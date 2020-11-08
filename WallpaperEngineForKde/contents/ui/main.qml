@@ -22,11 +22,8 @@ import org.kde.plasma.core 2.0 as Plasmacore
 
 Item {
     anchors.fill: parent
-
-/* Using loader as the plasma will crash if trying to change the video source on the fly.
- * Not crashing if setting the loader inactive and then again active */
-
-    Loader { 
+    
+	Loader { 
         id: mediaPlayerLoader
         anchors.fill: parent
 		source: "player.qml"

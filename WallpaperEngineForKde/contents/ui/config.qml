@@ -72,9 +72,6 @@ ColumnLayout {
         id: pickRow
 		Layout.alignment: Qt.AlignCenter
 
-//		Label {
- //           text: "|"
-  //      }
 		CheckBox {
             id: muteRadio
             text: "Mute audio"
@@ -245,5 +242,5 @@ ColumnLayout {
 		}
 	}
 
-onCfg_WallpaperTypeChanged: {}
+	onCfg_WallpaperTypeChanged: {}
 }

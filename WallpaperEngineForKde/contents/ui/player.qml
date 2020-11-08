@@ -20,7 +20,6 @@
 //https://doc.qt.io/qt-5/qml-qtmultimedia-playlist.html
 
 import QtQuick 2.7
-//import QtMultimedia 5.14
 import org.kde.plasma.core 2.0 as PlasmaCore
 
 Rectangle {
@@ -39,14 +38,7 @@ Rectangle {
 				 if( background.type == "video") backend.play()
              }
     }
-
-//	MediaPlayer {}
-//	VideoOutput {}
-
-//	Component {
-//		id: mpv
-//		MpvPlayer {}
-//	}
+	
 	property var backend
 	property var backComponent
 	function createBackend(){
@@ -127,22 +119,3 @@ Rectangle {
         id: windowModel
     }
 }
-/*
-    MediaPlayer {
-        id: playlistplayer
-        autoPlay: true
-		loops: MediaPlayer.Infinite
-        muted: wallpaper.configuration.MuteAudio
-        //bufferProgress: 0.7
-        source: wallpaper.configuration.WallpaperFilePath 
-    }
-
-    VideoOutput {
-        id: videoView
-        //visible: false
-        fillMode: wallpaper.configuration.FillMode
-        anchors.fill: parent
-        source: playlistplayer
-        flushMode: VideoOutput.LastFrame 
-    }
-*/
