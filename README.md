@@ -10,12 +10,14 @@ It's simple and small.
 You need to choose your steam workshop directory. Like `Steam/steamapps/workshop`
 
 ### install
-
-kpackagetool5 -t Plasma/Wallpaper -i WallpaperEngineForKde.tar
-
+```sh
+tar -cf wp-kde.tar WallpaperEngineForKde
+kpackagetool5 -t Plasma/Wallpaper -i wp-kde.tar
+```
 ### uninstall
-
+```sh
 kpackagetool5 -r WallpaperEngineForKde
+```
 
 ### Credits
 
