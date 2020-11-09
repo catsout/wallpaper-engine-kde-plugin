@@ -1,4 +1,4 @@
-## wallpaper engine for kde
+## Wallpaper Engine for Kde
 A wallpaper plgin integrating *wallpaper engine* into kde wallpaper setting.  
 It's simple and small.  
 
