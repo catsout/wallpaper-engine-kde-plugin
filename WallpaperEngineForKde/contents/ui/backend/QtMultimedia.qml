@@ -35,32 +35,47 @@ Item{
 		loops: MediaPlayer.Infinite
 		muted: background.mute
 		source: background.source
+		// can't set player.volume direct, use a var
 		volume: videoItem.volume
-		onPaused: {
-			volumeTimer.stop();
-			videoItem.volume = 0.0;
-		}
+	}
+
+	function play(){
+		// stop pause time to avoid quick switch which cause keep pause 
+		pauseTimer.stop();
+		volumeTimer.start();
+		player.play();
+	}
+	function pause(){
+		// need stop volumeTimer to increase volume
+		volumeTimer.stop();
+		// set volume and wait before pause, It's to solve the problem that real volume keep high 
+		videoItem.volume = 0.0;
+		pauseTimer.start()	
 	}
 	Timer{
 		id: volumeTimer
 		running: false
-		repeat: true
-		interval: 400
+		repeat: false
+		interval: 300
 		onTriggered: {
+			// increase volume by time
 			if(videoItem.volume >= 0.8)
 			{
 				videoItem.volume = 1.0;
 				volumeTimer.stop();
 			}
 			else
-				videoItem.volume += 0.1;
+				videoItem.volume += 0.05;
 		}
 	}
-	function play(){
-		player.play();
-		volumeTimer.start();
+	Timer{
+		id: pauseTimer
+		running: false
+		repeat: false
+		interval: 200
+		onTriggered: {
+			player.pause();
+		}
 	}
-	function pause(){
-		player.pause();
-	}
+
 }
