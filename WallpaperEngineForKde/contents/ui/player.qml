@@ -45,7 +45,7 @@ Rectangle {
 		// choose backend
 		switch (background.type) {
 			case 'video':
-				backComponent = Qt.createComponent("backend/multimedia.qml");
+				backComponent = Qt.createComponent("backend/QtMultimedia.qml");
 				//backComponent = Qt.createComponent("backend/mpv.qml");
 				break;
 			case 'web':
@@ -63,23 +63,8 @@ Rectangle {
 			backComponent.statusChanged.connect(loadBackend)
 	}
 	function loadBackend(){
-		var paraWebView = {
-			"url": background.source
-		}
-		var paraVideo = {
-			"video_source": background.source
-		}
-		// choose para
-		var para = null
-		switch (background.type) {
-			case 'video':
-				para = paraVideo
-				break;
-			case 'web':
-				para = paraWebView
-				break;
-		}
-		backend = backComponent.createObject(background, para)
+		// set para to {}, as it can't keep connect. use id in component direct.
+		backend = backComponent.createObject(background, {})
 		
 		//if ( background.type == "video" ) backend.initFinished.connect(mpvFinish)
 		function mpvFinish(){
@@ -94,15 +79,9 @@ Rectangle {
 		connectOk()
 		old.destroy()
 	}
-
-	function sourceCallback() {
-        if ( background.type == "video" ) backend.video_source = background.source
-        else if ( background.type == "web" ) backend.url = background.source
-	}
     
 	Component.onCompleted: {
 		createBackend()
-		background.sourceChanged.connect(sourceCallback)
 		background.typeChanged.connect(typeCallback)
 		connectOk()
 	}

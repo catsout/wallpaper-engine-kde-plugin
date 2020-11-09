@@ -23,12 +23,12 @@ import QtMultimedia 5.13
         anchors.fill: parent
         source: player
         flushMode: VideoOutput.LastFrame 
-		property string video_source			
+		property string video_source: background.source
 		MediaPlayer {
 			id: player
 			autoPlay: true
 			loops: MediaPlayer.Infinite
-			muted: wallpaper.configuration.MuteAudio
+			muted: background.mute
 			//bufferProgress: 0.7
 			source: video_source //wallpaper.configuration.WallpaperFilePath 
 		}
