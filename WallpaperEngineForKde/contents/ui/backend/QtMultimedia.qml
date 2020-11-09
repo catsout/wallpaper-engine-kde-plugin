@@ -30,6 +30,7 @@ import QtMultimedia 5.13
 			loops: MediaPlayer.Infinite
 			muted: background.mute
 			source: background.source
+			
 		}
 		function play(){
 			player.play();

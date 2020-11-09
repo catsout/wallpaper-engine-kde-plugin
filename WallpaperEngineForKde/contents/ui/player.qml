@@ -29,16 +29,26 @@ Rectangle {
 	property string source: wallpaper.configuration.WallpaperFilePath
 	property string type: wallpaper.configuration.WallpaperType
 	property bool mute: wallpaper.configuration.MuteAudio
-/*	Timer {
-             id: playtimer
-             running: true
-             repeat: false
-             interval: 4000
-             onTriggered: {
-				 backend.play()
-             }
+	
+	// lauch pause time to avoid freezing
+	Timer {
+		id: lauchPauseTimer
+		running: false
+        repeat: false
+        interval: 300
+        onTriggered: {
+				backend.pause();
+				playTimer.start();
+		}
     }
-*/	
+	Timer{
+		id: playTimer
+		running: false
+		repeat: false
+		interval: 5000
+		onTriggered: { background.autoPause(); }
+	}
+	
 	property var backend
 	property var backComponent
 	function createBackend(){
@@ -66,25 +76,39 @@ Rectangle {
 		// set para to {}, as it can't keep connect. use id in component direct.
 		backend = backComponent.createObject(background, {})
 		
-		//if ( background.type == "video" ) backend.initFinished.connect(mpvFinish)
-		//function mpvFinish(){
-        //    backend.pause()
-		//}
+		// new backend need autopause
+		sourceCallback()
 	}
-	
+	// signal changed
 	function typeCallback() {
 		var old = backend
 		backComponent = null
 		createBackend()
 		old.destroy()
 	}
-    
-	Component.onCompleted: {
-		createBackend()
-		background.typeChanged.connect(typeCallback)
-		background.okChanged.connect(autoPause)
+	  // as always autoplay for refresh lastframe, sourceChange need autoPause
+	function sourceCallback() {
+		sourcePauseTimer.start();	
 	}
 
+	Timer {
+		id: sourcePauseTimer
+		running: false
+        repeat: false
+        interval: 200
+        onTriggered: background.autoPause();
+    }
+
+	Component.onCompleted: {
+		// load first backend
+		createBackend(); // background signal connect
+		background.typeChanged.connect(typeCallback);
+		background.sourceChanged.connect(sourceCallback);
+		background.okChanged.connect(autoPause);
+		lauchPauseTimer.start();
+	}
+	
+	// auto pause
 	property bool ok: windowModel.playVideoWallpaper
 	function autoPause() {background.ok?backend.play():backend.pause()}
     WindowModel {
