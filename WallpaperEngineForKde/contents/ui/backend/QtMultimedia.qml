@@ -15,28 +15,52 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  2.010-1301, USA.
  */
-
+import QtQuick 2.0
 import QtMultimedia 5.13
-    VideoOutput {
+Item{
+	id: videoItem
+    anchors.fill: parent
+	property real volume: 0.0
+	VideoOutput {
         id: videoView
         //fillMode: wallpaper.configuration.FillMode
         anchors.fill: parent
         source: player
 		// keep lastframe for loop 
         flushMode: VideoOutput.LastFrame 
-		MediaPlayer {
-			id: player
-			autoPlay: true
-			loops: MediaPlayer.Infinite
-			muted: background.mute
-			source: background.source
-			
-		}
-		function play(){
-			player.play();
-		}
-		function pause(){
-			player.pause();
-		}
     }
-
+	MediaPlayer {
+		id: player
+		autoPlay: true
+		loops: MediaPlayer.Infinite
+		muted: background.mute
+		source: background.source
+		volume: videoItem.volume
+		onPaused: {
+			volumeTimer.stop();
+			videoItem.volume = 0.0;
+		}
+	}
+	Timer{
+		id: volumeTimer
+		running: false
+		repeat: true
+		interval: 400
+		onTriggered: {
+			if(videoItem.volume >= 0.8)
+			{
+				videoItem.volume = 1.0;
+				volumeTimer.stop();
+			}
+			else
+				videoItem.volume += 0.1;
+		}
+	}
+	function play(){
+		player.play();
+		volumeTimer.start();
+	}
+	function pause(){
+		player.pause();
+	}
+}
