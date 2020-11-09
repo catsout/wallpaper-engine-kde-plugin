@@ -16,16 +16,16 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  2.010-1301, USA.
  */
 
-import QtQuick 2.7
-import QtQuick.Controls 2.2
+import QtQuick 2.5
+import QtQuick.Controls 2.3
 import QtQuick.Controls.Styles 1.4
-import QtQuick.Dialogs 1.2
-import QtQuick.Layouts 1.2
-import QtMultimedia 5.14
-import Qt.labs.folderlistmodel 2.14
-import org.kde.kirigami 2.3 as Kirigami
+import QtQuick.Dialogs 1.0
+import QtQuick.Layouts 1.0
+//import QtMultimedia 5.14
+import Qt.labs.folderlistmodel 2.12
 import org.kde.plasma.core 2.0 as PlasmaCore
 import org.kde.kcm 1.1 as KCM
+import org.kde.kirigami 2.12 as Kirigami
 
 ColumnLayout {
     id: root
@@ -160,7 +160,8 @@ ColumnLayout {
 					var v = {
 						"workshopid": wplist.get(i,"fileName"),
 						"path": wplist.get(i,"filePath"),
-						"load": false
+						"load": false,
+						"index": i
 					};
 					wplist.files[k] = v;
 				}
@@ -208,6 +209,10 @@ ColumnLayout {
 
 	ListModel {
 		id: projectModel
+		function openContainingFolder(index){
+			var now = projectModel.get(index)
+			Qt.openUrlExternally("file://"+now["path"])	
+		}
 	}
 
 	KCM.GridView {
@@ -218,6 +223,12 @@ ColumnLayout {
 		view.model: projectModel 
 		view.delegate: KCM.GridDelegate {
 		text: title
+		actions: [
+        Kirigami.Action {
+            icon.name: "document-open-folder"
+            tooltip: "Open Containing Folder"
+            onTriggered: projectModel.openContainingFolder(index)
+        }]
 		thumbnail:Image {
 			anchors.fill: parent
 		    source: path + "/" + preview
