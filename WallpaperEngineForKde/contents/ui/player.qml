@@ -29,16 +29,16 @@ Rectangle {
 	property string source: wallpaper.configuration.WallpaperFilePath
 	property string type: wallpaper.configuration.WallpaperType
 	property bool mute: wallpaper.configuration.MuteAudio
-	Timer {
+/*	Timer {
              id: playtimer
              running: true
              repeat: false
              interval: 4000
              onTriggered: {
-				 if( background.type == "video") backend.play()
+				 backend.play()
              }
     }
-	
+*/	
 	property var backend
 	property var backComponent
 	function createBackend(){
@@ -67,32 +67,25 @@ Rectangle {
 		backend = backComponent.createObject(background, {})
 		
 		//if ( background.type == "video" ) backend.initFinished.connect(mpvFinish)
-		function mpvFinish(){
-            backend.pause()
-		}
+		//function mpvFinish(){
+        //    backend.pause()
+		//}
 	}
 	
 	function typeCallback() {
 		var old = backend
 		backComponent = null
 		createBackend()
-		connectOk()
 		old.destroy()
 	}
     
 	Component.onCompleted: {
 		createBackend()
 		background.typeChanged.connect(typeCallback)
-		connectOk()
+		background.okChanged.connect(autoPause)
 	}
 
 	property bool ok: windowModel.playVideoWallpaper
-	function connectOk(){
-		if (background.type == "video")
-			background.okChanged.connect(autoPause)
-		else background.okChanged.disconnect(autoPause)
-
-	}
 	function autoPause() {background.ok?backend.play():backend.pause()}
     WindowModel {
         id: windowModel

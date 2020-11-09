@@ -19,7 +19,8 @@
 import QtQuick 2.7
 import QtWebEngine 1.10
 WebEngineView {
-	anchors.fill: background
+	id: web
+	anchors.fill: parent
 	audioMuted: background.mute
 	url: background.source
 	onContextMenuRequested: function(request) {
@@ -32,5 +33,8 @@ WebEngineView {
 		WebEngine.settings.pdfViewerEnabled = false
 		WebEngine.settings.showScrollBars = false
     }
-
+	function play(){
+	}
+	function pause(){
+	}
 }

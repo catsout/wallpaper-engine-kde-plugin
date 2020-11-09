@@ -22,15 +22,14 @@ import QtMultimedia 5.13
         //fillMode: wallpaper.configuration.FillMode
         anchors.fill: parent
         source: player
+		// keep lastframe for loop 
         flushMode: VideoOutput.LastFrame 
-		property string video_source: background.source
 		MediaPlayer {
 			id: player
 			autoPlay: true
 			loops: MediaPlayer.Infinite
 			muted: background.mute
-			//bufferProgress: 0.7
-			source: video_source //wallpaper.configuration.WallpaperFilePath 
+			source: background.source
 		}
 		function play(){
 			player.play();
