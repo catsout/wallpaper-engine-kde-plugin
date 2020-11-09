@@ -1,4 +1,4 @@
-## README
+## wallpaper engine for kde
 A wallpaper plgin integrating *wallpaper engine* into kde wallpaper setting.  
 It's simple and small.  
 
@@ -29,12 +29,12 @@ use `export QT_XCB_GL_INTEGRATION=xcb_glx kwin --replace`
 
 ### Install
 ```sh
-tar -cf wp-kde.tar WallpaperEngineForKde
-kpackagetool5 -t Plasma/Wallpaper -i wp-kde.tar
+git clone https://github.com/catsout/wallpaper-engine-kde-plugin.git
+plasmapkg2 -i wallpaper-engine-kde-plugin/plugin
 ```
 ### Uninstall
 ```sh
-kpackagetool5 -r WallpaperEngineForKde
+plasmapkg2 -r wallpaper-engine-kde-plugin/plugin
 ```
 
 ### Credits

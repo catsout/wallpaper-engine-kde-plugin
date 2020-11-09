@@ -1,0 +1,13 @@
+[Desktop Entry]
+Encoding=UTF-8
+Name=wallpaper engine for kde
+
+Type=Service
+Icon=preferences-desktop-wallpaper
+
+X-KDE-ServiceTypes=Plasma/Wallpaper
+X-Plasma-MainScript=ui/main.qml
+X-KDE-PluginInfo-Name=com.github.casout.wallpaperEngineKde
+X-KDE-PluginInfo-EnabledByDefault=true
+X-KDE-PluginInfo-Version=3
+
