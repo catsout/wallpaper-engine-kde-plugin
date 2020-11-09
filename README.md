@@ -2,7 +2,7 @@
 A wallpaper plgin integrating *wallpaper engine* into kde wallpaper setting.  
 It's simple and small.  
 
-### note:
+### Note:
 - Only **video** and **web** are supported.
 - Only test on x11.
 - Need Qt >= 5.13, for loop video support without black screen
@@ -10,7 +10,7 @@ It's simple and small.
 
 You need to choose your steam workshop directory. Like `Steam/steamapps/workshop`  
 
-### better performance for intel card
+### Better performance for intel card
 May not greatly improve  
 #### hwdecode
 Qt using GStreamer for video backend.  
@@ -27,12 +27,12 @@ use `export QT_XCB_GL_INTEGRATION=xcb_glx kwin --replace`
 
 #### use mpv
 
-### install
+### Install
 ```sh
 tar -cf wp-kde.tar WallpaperEngineForKde
 kpackagetool5 -t Plasma/Wallpaper -i wp-kde.tar
 ```
-### uninstall
+### Uninstall
 ```sh
 kpackagetool5 -r WallpaperEngineForKde
 ```

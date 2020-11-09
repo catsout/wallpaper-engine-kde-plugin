@@ -52,6 +52,8 @@ Rectangle {
 	property var backend
 	property var backComponent
 	function createBackend(){
+		// check source
+		if(!background.source || background.source == "") return;
 		// choose backend
 		switch (background.type) {
 			case 'video':
