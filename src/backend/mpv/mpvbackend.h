@@ -34,6 +34,8 @@ class MpvObject : public QQuickFramebufferObject
 	Q_PROPERTY(Status status READ status NOTIFY statusChanged)
     Q_PROPERTY(bool mute READ mute WRITE setMute)
 	Q_PROPERTY(QString logfile READ logfile WRITE setLogfile)
+	Q_PROPERTY(int volume READ volume WRITE setVolume)
+
 
     mpv_handle *mpv;
     mpv_render_context *mpv_gl;
@@ -57,10 +59,12 @@ public:
 	QUrl source() const;
 	bool mute() const;
 	QString logfile() const;
+	int volume() const;
 
 	void setSource(const QUrl& source);
 	void setMute(const bool& mute);
 	void setLogfile(const QString& logfile);
+	void setVolume(const int& volume);
 
 public slots:
 	void play();

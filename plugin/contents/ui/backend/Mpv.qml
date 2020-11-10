@@ -21,12 +21,13 @@ import com.github.catsout.wallpaperEngineKde 1.0
 Item{
     id: videoItem
     anchors.fill: parent
-    property real volume: 0.0
+    property real volume: 0
     MpvObject {
         id: player
         anchors.fill: parent
         source: background.source
         mute: background.mute
+        volume: videoItem.volume
     }
     Component.onCompleted:{
         background.nowBackend = "mpv";
@@ -43,23 +44,23 @@ Item{
         // need stop volumeTimer to increase volume
         volumeTimer.stop();
         // set volume and wait before pause, It's to solve the problem that real volume keep high 
-        videoItem.volume = 0.0;
+        videoItem.volume = 0;
         pauseTimer.start()  
     }
     Timer{
         id: volumeTimer
         running: false
-        repeat: false
+        repeat: true
         interval: 300
         onTriggered: {
             // increase volume by time
-            if(videoItem.volume >= 0.8)
+            if(videoItem.volume >= 99)
             {
-                videoItem.volume = 1.0;
+                videoItem.volume = 100;
                 volumeTimer.stop();
             }
             else
-                videoItem.volume += 0.05;
+                videoItem.volume += 5;
         }
     }
     Timer{
@@ -71,5 +72,4 @@ Item{
             player.pause();
         }
     }
-
 }

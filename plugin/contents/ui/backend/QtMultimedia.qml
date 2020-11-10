@@ -58,7 +58,7 @@ Item{
     Timer{
         id: volumeTimer
         running: false
-        repeat: false
+        repeat: true
         interval: 300
         onTriggered: {
             // increase volume by time

@@ -284,8 +284,16 @@ QString MpvObject::logfile() const {
     return getProperty(QString::fromUtf8("log-file")).toString();
 }
 
+int MpvObject::volume() const {
+    return getProperty(QString::fromUtf8("volume")).toInt();
+}
+
 void MpvObject::setMute( const bool& mute){
 	setProperty(QString::fromUtf8("mute"), mute);
+}
+
+void MpvObject::setVolume( const int& volume){
+	setProperty(QString::fromUtf8("volume"), volume);
 }
 
 void MpvObject::setLogfile( const QString& logfile){
