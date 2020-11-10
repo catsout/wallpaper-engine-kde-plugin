@@ -23,84 +23,84 @@ Rectangle {
     id: background
     anchors.fill: parent
     color: wallpaper.configuration.BackgroundColor
-	property string source: wallpaper.configuration.WallpaperFilePath
-	property string type: wallpaper.configuration.WallpaperType
-	property bool mute: wallpaper.configuration.MuteAudio
-	
-	// lauch pause time to avoid freezing
-	Timer {
-		id: lauchPauseTimer
-		running: false
+    property string source: wallpaper.configuration.WallpaperFilePath
+    property string type: wallpaper.configuration.WallpaperType
+    property bool mute: wallpaper.configuration.MuteAudio
+    
+    // lauch pause time to avoid freezing
+    Timer {
+        id: lauchPauseTimer
+        running: false
         repeat: false
         interval: 300
         onTriggered: {
-				backendLoder.item.pause();
-				playTimer.start();
-		}
+                backendLoder.item.pause();
+                playTimer.start();
+        }
     }
-	Timer{
-		id: playTimer
-		running: false
-		repeat: false
-		interval: 5000
-		onTriggered: { background.autoPause(); }
-	}
-	Loader { 
-		id: backendLoder
-		anchors.fill: parent
-		//sourceComponent: rect
-	}
-	
-	function loadBackend(){
-		var qmlsource = "";
+    Timer{
+        id: playTimer
+        running: false
+        repeat: false
+        interval: 5000
+        onTriggered: { background.autoPause(); }
+    }
+    Loader { 
+        id: backendLoder
+        anchors.fill: parent
+        //sourceComponent: rect
+    }
+    
+    function loadBackend(){
+        var qmlsource = "";
 
-		// check source
-		if(!background.source || background.source == "") return;
-		// choose backend
-		switch (background.type) {
-			case 'video':
-				qmlsource = "backend/QtMultimedia.qml";
-				//backComponent = Qt.createComponent("backend/mpv.qml");
-				break;
-			case 'web':
-				qmlsource = "backend/WebView.qml";
-				break;
-			default:
-				return;
-		}
-		backendLoder.source = qmlsource;
-		sourceCallback();
-	}
-	
-	  // as always autoplay for refresh lastframe, sourceChange need autoPause
-	function sourceCallback() {
-		sourcePauseTimer.start();	
-	}
+        // check source
+        if(!background.source || background.source == "") return;
+        // choose backend
+        switch (background.type) {
+            case 'video':
+                qmlsource = "backend/QtMultimedia.qml";
+                //backComponent = Qt.createComponent("backend/mpv.qml");
+                break;
+            case 'web':
+                qmlsource = "backend/WebView.qml";
+                break;
+            default:
+                return;
+        }
+        backendLoder.source = qmlsource;
+        sourceCallback();
+    }
+    
+      // as always autoplay for refresh lastframe, sourceChange need autoPause
+    function sourceCallback() {
+        sourcePauseTimer.start();   
+    }
 
-	Timer {
-		id: sourcePauseTimer
-		running: false
+    Timer {
+        id: sourcePauseTimer
+        running: false
         repeat: false
         interval: 200
         onTriggered: background.autoPause();
     }
 
-	Component.onCompleted: {
-		// load first backend
-		loadBackend(); // background signal connect
-		background.typeChanged.connect(loadBackend);
-		background.sourceChanged.connect(sourceCallback);
-		background.okChanged.connect(autoPause);
-		lauchPauseTimer.start();
-	}
-	
-	// auto pause
-	property bool ok: windowModel.playVideoWallpaper
-	function autoPause() {background.ok
-					? backendLoder.item.play()
-					: backendLoder.item.pause()
-	}
-	
+    Component.onCompleted: {
+        // load first backend
+        loadBackend(); // background signal connect
+        background.typeChanged.connect(loadBackend);
+        background.sourceChanged.connect(sourceCallback);
+        background.okChanged.connect(autoPause);
+        lauchPauseTimer.start();
+    }
+    
+    // auto pause
+    property bool ok: windowModel.playVideoWallpaper
+    function autoPause() {background.ok
+                    ? backendLoder.item.play()
+                    : backendLoder.item.pause()
+    }
+    
     WindowModel {
         id: windowModel
     }

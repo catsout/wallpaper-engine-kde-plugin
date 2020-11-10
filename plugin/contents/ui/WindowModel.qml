@@ -90,9 +90,9 @@ Item {
     }
 
     function updateWindowsinfo(modePlay) {
-		//0 for maxizied
-		//1 for any
-		if(modePlay === 1){
+        //0 for maxizied
+        //1 for any
+        if(modePlay === 1){
             playVideoWallpaper = (onlyWindowsModel.count === minimizedWindowModel.count) ? true : false
         }
         else{
@@ -117,7 +117,7 @@ Item {
                 aObj = minimizedWindowModel.get(i)
                 minApps.push(aObj.AppPid)
             }
-           	
+            
             joinApps = removeDuplicates(joinApps) // for qml Kubuntu 18.04
             
             joinApps.sort();

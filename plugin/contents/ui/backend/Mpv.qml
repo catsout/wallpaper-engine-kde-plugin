@@ -19,9 +19,9 @@
 import wallpaper.engineforkde 1.0
 
 MpvObject {
-	anchors.fill: background
-//	loadscripts: false
-//	logfile: "/home/out/mpv1.log"
-//	vo: "vaapi"
-	mute: background.mute
+    anchors.fill: background
+//  loadscripts: false
+//  logfile: "/home/out/mpv1.log"
+//  vo: "vaapi"
+    mute: background.mute
 }

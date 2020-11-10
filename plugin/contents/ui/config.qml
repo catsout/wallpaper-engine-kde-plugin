@@ -31,27 +31,27 @@ import "checker.js" as Checker
 
 ColumnLayout {
     id: root
-	Layout.alignment: Qt.AlignCenter
-	
-	property string cfg_SteamWorkShopPath
-	property string cfg_WallpaperWorkShopId
-	property string cfg_WallpaperFilePath
-	property string cfg_WallpaperType
+    Layout.alignment: Qt.AlignCenter
+    
+    property string cfg_SteamWorkShopPath
+    property string cfg_WallpaperWorkShopId
+    property string cfg_WallpaperFilePath
+    property string cfg_WallpaperType
     property string cfg_BackgroundColor: "black"
     property int  cfg_FillMode: 2
-	property int  cfg_PauseMode: 0
+    property int  cfg_PauseMode: 0
     property bool cfg_MuteAudio: true
-	property bool cfg_UseMpv: false
+    property bool cfg_UseMpv: false
 
     RowLayout {
         id: selectRow
-		Layout.alignment: Qt.AlignCenter
-		Layout.topMargin: 10.0
+        Layout.alignment: Qt.AlignCenter
+        Layout.topMargin: 10.0
 
-		Label {
+        Label {
             text: "Pause mode:"
             Layout.alignment: Qt.AlignLeft }
-		
+        
         ComboBox {
             id: pauseMode
             model: [
@@ -62,19 +62,19 @@ ColumnLayout {
                     'label': "any window",
                 }
             ]
-			textRole: "label"
-			Component.onCompleted: pauseMode.currentIndex = wallpaper.configuration.PauseMode
-			onCurrentIndexChanged: cfg_PauseMode = pauseMode.currentIndex
+            textRole: "label"
+            Component.onCompleted: pauseMode.currentIndex = wallpaper.configuration.PauseMode
+            onCurrentIndexChanged: cfg_PauseMode = pauseMode.currentIndex
 
-		}
+        }
         
     }
 
     RowLayout {
         id: checkRow
-		Layout.alignment: Qt.AlignCenter
+        Layout.alignment: Qt.AlignCenter
 
-		CheckBox {
+        CheckBox {
             id: muteAudio
             text: "Mute audio"
             checked: cfg_MuteAudio
@@ -82,39 +82,39 @@ ColumnLayout {
                     cfg_MuteAudio = muteAudio.checked;
             }
         }
-		Component.onCompleted: {
-			// check c++ lib is installed
-			if(Checker.checklib(checkRow)) 
-				Qt.createQmlObject(`import QtQuick 2.5;
-						import QtQuick.Controls 2.3;
-						CheckBox{
-							id: useMpv
-							text: "use mpv"
-							checked: cfg_UseMpv 
-							onCheckedChanged: {
-								cfg_UseMpv = useMpv.checked;
-							}
-						}`,checkRow);
-		}
+        Component.onCompleted: {
+            // check c++ lib is installed
+            if(Checker.checklib(checkRow)) 
+                Qt.createQmlObject(`import QtQuick 2.5;
+                        import QtQuick.Controls 2.3;
+                        CheckBox{
+                            id: useMpv
+                            text: "use mpv"
+                            checked: cfg_UseMpv 
+                            onCheckedChanged: {
+                                cfg_UseMpv = useMpv.checked;
+                            }
+                        }`,checkRow);
+        }
     }
 
-	RowLayout {
+    RowLayout {
         id: infoRow
-		Layout.alignment: Qt.AlignCenter
-		
+        Layout.alignment: Qt.AlignCenter
+        
 
         Label {
-			id: workshopidLabel
+            id: workshopidLabel
             text: 'shopid: <a href="https://steamcommunity.com/sharedfiles/filedetails/?id='+ cfg_WallpaperWorkShopId + '">'+ cfg_WallpaperWorkShopId +'</a>'
-			onLinkActivated: Qt.openUrlExternally(link)
+            onLinkActivated: Qt.openUrlExternally(link)
         }
-		Label {text: '|'}
-		Label {
-			text: "type: " + cfg_WallpaperType
-			Layout.alignment: Qt.AlignLeft
+        Label {text: '|'}
+        Label {
+            text: "type: " + cfg_WallpaperType
+            Layout.alignment: Qt.AlignLeft
         }
-		Label {text: '|'}
-	    Button {
+        Label {text: '|'}
+        Button {
             id: wpFolderButton
             implicitWidth: height
             PlasmaCore.IconItem {
@@ -130,7 +130,7 @@ ColumnLayout {
                 onClicked: { wpDialog.open() }
             }
         }
-		Button {
+        Button {
             id: refreshButton
             implicitWidth: height
             PlasmaCore.IconItem {
@@ -144,126 +144,126 @@ ColumnLayout {
             MouseArea {
                 anchors.fill: parent
                 onClicked: { 
-					projectModel.clear();
-					var url = wplist.folder;
-					wplist.folder = "";
-					wplist.folder = url;
-				}
+                    projectModel.clear();
+                    var url = wplist.folder;
+                    wplist.folder = "";
+                    wplist.folder = url;
+                }
             }
         }
     }
 
     FolderListModel {
         id: wplist
-		property var files
-		property var name_to_index
-		property var lock: false
-		folder:	cfg_SteamWorkShopPath + "/content/431960" 
-		onStatusChanged: {
-			if (wplist.status == FolderListModel.Ready) 
-			{
-				wplist.files = {};
-				wplist.name_to_index = {};
-				wplist.lock = false;
-				projectModel.clear();
-				for(var i=0;i < wplist.count;i++)
-				{
-					var k = i;
-					var v = {
-						"workshopid": wplist.get(i,"fileName"),
-						"path": wplist.get(i,"filePath"),
-						"load": false,
-						"index": i
-					};
-					wplist.files[k] = v;
-				}
-				Object.entries(wplist.files).forEach(([k,v]) => {
-					readTextFile(v["path"] + "/project.json",
-							function (text) {
-								var json = JSON.parse(text);	
-								v["title"] = json["title"];
-								v["preview"] = json["preview"];
-								v["file"] = json["file"];
-								v["type"] = json["type"].toLowerCase();
-								v["load"] = true;
-								check();
-							}
-					);
-				});
-			}
-		}
-		function check() {
-			for(var k in wplist.files)
-				if(!wplist.files[k]["load"]) return;
-			if(wplist.lock) return;
-			wplist.lock = true;	
-			var currentIndex = 0;
-			for(var i=0;wplist.files.hasOwnProperty(i);i++) {
-				var v = wplist.files[i];
-				projectModel.append(v);
-				wplist.name_to_index[v["workshopid"]] = i;
-			}
-			picView.view.currentIndex = wplist.name_to_index[cfg_WallpaperWorkShopId];
-		}
-		function readTextFile(fileUrl, callback){
-			var xhr = new XMLHttpRequest;
-			xhr.open("GET", fileUrl);
-			xhr.onreadystatechange = function () {
-				if(xhr.readyState === XMLHttpRequest.DONE){
-					var response = xhr.responseText;
-					callback(response)
-				}
-			}
-			xhr.send();
-		}
-	}
+        property var files
+        property var name_to_index
+        property var lock: false
+        folder: cfg_SteamWorkShopPath + "/content/431960" 
+        onStatusChanged: {
+            if (wplist.status == FolderListModel.Ready) 
+            {
+                wplist.files = {};
+                wplist.name_to_index = {};
+                wplist.lock = false;
+                projectModel.clear();
+                for(var i=0;i < wplist.count;i++)
+                {
+                    var k = i;
+                    var v = {
+                        "workshopid": wplist.get(i,"fileName"),
+                        "path": wplist.get(i,"filePath"),
+                        "load": false,
+                        "index": i
+                    };
+                    wplist.files[k] = v;
+                }
+                Object.entries(wplist.files).forEach(([k,v]) => {
+                    readTextFile(v["path"] + "/project.json",
+                            function (text) {
+                                var json = JSON.parse(text);    
+                                v["title"] = json["title"];
+                                v["preview"] = json["preview"];
+                                v["file"] = json["file"];
+                                v["type"] = json["type"].toLowerCase();
+                                v["load"] = true;
+                                check();
+                            }
+                    );
+                });
+            }
+        }
+        function check() {
+            for(var k in wplist.files)
+                if(!wplist.files[k]["load"]) return;
+            if(wplist.lock) return;
+            wplist.lock = true; 
+            var currentIndex = 0;
+            for(var i=0;wplist.files.hasOwnProperty(i);i++) {
+                var v = wplist.files[i];
+                projectModel.append(v);
+                wplist.name_to_index[v["workshopid"]] = i;
+            }
+            picView.view.currentIndex = wplist.name_to_index[cfg_WallpaperWorkShopId];
+        }
+        function readTextFile(fileUrl, callback){
+            var xhr = new XMLHttpRequest;
+            xhr.open("GET", fileUrl);
+            xhr.onreadystatechange = function () {
+                if(xhr.readyState === XMLHttpRequest.DONE){
+                    var response = xhr.responseText;
+                    callback(response)
+                }
+            }
+            xhr.send();
+        }
+    }
 
 
-	ListModel {
-		id: projectModel
-		function openContainingFolder(index){
-			var now = projectModel.get(index)
-			Qt.openUrlExternally("file://"+now["path"])	
-		}
-	}
+    ListModel {
+        id: projectModel
+        function openContainingFolder(index){
+            var now = projectModel.get(index)
+            Qt.openUrlExternally("file://"+now["path"]) 
+        }
+    }
 
-	KCM.GridView {
-		id: picView
-		Layout.fillWidth: true
-		Layout.fillHeight: true
+    KCM.GridView {
+        id: picView
+        Layout.fillWidth: true
+        Layout.fillHeight: true
 
-		view.model: projectModel 
-		view.delegate: KCM.GridDelegate {
-		text: title
-		actions: [
+        view.model: projectModel 
+        view.delegate: KCM.GridDelegate {
+        text: title
+        actions: [
         Kirigami.Action {
             icon.name: "document-open-folder"
             tooltip: "Open Containing Folder"
             onTriggered: projectModel.openContainingFolder(index)
         }]
-		thumbnail:Image {
-			anchors.fill: parent
-		    source: path + "/" + preview
-		}
-		onClicked: {
-			   cfg_WallpaperWorkShopId = workshopid;
-			   cfg_WallpaperFilePath = path + "/" + file;
-			   cfg_WallpaperType = type;
-			   picView.view.currentIndex = wplist.name_to_index[workshopid];
-		   }
-		}
-	}
+        thumbnail:Image {
+            anchors.fill: parent
+            source: path + "/" + preview
+        }
+        onClicked: {
+               cfg_WallpaperWorkShopId = workshopid;
+               cfg_WallpaperFilePath = path + "/" + file;
+               cfg_WallpaperType = type;
+               picView.view.currentIndex = wplist.name_to_index[workshopid];
+           }
+        }
+    }
 
-	FileDialog {
-		id: wpDialog
-		title: "Select steam workshop dir"
-		selectFolder: true
-		selectMultiple : false
-		nameFilters: [ "All files (*)" ]
-		onAccepted: {
-			cfg_SteamWorkShopPath = wpDialog.fileUrls[0]
-		}
-	}
+    FileDialog {
+        id: wpDialog
+        title: "Select steam workshop dir"
+        selectFolder: true
+        selectMultiple : false
+        nameFilters: [ "All files (*)" ]
+        onAccepted: {
+            cfg_SteamWorkShopPath = wpDialog.fileUrls[0]
+        }
+    }
 
-	onCfg_WallpaperTypeChanged: {}
+    onCfg_WallpaperTypeChanged: {}
 }

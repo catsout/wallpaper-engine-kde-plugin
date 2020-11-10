@@ -6,7 +6,7 @@
 function checklib(parentItem) {
 	var ok = false;
 	var create = null;
-	try {
+	 try {
 		create = Qt.createQmlObject(
 		'import wallpaper.engineforkde 1.0;import QtQml 2.13;QtObject{}',
 		parentItem);
