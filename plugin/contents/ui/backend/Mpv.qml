@@ -15,7 +15,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  2.010-1301, USA.
  */
-import QtQuick 2.13
+import QtQuick 2.5
 import com.github.catsout.wallpaperEngineKde 1.0
 
 Item{

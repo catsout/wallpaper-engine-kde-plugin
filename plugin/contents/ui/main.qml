@@ -16,7 +16,7 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  2.010-1301, USA.
  */
 
-import QtQuick 2.7
+import QtQuick 2.5
 import org.kde.plasma.core 2.0 as PlasmaCore
 import "checker.js" as Checker
 
@@ -80,7 +80,7 @@ Rectangle {
                 else qmlsource = "backend/QtMultimedia.qml";
                 break;
             case 'web':
-                qmlsource = "backend/WebView.qml";
+                qmlsource = "backend/QtWebView.qml";
                 break;
             default:
                 return;
