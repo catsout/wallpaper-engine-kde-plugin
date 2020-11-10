@@ -34,7 +34,7 @@ Rectangle {
         repeat: false
         interval: 300
         onTriggered: {
-				backend.pause();
+				backendLoder.item.pause();
 				playTimer.start();
 		}
     }
@@ -45,46 +45,33 @@ Rectangle {
 		interval: 5000
 		onTriggered: { background.autoPause(); }
 	}
+	Loader { 
+		id: backendLoder
+		anchors.fill: parent
+		//sourceComponent: rect
+	}
 	
-	property var backend
-	property var backComponent
-	function createBackend(){
+	function loadBackend(){
+		var qmlsource = "";
+
 		// check source
 		if(!background.source || background.source == "") return;
 		// choose backend
 		switch (background.type) {
 			case 'video':
-				backComponent = Qt.createComponent("backend/QtMultimedia.qml");
+				qmlsource = "backend/QtMultimedia.qml";
 				//backComponent = Qt.createComponent("backend/mpv.qml");
 				break;
 			case 'web':
-				backComponent = Qt.createComponent("backend/WebView.qml")
+				qmlsource = "backend/WebView.qml";
 				break;
 			default:
 				return;
 		}
-
-		if (backComponent.status == Component.Error)
-			console.error("Error loading component:",backComponent.errorString())
-		if (backComponent.status == Component.Ready || backComponent.status == Component.Error)
-			loadBackend()
-		else
-			backComponent.statusChanged.connect(loadBackend)
+		backendLoder.source = qmlsource;
+		sourceCallback();
 	}
-	function loadBackend(){
-		// set para to {}, as it can't keep connect. use id in component direct.
-		backend = backComponent.createObject(background, {})
-		
-		// new backend need autopause
-		sourceCallback()
-	}
-	// signal changed
-	function typeCallback() {
-		var old = backend
-		backComponent = null
-		createBackend()
-		old.destroy()
-	}
+	
 	  // as always autoplay for refresh lastframe, sourceChange need autoPause
 	function sourceCallback() {
 		sourcePauseTimer.start();	
@@ -100,8 +87,8 @@ Rectangle {
 
 	Component.onCompleted: {
 		// load first backend
-		createBackend(); // background signal connect
-		background.typeChanged.connect(typeCallback);
+		loadBackend(); // background signal connect
+		background.typeChanged.connect(loadBackend);
 		background.sourceChanged.connect(sourceCallback);
 		background.okChanged.connect(autoPause);
 		lauchPauseTimer.start();
@@ -109,8 +96,13 @@ Rectangle {
 	
 	// auto pause
 	property bool ok: windowModel.playVideoWallpaper
-	function autoPause() {background.ok?backend.play():backend.pause()}
+	function autoPause() {background.ok
+					? backendLoder.item.play()
+					: backendLoder.item.pause()
+	}
+	
     WindowModel {
         id: windowModel
     }
+
 }
