@@ -50,17 +50,17 @@ ColumnLayout {
         Layout.topMargin: 10.0
 
         Label {
-            text: "Pause mode:"
+            text: "Pause Mode:"
             Layout.alignment: Qt.AlignLeft }
         
         ComboBox {
             id: pauseMode
             model: [
                 {
-                    'label': "maximied window",
+                    'label': "Maximied Window",
                 },
                 {
-                    'label': "any window",
+                    'label': "Any Window",
                 }
             ]
             textRole: "label"
@@ -77,7 +77,7 @@ ColumnLayout {
 
         CheckBox {
             id: muteAudio
-            text: "Mute audio"
+            text: "Mute Audio"
             checked: cfg_MuteAudio
             onCheckedChanged: {
                     cfg_MuteAudio = muteAudio.checked;
@@ -90,7 +90,7 @@ ColumnLayout {
                         import QtQuick.Controls 2.3;
                         CheckBox{
                             id: useMpv
-                            text: "use mpv"
+                            text: "Use mpv"
                             checked: cfg_UseMpv 
                             onCheckedChanged: {
                                 cfg_UseMpv = useMpv.checked;
@@ -106,12 +106,12 @@ ColumnLayout {
 
         Label {
             id: workshopidLabel
-            text: 'shopid: <a href="https://steamcommunity.com/sharedfiles/filedetails/?id='+ cfg_WallpaperWorkShopId + '">'+ cfg_WallpaperWorkShopId +'</a>'
+            text: 'Shopid: <a href="https://steamcommunity.com/sharedfiles/filedetails/?id='+ cfg_WallpaperWorkShopId + '">'+ cfg_WallpaperWorkShopId +'</a>'
             onLinkActivated: Qt.openUrlExternally(link)
         }
         Label {text: '|'}
         Label {
-            text: "type: " + cfg_WallpaperType
+            text: "Type: " + cfg_WallpaperType
             Layout.alignment: Qt.AlignLeft
         }
         Label {text: '|'}

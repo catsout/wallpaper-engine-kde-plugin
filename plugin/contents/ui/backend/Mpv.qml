@@ -22,6 +22,12 @@ Item{
     id: videoItem
     anchors.fill: parent
     property real volume: 0
+
+    // logfile
+    // source
+    // mute
+    // volume
+    // fun:setProperty(name,value)
     MpvObject {
         id: player
         anchors.fill: parent
