@@ -26,6 +26,14 @@ egl may break kwin.
 use `export QT_XCB_GL_INTEGRATION=xcb_glx kwin --replace`
 
 #### use mpv
+need compile c++ plugin
+```sh
+mkdir build && cd build
+cmake ..
+make
+sudo make install
+```
+
 
 ### Install
 ```sh
