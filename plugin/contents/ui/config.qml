@@ -40,6 +40,15 @@ ColumnLayout {
 	property int  cfg_PauseMode: 0
     property bool cfg_MuteAudio: true
 
+	property var checkmpv: null
+	Item{
+		id: checkItem
+		Component.onCompleted: {
+			root.checkmpv = Qt.createQmlObject('import wallpaper.engineforkde 1.0;
+			import QtQuick 2.5;
+			Item{}',checkItem);
+		}
+	}
     RowLayout {
         id: selectRow
 		Layout.alignment: Qt.AlignCenter
@@ -47,8 +56,7 @@ ColumnLayout {
 
 		Label {
             text: "Pause mode:"
-            Layout.alignment: Qt.AlignLeft
-        }
+            Layout.alignment: Qt.AlignLeft }
 		
         ComboBox {
             id: pauseMode
@@ -69,11 +77,11 @@ ColumnLayout {
     }
 
     RowLayout {
-        id: pickRow
+        id: checkRow
 		Layout.alignment: Qt.AlignCenter
 
 		CheckBox {
-            id: muteRadio
+            id: muteAudio
             text: "Mute audio"
             checked: cfg_MuteAudio
             onCheckedChanged: {
@@ -85,7 +93,16 @@ ColumnLayout {
             }
         }
     }
-		
+
+	onCheckmpvChanged:{
+		if(root.checkmpv != null) 
+			Qt.createQmlObject('import QtQuick 2.5;
+			import QtQuick.Controls 2.3;
+			CheckBox{
+            text: "use mpv"
+            checked: cfg_UseMpv
+			}',checkRow);
+	}
 	RowLayout {
         id: infoRow
 		Layout.alignment: Qt.AlignCenter
