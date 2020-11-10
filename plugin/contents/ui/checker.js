@@ -1,5 +1,8 @@
 .pragma library
 
+// Use try Qt.createQmlObject to check if c++ lib is installed
+// Use try, as Qt.createQmlObject may break the function
+// TODO: add CheckItem for c++ lib object, like mpvChecker{} intead of QtObject{}
 function checklib(parentItem) {
 	var ok = false;
 	var create = null;

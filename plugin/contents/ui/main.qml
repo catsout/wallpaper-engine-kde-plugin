@@ -16,9 +16,6 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  2.010-1301, USA.
  */
 
-//http://doc.qt.io/qt-5/qml-qtmultimedia-video.html
-//https://doc.qt.io/qt-5/qml-qtmultimedia-playlist.html
-
 import QtQuick 2.7
 import org.kde.plasma.core 2.0 as PlasmaCore
 
