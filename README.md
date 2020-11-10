@@ -1,5 +1,5 @@
 ## Wallpaper Engine for Kde
-A wallpaper plgin integrating *wallpaper engine* into kde wallpaper setting.  
+A wallpaper plgin integrating [wallpaper engine](https://store.steampowered.com/app/431960/Wallpaper_Engine) into kde wallpaper setting.  
 It's simple and small.  
 
 ### Note:
@@ -10,6 +10,16 @@ It's simple and small.
 - With web type, desktop right click not work.
 
 You need to choose your steam workshop directory. Like `Steam/steamapps/workshop`  
+
+### Install
+```sh
+git clone https://github.com/catsout/wallpaper-engine-kde-plugin.git
+plasmapkg2 -i wallpaper-engine-kde-plugin/plugin
+```
+### Uninstall
+```sh
+plasmapkg2 -r wallpaper-engine-kde-plugin/plugin
+```
 
 ### Better performance for intel card
 May not greatly improve.  
@@ -33,17 +43,6 @@ mkdir build && cd build
 cmake ..
 make
 sudo make install
-```
-
-
-### Install
-```sh
-git clone https://github.com/catsout/wallpaper-engine-kde-plugin.git
-plasmapkg2 -i wallpaper-engine-kde-plugin/plugin
-```
-### Uninstall
-```sh
-plasmapkg2 -r wallpaper-engine-kde-plugin/plugin
 ```
 
 ### Credits
