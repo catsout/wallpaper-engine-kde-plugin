@@ -45,15 +45,20 @@ Item{
     function play(){
         // stop pause time to avoid quick switch which cause keep pause 
         pauseTimer.stop();
-        volumeTimer.start();
+        if(!background.mute)
+            volumeTimer.start();
+        else videoItem.volume = 1;
         player.play();
     }
     function pause(){
         // need stop volumeTimer to increase volume
         volumeTimer.stop();
-        // set volume and wait before pause, It's to solve the problem that real volume keep high 
-        videoItem.volume = 0.0;
-        pauseTimer.start()  
+        if(!background.mute){
+            // set volume and wait before pause, It's to solve the problem that real volume keep high 
+            videoItem.volume = 0;
+            pauseTimer.start();
+        }
+        else player.pause();
     }
     Timer{
         id: volumeTimer

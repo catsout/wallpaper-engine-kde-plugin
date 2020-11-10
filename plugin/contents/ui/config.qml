@@ -51,7 +51,8 @@ ColumnLayout {
 
         Label {
             text: "Pause Mode:"
-            Layout.alignment: Qt.AlignLeft }
+            Layout.alignment: Qt.AlignLeft 
+        }
         
         ComboBox {
             id: pauseMode
@@ -88,6 +89,12 @@ ColumnLayout {
             if(Checker.checklib(checkRow)) 
                 Qt.createQmlObject(`import QtQuick 2.5;
                         import QtQuick.Controls 2.3;
+                        import QtQuick.Layouts 1.0;
+                        RowLayout{
+                        Label{
+                            text: "|"
+                            Layout.alignment: Qt.AlignLeft 
+                        }
                         CheckBox{
                             id: useMpv
                             text: "Use mpv"
@@ -95,6 +102,7 @@ ColumnLayout {
                             onCheckedChanged: {
                                 cfg_UseMpv = useMpv.checked;
                             }
+                        }
                         }`,checkRow);
         }
     }
