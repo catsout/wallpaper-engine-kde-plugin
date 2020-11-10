@@ -27,6 +27,8 @@ import org.kde.plasma.core 2.0 as PlasmaCore
 import org.kde.kcm 1.1 as KCM
 import org.kde.kirigami 2.12 as Kirigami
 
+import "checker.js" as Checker
+
 ColumnLayout {
     id: root
 	Layout.alignment: Qt.AlignCenter
@@ -39,16 +41,8 @@ ColumnLayout {
     property int  cfg_FillMode: 2
 	property int  cfg_PauseMode: 0
     property bool cfg_MuteAudio: true
+	property bool cfg_UseMpv: false
 
-	property var checkmpv: null
-	Item{
-		id: checkItem
-		Component.onCompleted: {
-			root.checkmpv = Qt.createQmlObject('import wallpaper.engineforkde 1.0;
-			import QtQuick 2.5;
-			Item{}',checkItem);
-		}
-	}
     RowLayout {
         id: selectRow
 		Layout.alignment: Qt.AlignCenter
@@ -85,24 +79,25 @@ ColumnLayout {
             text: "Mute audio"
             checked: cfg_MuteAudio
             onCheckedChanged: {
-                if (checked) {
-                    cfg_MuteAudio = true
-                } else {
-                    cfg_MuteAudio = false
-                }
+                    cfg_MuteAudio = muteAudio.checked;
             }
         }
+		Component.onCompleted: {
+			// check c++ lib is installed
+			if(Checker.checklib(checkRow)) 
+				Qt.createQmlObject(`import QtQuick 2.5;
+						import QtQuick.Controls 2.3;
+						CheckBox{
+							id: useMpv
+							text: "use mpv"
+							checked: cfg_UseMpv 
+							onCheckedChanged: {
+								cfg_UseMpv = useMpv.checked;
+							}
+						}`,checkRow);
+		}
     }
 
-	onCheckmpvChanged:{
-		if(root.checkmpv != null) 
-			Qt.createQmlObject('import QtQuick 2.5;
-			import QtQuick.Controls 2.3;
-			CheckBox{
-            text: "use mpv"
-            checked: cfg_UseMpv
-			}',checkRow);
-	}
 	RowLayout {
         id: infoRow
 		Layout.alignment: Qt.AlignCenter
