@@ -16,23 +16,25 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  2.010-1301, USA.
  */
 
-.pragma library
+#include <QQmlExtensionPlugin>
+#include <QQmlEngine>
+#include "weProjectLoader.h"
+#include "mpvbackend.h"
 
-// Use try Qt.createQmlObject to check if c++ lib is installed
-// Use try, as Qt.createQmlObject may break the function
-// TODO: add CheckItem for c++ lib object, like mpvChecker{} intead of QtObject{}
-function checklib(parentItem) {
-	var ok = false;
-	var create = null;
-	 try {
-		create = Qt.createQmlObject(
-		'import com.github.catsout.wallpaperEngineKde 1.0;import QtQml 2.13;QtObject{}',
-		parentItem);
+class Port : public QQmlExtensionPlugin
+{
+	Q_OBJECT
+	Q_PLUGIN_METADATA(IID QQmlExtensionInterface_iid)
 
-	} catch (error) {}
-	if(create != null){
-		ok = true;
-		create.destroy(1000);
-	}
-	return ok;
-}
+public:
+    void registerTypes(const char *uri)
+    {  
+		if(strcmp(uri, "com.github.catsout.wallpaperEngineKde") != 0)
+			return;
+		qmlRegisterType<WEProject>(uri, 1, 0, "WEProject");
+		std::setlocale(LC_NUMERIC, "C");
+		qmlRegisterType<MpvObject>(uri, 1, 0, "MpvObject");
+    }   
+};
+
+#include "plugin.moc"

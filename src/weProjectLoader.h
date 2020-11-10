@@ -16,23 +16,34 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  2.010-1301, USA.
  */
 
-.pragma library
+#ifndef WE_PROJECTLOADER
+#define WE_PROJECTLOADER
 
-// Use try Qt.createQmlObject to check if c++ lib is installed
-// Use try, as Qt.createQmlObject may break the function
-// TODO: add CheckItem for c++ lib object, like mpvChecker{} intead of QtObject{}
-function checklib(parentItem) {
-	var ok = false;
-	var create = null;
-	 try {
-		create = Qt.createQmlObject(
-		'import com.github.catsout.wallpaperEngineKde 1.0;import QtQml 2.13;QtObject{}',
-		parentItem);
+#include <QLibrary>
+#include <QJsonDocument>
 
-	} catch (error) {}
-	if(create != null){
-		ok = true;
-		create.destroy(1000);
-	}
-	return ok;
-}
+#include "viewModel.h"
+
+class WEProject : public QObject
+{
+	Q_OBJECT
+		Q_PROPERTY(QList<ViewModel *> model READ model NOTIFY modelChanged)
+		Q_PROPERTY(QString url READ url WRITE setUrl NOTIFY urlChanged)
+
+	public:
+		WEProject(QObject *parent=0);
+		~WEProject() override;
+		QList<ViewModel *> model();
+		QString url();
+		void setUrl(const QString &url);
+
+signals:
+		void modelChanged();
+		void urlChanged();
+	private:
+		QString m_url = "";
+		QList<ViewModel *> m_model = {};
+		void updateModel();
+};
+
+#endif

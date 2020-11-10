@@ -16,23 +16,32 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  2.010-1301, USA.
  */
 
-.pragma library
+#include "viewModel.h"
+ViewModel::ViewModel(QObject *parent):QObject(parent) {}
+ViewModel::ViewModel(
+		const QString &path, 
+		const QString &preview, 
+		const QString &type,
+		const QString &title,
+		const QString &file,
+		const QString &workshopid,
+		QObject *parent)
+	:
+		QObject(parent), 
+		m_path(path), 
+		m_preview(preview), 
+		m_type(type), 
+		m_title(title), 
+		m_file(file),
+		m_workshopid(workshopid) {}
 
-// Use try Qt.createQmlObject to check if c++ lib is installed
-// Use try, as Qt.createQmlObject may break the function
-// TODO: add CheckItem for c++ lib object, like mpvChecker{} intead of QtObject{}
-function checklib(parentItem) {
-	var ok = false;
-	var create = null;
-	 try {
-		create = Qt.createQmlObject(
-		'import com.github.catsout.wallpaperEngineKde 1.0;import QtQml 2.13;QtObject{}',
-		parentItem);
+		ViewModel::~ViewModel(){} 
 
-	} catch (error) {}
-	if(create != null){
-		ok = true;
-		create.destroy(1000);
-	}
-	return ok;
-}
+		QString ViewModel::path() const { return m_path; }
+
+
+QString ViewModel::preview() const { return m_preview; }
+QString ViewModel::type() const { return m_type; }
+QString ViewModel::title() const { return m_title; }
+QString ViewModel::file() const { return m_file; }
+QString ViewModel::workshopid() const { return m_workshopid; }

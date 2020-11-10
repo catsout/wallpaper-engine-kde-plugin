@@ -21,11 +21,12 @@ import QtQuick.Controls 2.3
 import QtQuick.Controls.Styles 1.4
 import QtQuick.Dialogs 1.0
 import QtQuick.Layouts 1.0
-//import QtMultimedia 5.14
-import Qt.labs.folderlistmodel 2.12
 import org.kde.plasma.core 2.0 as PlasmaCore
+// for kcm gridview
 import org.kde.kcm 1.1 as KCM
 import org.kde.kirigami 2.12 as Kirigami
+
+import Qt.labs.folderlistmodel 2.12
 
 import "checker.js" as Checker
 

@@ -38,6 +38,9 @@ Item{
         // can't set player.volume direct, use a var
         volume: videoItem.volume
     }
+    Component.onCompleted:{
+        background.nowBackend = "QtMultimedia";
+    }
 
     function play(){
         // stop pause time to avoid quick switch which cause keep pause 

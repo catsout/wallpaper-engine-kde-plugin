@@ -32,7 +32,9 @@ WebEngineView {
         WebEngine.settings.playbackRequiresUserGesture = false
         WebEngine.settings.pdfViewerEnabled = false
         WebEngine.settings.showScrollBars = false
+        background.nowBackend = "QtWebEngine";
     }
+
     function play(){
     }
     function pause(){
