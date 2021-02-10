@@ -188,6 +188,7 @@ ColumnLayout {
                     wplist.files[k] = v;
                 }
                 Object.entries(wplist.files).forEach(([k,v]) => {
+                    console.log(v["path"])
                     readTextFile(v["path"] + "/project.json",
                             function (text) {
                                 var json = JSON.parse(text);    
