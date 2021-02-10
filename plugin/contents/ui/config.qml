@@ -170,7 +170,7 @@ ColumnLayout {
         property var lock: false
         folder: cfg_SteamWorkShopPath + "/content/431960" 
         onStatusChanged: {
-            if (wplist.status == FolderListModel.Ready) 
+            if (wplist.status == FolderListModel.Ready && cfg_SteamWorkShopPath !== "")
             {
                 wplist.files = {};
                 wplist.name_to_index = {};
