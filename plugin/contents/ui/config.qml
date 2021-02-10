@@ -195,8 +195,9 @@ ColumnLayout {
                                 v["title"] = json["title"];
                                 v["preview"] = json["preview"];
                                 v["file"] = json["file"];
-                                v["type"] = json["type"].toLowerCase();
+                                v["type"] = json["type"];
                                 v["load"] = true;
+                                if(v["type"] != null) v["type"] = v["type"].toLowerCase();
                                 check();
                             }
                     );
