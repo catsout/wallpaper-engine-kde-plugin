@@ -75,7 +75,7 @@ Rectangle {
         // choose backend
         switch (background.type) {
             case 'video':
-                if(background.useMpv && Checker.checklib(background))
+                if(background.useMpv && Checker.checklib_wallpaper(background))
                     qmlsource = "backend/Mpv.qml";
                 else qmlsource = "backend/QtMultimedia.qml";
                 break;

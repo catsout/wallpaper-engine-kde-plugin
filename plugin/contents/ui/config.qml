@@ -67,15 +67,19 @@ ColumnLayout {
             textRole: "label"
             Component.onCompleted: pauseMode.currentIndex = wallpaper.configuration.PauseMode
             onCurrentIndexChanged: cfg_PauseMode = pauseMode.currentIndex
-
         }
         
+    }
+    Text {
+        Layout.alignment: Qt.AlignCenter
+        text: "No qt-labs-folderlistmodel found, please install it in your linux distro."
+        color: "red"
+        visible: !Checker.checklib_folderlist(checkRow) 
     }
 
     RowLayout {
         id: checkRow
         Layout.alignment: Qt.AlignCenter
-
         CheckBox {
             id: muteAudio
             text: "Mute Audio"
@@ -83,28 +87,25 @@ ColumnLayout {
             onCheckedChanged: {
                     cfg_MuteAudio = muteAudio.checked;
             }
+        }          
+        RowLayout{
+            visible: Checker.checklib_wallpaper(checkRow)
+
+            Label{
+                text: "|"
+                Layout.alignment: Qt.AlignLeft 
+            }
+
+            CheckBox{
+                id: useMpv
+                text: "Use mpv"
+                checked: cfg_UseMpv 
+                onCheckedChanged: {
+                    cfg_UseMpv = useMpv.checked;
+                }
+            }
         }
-        Component.onCompleted: {
-            // check c++ lib is installed
-            if(Checker.checklib(checkRow)) 
-                Qt.createQmlObject(`import QtQuick 2.5;
-                        import QtQuick.Controls 2.3;
-                        import QtQuick.Layouts 1.0;
-                        RowLayout{
-                        Label{
-                            text: "|"
-                            Layout.alignment: Qt.AlignLeft 
-                        }
-                        CheckBox{
-                            id: useMpv
-                            text: "Use mpv"
-                            checked: cfg_UseMpv 
-                            onCheckedChanged: {
-                                cfg_UseMpv = useMpv.checked;
-                            }
-                        }
-                        }`,checkRow);
-        }
+
     }
 
     RowLayout {

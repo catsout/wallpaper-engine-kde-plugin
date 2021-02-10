@@ -18,15 +18,12 @@
 
 .pragma library
 
-// Use try Qt.createQmlObject to check if c++ lib is installed
-// Use try, as Qt.createQmlObject may break the function
-// TODO: add CheckItem for c++ lib object, like mpvChecker{} intead of QtObject{}
-function checklib(parentItem) {
+function checklib(libName, parentItem) {
 	var ok = false;
 	var create = null;
 	 try {
 		create = Qt.createQmlObject(
-		'import com.github.catsout.wallpaperEngineKde 1.0;import QtQml 2.13;QtObject{}',
+		'import '+ libName +';import QtQml 2.13;QtObject{}',
 		parentItem);
 
 	} catch (error) {}
@@ -35,4 +32,12 @@ function checklib(parentItem) {
 		create.destroy(1000);
 	}
 	return ok;
+}
+
+function checklib_wallpaper(parentItem) {
+	return checklib('com.github.catsout.wallpaperEngineKde 1.0', parentItem);
+}
+
+function checklib_folderlist(parentItem) {
+	return checklib('Qt.labs.folderlistmodel 2.12', parentItem)
 }
