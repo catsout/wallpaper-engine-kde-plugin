@@ -65,7 +65,7 @@ ColumnLayout {
                 }
             ]
             textRole: "label"
-            Component.onCompleted: pauseMode.currentIndex = wallpaper.configuration.PauseMode
+            currentIndex: cfg_PauseMode
             onCurrentIndexChanged: cfg_PauseMode = pauseMode.currentIndex
         }
         
