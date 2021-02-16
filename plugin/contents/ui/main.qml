@@ -24,8 +24,8 @@ Rectangle {
     id: background
     anchors.fill: parent
     color: wallpaper.configuration.BackgroundColor
-    property string source: wallpaper.configuration.WallpaperFilePath
     property string type: wallpaper.configuration.WallpaperType
+    property string source: wallpaper.configuration.WallpaperFilePath
     property bool mute: wallpaper.configuration.MuteAudio
     property bool useMpv: wallpaper.configuration.UseMpv
     
@@ -69,6 +69,7 @@ Rectangle {
     
     function loadBackend(){
         var qmlsource = "";
+        var properties = {};
 
         // check source
         if(!background.source || background.source == "") return;
@@ -83,10 +84,12 @@ Rectangle {
                 qmlsource = "backend/QtWebView.qml";
                 break;
             default:
-                return;
+                qmlsource = "backend/InfoShow.qml";
+                properties = {"info":"Not supported wallpaper type: "+background.type};
+                break
         }
-
-        backendLoder.setSource(qmlsource, {});
+        console.log("load backend: "+qmlsource);
+        backendLoder.setSource(qmlsource, properties);
         sourceCallback();
     }
     

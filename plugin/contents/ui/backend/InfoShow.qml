@@ -17,28 +17,22 @@
  */
 
 import QtQuick 2.5
-import QtWebEngine 1.10
-WebEngineView {
-//WebView {
-    id: web
-    anchors.fill: parent
-    audioMuted: background.mute
-    url: background.source
-    
-    onContextMenuRequested: function(request) {
-        request.accepted = true;
-    }
-    Component.onCompleted: {
-        WebEngine.settings.fullscreenSupportEnabled = true
-        WebEngine.settings.printElementBackgrounds = false
-        WebEngine.settings.playbackRequiresUserGesture = false
-        WebEngine.settings.pdfViewerEnabled = false
-        WebEngine.settings.showScrollBars = false
-        background.nowBackend = "QtWebEngine";
-    }
+import QtQuick.Layouts 1.13
 
-    function play(){
+Item {
+    id: infoItem
+    anchors.fill: parent
+    property string info: "error"
+    ColumnLayout {
+        anchors.fill: parent
+        Text {
+                Layout.alignment: Qt.AlignCenter
+                text: infoItem.info
+                color: "yellow"
+                font.pointSize: 40
+        }
     }
-    function pause(){
-    }
+    function play(){}
+
+    function pause(){}
 }
