@@ -72,7 +72,12 @@ Rectangle {
         var properties = {};
 
         // check source
-        if(!background.source || background.source == "") return;
+        if(!background.source || background.source == "") {
+            qmlsource = "backend/InfoShow.qml";
+            properties = {"info":"Error: source is empty.\n The config may broken."};
+            backendLoder.setSource(qmlsource, properties);
+            return;
+        }
         // choose backend
         switch (background.type) {
             case 'video':

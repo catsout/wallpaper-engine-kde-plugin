@@ -182,7 +182,8 @@ ColumnLayout {
                     var v = {
                         "workshopid": wplist.get(i,"fileName"),
                         "path": wplist.get(i,"filePath"),
-                        "load": false,
+                        "loaded": false,
+                        "enabled": false,
                         "index": i
                     };
                     wplist.files[k] = v;
@@ -192,12 +193,12 @@ ColumnLayout {
                             function (text) {
                                 //console.log("read project:" + v["workshopid"])
                                 var json = JSON.parse(text);    
-                                v["title"] = json["title"];
+                                v["title"] = json["title"]?json["title"]:"unknown";
                                 v["preview"] = json["preview"];
                                 v["file"] = json["file"];
-                                v["type"] = json["type"];
-                                v["load"] = true;
-                                if(v["type"] != null) v["type"] = v["type"].toLowerCase();
+                                v["type"] = json["type"]?json["type"]:"unknown";
+                                v["loaded"] = true;
+                                v["type"] = v["type"].toLowerCase();
                                 check();
                             }
                     );
@@ -206,7 +207,7 @@ ColumnLayout {
         }
         function check() {
             for(var k in wplist.files)
-                if(!wplist.files[k]["load"]) return;
+                if(!wplist.files[k]["loaded"]) return;
             if(wplist.lock) return;
             wplist.lock = true; 
             var currentIndex = 0;
