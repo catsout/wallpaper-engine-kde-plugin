@@ -92,10 +92,14 @@ Item {
     function updateWindowsinfo(modePlay) {
         //0 for maxizied
         //1 for any
-        if(modePlay === 1){
-            playVideoWallpaper = (onlyWindowsModel.count === minimizedWindowModel.count) ? true : false
+        //3 for never
+        if(modePlay === 1) {
+            playVideoWallpaper = (onlyWindowsModel.count === minimizedWindowModel.count) ? true : false;
         }
-        else{
+        else if(modePlay === 2) {
+            playVideoWallpaper = true;
+        }
+        else {
             var joinApps  = [];
             var minApps  = [];
             var aObj;

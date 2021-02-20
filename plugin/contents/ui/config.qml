@@ -62,6 +62,9 @@ ColumnLayout {
                 },
                 {
                     'label': "Any Window",
+                },
+                {
+                    'label': "Never Pause",
                 }
             ]
             textRole: "label"
