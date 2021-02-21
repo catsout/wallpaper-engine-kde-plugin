@@ -74,7 +74,7 @@ Rectangle {
         // check source
         if(!background.source || background.source == "") {
             qmlsource = "backend/InfoShow.qml";
-            properties = {"info":"Error: source is empty.\n The config may broken."};
+            properties = {"info":"Error: source is empty.\n The config may be broken."};
             backendLoder.setSource(qmlsource, properties);
             return;
         }
