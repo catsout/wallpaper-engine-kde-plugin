@@ -227,7 +227,10 @@ ColumnLayout {
             xhr.onreadystatechange = function () {
                 if(xhr.readyState === XMLHttpRequest.DONE){
                     var response = xhr.responseText;
-                    callback(response)
+                    if(response)
+                        callback(response);
+                    else
+                        callback("{}");
                 }
             }
             xhr.send();
