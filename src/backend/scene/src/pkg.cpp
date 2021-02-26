@@ -110,8 +110,8 @@ bool wallpaper::fs::CreateDir(file_node& root, const std::string& path)
     auto found = now->end();
     for(const auto& name:names)
     {
-        //give up when name is empty
-        if(name.empty()) return false;
+        //continue when name is empty
+        if(name.empty()) continue;
         found = now->find(name);
         //must exist
         if(found == now->end())
@@ -241,83 +241,3 @@ std::string wallpaper::fs::GetContent(const file_node& root, const std::string& 
     }
     return result;
 }
-/*
-void WallpaperShader::loadWallpaperTex(std::ifstream& file)
-{
-    typedef int (*fun)(std::ifstream&);
-    //texv texi
-    std::string xv,xi,xb;
-    xv.resize(9);
-    file.read(&xv[0],9);
-    xi.resize(9);
-    file.read(&xi[0],9);
-
-    //read header
-    int format,flags,textureWidth,textureHeight,imageWidth,imageHeight,unkInt0;
-    format = readInt32(file);
-    flags = readInt32(file);
-    textureWidth = readInt32(file);
-    textureHeight = readInt32(file);
-    imageWidth = readInt32(file);
-    imageHeight = readInt32(file);
-    unkInt0 = readInt32(file);
-
-    int imageCount,mipmapCount,freeImageFormat;
-    xb.resize(9);
-    file.read(&xb[0],9);
-    int xbVer = std::stoi(xb.c_str()+4);
-    imageCount = readInt32(file);
-    if(xbVer == 3)
-        freeImageFormat = readInt32(file);
-    else if(xbVer > 3||xbVer < 1)
-        {std::cout << "ERROR::WallpaperShader::loadWallpaperTex not support texb version " << xbVer << std::endl;return;}
-
-    mipmapCount = readInt32(file);
-    if(mipmapCount > MAX_MIPMAP_COUNT)
-        {std::cout << "ERROR::WallpaperShader::loadWallpaperTex too many mipmap" << std::endl;return;}
-
-    for(int iImage = 0; iImage < imageCount; iImage++)
-    {
-        if(iImage == 1)
-            {std::cout << "ERROR::WallpaperShader::loadWallpaperTex no multiple tex image support" << std::endl;return;}
-
-        for(int iMipmap = 0; iMipmap < mipmapCount; iMipmap++)
-        {
-            int mWidth = readInt32(file);
-            int mHeight = readInt32(file);
-            bool IsLZ4Compressed = false;
-            int DecompressedBytesCount = 0;
-            if(xbVer > 1)
-            {
-                IsLZ4Compressed =readInt32(file) == 1;
-                DecompressedBytesCount = readInt32(file);
-            }
-            int byteCount = readInt32(file);
-            char* src,*dst,*result;
-            src = new char[byteCount];
-            file.read(src,byteCount);
-            result = src;
-            if(IsLZ4Compressed)
-            {
-                dst = new char[DecompressedBytesCount];
-                int x = LZ4_decompress_safe(src,dst,byteCount,DecompressedBytesCount);
-                if (x < DecompressedBytesCount)
-                    {std::cout<< "ERROR::WallpaperShader::loadWallpaperTex lz4 decompress error" << std::endl;return;}
-                result = dst;
-            }
-            if(xbVer == 3)
-            {
-                int n;
-                result = (char*)stbi_load_from_memory((const unsigned char*)result,IsLZ4Compressed?DecompressedBytesCount:byteCount,&mWidth,&mHeight,&n,4);
-                std::cout << "stb " << mWidth  << "x" << mHeight << " " << n << std::endl;
-            }
-            Uniform::loadImage2DToGL(iMipmap,getTexGLFormat(format),mWidth,mHeight,result);
-            delete [] src;
-            if(IsLZ4Compressed) delete [] dst;
-            if(xbVer == 3) stbi_image_free(result);
-        }
-    }
-
-}
-*/
-

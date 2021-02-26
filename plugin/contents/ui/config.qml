@@ -81,7 +81,7 @@ ColumnLayout {
     }
     Text {
         Layout.alignment: Qt.AlignCenter
-        text: "Scene wallpaper may crash kde earily, make sure you known how to fix."
+        text: "Scene wallpaper may crash kde earily, make sure you know how to fix."
         color: "yellow"
         visible: Checker.checklib_wallpaper(checkRow)
     }
@@ -285,7 +285,10 @@ ColumnLayout {
         selectMultiple : false
         nameFilters: [ "All files (*)" ]
         onAccepted: {
-            cfg_SteamLibraryPath = wpDialog.fileUrls[0]
+            var path = wpDialog.fileUrls[0];
+            if(path.slice(-1) === '/')
+                path = path.slice(0,-1);
+            cfg_SteamLibraryPath = path;
         }
     }
 
