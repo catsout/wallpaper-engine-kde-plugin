@@ -27,6 +27,7 @@ private:
 	gl::VerticeArray vertices_;
 	WPRender wpRender_;
 	bool m_inited = false;
+	bool m_loaded = false;
 	int framecount_ = 0;
 };
 

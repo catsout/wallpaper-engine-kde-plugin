@@ -18,6 +18,7 @@ bool WallpaperGL::Init(void *get_proc_address(const char *)) {
 void WallpaperGL::Load(const std::string& pkg_path)
 {
 	if(!m_inited || pkg_path == m_pkgPath) return;
+	m_loaded = false;
 	if(!m_pkgPath.empty()) {
 		Clear();
 	}
@@ -32,6 +33,10 @@ void WallpaperGL::Load(const std::string& pkg_path)
 
     //read scene
     std::string scene_src = wallpaper::fs::GetContent(m_pkgfs, "scene.json");
+	if(scene_src.empty()) {
+		LOG_ERROR("Not supported scene type");
+		return;
+	}
     auto scene_json = json::parse(scene_src);
 
 	auto& camera = scene_json.at("camera");
@@ -67,11 +72,12 @@ void WallpaperGL::Load(const std::string& pkg_path)
 	}
 	// clear for first frame
 	wpRender_.shaderMgr.globalUniforms.ClearCache();
+	m_loaded = true;
 }
 
 void WallpaperGL::Render(uint fbo, int width, int height)
 {
-	if(!m_inited) return;
+	if(!m_inited || !m_loaded) return;
 	if(!wpRender_.shaderMgr.globalUniforms.CacheEmpty()) {
 		float lasttime = *(float*)wpRender_.shaderMgr.globalUniforms.GetValue("g_Time");
 		wpRender_.shaderMgr.globalUniforms.ClearCache();
@@ -114,7 +120,7 @@ void WallpaperGL::Clear()
 	wpRender_.shaderMgr.ClearCache();
 	wpRender_.texCache.Clear();	
     m_objects.clear();
-	vertices_.Delete();
+	if(m_loaded) vertices_.Delete();
 	LOG_INFO("Date cleared");
 }
 
