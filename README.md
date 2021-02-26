@@ -11,7 +11,7 @@ And restore it when scene wallpaper break your kde.
   Need hold leftclick on the desktop to get `Configure Desktop and Wallpaper` 
 
 ### Note
-- Support **scene(2d)** **video** **web** type
+- Support **scene(2d)**,**video**,**web** types
 - Compile needed for scene type and mpv video backend, also ok for using without compiling.
 - Only test on x11.
 - Need Qt >= 5.13, for loop video support without black screen.
