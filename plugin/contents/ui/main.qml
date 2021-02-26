@@ -90,8 +90,13 @@ Rectangle {
                 qmlsource = "backend/QtWebView.qml";
                 break;
             case 'scene':
-                qmlsource = "backend/Scene.qml";
-                properties = {"assets": background.steamlibrary + "/steamapps/common/wallpaper_engine/assets"};
+                if(Checker.checklib_wallpaper(background)) {
+                    qmlsource = "backend/Scene.qml";
+                    properties = {"assets": background.steamlibrary + "/steamapps/common/wallpaper_engine/assets"};
+                } else {
+                    qmlsource = "backend/InfoShow.qml";
+                    properties = {"info": "Error: plugin lib not found, scene support require compile and install it."};
+                }
                 break;
             default:
                 qmlsource = "backend/InfoShow.qml";

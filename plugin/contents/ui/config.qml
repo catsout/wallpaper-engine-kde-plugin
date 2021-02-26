@@ -79,7 +79,12 @@ ColumnLayout {
         color: "red"
         visible: !Checker.checklib_folderlist(checkRow) 
     }
-
+    Text {
+        Layout.alignment: Qt.AlignCenter
+        text: "Scene wallpaper may crash kde earily, make sure you known how to fix."
+        color: "yellow"
+        visible: Checker.checklib_wallpaper(checkRow)
+    }
     RowLayout {
         id: checkRow
         Layout.alignment: Qt.AlignCenter
@@ -135,7 +140,7 @@ ColumnLayout {
                 source: "folder-symbolic"
                 PlasmaCore.ToolTipArea {
                     anchors.fill: parent
-                    subText: cfg_SteamLibraryPath?cfg_SteamLibraryPath:"Select steam workshop dir"
+                    subText: cfg_SteamLibraryPath?cfg_SteamLibraryPath:"Select steam libary dir"
                 }
             }
             MouseArea {

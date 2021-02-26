@@ -2,17 +2,21 @@
 A wallpaper plgin integrating [wallpaper engine](https://store.steampowered.com/app/431960/Wallpaper_Engine) into kde wallpaper setting.  
 It's simple and small.  
 
+### Warning for scene type
+Backup your `~/.config/plasma-org.kde.plasma.desktop-appletsrc` file, before use scene wallpaper.  
+And restore it when scene wallpaper break your kde.  
+
 ### Known issue
 - With web type, desktop right click not work.  
   Need hold leftclick on the desktop to get `Configure Desktop and Wallpaper` 
 
-### Note:
-- Compile isn't needed, or you want to use mpv as video backend.
-- Only **video** and **web** are supported.
+### Note
+- Support **scene(2d)** **video** **web** type
+- Compile needed for scene type and mpv video backend, also ok for using without compiling.
 - Only test on x11.
 - Need Qt >= 5.13, for loop video support without black screen.
 
-You need to choose your steam workshop directory. Like `Steam/steamapps/workshop`  
+You need to choose your steam library directory. Like `~/.local/share/Steam`  
 
 ### Install
 ```sh
@@ -22,6 +26,14 @@ plasmapkg2 -i wallpaper-engine-kde-plugin/plugin
 ### Uninstall
 ```sh
 plasmapkg2 -r wallpaper-engine-kde-plugin/plugin
+```
+
+### Compile c++ part
+```sh
+mkdir build && cd build
+cmake ..
+make
+sudo make install
 ```
 
 ### Better performance for intel card
@@ -41,12 +53,6 @@ use `export QT_XCB_GL_INTEGRATION=xcb_glx kwin --replace`.
 
 #### use mpv 
 need compile c++ plugin.
-```sh
-mkdir build && cd build
-cmake ..
-make
-sudo make install
-```
 
 ### Credits
 
