@@ -12,9 +12,6 @@
 #define LOG_ERROR(text) wallpaper::Logger::Log(__FUNCTION__, __LINE__, "Error at ", (text));
 #define LOG_INFO(text) wallpaper::Logger::Log("", -1, "", (text));
 
-
-
-#define DEBUG_OPENGL 1
 #if defined(DEBUG_OPENGL)
 #define CHECK_GL_ERROR_IF_DEBUG() wallpaper::gl::checkGlError(__FILE__, __FUNCTION__, __LINE__);
 #else

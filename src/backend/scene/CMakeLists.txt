@@ -1,6 +1,10 @@
 set(CMAKE_CXX_STANDARD 14)
 project(scenebackend)
 
+if (CMAKE_BUILD_TYPE EQUAL "DEBUG")
+add_compile_definitions(DEBUG_OPENGL=1)
+endif (CMAKE_BUILD_TYPE EQUAL "DEBUG")
+
 find_package(Qt5 COMPONENTS Gui Quick Qml X11Extras REQUIRED)
 include_directories(${Qt5Gui_PRIVATE_INCLUDE_DIRS})
 include_directories(include)
