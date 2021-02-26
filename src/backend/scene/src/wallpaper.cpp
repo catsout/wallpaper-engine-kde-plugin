@@ -76,7 +76,8 @@ void WallpaperGL::Render(uint fbo, int width, int height)
 		float lasttime = *(float*)wpRender_.shaderMgr.globalUniforms.GetValue("g_Time");
 		wpRender_.shaderMgr.globalUniforms.ClearCache();
 		float* nowtime = (float*)wpRender_.shaderMgr.globalUniforms.GetValue("g_Time");
-		if((int)(*nowtime*1000) - (int)(lasttime*1000) < 1000 / 30) {
+		int diff = (int)(*nowtime*1000) - (int)(lasttime*1000);
+		if(diff < 1000 / 30 && diff > 0) {
 			*nowtime = lasttime;
 			return;
 		}

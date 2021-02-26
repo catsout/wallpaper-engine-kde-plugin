@@ -72,13 +72,14 @@ void GlobalUniform::SetSize(int w, int h) {
 void* GlobalUniform::Time() {
 	using namespace std::chrono;
 	time_ = duration_cast<milliseconds>(steady_clock::now() - startTime_).count() / 1000.0f;
+	if(time_ > 60.0f)
+		startTime_ = steady_clock::now();
 	return &time_;
 }
 
 void* GlobalUniform::Daytime() {
 	using namespace std::chrono;
 	daytime_ = duration_cast<minutes>(system_clock::now().time_since_epoch() % hours(24)).count() / (24.0f*60.0f);
-	std::cerr << daytime_ << std::endl;
 	return &daytime_;
 }
 
