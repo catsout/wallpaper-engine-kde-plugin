@@ -1,5 +1,6 @@
 find_package(Qt5 COMPONENTS Qml REQUIRED)
 add_subdirectory(backend/mpv)
+add_subdirectory(backend/scene)
 
 add_library(${PROJECT_NAME} SHARED
 	plugin.cpp
@@ -14,6 +15,7 @@ target_link_libraries(${PROJECT_NAME}
 	PUBLIC 
 		Qt5::Qml 
 		mpvbackend
+		scenebackend
 )
 
 # During plugin searching Qt will be looking for 'qmldir' file

@@ -20,6 +20,7 @@
 #include <QQmlEngine>
 #include "weProjectLoader.h"
 #include "mpvbackend.h"
+#include "SceneViewer.h"
 
 class Port : public QQmlExtensionPlugin
 {
@@ -32,6 +33,7 @@ public:
 		if(strcmp(uri, "com.github.catsout.wallpaperEngineKde") != 0)
 			return;
 		qmlRegisterType<WEProject>(uri, 1, 0, "WEProject");
+		qmlRegisterType<SceneViewer>(uri, 1, 0, "SceneViewer");
 		std::setlocale(LC_NUMERIC, "C");
 		qmlRegisterType<MpvObject>(uri, 1, 0, "MpvObject");
     }   

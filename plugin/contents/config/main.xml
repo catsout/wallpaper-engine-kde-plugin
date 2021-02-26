@@ -6,7 +6,7 @@
   <kcfgfile name=""/>
 
   <group name="General">
-	<entry name="SteamWorkShopPath" type="String">
+	<entry name="SteamLibraryPath" type="String">
       <label>Steam workshop path</label>
       <default></default>
     </entry>

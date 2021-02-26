@@ -24,6 +24,7 @@ Rectangle {
     id: background
     anchors.fill: parent
     color: wallpaper.configuration.BackgroundColor
+    property string steamlibrary: wallpaper.configuration.SteamLibraryPath
     property string type: wallpaper.configuration.WallpaperType
     property string source: wallpaper.configuration.WallpaperFilePath
     property bool mute: wallpaper.configuration.MuteAudio
@@ -74,7 +75,7 @@ Rectangle {
         // check source
         if(!background.source || background.source == "") {
             qmlsource = "backend/InfoShow.qml";
-            properties = {"info":"Error: source is empty.\n The config may broken."};
+            properties = {"info":"Error: source is empty.\n The config may be broken."};
             backendLoder.setSource(qmlsource, properties);
             return;
         }
@@ -87,6 +88,10 @@ Rectangle {
                 break;
             case 'web':
                 qmlsource = "backend/QtWebView.qml";
+                break;
+            case 'scene':
+                qmlsource = "backend/Scene.qml";
+                properties = {"assets": background.steamlibrary + "/steamapps/common/wallpaper_engine/assets"};
                 break;
             default:
                 qmlsource = "backend/InfoShow.qml";

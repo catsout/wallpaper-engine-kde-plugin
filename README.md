@@ -2,12 +2,15 @@
 A wallpaper plgin integrating [wallpaper engine](https://store.steampowered.com/app/431960/Wallpaper_Engine) into kde wallpaper setting.  
 It's simple and small.  
 
+### Known issue
+- With web type, desktop right click not work.  
+  Need hold leftclick on the desktop to get `Configure Desktop and Wallpaper` 
+
 ### Note:
 - Compile isn't needed, or you want to use mpv as video backend.
 - Only **video** and **web** are supported.
 - Only test on x11.
 - Need Qt >= 5.13, for loop video support without black screen.
-- With web type, desktop right click not work.
 
 You need to choose your steam workshop directory. Like `Steam/steamapps/workshop`  
 
