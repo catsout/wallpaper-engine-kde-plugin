@@ -34,7 +34,7 @@ ColumnLayout {
     id: root
     Layout.alignment: Qt.AlignCenter
     
-    property string cfg_SteamWorkShopPath
+    property string cfg_SteamLibraryPath
     property string cfg_WallpaperWorkShopId
     property string cfg_WallpaperFilePath
     property string cfg_WallpaperType
@@ -135,7 +135,7 @@ ColumnLayout {
                 source: "folder-symbolic"
                 PlasmaCore.ToolTipArea {
                     anchors.fill: parent
-                    subText: cfg_SteamWorkShopPath?cfg_SteamWorkShopPath:"Select steam workshop dir"
+                    subText: cfg_SteamLibraryPath?cfg_SteamLibraryPath:"Select steam workshop dir"
                 }
             }
             MouseArea {
@@ -171,9 +171,9 @@ ColumnLayout {
         property var files
         property var name_to_index
         property var lock: false
-        folder: cfg_SteamWorkShopPath + "/content/431960" 
+        folder: cfg_SteamLibraryPath + "/steamapps/workshop/content/431960" 
         onStatusChanged: {
-            if (wplist.status == FolderListModel.Ready && cfg_SteamWorkShopPath !== "")
+            if (wplist.status == FolderListModel.Ready && cfg_SteamLibraryPath !== "")
             {
                 wplist.files = {};
                 wplist.name_to_index = {};
@@ -275,12 +275,12 @@ ColumnLayout {
 
     FileDialog {
         id: wpDialog
-        title: "Select steam workshop dir"
+        title: "Select steam libary dir"
         selectFolder: true
         selectMultiple : false
         nameFilters: [ "All files (*)" ]
         onAccepted: {
-            cfg_SteamWorkShopPath = wpDialog.fileUrls[0]
+            cfg_SteamLibraryPath = wpDialog.fileUrls[0]
         }
     }
 
