@@ -47,7 +47,7 @@ private:
 class ImageObject : public RenderObject
 {
 public:
-    ImageObject():m_material(*this) {};
+    ImageObject():m_material(*this),size_(2) {};
     bool From_json(const nlohmann::json&);
     ~ImageObject();
     void Load(WPRender&);

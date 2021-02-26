@@ -51,10 +51,12 @@ ImageObject::~ImageObject() {
 bool ImageObject::From_json(const json& obj)
 {
     if(!RenderObject::From_json(obj) || !obj.contains("image")) return false;
-	LOG_INFO("Image" + Name());
-	std::vector<float> fsize;
-	if(!StringToVec<float>(obj.at("size"), fsize)) return false;
-	size_ = std::vector<int>(fsize.begin(), fsize.end());
+
+	if(obj.contains("size")) {
+		std::vector<float> fsize;
+		if(!StringToVec<float>(obj.at("size"), fsize)) return false;
+		size_ = std::vector<int>(fsize.begin(), fsize.end());
+	}
 	if(obj.contains("copybackground"))
 		copybackground_ = obj.at("copybackground");
 
@@ -63,7 +65,7 @@ bool ImageObject::From_json(const json& obj)
 
 	if(obj.contains("color") && obj.at("color").is_string())
 		if(!StringToVec<float>(obj.at("color"), color_)) return false;
-	size_ = std::vector<int>(fsize.begin(), fsize.end());
+
     std::string image_str = fs::GetContent(WallpaperGL::GetPkgfs(), obj.at("image"));
     /*
     {
@@ -73,6 +75,14 @@ bool ImageObject::From_json(const json& obj)
     */
     auto image = json::parse(image_str);
     if(!image.contains("material")) return false;
+	if(!obj.contains("size")) {
+		if(image.contains("width")) {
+			size_[0] = image.at("width");
+			size_[1] = image.at("height");
+		}
+		else return false;
+	}
+		
 	if(image.contains("autosize"))
 		autosize_ = image.at("autosize").get<bool>();
     std::string material_str = fs::GetContent(WallpaperGL::GetPkgfs(), image.at("material"));
