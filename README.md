@@ -20,6 +20,13 @@ And restore it when scene wallpaper break your kde.
 
 You need to choose your steam library directory. Like `~/.local/share/Steam`  
 
+### How to use:
+1. Use steam+proton or wine+steam
+2. Buy and install wallpaper engine
+3. Select steam library dir(like .local/share/Steam) in plugin
+4. Enjoy
+
+
 ### Install
 ```sh
 git clone https://github.com/catsout/wallpaper-engine-kde-plugin.git
