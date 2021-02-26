@@ -2,8 +2,8 @@
 A wallpaper plgin integrating [wallpaper engine](https://store.steampowered.com/app/431960/Wallpaper_Engine) into kde wallpaper setting.  
 It's simple and small.  
 
-### Warning for scene type
-Backup your `~/.config/plasma-org.kde.plasma.desktop-appletsrc` file, before use scene wallpaper.  
+### Warning for scene support
+Backup your `~/.config/plasma-org.kde.plasma.desktop-appletsrc` file, before using scene wallpaper.  
 And restore it when scene wallpaper break your kde.  
 
 ### Known issue
