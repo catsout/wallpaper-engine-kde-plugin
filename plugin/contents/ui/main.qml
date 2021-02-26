@@ -95,7 +95,7 @@ Rectangle {
                     properties = {"assets": background.steamlibrary + "/steamapps/common/wallpaper_engine/assets"};
                 } else {
                     qmlsource = "backend/InfoShow.qml";
-                    properties = {"info": "Error: plugin lib not found, scene support require compile and install it."};
+                    properties = {"info": "Error: plugin lib not found,\nscene support require to compile and install it."};
                 }
                 break;
             default:
