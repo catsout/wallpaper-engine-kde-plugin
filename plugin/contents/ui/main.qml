@@ -32,6 +32,11 @@ Rectangle {
     
     property string nowBackend: ""
 
+    onSourceChanged: {
+        if(background.nowBackend === "InfoShow")
+            loadBackend();
+    }
+
     // lauch pause time to avoid freezing
     Timer {
         id: lauchPauseTimer

@@ -32,6 +32,10 @@ Item {
                 font.pointSize: 40
         }
     }
+    Component.onCompleted:{
+        background.nowBackend = "InfoShow";
+    }
+
     function play(){}
 
     function pause(){}
