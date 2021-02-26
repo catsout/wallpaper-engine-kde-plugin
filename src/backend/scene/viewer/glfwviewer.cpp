@@ -14,7 +14,10 @@ const unsigned int SCR_HEIGHT = 720;
 
 int main(int argc, char**argv)
 {
-	if(argc != 3) return 1;
+	if(argc != 3){
+		std::cerr << "usage: " << argv[0] << " <assets dir> <pkg file>" << std::endl;
+		return 1;
+	}
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
