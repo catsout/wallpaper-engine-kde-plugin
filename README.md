@@ -3,6 +3,7 @@ A wallpaper plgin integrating [wallpaper engine](https://store.steampowered.com/
 It's simple and small.  
 
 ### Warning for scene support
+Scene support is unstable, may easily crash your kde.   
 Backup your `~/.config/plasma-org.kde.plasma.desktop-appletsrc` file, before using scene wallpaper.  
 And restore it when scene wallpaper break your kde.  
 
@@ -15,6 +16,7 @@ And restore it when scene wallpaper break your kde.
 - Compile needed for scene type and mpv video backend, also ok for using without compiling.
 - Only test on x11.
 - Need Qt >= 5.13, for loop video support without black screen.
+- The code is just work, the performance may be slow.  
 
 You need to choose your steam library directory. Like `~/.local/share/Steam`  
 
