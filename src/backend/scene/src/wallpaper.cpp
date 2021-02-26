@@ -28,7 +28,7 @@ void WallpaperGL::Load(const std::string& pkg_path)
 		return;
 	}
 	m_pkgPath = pkg_path;
-	fs::PrintFileTree(m_pkgfs, 100);
+	//fs::PrintFileTree(m_pkgfs, 100);
 
     //read scene
     std::string scene_src = wallpaper::fs::GetContent(m_pkgfs, "scene.json");
