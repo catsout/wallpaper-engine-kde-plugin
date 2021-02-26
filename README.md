@@ -20,6 +20,13 @@ And restore it when scene wallpaper break your kde.
 
 You need to choose your steam library directory. Like `~/.local/share/Steam`  
 
+### How to use:
+1. Use steam+proton or wine+steam
+2. Buy and install wallpaper engine
+3. Select steam library dir(like .local/share/Steam) in plugin
+4. Enjoy
+
+
 ### Install
 ```sh
 git clone https://github.com/catsout/wallpaper-engine-kde-plugin.git
@@ -60,3 +67,5 @@ need compile c++ plugin.
 
 - [Smart Video Wallpaper](https://store.kde.org/p/1316299/)                                                                                                                                                                                                                                                                          
 
+### Preview
+![](https://cdn.pling.com/img/e/8/d/f/b0c358d344d8e9132cb09f08c7d83d02563f959cbc754ad7446b2ac6e017d61d0ede.png)
