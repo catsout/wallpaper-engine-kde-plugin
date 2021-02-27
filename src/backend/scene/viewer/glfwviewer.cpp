@@ -7,6 +7,8 @@
 #include "pkg.h"
 #include "wallpaper.h"
 
+#include <unistd.h>
+
 using namespace std;
 
 const unsigned int SCR_WIDTH = 1280;
@@ -14,8 +16,26 @@ const unsigned int SCR_HEIGHT = 720;
 
 int main(int argc, char**argv)
 {
-	if(argc != 3){
-		std::cerr << "usage: " << argv[0] << " <assets dir> <pkg file>" << std::endl;
+	int result = 0,objnum = -1,effnum = -1;
+    while((result = getopt(argc, argv, "o:e:")) != -1 ) {
+		switch(result)
+		{
+		case 'o':
+			objnum = std::stoi(optarg);		
+			break;
+		case 'e':
+			effnum = std::stoi(optarg);
+			break;
+			break;
+		case '?':
+			break;
+		}
+    }
+	if(argc - optind != 2) {
+		std::cerr << "usage: "+ std::string(argv[0]) +" [options] <assets dir> <pkg file>\n"
+		<< "options:\n"  
+		<< "-o object amount to render\n" 
+		<< "-e effect amount to render\n";
 		return 1;
 	}
     glfwInit();
@@ -36,14 +56,16 @@ int main(int argc, char**argv)
     wallpaper::WallpaperGL* wgl_ptr = new wallpaper::WallpaperGL();
     auto& wgl = *wgl_ptr;
 	wgl.Init((GLADloadproc)glfwGetProcAddress);
-	wgl.SetAssets(argv[1]);
+	wgl.SetAssets(argv[optind]);
+	wgl.SetObjEffNum(objnum, effnum);
     //const wallpaper::fs::file_node& x = wallpaper::WallpaperGL::GetPkgfs();
-    wgl.Load(argv[2]);
+    wgl.Load(argv[optind+1]);
 
     while (!glfwWindowShouldClose(window))
     {
 		glfwPollEvents();
         wgl.Render(0,SCR_WIDTH,SCR_HEIGHT);
+        glfwSwapInterval(1.0);
         glfwSwapBuffers(window);
     }
     delete wgl_ptr;

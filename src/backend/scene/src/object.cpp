@@ -182,7 +182,7 @@ void ImageObject::Render(WPRender& wpRender)
 	SetCurFbo(fbo_.get());
 	int index = 0;
 	for(auto& e:effects_) {
-	//	if(index++ == 0) break;
+		if(index++ == WallpaperGL::EffNum()) break;
 		e.Render(wpRender);
 	}
 

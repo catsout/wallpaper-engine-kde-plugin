@@ -7,6 +7,8 @@ using json = nlohmann::json;
 using namespace wallpaper;
 
 file_node wallpaper::WallpaperGL::m_pkgfs = file_node();
+int WallpaperGL::m_objnum = -1;
+int WallpaperGL::m_effnum = -1;
 
 bool WallpaperGL::Init(void *get_proc_address(const char *)) {
 //	if(m_inited) return true;
@@ -15,8 +17,7 @@ bool WallpaperGL::Init(void *get_proc_address(const char *)) {
 	return m_inited;
 }
 
-void WallpaperGL::Load(const std::string& pkg_path)
-{
+void WallpaperGL::Load(const std::string& pkg_path) {
 	if(!m_inited || pkg_path == m_pkgPath) return;
 	m_loaded = false;
 	if(!m_pkgPath.empty()) {
@@ -75,8 +76,7 @@ void WallpaperGL::Load(const std::string& pkg_path)
 	m_loaded = true;
 }
 
-void WallpaperGL::Render(uint fbo, int width, int height)
-{
+void WallpaperGL::Render(uint fbo, int width, int height) {
 	if(!m_inited || !m_loaded) return;
 	if(!wpRender_.shaderMgr.globalUniforms.CacheEmpty()) {
 		float lasttime = *(float*)wpRender_.shaderMgr.globalUniforms.GetValue("g_Time");
@@ -97,7 +97,7 @@ void WallpaperGL::Render(uint fbo, int width, int height)
 
 	int index = 0;
     for(auto& iter:m_objects){
-//		if(index++ == 3) break;
+		if(index++ == ObjNum()) break;
         iter->Render(wpRender_);
 	}
 
@@ -128,4 +128,9 @@ void WallpaperGL::Clear()
 void WallpaperGL::SetAssets(const std::string& path) {
 	std::string& assetsPath = fs::GetAssetsPath();
 	assetsPath = path;
+}
+
+void WallpaperGL::SetObjEffNum(int obj, int eff) {
+	WallpaperGL::m_objnum = obj;
+	WallpaperGL::m_effnum = eff;
 }
