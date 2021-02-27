@@ -11,4 +11,4 @@ CTestTestfile.cmake
 _deps
 *.tar
 build
-.swp
+*.swp
