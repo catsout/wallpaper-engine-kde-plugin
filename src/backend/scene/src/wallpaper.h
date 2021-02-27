@@ -15,6 +15,8 @@ public:
     static const fs::file_node& GetPkgfs(){
         return m_pkgfs;
     }
+    WallpaperGL() {};
+    ~WallpaperGL() {vertices_.Delete();};
 	bool Init(void *get_proc_address(const char *));
     void Load(const std::string& pkg_path);
     void Render(uint fbo, int width, int height);

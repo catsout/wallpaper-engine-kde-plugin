@@ -114,5 +114,6 @@ void VerticeArray::Delete() {
 		glDeleteVertexArrays(1, &VAO_);
 		CHECK_GL_ERROR_IF_DEBUG();
 		glWrapper_->DeleteBuffer(buffer_);
+        VAO_ = -1;
 	}
 }

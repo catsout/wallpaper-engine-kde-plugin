@@ -97,6 +97,7 @@ void WallpaperGL::Render(uint fbo, int width, int height)
 
 	int index = 0;
     for(auto& iter:m_objects){
+//		if(index++ == 3) break;
         iter->Render(wpRender_);
 	}
 

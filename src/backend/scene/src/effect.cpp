@@ -71,7 +71,6 @@ void Effect::Load(WPRender& wpRender) {
 		m.material.SetShadervalue("g_ModelViewProjectionMatrix", std::vector<float>(modelviewpro, modelviewpro + 4*4));
 		m.material.Load(wpRender);
 	}
-	auto size = wpRender.shaderMgr.globalUniforms.Ortho();
 	vertices_ = gl::VerticeArray::GenDefault(&wpRender.glWrapper);
 	vertices_.Update();
 }

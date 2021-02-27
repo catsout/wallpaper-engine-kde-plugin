@@ -33,10 +33,11 @@ int main(int argc, char**argv)
     glfwMakeContextCurrent(window);
     //glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
-    wallpaper::WallpaperGL wgl;
+    wallpaper::WallpaperGL* wgl_ptr = new wallpaper::WallpaperGL();
+    auto& wgl = *wgl_ptr;
 	wgl.Init((GLADloadproc)glfwGetProcAddress);
 	wgl.SetAssets(argv[1]);
-//    const wallpaper::fs::file_node& x = wallpaper::WallpaperGL::GetPkgfs();
+    //const wallpaper::fs::file_node& x = wallpaper::WallpaperGL::GetPkgfs();
     wgl.Load(argv[2]);
 
     while (!glfwWindowShouldClose(window))
@@ -45,7 +46,8 @@ int main(int argc, char**argv)
         wgl.Render(0,SCR_WIDTH,SCR_HEIGHT);
         glfwSwapBuffers(window);
     }
-    wgl.Clear();
+    delete wgl_ptr;
+    //wgl.Clear();
     glfwTerminate();
     return 0;
 }
