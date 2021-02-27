@@ -148,6 +148,7 @@ void ImageObject::Load(WPRender& wpRender)
 
 	int index = 0;
 	for(auto& e:effects_){
+		if(index++ == WallpaperGL::EffNum()) break;
 		LOG_INFO("\n---Loading effect---");
 		e.Load(wpRender);
 	}
