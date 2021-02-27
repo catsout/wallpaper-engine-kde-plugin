@@ -103,13 +103,6 @@ bool ImageObject::From_json(const json& obj)
     return true;
 }
 
-void SetShadervalue(gl::Shadervalues& shadervalues, const std::string& glname, const std::vector<float>& value) {
-	gl::Shadervalue sv = gl::Shadervalue();
-	sv.glname = glname;
-	sv.value = value;
-	shadervalues[glname] = sv;
-}
-
 void ImageObject::Load(WPRender& wpRender)
 {
 	auto ori = Origin();
@@ -126,10 +119,8 @@ void ImageObject::Load(WPRender& wpRender)
 	auto model_mat = glm::translate(glm::mat4(1.0f), glm::vec3(ori[0],ori[1],ori[2]));// - glm::vec3(size_[0]*scale[0]/2.0f, size_[1]*scale[1]/2.0f, ori[2]));
 	//1. scale
 	model_mat = glm::scale(model_mat, glm::vec3(scale[0], scale[1], scale[2]));
-
 	auto modelviewpro_mat = viewpro_mat * model_mat;
-	const float* modelviewpro  = glm::value_ptr(modelviewpro_mat);
-	SetShadervalue(shadervalues_,"fboTrans", std::vector<float>(modelviewpro, modelviewpro + 4*4));
+	gl::Shadervalue::SetShadervalues(shadervalues_,"fboTrans", modelviewpro_mat);
 
 	if(m_material.GetShadervalues().count("g_Texture0Resolution") != 0) {
 		model_mat = glm::mat4(1.0f);
@@ -150,11 +141,10 @@ void ImageObject::Load(WPRender& wpRender)
 			viewpro_mat = glm::ortho(0.0f, (float)size_[0], 0.0f, (float)size_[1], -100.0f, 100.0f);
 		}
 		modelviewpro_mat = viewpro_mat * model_mat;
-		modelviewpro  = glm::value_ptr(modelviewpro_mat);
-		m_material.SetShadervalue("g_ModelViewProjectionMatrix", std::vector<float>(modelviewpro, modelviewpro + 4*4));
+		gl::Shadervalue::SetShadervalues(m_material.GetShadervalues(), "g_ModelViewProjectionMatrix", modelviewpro_mat);
 	}
-	m_material.SetShadervalue("g_Alpha", {alpha_});
-	m_material.SetShadervalue("g_Color", color_);
+	gl::Shadervalue::SetShadervalues(m_material.GetShadervalues(), "g_Alpha", std::vector<float>({alpha_}));
+	gl::Shadervalue::SetShadervalues(m_material.GetShadervalues(), "g_Color", color_);
 
 	int index = 0;
 	for(auto& e:effects_){

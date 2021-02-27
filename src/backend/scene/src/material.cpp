@@ -100,10 +100,3 @@ void wp::Material::Render(WPRender& wpRender) {
 	object_.CurVertices()->Draw();
 	CHECK_GL_ERROR_IF_DEBUG();
 }
-
-void wp::Material::SetShadervalue(const std::string& glname, const std::vector<float>& value) {
-	gl::Shadervalue sv = gl::Shadervalue();
-	sv.glname = glname;
-	sv.value = value;
-	shadervalues_[glname] = sv;
-}

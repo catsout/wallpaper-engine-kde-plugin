@@ -71,19 +71,6 @@ VerticeArray VerticeArray::GenWPImage(GLWrapper* glWrapper, std::vector<float> o
 	return GenVerticeArray(glWrapper, vertices, {3, 2});
 }
 
-VerticeArray VerticeArray::GenFull(GLWrapper* glWrapper, std::vector<float> size) {
-	float right = size[0], top = size[1], z = 0.0f;
-	std::vector<float> vertices = {
-		 0.0f, 0.0f, z,  0.0f, 0.0f,
-		 right, 0.0f, z,  1.0f, 0.0f,
-		 right,  top, z,  1.0f, 1.0f,
-		 right,  top, z,  1.0f, 1.0f,
-		 0.0f,  top, z,  0.0f, 1.0f,
-		 0.0f, 0.0f, z,  0.0f, 0.0f
-    };
-	return GenVerticeArray(glWrapper, vertices, {3, 2});
-}
-
 void VerticeArray::Update() {
 	Bind(VAO_);
     glWrapper_->BufferSubData(buffer_, vertices.size()*sizeof(float), &vertices[0]);

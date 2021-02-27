@@ -63,12 +63,10 @@ bool Effect::From_json(const nlohmann::json& effect_j) {
 
 void Effect::Load(WPRender& wpRender) {
 	auto modelviewpro_mat = glm::mat4(1.0f);
-	const float* modelviewpro  = glm::value_ptr(modelviewpro_mat);
-
 	for(auto& f:fboMap_)
 		f.second = std::unique_ptr<gl::GLFramebuffer>(wpRender.glWrapper.CreateFramebuffer(size_[0], size_[1]));
 	for(auto& m:materials_) {
-		m.material.SetShadervalue("g_ModelViewProjectionMatrix", std::vector<float>(modelviewpro, modelviewpro + 4*4));
+		gl::Shadervalue::SetShadervalues(m.material.GetShadervalues(), "g_ModelViewProjectionMatrix", modelviewpro_mat);
 		m.material.Load(wpRender);
 	}
 	vertices_ = gl::VerticeArray::GenDefault(&wpRender.glWrapper);

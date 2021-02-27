@@ -22,7 +22,12 @@ struct Shadervalue {
 	std::vector<float> value;
 	std::string value_str;
 	static void SetValue(Shadervalue&, const std::string&);
-	static const std::string FindShadervalue(const std::unordered_map<std::string, Shadervalue>& shadervalues, const std::string& glname);
+
+	typedef std::unordered_map<std::string, Shadervalue> Shadervalues;
+	static const std::string FindShadervalue(const Shadervalues& shadervalues, const std::string& glname);
+
+	static void SetShadervalues(Shadervalues&, const std::string& glname, const std::vector<float>& value);
+	static void SetShadervalues(Shadervalues&, const std::string& glname, const glm::mat4& value);
 };
 
 typedef std::unordered_map<std::string, int> Combos;

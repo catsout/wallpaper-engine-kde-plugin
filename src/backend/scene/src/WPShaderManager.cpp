@@ -21,6 +21,18 @@ void Shadervalue::SetValue(Shadervalue& sv, const std::string& value) {
 	wp::StringToVec<float>(value, sv.value);
 }
 
+void Shadervalue::SetShadervalues(Shadervalues& shadervalues, const std::string& glname, const std::vector<float>& value) {
+	gl::Shadervalue sv = gl::Shadervalue();
+	sv.glname = glname;
+	sv.value = value;
+	shadervalues[glname] = sv;
+}
+
+void Shadervalue::SetShadervalues(Shadervalues& shadervalues, const std::string& glname, const glm::mat4& value) {
+	const float* value_ptr = glm::value_ptr(value);
+	SetShadervalues(shadervalues, glname, std::vector<float>(value_ptr, value_ptr + 4*4));
+}
+
 GlobalUniform::GlobalUniform() {
 	startTime_ = std::chrono::steady_clock::now();
 	funcmap_["g_Time"] = &GlobalUniform::Time;

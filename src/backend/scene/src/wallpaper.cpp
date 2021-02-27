@@ -53,12 +53,13 @@ void WallpaperGL::Load(const std::string& pkg_path) {
 
 	auto& ortho = general_json.at("orthogonalprojection");
 	wpRender_.shaderMgr.globalUniforms.SetOrtho(ortho.at("width"), ortho.at("height"));
-		
 	wpRender_.CreateGlobalFbo(ortho.at("width"), ortho.at("height"));
 
-	auto size = wpRender_.shaderMgr.globalUniforms.Ortho();
-	vertices_ = gl::VerticeArray::GenDefault(&wpRender_.glWrapper);
-	vertices_.Update();
+	if(m_flip) {
+		gl::Shadervalue::SetShadervalues(m_shadervalues, "fboTrans", glm::rotate(glm::mat4(1.0f), glm::radians(180.0f), glm::vec3(1.0f,0,0)));
+	}
+	m_vertices = gl::VerticeArray::GenDefault(&wpRender_.glWrapper);
+	m_vertices.Update();
 
     auto& objects = scene_json.at("objects");
     for(auto& object:objects) {
@@ -109,8 +110,8 @@ void WallpaperGL::Render(uint fbo, int width, int height) {
 	wpRender_.glWrapper.ActiveTexture(0);
 	wpRender_.glWrapper.BindTexture(&(wpRender_.GlobalFbo()->color_texture));
 	wpRender_.shaderMgr.BindShader("displayFbo");
-	wpRender_.shaderMgr.UpdateUniforms("displayFbo", {});
-	vertices_.Draw();
+	wpRender_.shaderMgr.UpdateUniforms("displayFbo", m_shadervalues);
+	m_vertices.Draw();
 	CHECK_GL_ERROR_IF_DEBUG();
 }
 
@@ -121,7 +122,7 @@ void WallpaperGL::Clear()
 	wpRender_.shaderMgr.ClearCache();
 	wpRender_.texCache.Clear();	
     m_objects.clear();
-	if(m_loaded) vertices_.Delete();
+	m_vertices.Delete();
 	LOG_INFO("Date cleared");
 }
 

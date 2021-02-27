@@ -37,8 +37,9 @@ public:
     void Render(WPRender&);
 	const std::string& GetShader() const {return shader_;};
 	const gl::Shadervalues& GetShadervalues() const {return shadervalues_;};
+	gl::Shadervalues& GetShadervalues() {return shadervalues_;};
 	void SetSize(const std::vector<int>& value) {size_ = value;};
-	void SetShadervalue(const std::string& glname,const std::vector<float>& value);
+
 private:
     RenderObject& object_;
 	std::vector<int> size_;

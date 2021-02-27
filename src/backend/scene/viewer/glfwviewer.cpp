@@ -11,8 +11,13 @@
 
 using namespace std;
 
-const unsigned int SCR_WIDTH = 1280;
-const unsigned int SCR_HEIGHT = 720;
+unsigned int SCR_WIDTH = 1280;
+unsigned int SCR_HEIGHT = 720;
+
+void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
+	SCR_WIDTH = width;
+	SCR_HEIGHT = height;
+}
 
 int main(int argc, char**argv)
 {
@@ -51,21 +56,25 @@ int main(int argc, char**argv)
         return -1;
     }
     glfwMakeContextCurrent(window);
-    //glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
     wallpaper::WallpaperGL* wgl_ptr = new wallpaper::WallpaperGL();
     auto& wgl = *wgl_ptr;
 	wgl.Init((GLADloadproc)glfwGetProcAddress);
 	wgl.SetAssets(argv[optind]);
 	wgl.SetObjEffNum(objnum, effnum);
+	wgl.SetFlip(true);
     //const wallpaper::fs::file_node& x = wallpaper::WallpaperGL::GetPkgfs();
     wgl.Load(argv[optind+1]);
 
+
+	glClear(GL_COLOR_BUFFER_BIT);
     while (!glfwWindowShouldClose(window))
     {
 		glfwPollEvents();
+
         wgl.Render(0,SCR_WIDTH,SCR_HEIGHT);
-        glfwSwapInterval(1.0);
+        glfwSwapInterval(2);
         glfwSwapBuffers(window);
     }
     delete wgl_ptr;
