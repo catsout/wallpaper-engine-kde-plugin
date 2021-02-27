@@ -178,7 +178,7 @@ void ImageObject::Render(WPRender& wpRender)
     m_material.Render(wpRender);
 
 
-	glBlendFunc(GL_SRC_ALPHA, GL_DST_ALPHA);
+	glBlendFunc(GL_ONE, GL_DST_ALPHA);
 	SetCurFbo(fbo_.get());
 	int index = 0;
 	for(auto& e:effects_) {
