@@ -74,7 +74,7 @@ int main(int argc, char**argv)
 		glfwPollEvents();
 
         wgl.Render(0,SCR_WIDTH,SCR_HEIGHT);
-        glfwSwapInterval(2);
+        glfwSwapInterval(1.5);
         glfwSwapBuffers(window);
     }
     delete wgl_ptr;
