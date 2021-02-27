@@ -32,6 +32,7 @@ GlobalUniform::GlobalUniform() {
 	funcmap_["g_ViewProjectionMatrix"] = &GlobalUniform::ViewProjectionMatrix;
 	funcmap_["g_ModelViewProjectionMatrix"] = &GlobalUniform::ModelViewProjectionMatrix;
 	funcmap_["g_ModelViewProjectionMatrixInverse"] = &GlobalUniform::ModelViewProjectionMatrixInverse;
+	funcmap_["fboTrans"] = &GlobalUniform::FboTrans;
 	camera_.center = glm::vec3(0.0f,0.0f,0.0f);
 	camera_.eye = glm::vec3(0.0f,0.0f,1.0f);
 	camera_.up = glm::vec3(0.0f,1.0f,0.0f);
@@ -99,7 +100,8 @@ void* GlobalUniform::ModelMatrix() {
 }
 
 void* GlobalUniform::ModelMatrixInverse() {
-	modelMatrixInverse_ = glm::mat4(1.0f);
+	GetValue("g_ModelMatrix");
+	modelMatrixInverse_ = glm::inverse(modelMatrix_);
 	return glm::value_ptr(modelMatrixInverse_);
 }
 
@@ -120,6 +122,10 @@ void* GlobalUniform::ModelViewProjectionMatrixInverse() {
 	GetValue("g_ModelViewProjectionMatrix");
 	modelViewProjectionMatrixInverse_ = glm::inverse(modelViewProjectionMatrix_);
 	return glm::value_ptr(modelViewProjectionMatrixInverse_);
+}
+void* GlobalUniform::FboTrans() {
+	fboTrans_ = glm::mat4(1.0f);
+	return glm::value_ptr(fboTrans_);
 }
 
 const glm::mat4& GlobalUniform::GetViewProjectionMatrix() {

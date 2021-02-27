@@ -38,10 +38,10 @@ VerticeArray VerticeArray::GenDefault(GLWrapper* glWrapper) {
 }
 
 VerticeArray VerticeArray::GenSizedBox(GLWrapper* glWrapper, std::vector<float> size) {
-	float left = 0.0f;
-	float right = size[0];
-	float bottom = 0.0f;
-	float top = size[1];
+	float left = -size[0]/2.0f;
+	float right = size[0]/2.0f;
+	float bottom = -size[1]/2.0f;
+	float top = size[1]/2.0f;
 	float z = 0.0f;
 	std::vector<float> vertices = {
 		 left, bottom, z,  0.0f, 0.0f,

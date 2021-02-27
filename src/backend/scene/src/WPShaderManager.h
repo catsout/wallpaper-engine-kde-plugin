@@ -59,6 +59,7 @@ public:
 	void* ViewProjectionMatrix();
 	void* ModelViewProjectionMatrix();
 	void* ModelViewProjectionMatrixInverse();
+	void* FboTrans();
 	const glm::mat4& GetViewProjectionMatrix();
 private:
 	Camera camera_;
@@ -79,6 +80,7 @@ private:
 	glm::mat4 modelMatrixInverse_;
 	glm::mat4 modelViewProjectionMatrix_;
 	glm::mat4 modelViewProjectionMatrixInverse_;
+	glm::mat4 fboTrans_;
 };
 
 class Shader {

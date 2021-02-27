@@ -57,7 +57,7 @@ void WallpaperGL::Load(const std::string& pkg_path) {
 	wpRender_.CreateGlobalFbo(ortho.at("width"), ortho.at("height"));
 
 	auto size = wpRender_.shaderMgr.globalUniforms.Ortho();
-	vertices_ = gl::VerticeArray::GenSizedBox(&wpRender_.glWrapper,std::vector<float>(size.begin(),size.end()));
+	vertices_ = gl::VerticeArray::GenDefault(&wpRender_.glWrapper);
 	vertices_.Update();
 
     auto& objects = scene_json.at("objects");

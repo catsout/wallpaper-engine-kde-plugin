@@ -17,12 +17,12 @@ void WPRender::Clear(float alpha) {
 
 void WPRender::CreateGlobalFbo(int width, int height) {
 	std::string vsCode = "#version 330 core\n"
-		"uniform mat4 g_ModelViewProjectionMatrix;\n"
+		"uniform mat4 fboTrans;\n"
 		"in vec3 a_position;\n"
 		"in vec2 a_texCoord;\n"
 		"out vec2 TexCoord;\n"
 		"void main()\n"
-		"{gl_Position = g_ModelViewProjectionMatrix*vec4(a_position, 1.0f);TexCoord = a_texCoord;}";
+		"{gl_Position = fboTrans*vec4(a_position, 1.0f);TexCoord = a_texCoord;}";
 	std::string fgCode = "#version 330 core\n"
 		"in vec2 TexCoord;\n"
 		"out vec4 color;\n"
