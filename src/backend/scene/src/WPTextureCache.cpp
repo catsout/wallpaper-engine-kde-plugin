@@ -12,7 +12,7 @@ Texture::Texture(GLWrapper* glWrapper,const std::string& name):glWrapper_(glWrap
 	texture = glWrapper_->CreateTexture(GL_TEXTURE_2D, tex.Main().Width(), tex.Main().Height(), tex.MipmapNum());
 	for(int i=0;i<tex.MipmapNum();i++){
 		Image& img = tex.Mipmap(i);
-		glWrapper_->TextureImage(texture, i, img.Width(), img.Height(), format_ ,(uint8_t*)img.RawData(), true, img.Size());
+		glWrapper_->TextureImage(texture, i, img.Width(), img.Height(), format_ ,(uint8_t*)img.RawData(), false, img.Size());
 	}
 }
 

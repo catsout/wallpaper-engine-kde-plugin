@@ -171,17 +171,17 @@ void ImageObject::Render(WPRender& wpRender)
 			wpRender.glWrapper.ActiveTexture(0);
 			wpRender.glWrapper.BindTexture(&CurFbo()->color_texture);
 		}
-		glBlendFunc(GL_SRC_ALPHA, GL_DST_ALPHA);
 	}
 	else {
 		wpRender.Clear();
 	}		
 
+	glBlendFunc(GL_ONE, GL_ZERO);
 	SetCurVertices(&Vertices());
     m_material.Render(wpRender);
 
 
-	glBlendFunc(GL_ONE, GL_DST_ALPHA);
+	glBlendFunc(GL_ONE, GL_ZERO);
 	SetCurFbo(fbo_.get());
 	int index = 0;
 	for(auto& e:effects_) {
@@ -189,8 +189,7 @@ void ImageObject::Render(WPRender& wpRender)
 		e.Render(wpRender);
 	}
 
-	glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-
+	glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
 	wpRender.UseGlobalFbo(shadervalues_);
 	wpRender.glWrapper.ActiveTexture(0);
 	wpRender.glWrapper.BindTexture(&CurFbo()->color_texture);
