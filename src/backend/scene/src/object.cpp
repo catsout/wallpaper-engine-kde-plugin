@@ -183,7 +183,6 @@ void ImageObject::Render(WPRender& wpRender)
 
 
 	glBlendFunc(GL_ONE, GL_ZERO);
-//	SetCurFbo(fbo_.get());
 	int index = 0;
 	for(auto& e:effects_) {
 		if(index++ == WallpaperGL::EffNum()) break;

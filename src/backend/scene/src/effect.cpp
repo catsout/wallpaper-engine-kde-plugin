@@ -20,7 +20,6 @@ bool Effect::From_json(const nlohmann::json& effect_j) {
 			fboDataMap_[name] = FboData(scale);
 		}
 	}
-//	fboDataMap_["default"] = FboData(1.0f);
 	// effect code must have passes, which contain material
 	if(!file_j.contains("passes")) return false;	
 	auto& file_passes_j = file_j.at("passes");
@@ -81,9 +80,11 @@ void Effect::Load(WPRender& wpRender) {
 void Effect::Render(WPRender& wpRender) {
 	imgObject_.SetCurVertices(&vertices_);
 	for(auto& m:materials_) {
+		bool switchFbo = false;
 		if(m.target == "default") {
 			wpRender.glWrapper.BindFramebuffer(imgObject_.TargetFbo());
 			wpRender.glWrapper.Viewport(0,0,size_[0], size_[1]);
+			switchFbo = true;
 		}
 		else {
 			FboData& targetFboData = fboDataMap_.at(m.target);
@@ -100,7 +101,7 @@ void Effect::Render(WPRender& wpRender) {
 				wpRender.glWrapper.BindTexture(&fboDataMap_.at(b.name).fbo->color_texture);
 		}
 	    m.material.Render(wpRender);
-		imgObject_.SwitchFbo();
+		if(switchFbo)	
+			imgObject_.SwitchFbo();
 	}
-//	imgObject_.SetCurFbo(fboDataMap_.at(materials_.back().target).fbo.get());
 }
