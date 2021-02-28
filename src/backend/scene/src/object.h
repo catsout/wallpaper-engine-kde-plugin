@@ -44,6 +44,8 @@ public:
 
     auto* CurVertices() {return m_curVertices;};
     void SetCurVertices(gl::VerticeArray* value) {m_curVertices = value;};
+protected:
+    auto& Origin() {return m_origin;};
 
 private:
     std::string m_name;
@@ -88,6 +90,8 @@ private:
 	std::vector<int> size_;
 	bool autosize_ = false;
 	bool copybackground_ = false;
+	bool m_compose = false;
+	bool m_fullscreen = false;
 	float m_alpha = 1.0f;
 	float m_brightness  = 1.0f;
 	std::vector<float> m_color = {1.0f,1.0f,1.0f};

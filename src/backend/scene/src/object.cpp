@@ -18,11 +18,15 @@
 using json = nlohmann::json;
 using namespace wallpaper;
 
-std::unique_ptr<RenderObject> wallpaper::CreateObject(const json& obj_json)
-{
+std::unique_ptr<RenderObject> wallpaper::CreateObject(const json& obj_json) {
+	std::string name;
+	if(obj_json.contains("name") && obj_json.at("name").is_string())
+		name = obj_json.at("name");
+
     if(obj_json.contains("image") && !obj_json.at("image").is_null()) {
         auto obj = std::make_unique<ImageObject>();
         if(obj->From_json(obj_json)) return obj;
+		else LOG_ERROR("Read image object " + name + " from json failed");
     }
     else if(obj_json.contains("particle") && !obj_json.at("particle").is_null()) {
         auto obj = std::make_unique<ParticleObject>();
@@ -33,7 +37,7 @@ std::unique_ptr<RenderObject> wallpaper::CreateObject(const json& obj_json)
 
 bool wallpaper::RenderObject::From_json(const json& obj)
 {
-
+	if(!obj.contains("name")) return false;
     m_name = obj.at("name");
 	if(obj.contains("origin") && obj.at("origin").is_string())
 		if(!StringToVec<float>(obj.at("origin"), m_origin)) return false;
@@ -54,7 +58,8 @@ ImageObject::~ImageObject() {
 bool ImageObject::From_json(const json& obj)
 {
     if(!RenderObject::From_json(obj) || !obj.contains("image")) return false;
-
+	if(Name() == "Compose")
+		m_compose = true;
 	if(obj.contains("size")) {
 		std::vector<float> fsize;
 		if(!StringToVec<float>(obj.at("size"), fsize)) return false;
@@ -87,6 +92,9 @@ bool ImageObject::From_json(const json& obj)
 			size_[0] = image.at("width");
 			size_[1] = image.at("height");
 		}
+		else if(image.contains("fullscreen")) {
+			m_fullscreen = true;
+		}
 		else return false;
 	}
 		
@@ -96,13 +104,18 @@ bool ImageObject::From_json(const json& obj)
 	GenBaseCombos();
 
     std::string material_str = fs::GetContent(WallpaperGL::GetPkgfs(), image.at("material"));
-    if(!m_material.From_json(json::parse(material_str))) return false;
+	auto mat_j = json::parse(material_str);
+    if(!m_material.From_json(mat_j)) return false;
+	
+
 	m_material.SetSize(size_);
 	if(obj.contains("effects")) {
 		for(auto& e:obj.at("effects")) {
 			effects_.push_back(Effect(*this, size_));
-			if(!effects_.back().From_json(e))
+			if(!effects_.back().From_json(e)) {
+				LOG_INFO("object: " + Name() + "'s effect: " + effects_.back().Name() + " not load");
 				effects_.pop_back();
+			}
 		}
 	}
     return true;
@@ -110,6 +123,11 @@ bool ImageObject::From_json(const json& obj)
 
 void ImageObject::Load(WPRender& wpRender)
 {
+	// fullscreen
+	if(m_fullscreen) {
+		size_ = wpRender.shaderMgr.globalUniforms.Ortho();
+		Origin() = std::vector<float>({size_[0]/2.0f, size_[1]/2.0f, 0.0f});
+	}
 	auto ori = Origin();
 	ori[1] = wpRender.shaderMgr.globalUniforms.Ortho()[1] - ori[1];
 	auto& verArry = Vertices();
@@ -146,6 +164,7 @@ void ImageObject::Load(WPRender& wpRender)
 
 		if(IsCompose()) {
 			// compose need to know wordcoord and use global ViewProjectionMatrix
+			// this is ok for fullscreen as ori at (0,0,0)
 			model_mat = glm::translate(glm::mat4(1.0f), glm::vec3(ori[0], ori[1], ori[2])) * model_mat;
 		} else {
 			model_mat = glm::translate(glm::mat4(1.0f), glm::vec3(size_[0]/2.0f, size_[1]/2.0f, 0.0f)) * model_mat;
@@ -210,7 +229,7 @@ void ImageObject::Render(WPRender& wpRender)
 
 
 bool ImageObject::IsCompose() const {
-	return Name() == "Compose";
+	return m_compose;
 }
 
 void ImageObject::GenBaseCombos() {

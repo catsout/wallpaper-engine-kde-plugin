@@ -242,7 +242,7 @@ std::string PreShaderSrc(GLenum shader_type, const std::string& src, Combos& com
 			std::vector<std::string> defines = wp::SpliteString(line.substr(0, line.find_first_of(';')), " ");
 			Shadervalue sv;	
 			sv.material = sv_json.at("material");
-			sv.glname = defines[2];
+			sv.glname = defines.back();
 			if(sv.glname[0] != 'g')
 				LOG_INFO("PreShaderSrc User shadervalue not supported");
 			if(sv_json.contains("default")){

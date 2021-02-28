@@ -9,8 +9,16 @@ bool Effect::From_json(const nlohmann::json& effect_j) {
 	auto& pkgfs = WallpaperGL::GetPkgfs();
 	// effect code is at "file"
 	std::string file_src = fs::GetContent(pkgfs, effect_j.at("file"));
+	if(file_src.empty()) {
+		name_ = "unknown";
+		return false;
+	}
 	auto file_j = json::parse(file_src); 
 	name_ = file_j.at("name");	
+
+	if(effect_j.contains("visible") && effect_j.at("visible").is_boolean())
+		m_visible = effect_j.at("visible");
+
 	// load fbos
 	if(file_j.contains("fbos")) {
 		auto& fbos = file_j.at("fbos");

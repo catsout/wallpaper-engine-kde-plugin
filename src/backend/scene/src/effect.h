@@ -36,7 +36,7 @@ public:
 
 class Effect : public Renderable {
 public:
-    Effect(ImageObject& img,std::vector<int> size):imgObject_(img),size_(size) {};
+    Effect(ImageObject& img,std::vector<int> size):imgObject_(img),size_(size),m_visible(true) {};
     ~Effect() {};
     Effect(const Effect&) = delete;
     Effect& operator=(const Effect&) = delete;
@@ -51,6 +51,8 @@ public:
     void Load(WPRender&);
     void Render(WPRender&);
 
+	bool Visible() const {return m_visible;};
+
     const std::string& Name() {return name_;};
 private:
     ImageObject& imgObject_;
@@ -59,5 +61,7 @@ private:
 	std::vector<MaterialData> materials_;
 	std::unordered_map<std::string, FboData> fboDataMap_;
     gl::VerticeArray vertices_;
+	
+	bool m_visible;
 };
 }

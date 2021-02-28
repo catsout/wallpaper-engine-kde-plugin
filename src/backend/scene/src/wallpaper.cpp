@@ -70,7 +70,10 @@ void WallpaperGL::Load(const std::string& pkg_path) {
 	int index = 0;
     for(auto& iter:m_objects) {
 		if(index++ == ObjNum()) break;
-		if(!iter->Visible()) continue;
+		if(!iter->Visible()) {
+			LOG_INFO("\n-----Ignore invisiable object: " + iter->Name() + "------");
+			continue;
+		}
 		LOG_INFO("\n-----Loading object: " + iter->Name() + "-----");
         iter->Load(wpRender_);
 	}

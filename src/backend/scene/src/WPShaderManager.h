@@ -49,7 +49,7 @@ public:
 	void* GetValue(const std::string& name);
 	bool IsGlobalUniform(const std::string& name);
 	void SetCamera(std::vector<float>,std::vector<float>,std::vector<float>);
-	std::vector<int> Ortho() {return ortho_;};
+	std::vector<int> Ortho() const {return ortho_;};
 	void SetOrtho(int w, int h);
 	void SetSize(int w, int h);
 	void SetPointerPos(float x, float y);
