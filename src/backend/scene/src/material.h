@@ -29,8 +29,8 @@ class RenderObject;
 class Material : public Renderable
 {
 public:
-    Material(RenderObject& object):object_(object),size_({1920,1080}) {};
-    Material(RenderObject& object, std::vector<int> size):object_(object),size_(size) {};
+    Material(RenderObject& object, const std::vector<int>& size);
+    Material(RenderObject& object):Material(object, {1920,1080}) {};
     bool From_json(const nlohmann::json&);
     ~Material(){};
     void Load(WPRender&);

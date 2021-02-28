@@ -14,10 +14,13 @@ bool Effect::From_json(const nlohmann::json& effect_j) {
 	// load fbos
 	if(file_j.contains("fbos")) {
 		auto& fbos = file_j.at("fbos");
-		for(auto& f:fbos)
-			fboMap_[f.at("name").get<std::string>()] = nullptr;
+		for(auto& f:fbos) {
+			std::string name = f.at("name").get<std::string>();
+			float scale = f.at("scale");
+			fboDataMap_[name] = FboData(scale);
+		}
 	}
-	fboMap_["default"] = nullptr;
+	fboDataMap_["default"] = FboData(1.0f);
 	// effect code must have passes, which contain material
 	if(!file_j.contains("passes")) return false;	
 	auto& file_passes_j = file_j.at("passes");
@@ -63,8 +66,10 @@ bool Effect::From_json(const nlohmann::json& effect_j) {
 
 void Effect::Load(WPRender& wpRender) {
 	auto modelviewpro_mat = glm::mat4(1.0f);
-	for(auto& f:fboMap_)
-		f.second = std::unique_ptr<gl::GLFramebuffer>(wpRender.glWrapper.CreateFramebuffer(size_[0], size_[1]));
+	for(auto& f:fboDataMap_) {
+		float scale = f.second.scale;
+		f.second.fbo = std::unique_ptr<gl::GLFramebuffer>(wpRender.glWrapper.CreateFramebuffer(size_[0]/scale, size_[1]/scale));
+	}
 	for(auto& m:materials_) {
 		gl::Shadervalue::SetShadervalues(m.material.GetShadervalues(), "g_ModelViewProjectionMatrix", modelviewpro_mat);
 		m.material.Load(wpRender);
@@ -76,8 +81,9 @@ void Effect::Load(WPRender& wpRender) {
 void Effect::Render(WPRender& wpRender) {
 	imgObject_.SetCurVertices(&vertices_);
 	for(auto& m:materials_) {
-		wpRender.glWrapper.BindFramebuffer(fboMap_.at(m.target).get());
-		glViewport(0,0,size_[0], size_[1]);
+		FboData& targetFboData = fboDataMap_.at(m.target);
+		wpRender.glWrapper.BindFramebuffer(targetFboData.fbo.get());
+		wpRender.glWrapper.Viewport(0,0,size_[0]/targetFboData.scale, size_[1]/targetFboData.scale);
 		wpRender.Clear(0.0f);
 
 		for(auto& b:m.bindInfos) {
@@ -85,9 +91,9 @@ void Effect::Render(WPRender& wpRender) {
 			if(b.name == "previous")
 				wpRender.glWrapper.BindTexture(&(imgObject_.CurFbo())->color_texture);
 			else
-				wpRender.glWrapper.BindTexture(&fboMap_.at(b.name)->color_texture);
+				wpRender.glWrapper.BindTexture(&fboDataMap_.at(b.name).fbo->color_texture);
 		}
 	    m.material.Render(wpRender);
 	}
-	imgObject_.SetCurFbo(fboMap_.at(materials_.back().target).get());
+	imgObject_.SetCurFbo(fboDataMap_.at(materials_.back().target).fbo.get());
 }

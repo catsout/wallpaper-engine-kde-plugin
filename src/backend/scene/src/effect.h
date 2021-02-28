@@ -19,11 +19,19 @@ struct BindInfo {
 
 class MaterialData {
 public:
-	MaterialData(RenderObject& obj, std::vector<int> size):material(obj, size) {};
+	MaterialData(RenderObject& obj, const std::vector<int>& size):material(obj, size) {};
 	~MaterialData() {};
 	Material material;
 	std::string target;
 	std::vector<BindInfo> bindInfos;
+};
+
+class FboData {
+public:
+	FboData(float scale):scale(scale) {};
+	FboData():scale(1.0f) {};
+	std::unique_ptr<gl::GLFramebuffer> fbo;
+	float scale;
 };
 
 class Effect : public Renderable {
@@ -37,7 +45,7 @@ public:
 		name_(o.name_),
 		size_(std::move(o.size_)),
 		materials_(std::move(o.materials_)),
-		fboMap_(std::move(o.fboMap_)) {};
+		fboDataMap_(std::move(o.fboDataMap_)) {};
 
     bool From_json(const nlohmann::json&);
     void Load(WPRender&);
@@ -49,8 +57,7 @@ private:
 	std::string name_;
 	std::vector<int> size_;
 	std::vector<MaterialData> materials_;
-	std::unordered_map<std::string, std::unique_ptr<gl::GLFramebuffer>> fboMap_;
+	std::unordered_map<std::string, FboData> fboDataMap_;
     gl::VerticeArray vertices_;
-//	gl::GLFramebuffer* fboPre_;
 };
 }

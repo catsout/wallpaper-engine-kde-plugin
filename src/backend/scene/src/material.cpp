@@ -7,7 +7,14 @@
 using json = nlohmann::json;
 namespace wp = wallpaper;
 
+
+wp::Material::Material(RenderObject& object, const std::vector<int>& size):object_(object),size_(size) {
+};
+
 bool wp::Material::From_json(const json& obj_json) {
+	const ImageObject& imgobj = dynamic_cast<const ImageObject&>(object_);
+	combos_ = gl::Combos(imgobj.BaseCombos());
+
     if(!obj_json.contains("passes")) return false;
     auto& content = obj_json.at("passes")[0];
     if(!content.contains("shader")) return false;
@@ -20,9 +27,6 @@ bool wp::Material::From_json(const json& obj_json) {
 	if(content.contains("combos")) {
 		for(auto& c:content.at("combos").items())
 			combos_[c.key()] = c.value().get<int>();
-		shader_.append("+");
-		for(auto& c:combos_)
-			shader_.append(c.first + std::to_string(c.second));
 	}
 	if(content.contains("constantshadervalues")) {
 		constShadervalues_ = content.at("constantshadervalues").dump();
@@ -31,8 +35,7 @@ bool wp::Material::From_json(const json& obj_json) {
 }
 
 void wp::Material::Load(WPRender& wpRender) {
-	LOG_INFO("compile " + shader_);
-	wpRender.shaderMgr.CreateShader(shader_, combos_, shadervalues_);
+	shader_ = wpRender.shaderMgr.CreateShader(shader_, combos_, shadervalues_);
 	auto* lks = wpRender.shaderMgr.CreateLinkedShader(shader_);
 	/*
 	for(auto& el:lks->GetUniforms()) {

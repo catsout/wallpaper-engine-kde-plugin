@@ -218,13 +218,9 @@ std::string PreShaderSrc(GLenum shader_type, const std::string& src, Combos& com
 		else if(line.find("// [COMBO]") != std::string::npos) {
 			auto combo_json = json::parse(line.substr(line.find_first_of('{')));
 			if(combo_json.contains("combo")) {
-				if(combos.count(combo_json.at("combo")))
-					;
-				else if(combo_json.contains("default")) {
-					auto name = combo_json.at("combo").get<std::string>();
-					int value = combo_json.at("default").get<int>();
-					combos[name] = value;
-				}
+				auto name = combo_json.at("combo").get<std::string>();
+				int value = combo_json.contains("default")?combo_json.at("default").get<int>():0;
+				combos[name] = value;
 				line = "";
 			}
 		}
@@ -265,22 +261,62 @@ Shader* WPShaderManager::CreateShader_(const std::string& name, GLuint stage, co
 }
 
 
-void WPShaderManager::CreateShader(const std::string& name, const Combos& combos, Shadervalues& shadervalues) {
-	if(!shaderCache_.count(name)) {
-		shaderCache_[name] = WPShader();
-		auto& shader = shaderCache_[name];
-		auto fileName = name.substr(0, name.find_first_of('+'));
-		std::string svCode = wp::fs::GetContent(wp::WallpaperGL::GetPkgfs(),"shaders/"+fileName+".vert");
-		std::string fgCode = wp::fs::GetContent(wp::WallpaperGL::GetPkgfs(),"shaders/"+fileName+".frag");
-		shader.combos = combos;
-
-		svCode = PreShaderSrc(GL_VERTEX_SHADER, svCode, shader.combos, shaderCache_[name].shadervalues);
-		fgCode = PreShaderSrc(GL_FRAGMENT_SHADER, fgCode, shader.combos, shaderCache_[name].shadervalues);
-		shader.vs = std::unique_ptr<Shader>(CreateShader_(name, GL_VERTEX_SHADER, svCode));
-		shader.fg = std::unique_ptr<Shader>(CreateShader_(name, GL_FRAGMENT_SHADER, fgCode));
+std::string WPShaderManager::CreateShader(const std::string& name, const Combos& combos, Shadervalues& shadervalues) {
+	std::string shaderName;
+	bool IsInCache = false;
+	for(auto& el:shaderCache_) {
+		if(el.first.compare(0, name.size(), name) == 0) {
+			auto& shaderCombos = el.second.combos;
+			auto& defaultCombos = el.second.combos;
+			bool flag = true;
+			// shadersCombos == active combos
+			for(auto& c:shaderCombos) {
+				if(combos.count(c.first) == 0) {
+					if(defaultCombos.count(c.first) == 0 || defaultCombos.at(c.first) != c.second)
+						flag = false;
+				}
+				else if(c.second != combos.at(c.first))
+					flag = false;
+			}
+			if(flag) {
+				IsInCache = true;
+				shaderName = el.first;
+			}
+		}
 	}
-	for(auto el:shaderCache_[name].shadervalues)
+	if(!IsInCache || shaderName.empty()) {
+		LOG_INFO("compile shader: " + name);
+		std::string svCode = wp::fs::GetContent(wp::WallpaperGL::GetPkgfs(),"shaders/"+name+".vert");
+		std::string fgCode = wp::fs::GetContent(wp::WallpaperGL::GetPkgfs(),"shaders/"+name+".frag");
+		gl::Combos shaderCombos,defaultCombos;
+		gl::Shadervalues shadervalues;
+		svCode = PreShaderSrc(GL_VERTEX_SHADER, svCode, defaultCombos, shadervalues);
+		fgCode = PreShaderSrc(GL_FRAGMENT_SHADER, fgCode, defaultCombos, shadervalues);
+		shaderCombos = defaultCombos;
+
+		for(const auto& c:combos) {
+			if(shaderCombos.count(c.first) != 0) 
+				shaderCombos[c.first] = c.second;
+		}
+		shaderName = name+'+';
+		for(auto& c:shaderCombos)
+			shaderName.append(c.first + std::to_string(c.second));
+
+		shaderCache_[shaderName] = WPShader();
+		auto& shader = shaderCache_[shaderName];
+		shader.combos = std::move(shaderCombos);
+		shader.defaultCombos = std::move(defaultCombos);
+		shader.shadervalues = std::move(shadervalues);
+
+
+		shader.vs = std::unique_ptr<Shader>(CreateShader_(shaderName, GL_VERTEX_SHADER, svCode));
+		shader.fg = std::unique_ptr<Shader>(CreateShader_(shaderName, GL_FRAGMENT_SHADER, fgCode));
+	}
+	for(auto el:shaderCache_[shaderName].shadervalues)
 		shadervalues.insert(el);
+
+	LOG_INFO("use shader: " + shaderName);
+	return shaderName;
 }
 
 

@@ -103,6 +103,7 @@ struct WPShader {
 	std::unique_ptr<Shader> vs;
 	std::unique_ptr<Shader> fg;
 	Combos combos;
+	Combos defaultCombos;
 	Shadervalues shadervalues;	
 };
 
@@ -123,7 +124,7 @@ private:
 class WPShaderManager {
 public:
 	WPShaderManager(GLWrapper* glWrapper):glWrapper_(glWrapper) {};
-	void CreateShader(const std::string& name, const Combos& combos, Shadervalues& shadervalues);
+	std::string CreateShader(const std::string& name, const Combos& combos, Shadervalues& shadervalues);
 	void CreateShader(const std::string& name, const std::string& vsCode, const std::string& fgCode);
 	LinkedShader* CreateLinkedShader(const std::string& name);
 	void BindShader(const std::string& name);

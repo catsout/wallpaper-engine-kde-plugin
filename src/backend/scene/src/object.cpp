@@ -90,6 +90,9 @@ bool ImageObject::From_json(const json& obj)
 		
 	if(image.contains("autosize"))
 		autosize_ = image.at("autosize").get<bool>();
+	// gen combos before material and effect
+	GenBaseCombos();
+
     std::string material_str = fs::GetContent(WallpaperGL::GetPkgfs(), image.at("material"));
     if(!m_material.From_json(json::parse(material_str))) return false;
 	m_material.SetSize(size_);
@@ -133,7 +136,7 @@ void ImageObject::Load(WPRender& wpRender)
 			model_mat = glm::translate(model_mat, glm::vec3(size_[0]/2.0f,size_[1]/2.0f,0.0f));
 		}
 
-		if(Name() == "Compose") {
+		if(IsCompose()) {
 			// compose need to know wordcoord and use global ViewProjectionMatrix
 			model_mat = glm::translate(glm::mat4(1.0f), glm::vec3(ori[0], ori[1], ori[2])) * model_mat;
 		} else {
@@ -164,7 +167,7 @@ void ImageObject::Render(WPRender& wpRender)
 
 	if(copybackground_)	{
 		wpRender.Clear(0.0f);
-		if(Name() == "Compose") {
+		if(IsCompose()) {
 			wpRender.glWrapper.ActiveTexture(0);
 			wpRender.glWrapper.BindTexture(&CurFbo()->color_texture);
 		}
@@ -195,6 +198,16 @@ void ImageObject::Render(WPRender& wpRender)
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
+
+bool ImageObject::IsCompose() const {
+	return Name() == "Compose";
+}
+
+void ImageObject::GenBaseCombos() {
+	m_basecombos.clear();
+//{"material":"ui_editor_properties_composite","combo":"COMPOSITE","type":"options","default":0,"options":{"ui_editor_properties_normal":0,"ui_editor_properties_blend":1,"ui_editor_properties_under":2,"ui_editor_properties_cutout":3}}
+	m_basecombos["COMPOSITE"] = IsCompose()?0:1;
+}
 
 ParticleObject::ParticleObject() {
 }

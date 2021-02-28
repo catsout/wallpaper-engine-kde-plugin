@@ -11,18 +11,28 @@
 
 namespace wallpaper
 {
+namespace RenderableType
+{
+	enum Type {
+		Image,
+		Particle
+	};
+};
 
 class RenderObject : public Renderable
 {
 public:
     RenderObject():m_name(""),m_angles({0.0f,0.0f,0.0f}),m_origin(3),m_scale({1.0f,1.0f,1.0f}),m_visible(true) {};
 
+	
     virtual ~RenderObject() {
         m_vertices.Delete();
     }
     virtual void Load(WPRender&) = 0;
     virtual void Render(WPRender&) = 0;
     virtual bool From_json(const nlohmann::json&);
+	virtual RenderableType::Type Type() const = 0;
+
 
 	gl::GLFramebuffer* CurFbo() {return m_curFbo;};
 	void SetCurFbo(gl::GLFramebuffer* value) {m_curFbo=value;};
@@ -52,8 +62,13 @@ public:
     ~ImageObject();
     void Load(WPRender&);
     void Render(WPRender&);
+	RenderableType::Type Type() const {return RenderableType::Image;};
+	bool IsCompose() const;
+	const gl::Combos BaseCombos() const {return m_basecombos;};
 
 private:
+	void GenBaseCombos();
+
 	std::vector<int> size_;
     Material m_material;
 	std::vector<Effect> effects_;
@@ -64,6 +79,7 @@ private:
 	float alpha_ = 1.0f;
 	std::vector<float> color_ = {1.0f,1.0f,1.0f};
     gl::VerticeArray m_verticesDefault;
+	gl::Combos m_basecombos;
 };
 
 class ParticleObject : public RenderObject
@@ -74,6 +90,7 @@ public:
     ~ParticleObject() {};
     void Load(WPRender&);
     void Render(WPRender&) {};
+	RenderableType::Type Type() const {return RenderableType::Particle;};
 };
 
 
