@@ -36,6 +36,7 @@ public:
 
 	const std::string& Name() const {return m_name;};
     const auto& Origin() const {return m_origin;};
+    const auto& Angles() const {return m_angles;};
     const auto& Scale() const {return m_scale;};
     auto& Vertices() {return m_vertices;};
 

@@ -119,16 +119,22 @@ void ImageObject::Load(WPRender& wpRender)
     verArry.Update();
 
     m_material.Load(wpRender);
-	
+
+	// fbo shadervalues	
 	auto viewpro_mat = wpRender.shaderMgr.globalUniforms.GetViewProjectionMatrix();
 	auto scale = Scale();
 	//2. move to origin
 	auto model_mat = glm::translate(glm::mat4(1.0f), glm::vec3(ori[0],ori[1],ori[2]));
+	//2. rotation
+	model_mat = glm::rotate(model_mat, glm::radians(Angles()[2]), glm::vec3(0,0,1)); // z
+	model_mat = glm::rotate(model_mat, glm::radians(Angles()[0]), glm::vec3(1,0,0)); // x
+	model_mat = glm::rotate(model_mat, glm::radians(Angles()[1]), glm::vec3(0,1,0)); // y
 	//1. scale
 	model_mat = glm::scale(model_mat, glm::vec3(scale[0], scale[1], scale[2]));
 	auto modelviewpro_mat = viewpro_mat * model_mat;
-	gl::Shadervalue::SetShadervalues(shadervalues_,"fboTrans", modelviewpro_mat);
+	gl::Shadervalue::SetShadervalues(shadervalues_, "fboTrans", modelviewpro_mat);
 
+	// material shadervalues
 	if(m_material.GetShadervalues().count("g_Texture0Resolution") != 0) {
 		model_mat = glm::mat4(1.0f);
 
