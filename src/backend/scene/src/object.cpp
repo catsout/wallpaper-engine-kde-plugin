@@ -35,16 +35,14 @@ bool wallpaper::RenderObject::From_json(const json& obj)
 {
 
     m_name = obj.at("name");
-	//if(!(obj.contains("origin") && obj.contains("angles") && obj.contains("scale")));
-	//	return false;
-	if(!(obj.contains("origin") && obj.at("origin").is_string())) return false;
-    if(!StringToVec<float>(obj.at("origin"), m_origin)) return false;
+	if(obj.contains("origin") && obj.at("origin").is_string())
+		if(!StringToVec<float>(obj.at("origin"), m_origin)) return false;
 
-	if(!(obj.contains("scale") && obj.at("scale").is_string())) return false;
-    if(!StringToVec<float>(obj.at("scale"), m_scale)) return false;
+	if(obj.contains("scale") && obj.at("scale").is_string())
+		if(!StringToVec<float>(obj.at("scale"), m_scale)) return false;
 
-	if(!(obj.contains("angles") && obj.at("angles").is_string())) return false;
-    if(!StringToVec<float>(obj.at("angles"), m_angles)) return false;
+	if(obj.contains("angles") && obj.at("angles").is_string())
+		if(!StringToVec<float>(obj.at("angles"), m_angles)) return false;
 
     if(obj.contains("visible") && obj.at("visible").is_boolean()) m_visible = obj.at("visible");
     return true;
