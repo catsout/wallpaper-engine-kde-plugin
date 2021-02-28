@@ -85,8 +85,9 @@ private:
 	std::vector<int> size_;
 	bool autosize_ = false;
 	bool copybackground_ = false;
-	float alpha_ = 1.0f;
-	std::vector<float> color_ = {1.0f,1.0f,1.0f};
+	float m_alpha = 1.0f;
+	float m_brightness  = 1.0f;
+	std::vector<float> m_color = {1.0f,1.0f,1.0f};
 };
 
 class ParticleObject : public RenderObject

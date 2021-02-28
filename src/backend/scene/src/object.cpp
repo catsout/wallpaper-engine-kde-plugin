@@ -65,11 +65,15 @@ bool ImageObject::From_json(const json& obj)
 	if(obj.contains("copybackground"))
 		copybackground_ = obj.at("copybackground");
 
-	if(obj.contains("alpha") && obj.at("color").is_number())
-		alpha_ = obj.at("alpha");
+	if(obj.contains("brightness") && obj.at("brightness").is_number())
+		m_brightness = obj.at("brightness");
+
+
+	if(obj.contains("alpha") && obj.at("alpha").is_number())
+		m_alpha = obj.at("alpha");
 
 	if(obj.contains("color") && obj.at("color").is_string())
-		if(!StringToVec<float>(obj.at("color"), color_)) return false;
+		if(!StringToVec<float>(obj.at("color"), m_color)) return false;
 
     std::string image_str = fs::GetContent(WallpaperGL::GetPkgfs(), obj.at("image"));
     /*
@@ -119,7 +123,7 @@ void ImageObject::Load(WPRender& wpRender)
 	auto viewpro_mat = wpRender.shaderMgr.globalUniforms.GetViewProjectionMatrix();
 	auto scale = Scale();
 	//2. move to origin
-	auto model_mat = glm::translate(glm::mat4(1.0f), glm::vec3(ori[0],ori[1],ori[2]));// - glm::vec3(size_[0]*scale[0]/2.0f, size_[1]*scale[1]/2.0f, ori[2]));
+	auto model_mat = glm::translate(glm::mat4(1.0f), glm::vec3(ori[0],ori[1],ori[2]));
 	//1. scale
 	model_mat = glm::scale(model_mat, glm::vec3(scale[0], scale[1], scale[2]));
 	auto modelviewpro_mat = viewpro_mat * model_mat;
@@ -146,8 +150,11 @@ void ImageObject::Load(WPRender& wpRender)
 		modelviewpro_mat = viewpro_mat * model_mat;
 		gl::Shadervalue::SetShadervalues(m_material.GetShadervalues(), "g_ModelViewProjectionMatrix", modelviewpro_mat);
 	}
-	gl::Shadervalue::SetShadervalues(m_material.GetShadervalues(), "g_Alpha", std::vector<float>({alpha_}));
-	gl::Shadervalue::SetShadervalues(m_material.GetShadervalues(), "g_Color", color_);
+	gl::Shadervalue::SetShadervalues(m_material.GetShadervalues(), "g_UserAlpha", std::vector<float>({m_alpha}));
+	gl::Shadervalue::SetShadervalues(m_material.GetShadervalues(), "g_Brightness", std::vector<float>({m_brightness}));
+	gl::Shadervalue::SetShadervalues(m_material.GetShadervalues(), "g_Alpha", std::vector<float>({m_alpha}));
+	gl::Shadervalue::SetShadervalues(m_material.GetShadervalues(), "g_Color", m_color);
+
 
 	int index = 0;
 	for(auto& e:effects_){
