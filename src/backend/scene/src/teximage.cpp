@@ -100,7 +100,7 @@ TexImage TexImage::LoadFromFile(const std::string& path)
     unkown = readInt32(file);
     tex.m_texb = ReadTexVesion(file);
 	// image 
-	int image_count,free_image_format,mipmap_count;
+	int image_count = 0,free_image_format = -1,mipmap_count = 0;
 	image_count = readInt32(file);
     if(tex.m_texb == 3) {
         free_image_format = readInt32(file);
@@ -137,14 +137,22 @@ TexImage TexImage::LoadFromFile(const std::string& path)
 			}
 			else LOG_ERROR("lz4 decompress failed");
 		}
+		auto imageType = static_cast<ImageType::Type>(free_image_format);
 		// is image container
 		if(tex.m_texb == 3 && free_image_format != -1)
 		{
-			tex.m_mipmap[i_mipmap] = (Image(result, decompressed_size));
+			tex.m_mipmap[i_mipmap] = (Image(result, decompressed_size, imageType));
 			delete [] result;
 		}
 		else
-			tex.m_mipmap[i_mipmap] = (Image(mipmap_width, mipmap_height, type, result, decompressed_size, [](char* data){delete [] data;}));	
+			tex.m_mipmap[i_mipmap] = (Image(mipmap_width, mipmap_height, type, imageType, result, decompressed_size, [](char* data){delete [] data;}));	
 	}
 	return tex;
+}
+
+std::string TexImage::Type() const {
+	if(Main().Type() == ImageType::UNKNOWN) {
+		return gl::TextureFormat::to_string(Main().Format());	
+	}
+	else return ImageType::to_string(Main().Type());
 }

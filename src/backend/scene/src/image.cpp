@@ -6,8 +6,22 @@
 using namespace wallpaper;
 
 
-Image::Image(const char* file_data, int size)
-{
+std::string ImageType::to_string(ImageType::Type type) {
+#define IMG(str) case str: return #str;
+	switch(type) {
+        IMG(UNKNOWN)
+        IMG(BMP)
+        IMG(ICO)
+		IMG(JPEG)
+        IMG(JNG)
+        IMG(PNG)
+		default:
+			LOG_ERROR("Not valied image type: " + std::to_string((int)type));
+			return "";
+	}
+}
+
+Image::Image(const char* file_data, int size, ImageType::Type type):m_type(type) {
 	int num;
 	//stbi_set_flip_vertically_on_load(true);
 	char* data = (char*)stbi_load_from_memory((const unsigned char*)file_data, size, &m_width, &m_height, &num, 4);

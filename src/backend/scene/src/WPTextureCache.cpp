@@ -7,6 +7,7 @@ using namespace wallpaper::gl;
 
 Texture::Texture(GLWrapper* glWrapper,const std::string& name):glWrapper_(glWrapper),name_(name) {
 	TexImage tex = TexImage::LoadFromFile("materials/" +name+".tex");
+	LOG_INFO("load " + tex.Type() + " tex: " + name);
 	tex.GetResolution(resolution_);
 	format_ = tex.Main().Format();
 	texture = glWrapper_->CreateTexture(GL_TEXTURE_2D, tex.Main().Width(), tex.Main().Height(), tex.MipmapNum());

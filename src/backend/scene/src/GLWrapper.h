@@ -19,6 +19,7 @@ public:
 		RGB8,
 		RGBA8
 	};
+	static std::string to_string(TextureFormat::Format format);
 };
 
 struct GLTexture{

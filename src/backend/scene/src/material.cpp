@@ -79,7 +79,6 @@ void wp::Material::Load(WPRender& wpRender) {
 				sv_resolutions.back().value = std::vector<float>(re.begin(),re.end());
 				continue;
 			}
-			std::cout << "load "+texture << std::endl;
 			gl::Texture* tex = wpRender.texCache.LoadTexture(texture);
 			auto resolution = tex->GetResolution();
 			sv_resolutions.back().value = std::vector<float>(resolution.begin(), resolution.end());

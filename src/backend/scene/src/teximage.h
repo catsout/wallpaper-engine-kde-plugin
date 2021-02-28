@@ -12,11 +12,17 @@ public:
 	TexImage():m_mipmap(1) {};
 	static TexImage LoadFromFile(const std::string&);
 	TexImage(TexImage&& other);
+
 	Image& Main() {return m_mipmap.at(0);}
+	const Image& Main() const {return m_mipmap.at(0);}
+
 	Image& Mipmap(int index) {return m_mipmap.at(index);};
+	const Image& Mipmap(int index) const {return m_mipmap.at(index);};
+
 	int MipmapNum() {return m_mipmap.size();}
 	bool Loaded() {return true;};
 	void GetResolution(int*);
+	std::string Type() const;
 private:
 	int m_texv;
 	int m_texi;

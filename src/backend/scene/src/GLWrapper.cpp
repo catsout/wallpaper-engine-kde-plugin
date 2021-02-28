@@ -20,6 +20,21 @@ static std::string GetInfoLog(GLuint name, Getiv getiv, GetLog getLog) {
 	return infoLog;
 }
 
+std::string TextureFormat::to_string(TextureFormat::Format format) {
+#define Fmt(str) case str: return #str;
+	switch(format) {
+        Fmt(RGBA8)
+		Fmt(BC1)
+		Fmt(BC2)
+		Fmt(BC3)
+		Fmt(A8)
+		Fmt(RGB8)
+		default:
+			LOG_ERROR("Not valied tex format: " + std::to_string((int)format));
+			return "";
+	}
+}
+
 GLFramebuffer::~GLFramebuffer() {
 	if (framebuffer)
 		glDeleteFramebuffers(1,&framebuffer);
