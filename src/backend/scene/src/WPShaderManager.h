@@ -52,11 +52,13 @@ public:
 	std::vector<int> Ortho() {return ortho_;};
 	void SetOrtho(int w, int h);
 	void SetSize(int w, int h);
+	void SetPointerPos(float x, float y);
 	void ClearCache() {cache_.clear();}
 	bool CacheEmpty() {return cache_.empty();}
 
 	void* Time();
 	void* Daytime();
+	void* PointerPosition();
 	void* TexelSize();
 	void* TexelSizeHalf();
 	void* ModelMatrix();
@@ -76,7 +78,7 @@ private:
 
 	float time_;
 	float daytime_;
-	float alpha_;
+	float pointerPosition_[2];
 	float size_[2];
 	float halfsize_[2];
 	glm::vec3 color_;

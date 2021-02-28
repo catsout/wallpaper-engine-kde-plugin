@@ -38,6 +38,8 @@ public:
     const auto& Origin() const {return m_origin;};
     const auto& Angles() const {return m_angles;};
     const auto& Scale() const {return m_scale;};
+    bool Visible() const {return m_visible;};
+
     auto& Vertices() {return m_vertices;};
 
     auto* CurVertices() {return m_curVertices;};

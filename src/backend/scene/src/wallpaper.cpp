@@ -70,6 +70,7 @@ void WallpaperGL::Load(const std::string& pkg_path) {
 	int index = 0;
     for(auto& iter:m_objects) {
 		if(index++ == ObjNum()) break;
+		if(!iter->Visible()) continue;
 		LOG_INFO("\n-----Loading object: " + iter->Name() + "-----");
         iter->Load(wpRender_);
 	}
@@ -100,6 +101,7 @@ void WallpaperGL::Render(uint fbo, int width, int height) {
 	int index = 0;
     for(auto& iter:m_objects){
 		if(index++ == ObjNum()) break;
+		if(!iter->Visible()) continue;
         iter->Render(wpRender_);
 	}
 

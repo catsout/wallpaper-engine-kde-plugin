@@ -37,6 +37,7 @@ GlobalUniform::GlobalUniform() {
 	startTime_ = std::chrono::steady_clock::now();
 	funcmap_["g_Time"] = &GlobalUniform::Time;
 	funcmap_["g_Daytime"] = &GlobalUniform::Daytime;
+	funcmap_["g_PointerPosition"] = &GlobalUniform::PointerPosition;
 	funcmap_["g_TexelSize"] = &GlobalUniform::TexelSize;
 	funcmap_["g_TexelSizeHalf"] = &GlobalUniform::TexelSizeHalf;
 	funcmap_["g_ModelMatrix"] = &GlobalUniform::ModelMatrix;
@@ -50,6 +51,8 @@ GlobalUniform::GlobalUniform() {
 	camera_.up = glm::vec3(0.0f,1.0f,0.0f);
 	size_[0] = 1920.0f;
 	size_[1] = 1080.0f;
+	pointerPosition_[0] = 0.0f;
+	pointerPosition_[1] = 0.0f;
 }
 
 bool GlobalUniform::IsGlobalUniform(const std::string& name) {
@@ -82,6 +85,11 @@ void GlobalUniform::SetSize(int w, int h) {
 	size_[1] = (float)h;
 }
 
+void GlobalUniform::SetPointerPos(float x, float y) {
+	pointerPosition_[0] = x;
+	pointerPosition_[1] = y;
+}
+
 void* GlobalUniform::Time() {
 	using namespace std::chrono;
 	time_ = duration_cast<milliseconds>(steady_clock::now() - startTime_).count() / 1000.0f;
@@ -94,6 +102,10 @@ void* GlobalUniform::Daytime() {
 	using namespace std::chrono;
 	daytime_ = duration_cast<minutes>(system_clock::now().time_since_epoch() % hours(24)).count() / (24.0f*60.0f);
 	return &daytime_;
+}
+
+void* GlobalUniform::PointerPosition() {
+	return pointerPosition_;
 }
 
 void* GlobalUniform::TexelSize() {
