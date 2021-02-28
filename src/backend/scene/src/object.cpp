@@ -155,21 +155,22 @@ void ImageObject::Load(WPRender& wpRender)
 		LOG_INFO("\n---Loading effect---");
 		e.Load(wpRender);
 	}
-	fbo_ = std::unique_ptr<gl::GLFramebuffer>(wpRender.glWrapper.CreateFramebuffer(size_[0], size_[1]));
+	m_fbo1 = std::unique_ptr<gl::GLFramebuffer>(wpRender.glWrapper.CreateFramebuffer(size_[0], size_[1]));
+	m_fbo2 = std::unique_ptr<gl::GLFramebuffer>(wpRender.glWrapper.CreateFramebuffer(size_[0], size_[1]));
 }
 
 void ImageObject::Render(WPRender& wpRender)
 {
-	SetCurFbo(wpRender.GlobalFbo());
-	
-	wpRender.glWrapper.BindFramebuffer(fbo_.get());
+	m_curFbo = m_fbo1.get();
+
+	wpRender.glWrapper.BindFramebuffer(m_curFbo);
 	wpRender.glWrapper.Viewport(0,0,size_[0], size_[1]);
 
 	if(copybackground_)	{
 		wpRender.Clear(0.0f);
 		if(IsCompose()) {
 			wpRender.glWrapper.ActiveTexture(0);
-			wpRender.glWrapper.BindTexture(&CurFbo()->color_texture);
+			wpRender.glWrapper.BindTexture(&wpRender.GlobalFbo()->color_texture);
 		}
 	}
 	else {
@@ -182,7 +183,7 @@ void ImageObject::Render(WPRender& wpRender)
 
 
 	glBlendFunc(GL_ONE, GL_ZERO);
-	SetCurFbo(fbo_.get());
+//	SetCurFbo(fbo_.get());
 	int index = 0;
 	for(auto& e:effects_) {
 		if(index++ == WallpaperGL::EffNum()) break;
@@ -207,6 +208,26 @@ void ImageObject::GenBaseCombos() {
 //{"material":"ui_editor_properties_composite","combo":"COMPOSITE","type":"options","default":0,"options":{"ui_editor_properties_normal":0,"ui_editor_properties_blend":1,"ui_editor_properties_under":2,"ui_editor_properties_cutout":3}}
 	m_basecombos["COMPOSITE"] = IsCompose()?0:1;
 }
+
+
+gl::GLFramebuffer* ImageObject::CurFbo() {
+	if(m_curFbo == nullptr)
+		m_curFbo = m_fbo1.get();
+	return m_curFbo;
+}
+
+gl::GLFramebuffer* ImageObject::TargetFbo() {
+	if(m_fbo1.get() == m_curFbo)
+		return m_fbo2.get();
+	else return m_fbo1.get();
+}
+
+void ImageObject::SwitchFbo() {
+	if(m_fbo1.get() == m_curFbo)	
+		m_curFbo = m_fbo2.get();
+	else m_curFbo = m_fbo1.get();
+}
+
 
 ParticleObject::ParticleObject() {
 }

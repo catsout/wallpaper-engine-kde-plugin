@@ -34,14 +34,14 @@ public:
 	virtual RenderableType::Type Type() const = 0;
 
 
-	gl::GLFramebuffer* CurFbo() {return m_curFbo;};
-	void SetCurFbo(gl::GLFramebuffer* value) {m_curFbo=value;};
-    const std::string& Name() const {return m_name;};
+	const std::string& Name() const {return m_name;};
     const auto& Origin() const {return m_origin;};
     const auto& Scale() const {return m_scale;};
     auto& Vertices() {return m_vertices;};
+
     auto* CurVertices() {return m_curVertices;};
     void SetCurVertices(gl::VerticeArray* value) {m_curVertices = value;};
+
 private:
     std::string m_name;
     std::vector<float> m_angles;
@@ -49,9 +49,7 @@ private:
     std::vector<float> m_scale;
     bool m_visible;
     gl::VerticeArray m_vertices;
-
     gl::VerticeArray* m_curVertices;
-	gl::GLFramebuffer* m_curFbo;
 };
 
 class ImageObject : public RenderObject
@@ -66,20 +64,29 @@ public:
 	bool IsCompose() const;
 	const gl::Combos BaseCombos() const {return m_basecombos;};
 
+	gl::GLFramebuffer* CurFbo();
+	gl::GLFramebuffer* TargetFbo();
+	void SwitchFbo();
+
 private:
 	void GenBaseCombos();
 
-	std::vector<int> size_;
-    Material m_material;
+	Material m_material;
 	std::vector<Effect> effects_;
-	std::unique_ptr<gl::GLFramebuffer> fbo_;
+
+	gl::Combos m_basecombos;
 	gl::Shadervalues shadervalues_;
+	gl::VerticeArray m_verticesDefault;
+
+	gl::GLFramebuffer* m_curFbo;
+	std::unique_ptr<gl::GLFramebuffer> m_fbo1;
+	std::unique_ptr<gl::GLFramebuffer> m_fbo2;
+
+	std::vector<int> size_;
 	bool autosize_ = false;
 	bool copybackground_ = false;
 	float alpha_ = 1.0f;
 	std::vector<float> color_ = {1.0f,1.0f,1.0f};
-    gl::VerticeArray m_verticesDefault;
-	gl::Combos m_basecombos;
 };
 
 class ParticleObject : public RenderObject
