@@ -31,7 +31,7 @@ private:
     static fs::file_node m_pkgfs;
 	std::string m_pkgPath;
     std::vector<std::unique_ptr<RenderObject>> m_objects;
-	WPRender wpRender_;
+	WPRender m_wpRender;
 
 	bool m_inited = false;
 	bool m_loaded = false;

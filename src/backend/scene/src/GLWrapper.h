@@ -117,7 +117,9 @@ public:
 	void BindTexture(GLTexture *tex);
 	void BindProgram(GLProgram *program);
 	void BindFramebuffer(GLFramebuffer* fbo);
+	void BindFramebufferViewport(GLFramebuffer* fbo);
 	void BindDefaultFramebuffer();
+	void BindFramebufferTex(GLFramebuffer* fbo);
 	void DeleteBuffer(GLBuffer* buffer);
 	void DeleteTexture(GLTexture* texture);
 	void DeleteShader(GLShader* shader);
@@ -134,6 +136,7 @@ public:
 	void SetUniform(GLProgram* program, GLUniform* uniform, const void* value);
 private:
 	std::unordered_map<int, int> uniformCount_;	
+	GLFramebuffer* m_curFbo;
 };
 }
 }

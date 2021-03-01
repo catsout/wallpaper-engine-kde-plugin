@@ -90,14 +90,12 @@ void Effect::Render(WPRender& wpRender) {
 	for(auto& m:materials_) {
 		bool switchFbo = false;
 		if(m.target == "default") {
-			wpRender.glWrapper.BindFramebuffer(imgObject_.TargetFbo());
-			wpRender.glWrapper.Viewport(0,0,size_[0], size_[1]);
+			wpRender.glWrapper.BindFramebufferViewport(imgObject_.TargetFbo());
 			switchFbo = true;
 		}
 		else {
 			FboData& targetFboData = fboDataMap_.at(m.target);
-			wpRender.glWrapper.BindFramebuffer(targetFboData.fbo.get());
-			wpRender.glWrapper.Viewport(0,0,size_[0]/targetFboData.scale, size_[1]/targetFboData.scale);
+			wpRender.glWrapper.BindFramebufferViewport(targetFboData.fbo.get());
 		}
 		wpRender.Clear(0.0f);
 

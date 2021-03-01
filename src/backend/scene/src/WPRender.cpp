@@ -38,8 +38,7 @@ void WPRender::UseGlobalFbo() {
 }
 
 void WPRender::UseGlobalFbo(const gl::Shadervalues& shadervalues) {
-	glWrapper.BindFramebuffer(fbo_.get());
-	glWrapper.Viewport(0, 0, fbo_->width, fbo_->height);
+	glWrapper.BindFramebufferViewport(fbo_.get());
 	shaderMgr.BindShader("displayFbo");
 	shaderMgr.UpdateUniforms("displayFbo", shadervalues);
 }

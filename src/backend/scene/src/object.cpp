@@ -193,8 +193,7 @@ void ImageObject::Render(WPRender& wpRender)
 {
 	m_curFbo = m_fbo1.get();
 
-	wpRender.glWrapper.BindFramebuffer(m_curFbo);
-	wpRender.glWrapper.Viewport(0,0,size_[0], size_[1]);
+	wpRender.glWrapper.BindFramebufferViewport(m_curFbo);
 
 	if(copybackground_)	{
 		wpRender.Clear(0.0f);

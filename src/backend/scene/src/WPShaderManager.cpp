@@ -214,19 +214,23 @@ std::string PreShaderSrc(GLenum shader_type, const std::string& src, Combos& com
 	std::string include;
     std::string line;
     std::istringstream content(src);
+	size_t last_var_pos = 0;
 	
     while(std::getline(content,line))
     {
-		if(line.find("#include") != std::string::npos){
+		bool update_pos = false;
+		if(line.find("#include") != std::string::npos) {
 			include.append(line + "\n");
 			line = "";
 		}
-        else if(line.find("attribute ") != std::string::npos)
+        else if(line.find("attribute ") != std::string::npos) {
             line = "in" + line.substr(sizeof("attribute")-1);
-
-        else if(line.find("varying ") != std::string::npos)
+			update_pos = true;
+		}
+        else if(line.find("varying ") != std::string::npos) {
             line = (shader_type==GL_FRAGMENT_SHADER?"in":"out") + line.substr(sizeof("varying")-1);
-
+			update_pos = true;
+		}
 		else if(line.find("// [COMBO]") != std::string::npos) {
 			auto combo_json = json::parse(line.substr(line.find_first_of('{')));
 			if(combo_json.contains("combo")) {
@@ -236,28 +240,32 @@ std::string PreShaderSrc(GLenum shader_type, const std::string& src, Combos& com
 				line = "";
 			}
 		}
-
-		else if(line.find("// {") != std::string::npos) {
-			auto sv_json = json::parse(line.substr(line.find_first_of('{')));
-			std::vector<std::string> defines = wp::SpliteString(line.substr(0, line.find_first_of(';')), " ");
-			Shadervalue sv;	
-			sv.material = sv_json.at("material");
-			sv.glname = defines.back();
-			if(sv.glname[0] != 'g')
-				LOG_INFO("PreShaderSrc User shadervalue not supported");
-			if(sv_json.contains("default")){
-				auto value = sv_json.at("default");
-				if(value.is_string())
-					Shadervalue::SetValue(sv, value);
-				if(value.is_number())
-					sv.value = std::vector<float>({value.get<float>()});
+		else if(line.find("uniform ") != std::string::npos) {
+			update_pos = true;
+			if(line.find("// {") != std::string::npos) {
+				auto sv_json = json::parse(line.substr(line.find_first_of('{')));
+				std::vector<std::string> defines = wp::SpliteString(line.substr(0, line.find_first_of(';')), " ");
+				Shadervalue sv;	
+				sv.material = sv_json.at("material");
+				sv.glname = defines.back();
+				if(sv.glname[0] != 'g')
+					LOG_INFO("PreShaderSrc User shadervalue not supported");
+				if(sv_json.contains("default")){
+					auto value = sv_json.at("default");
+					if(value.is_string())
+						Shadervalue::SetValue(sv, value);
+					if(value.is_number())
+						sv.value = std::vector<float>({value.get<float>()});
+				}
+				shadervalues[sv.glname] = sv;
 			}
-			shadervalues[sv.glname] = sv;
 		}
         new_src += line + '\n';
+		if(update_pos)
+			last_var_pos = new_src.size();
 	}
 	LoadShaderWithInclude(include);
-    new_src.insert(new_src.find("void main()"), include);
+    new_src.insert(last_var_pos, include);
 	return new_src;
 }
 

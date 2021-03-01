@@ -10,6 +10,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include "GLWrapper.h"
 #include "WPTextureCache.h"
+#include "WPShaderPreprocessor.h"
 
 namespace wallpaper
 {
@@ -137,6 +138,7 @@ public:
 	static const std::string pre_shader_code;
 private:
 	Shader* CreateShader_(const std::string& name, GLuint stage, const std::string& source);
+	
 
 	GLWrapper* glWrapper_;
 	typedef std::unordered_map<std::string, std::unique_ptr<LinkedShader>> LinkedShaderCache;

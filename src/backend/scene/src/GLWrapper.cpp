@@ -161,6 +161,15 @@ void GLWrapper::BindFramebuffer(GLFramebuffer* fbo) {
 	CHECK_GL_ERROR_IF_DEBUG();
 }
 
+void GLWrapper::BindFramebufferViewport(GLFramebuffer* fbo) {
+	BindFramebuffer(fbo);
+	Viewport(0,0, fbo->width, fbo->height);
+}
+
+void GLWrapper::BindFramebufferTex(GLFramebuffer* fbo) {
+	BindTexture(&fbo->color_texture);
+}
+
 void GLWrapper::BindDefaultFramebuffer() {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	CHECK_GL_ERROR_IF_DEBUG();
