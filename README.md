@@ -1,5 +1,5 @@
 ## Wallpaper Engine for Kde
-A wallpaper plgin integrating [wallpaper engine](https://store.steampowered.com/app/431960/Wallpaper_Engine) into kde wallpaper setting.  
+A wallpaper plugin integrating [wallpaper engine](https://store.steampowered.com/app/431960/Wallpaper_Engine) into kde wallpaper setting.  
 It's simple and small.  
 
 ### Warning for scene support
