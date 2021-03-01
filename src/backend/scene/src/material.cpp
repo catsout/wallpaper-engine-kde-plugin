@@ -49,6 +49,8 @@ void wp::Material::Load(WPRender& wpRender) {
 			std::string glname = gl::Shadervalue::FindShadervalue(shadervalues_, c.key());
 			if(!glname.empty()) {
 				auto& sv = shadervalues_[glname];
+				if(c.value().contains("value"))
+					c.value() = c.value().at("value");
 				if(c.value().is_string())
 					gl::Shadervalue::SetValue(sv, c.value());
 				else if(c.value().is_number())
@@ -74,9 +76,19 @@ void wp::Material::Load(WPRender& wpRender) {
 			sv_resolutions.push_back(gl::Shadervalue());
 			sv_resolutions.back().glname = sv_resolution;
 
-			if(texture.empty() || texture.compare(0,4,"_rt_") == 0) {
+			if(texture.empty()) {
 				std::vector<int> re = {size_[0],size_[1],size_[0],size_[1]};
 				sv_resolutions.back().value = std::vector<float>(re.begin(),re.end());
+				continue;
+			}else if(texture.compare(0, 4, "_rt_") == 0) {
+				std::vector<int> re_i = {size_[0],size_[1],size_[0],size_[1]};
+				std::vector<float> re(re_i.begin(), re_i.end());
+				if(texture.compare(4, 14, "FullFrameBuffer") == 0) {
+					const auto& ortho = wpRender.shaderMgr.globalUniforms.Ortho();
+					std::vector<float> ortho_f(ortho.begin(), ortho.end());
+					re = std::vector<float>({ortho_f[0], ortho_f[1], ortho_f[0], ortho_f[1]});
+				}
+				sv_resolutions.back().value = re;
 				continue;
 			}
 			gl::Texture* tex = wpRender.texCache.LoadTexture(texture);

@@ -151,9 +151,8 @@ void ImageObject::Load(WPRender& wpRender)
 	gl::Shadervalue::SetShadervalues(shadervalues_, "fboTrans", modelviewpro_mat);
 
 	// material shadervalues
+	model_mat = glm::mat4(1.0f);
 	if(m_material.GetShadervalues().count("g_Texture0Resolution") != 0) {
-		model_mat = glm::mat4(1.0f);
-
 		// remove black edge
 		auto& sv = m_material.GetShadervalues().at("g_Texture0Resolution");
 		if(sv.value[0] != sv.value[2] || sv.value[1] != sv.value[3]) {
@@ -161,18 +160,17 @@ void ImageObject::Load(WPRender& wpRender)
 			model_mat = glm::scale(model_mat, glm::vec3(sv.value[0]/sv.value[2], sv.value[1]/sv.value[3], 1.0f));
 			model_mat = glm::translate(model_mat, glm::vec3(size_[0]/2.0f,size_[1]/2.0f,0.0f));
 		}
-
-		if(IsCompose()) {
-			// compose need to know wordcoord and use global ViewProjectionMatrix
-			// this is ok for fullscreen as ori at (0,0,0)
-			model_mat = glm::translate(glm::mat4(1.0f), glm::vec3(ori[0], ori[1], ori[2])) * model_mat;
-		} else {
-			model_mat = glm::translate(glm::mat4(1.0f), glm::vec3(size_[0]/2.0f, size_[1]/2.0f, 0.0f)) * model_mat;
-			viewpro_mat = glm::ortho(0.0f, (float)size_[0], 0.0f, (float)size_[1], -100.0f, 100.0f);
-		}
-		modelviewpro_mat = viewpro_mat * model_mat;
-		gl::Shadervalue::SetShadervalues(m_material.GetShadervalues(), "g_ModelViewProjectionMatrix", modelviewpro_mat);
 	}
+	if(IsCompose()) {
+		// compose need to know wordcoord and use global ViewProjectionMatrix
+		// this is ok for fullscreen as ori at (0,0,0)
+		model_mat = glm::translate(glm::mat4(1.0f), glm::vec3(ori[0], ori[1], ori[2])) * model_mat;
+	} else {
+		model_mat = glm::translate(glm::mat4(1.0f), glm::vec3(size_[0]/2.0f, size_[1]/2.0f, 0.0f)) * model_mat;
+		viewpro_mat = glm::ortho(0.0f, (float)size_[0], 0.0f, (float)size_[1], -100.0f, 100.0f);
+	}
+	modelviewpro_mat = viewpro_mat * model_mat;
+	gl::Shadervalue::SetShadervalues(m_material.GetShadervalues(), "g_ModelViewProjectionMatrix", modelviewpro_mat);
 	gl::Shadervalue::SetShadervalues(m_material.GetShadervalues(), "g_UserAlpha", std::vector<float>({m_alpha}));
 	gl::Shadervalue::SetShadervalues(m_material.GetShadervalues(), "g_Brightness", std::vector<float>({m_brightness}));
 	gl::Shadervalue::SetShadervalues(m_material.GetShadervalues(), "g_Alpha", std::vector<float>({m_alpha}));

@@ -91,6 +91,7 @@ GLFramebuffer* GLWrapper::CreateFramebuffer(int width, int height) {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glBindTexture(GL_TEXTURE_2D, 0);
 	CHECK_GL_ERROR_IF_DEBUG();
+	m_curFbo = nullptr;
 	return fbo;
 }
 
@@ -159,6 +160,7 @@ void GLWrapper::BindProgram(GLProgram *program) {
 void GLWrapper::BindFramebuffer(GLFramebuffer* fbo) {
 	glBindFramebuffer(GL_FRAMEBUFFER, fbo->framebuffer);
 	CHECK_GL_ERROR_IF_DEBUG();
+	m_curFbo = fbo;
 }
 
 void GLWrapper::BindFramebufferViewport(GLFramebuffer* fbo) {
@@ -349,6 +351,10 @@ void GLWrapper::SetUniform(GLProgram* program, GLUniform* uniform,const void* va
 		SetUniformMat4(loc, static_cast<const float*>(value));
         break;
     }   
+}
+
+GLFramebuffer* GLWrapper::GetNowFramebuffer() {
+	return m_curFbo;
 }
 
 GLWrapper::GLWrapper() {

@@ -134,6 +134,8 @@ public:
 	void SetUniformI(GLint loc, int count, const int *udata);
 	void SetUniformMat4(GLint loc, const float *udata);
 	void SetUniform(GLProgram* program, GLUniform* uniform, const void* value);
+
+	GLFramebuffer* GetNowFramebuffer();
 private:
 	std::unordered_map<int, int> uniformCount_;	
 	GLFramebuffer* m_curFbo;

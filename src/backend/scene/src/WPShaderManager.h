@@ -10,7 +10,6 @@
 #include <glm/gtc/type_ptr.hpp>
 #include "GLWrapper.h"
 #include "WPTextureCache.h"
-#include "WPShaderPreprocessor.h"
 
 namespace wallpaper
 {
