@@ -19,19 +19,22 @@ namespace wallpaper {
 	template<> inline
 	bool wallpaper::GetJsonValue<std::vector<float>>(const nlohmann::json& json, std::vector<float>& value) {
 		std::string strvalue;
-		if(json.contains("value") && json.contains("user")) 
+		if(json.contains("value")) 
 			strvalue = json.at("value").get<std::string>();
 		else strvalue = json.get<std::string>();
 		return StringToVec<float>(strvalue, value);
 	}
 
 	template <typename T>
-	bool GetJsonValue(const char* func, int line, const nlohmann::json& json, T& value) {
+	bool GetJsonValue(const char* func, int line, const nlohmann::json& json, T& value, const char* name = nullptr) {
 		using njson = nlohmann::json;
+		std::string nameinfo;
+		if(name != nullptr) 
+			nameinfo = std::string("(key: ") + name + ")";
 		try {
 			return GetJsonValue<T>(json, value);
 		} catch(njson::type_error& e) {
-			Logger::Log(func, line, "Error read json at: ", e.what());
+			Logger::Log(func, line, "Error read json at: ", e.what() + nameinfo);
 		}
 		return false; 
 	}
@@ -43,6 +46,6 @@ namespace wallpaper {
 				Logger::Log(func, line, "Warning read json: ", name + " not a key");
 			return false;
 		}
-		return GetJsonValue<T>(func, line, json.at(name), value);
+		return GetJsonValue<T>(func, line, json.at(name), value, name.c_str());
 	}
 }
