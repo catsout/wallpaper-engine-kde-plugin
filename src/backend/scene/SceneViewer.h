@@ -9,6 +9,7 @@ class SceneViewer : public QQuickFramebufferObject
     Q_OBJECT
 	Q_PROPERTY(QUrl source READ source WRITE setSource NOTIFY sourceChanged)
 	Q_PROPERTY(QUrl assets READ assets WRITE setAssets)
+	Q_PROPERTY(bool keepAspect READ keepAspect WRITE setKeepAspect NOTIFY keepAspectChanged)
 
     friend class SceneRenderer;
 
@@ -19,9 +20,11 @@ public:
 
 	QUrl source() const;
 	QUrl assets() const;
+	bool keepAspect() const;
 
 	void setSource(const QUrl& source);
 	void setAssets(const QUrl& assets);
+	void setKeepAspect(bool);
 
 public slots:
 	void play();
@@ -29,8 +32,10 @@ public slots:
 
 signals:
 	void sourceChanged();
+	void keepAspectChanged();
 private:
 	QUrl m_source;
 	QUrl m_assets;
     QTimer m_updateTimer;
+	bool m_keepAspect = false;
 };

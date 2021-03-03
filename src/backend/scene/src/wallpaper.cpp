@@ -10,8 +10,19 @@ file_node wallpaper::WallpaperGL::m_pkgfs = file_node();
 int WallpaperGL::m_objnum = -1;
 int WallpaperGL::m_effnum = -1;
 
+glm::mat4 GetAspectScaleMatrix(int width, int height, float aspect) {
+	float fw = (float)width;
+	float fh = (float)height;
+	glm::mat4 result(1.0f);
+	if(aspect*height > width) {
+		result = glm::scale(result, glm::vec3(1.0f, (fw/aspect)/fh, 1.0f));	
+	}else {
+		result = glm::scale(result, glm::vec3((fh*aspect)/fw, 1.0f, 1.0f));	
+	}
+	return result;
+}
+
 bool WallpaperGL::Init(void *get_proc_address(const char *)) {
-//	if(m_inited) return true;
 	LOG_INFO("Init opengl");
 	m_inited = m_wpRender.Init(get_proc_address);
 	return m_inited;
@@ -51,13 +62,15 @@ void WallpaperGL::Load(const std::string& pkg_path) {
 	if(!StringToVec<float>(general_json.at("clearcolor"), clearcolor)) return;
 	m_wpRender.SetClearcolor(clearcolor);
 
-	auto& ortho = general_json.at("orthogonalprojection");
-	m_wpRender.shaderMgr.globalUniforms.SetOrtho(ortho.at("width"), ortho.at("height"));
-	m_wpRender.CreateGlobalFbo(ortho.at("width"), ortho.at("height"));
+	auto& ortho_j = general_json.at("orthogonalprojection");
+	std::vector<int> ortho({ortho_j.at("width"), ortho_j.at("height")});
+	m_wpRender.shaderMgr.globalUniforms.SetOrtho(ortho.at(0), ortho.at(1));
+	m_wpRender.CreateGlobalFbo(ortho.at(0), ortho.at(1));
+	
+	if(m_flip)
+		m_fboTrans = glm::rotate(glm::mat4(1.0f), glm::radians(180.0f), glm::vec3(1.0f,0,0));
+	gl::Shadervalue::SetShadervalues(m_shadervalues, "fboTrans", m_fboTrans);
 
-	if(m_flip) {
-		gl::Shadervalue::SetShadervalues(m_shadervalues, "fboTrans", glm::rotate(glm::mat4(1.0f), glm::radians(180.0f), glm::vec3(1.0f,0,0)));
-	}
 	m_vertices = gl::VerticeArray::GenDefault(&m_wpRender.glWrapper);
 	m_vertices.Update();
 
@@ -112,6 +125,15 @@ void WallpaperGL::Render(uint fbo, int width, int height) {
 		if(!iter->Visible()) continue;
         iter->Render(m_wpRender);
 	}
+
+	glm::mat4 fboTrans(1.0f);
+	if(m_keepAspect) {
+		const auto& ortho = m_wpRender.shaderMgr.globalUniforms.Ortho();
+		float aspect = (float)ortho.at(0) / (float)ortho.at(1);
+		fboTrans = GetAspectScaleMatrix(defaultFbo.width, defaultFbo.height, aspect);
+	}
+	gl::Shadervalue::SetShadervalues(m_shadervalues, "fboTrans", fboTrans * m_fboTrans);
+
 
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	m_wpRender.glWrapper.BindFramebufferViewport(&defaultFbo);

@@ -25,6 +25,6 @@ int main(int argc, char **argv)
 	SceneViewer *sv = obj->findChild<SceneViewer *>();
 	sv->setProperty("assets", QUrl::fromLocalFile(argv[1]));
 	sv->setProperty("source", QUrl::fromLocalFile(argv[2]));
-
+	sv->setProperty("keepAspect", true);
     return app.exec();
 }

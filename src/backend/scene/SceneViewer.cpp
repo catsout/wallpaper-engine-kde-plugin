@@ -46,8 +46,15 @@ public:
     }
 
 	void synchronize(QQuickFramebufferObject *item) {
+		bool needUpdate = false;
+
 		if(!framebufferObject()) {
 			m_wgl.Init(get_proc_address);
+		}
+		if(m_keepAspect != m_viewer->keepAspect()) {
+			m_keepAspect = m_viewer->keepAspect();
+			m_wgl.SetKeepAspect(m_keepAspect);
+			needUpdate = true;
 		}
 		if(m_source != m_viewer->source() && !m_viewer->assets().isEmpty()) {
 			auto assets = QDir::toNativeSeparators(m_viewer->assets().toLocalFile()).toStdString();
@@ -56,6 +63,9 @@ public:
 			m_source = m_viewer->source();
 			auto source = QDir::toNativeSeparators(m_source.toLocalFile()).toStdString();
 			m_wgl.Load(source);
+			needUpdate = true;
+		}
+		if(needUpdate) {
 			m_viewer->window()->resetOpenGLState();
 			m_viewer->update();
 		}
@@ -70,6 +80,7 @@ private:
 	SceneViewer* m_viewer;
 	QUrl m_source;
 	wallpaper::WallpaperGL m_wgl;
+	bool m_keepAspect;
 };
 
 SceneViewer::SceneViewer(QQuickItem * parent)
@@ -95,6 +106,8 @@ QUrl SceneViewer::source() const { return m_source; }
 
 QUrl SceneViewer::assets() const { return m_assets; }
 
+bool SceneViewer::keepAspect() const { return m_keepAspect; }
+
 void SceneViewer::setSource(const QUrl& source) {
 	if(source == m_source) return;
 	m_source = source;
@@ -105,6 +118,13 @@ void SceneViewer::setSource(const QUrl& source) {
 void SceneViewer::setAssets(const QUrl& assets) {
 	if(m_assets == assets) return;
 	m_assets = assets;
+};
+
+void SceneViewer::setKeepAspect(bool value) {
+	if(m_keepAspect == value) return;
+	m_keepAspect = value;
+	update();
+	Q_EMIT keepAspectChanged();
 };
 
 void SceneViewer::play() {
