@@ -2,14 +2,11 @@
 A wallpaper plugin integrating [wallpaper engine](https://store.steampowered.com/app/431960/Wallpaper_Engine) into kde wallpaper setting.  
 It's simple and small.  
 
-### Warning for scene support
-Scene support is unstable, may easily crash your kde.   
-Backup your `~/.config/plasma-org.kde.plasma.desktop-appletsrc` file, before using scene wallpaper.  
-And restore it when scene wallpaper break your kde.  
-
 ### Known issue
 - With web type, desktop right click not work.  
   Need hold leftclick on the desktop to get `Configure Desktop and Wallpaper` 
+- Some case scene wallpaper may crash your kde.  
+  Remove `WallpaperFilePath` line in `~/.config/plasma-org.kde.plasma.desktop-appletsrc` and restart kde to fix.  
 
 ### Note
 - Support **scene(2d)**,**video**,**web** types
