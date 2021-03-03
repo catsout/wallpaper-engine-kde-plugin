@@ -72,13 +72,10 @@ Item {
     }
 
     function updateWindowsinfo(modePlay) {
-        //0 for maxizied
-        //1 for any
-        //3 for never
-        if(modePlay === 1) {
+        if(modePlay === Common.PauseMode.Any) {
             playVideoWallpaper = (onlyWindowsModel.count === minimizedWindowModel.count) ? true : false;
         }
-        else if(modePlay === 2) {
+        else if(modePlay === Common.PauseMode.Never) {
             playVideoWallpaper = true;
         }
         else {

@@ -1,10 +1,21 @@
 import QtQuick 2.5
 import com.github.catsout.wallpaperEngineKde 1.0
+import ".."
 
 Item{
     id: videoItem
     anchors.fill: parent
     property real volume: 0
+    property int displayMode: background.displayMode
+    
+    onDisplayModeChanged: {
+        var value = -1;
+        if(displayMode == Common.DisplayMode.Scale)
+            value = "no";
+        else if(displayMode == Common.DisplayMode.Aspect)
+            value = -1;
+        player.setProperty("video-aspect-override", value);
+    }
 
     // logfile
     // source
@@ -21,7 +32,6 @@ Item{
     Component.onCompleted:{
         background.nowBackend = "mpv";
     }   
-
 
     function play(){
         // stop pause time to avoid quick switch which cause keep pause 

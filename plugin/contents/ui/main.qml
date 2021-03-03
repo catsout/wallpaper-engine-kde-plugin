@@ -10,6 +10,7 @@ Rectangle {
     property string type: wallpaper.configuration.WallpaperType
     property string source: wallpaper.configuration.WallpaperFilePath
     property bool mute: wallpaper.configuration.MuteAudio
+    property bool displayMode: wallpaper.configuration.DisplayMode
     property bool useMpv: wallpaper.configuration.UseMpv
     
     property string nowBackend: ""

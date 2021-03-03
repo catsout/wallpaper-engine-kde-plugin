@@ -12,6 +12,7 @@ import Qt.labs.folderlistmodel 2.12
 
 import "checker.js" as Checker
 
+
 ColumnLayout {
     id: root
     Layout.alignment: Qt.AlignCenter
@@ -21,8 +22,8 @@ ColumnLayout {
     property string cfg_WallpaperFilePath
     property string cfg_WallpaperType
     property string cfg_BackgroundColor: "black"
-    property int  cfg_FillMode: 2
-    property int  cfg_PauseMode: 0
+    property int  cfg_DisplayMode: Common.DisplayMode.Aspect
+    property int  cfg_PauseMode: Common.PauseMode.Never
     property bool cfg_MuteAudio: true
     property bool cfg_UseMpv: false
 
@@ -32,7 +33,7 @@ ColumnLayout {
         Layout.topMargin: 10.0
 
         Label {
-            text: "Pause Mode:"
+            text: "Pause:"
             Layout.alignment: Qt.AlignLeft 
         }
         
@@ -40,18 +41,45 @@ ColumnLayout {
             id: pauseMode
             model: [
                 {
-                    'label': "Maximied Window",
+                    text: "Maximied Window",
+                    value: Common.PauseMode.Max
                 },
                 {
-                    'label': "Any Window",
+                    text: "Any Window",
+                    value: Common.PauseMode.Any
                 },
                 {
-                    'label': "Never Pause",
+                    text: "Never Pause",
+                    value: Common.PauseMode.Never
                 }
             ]
-            textRole: "label"
-            currentIndex: cfg_PauseMode
-            onCurrentIndexChanged: cfg_PauseMode = pauseMode.currentIndex
+            textRole: "text"
+            valueRole: "value"
+            onActivated: cfg_PauseMode = currentValue
+            Component.onCompleted: currentIndex = indexOfValue(cfg_PauseMode)
+        }
+
+        Label {
+            text: "Display:"
+            Layout.alignment: Qt.AlignLeft 
+        }
+        
+        ComboBox {
+            id: displayMode
+            model: [
+                {
+                    text: "Keep aspect radio",
+                    value: Common.DisplayMode.Aspect
+                },
+                {
+                    text: "Scale to fill",
+                    value: Common.DisplayMode.Scale
+                },
+            ]
+            textRole: "text"
+            valueRole: "value"
+            onActivated: cfg_DisplayMode = currentValue
+            Component.onCompleted: currentIndex = indexOfValue(cfg_DisplayMode)
         }
         
     }

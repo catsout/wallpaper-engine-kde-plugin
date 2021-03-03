@@ -26,8 +26,8 @@
       <label>Last folder used</label>
       <default>black</default>
     </entry>
-    <entry name="FillMode" type="int">
-      <label>Video fill mode</label>
+    <entry name="DisplayMode" type="int">
+      <label>Video display mode</label>
       <default>2</default>
     </entry>
 	<entry name="PauseMode" type="int">

@@ -1,9 +1,20 @@
 import QtQuick 2.5
 import QtMultimedia 5.13
+import ".."
+
 Item{
     id: videoItem
     anchors.fill: parent
     property real volume: 0.0
+    property int displayMode: background.displayMode
+
+    onDisplayModeChanged: {
+        if(displayMode == Common.DisplayMode.Scale)
+            videoView.fillMode = VideoOutput.Stretch;
+        else if(displayMode == Common.DisplayMode.Aspect)
+            videoView.fillMode = VideoOutput.PreserveAspectFit;
+    }
+
     VideoOutput {
         id: videoView
         //fillMode: wallpaper.configuration.FillMode
