@@ -90,6 +90,8 @@ void WallpaperGL::Load(const std::string& pkg_path) {
 		LOG_INFO("\n-----Loading object: " + iter->Name() + "-----");
         iter->Load(m_wpRender);
 	}
+	// clean useless shadercache
+	m_wpRender.shaderMgr.ClearShaderCache();
 	// clear for first frame
 	m_wpRender.shaderMgr.globalUniforms.ClearCache();
 	m_loaded = true;

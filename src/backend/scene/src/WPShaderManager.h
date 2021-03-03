@@ -133,6 +133,7 @@ public:
 	void UpdateUniforms(const std::string& name, const Shadervalues& shadervalues);
 	void SetTextures(const std::string& name, Shadervalues& shadervalues);
 	void ClearCache();
+	void ClearShaderCache();
 	GlobalUniform globalUniforms;
 	static const std::string pre_shader_code;
 private:

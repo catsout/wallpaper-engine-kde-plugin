@@ -422,6 +422,10 @@ void WPShaderManager::ClearCache() {
 	linkedCache_.clear();
 }
 
+void WPShaderManager::ClearShaderCache() {
+	shaderCache_.clear();
+}
+
 
 const std::string WPShaderManager::pre_shader_code = "#version 330\n"
                                               "#define highp\n"
