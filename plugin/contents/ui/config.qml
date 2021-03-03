@@ -60,6 +60,12 @@ ColumnLayout {
         }
 
         Label {
+            text: "|"
+            Layout.alignment: Qt.AlignLeft 
+        }
+ 
+
+        Label {
             text: "Display:"
             Layout.alignment: Qt.AlignLeft 
         }
