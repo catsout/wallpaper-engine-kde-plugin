@@ -130,8 +130,8 @@ void* GlobalUniform::ModelMatrixInverse() {
 }
 
 void* GlobalUniform::ViewProjectionMatrix() {
-	auto view = glm::mat4(1.0f);
-//	auto view = glm::lookAt(camera_.eye, camera_.center, camera_.up);
+//	auto view = glm::mat4(1.0f);
+	auto view = glm::lookAt(glm::vec3(0, 0, 0), glm::vec3(0, 0, -1), camera_.up);
 	viewProjectionMatrix_ = glm::ortho(0.0f, (float)ortho_[0], 0.0f, (float)ortho_[1], -100.0f, 100.0f)*view;
 	return glm::value_ptr(viewProjectionMatrix_);
 }

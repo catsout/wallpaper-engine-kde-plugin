@@ -27,6 +27,7 @@ void checkGlError(const char* file, const char* func, int line);
 class Logger {
 public:
 	static void Log(const char* func, int line, const char* prefix, const std::string& text);
+	static void Log(const char* func, int line, const char* prefix, const char* text);
 };
 
 

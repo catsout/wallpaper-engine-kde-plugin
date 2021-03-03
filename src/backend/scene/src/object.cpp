@@ -20,8 +20,7 @@ using namespace wallpaper;
 
 std::unique_ptr<RenderObject> wallpaper::CreateObject(const json& obj_json) {
 	std::string name;
-	if(obj_json.contains("name") && obj_json.at("name").is_string())
-		name = obj_json.at("name");
+	GET_JSON_NAME_VALUE(obj_json, "name", name);
 
     if(obj_json.contains("image") && !obj_json.at("image").is_null()) {
         auto obj = std::make_unique<ImageObject>();
@@ -37,18 +36,17 @@ std::unique_ptr<RenderObject> wallpaper::CreateObject(const json& obj_json) {
 
 bool wallpaper::RenderObject::From_json(const json& obj)
 {
-	if(!obj.contains("name")) return false;
-    m_name = obj.at("name");
-	if(obj.contains("origin") && obj.at("origin").is_string())
-		if(!StringToVec<float>(obj.at("origin"), m_origin)) return false;
+	if(!GET_JSON_NAME_VALUE(obj, "name", m_name))
+		return false;
 
-	if(obj.contains("scale") && obj.at("scale").is_string())
-		if(!StringToVec<float>(obj.at("scale"), m_scale)) return false;
+	GET_JSON_NAME_VALUE(obj, "origin", m_origin);
 
-	if(obj.contains("angles") && obj.at("angles").is_string())
-		if(!StringToVec<float>(obj.at("angles"), m_angles)) return false;
+	GET_JSON_NAME_VALUE(obj, "scale", m_scale);
 
-    if(obj.contains("visible") && obj.at("visible").is_boolean()) m_visible = obj.at("visible");
+	GET_JSON_NAME_VALUE(obj, "angles", m_angles);
+
+	GET_JSON_NAME_VALUE_NOWARN(obj, "visible", m_visible);
+
     return true;
 }
 
@@ -65,21 +63,15 @@ bool ImageObject::From_json(const json& obj)
 		if(!StringToVec<float>(obj.at("size"), fsize)) return false;
 		size_ = std::vector<int>(fsize.begin(), fsize.end());
 	}
-	if(obj.contains("copybackground"))
-		copybackground_ = obj.at("copybackground");
+	GET_JSON_NAME_VALUE_NOWARN(obj, "copybackground", m_copybackground);
 
-	if(obj.contains("brightness") && obj.at("brightness").is_number())
-		m_brightness = obj.at("brightness");
+	GET_JSON_NAME_VALUE_NOWARN(obj, "brightness", m_brightness);
 
-	if(obj.contains("colorBlendMode"))
-		m_blendmode = obj.at("colorBlendMode");
+	GET_JSON_NAME_VALUE_NOWARN(obj, "colorBlendMode", m_blendmode);
 
+	GET_JSON_NAME_VALUE_NOWARN(obj, "alpha", m_alpha);
 
-	if(obj.contains("alpha") && obj.at("alpha").is_number())
-		m_alpha = obj.at("alpha");
-
-	if(obj.contains("color") && obj.at("color").is_string())
-		if(!StringToVec<float>(obj.at("color"), m_color)) return false;
+	GET_JSON_NAME_VALUE_NOWARN(obj, "color", m_color);
 
     std::string image_str = fs::GetContent(WallpaperGL::GetPkgfs(), obj.at("image"));
     /*
@@ -89,6 +81,7 @@ bool ImageObject::From_json(const json& obj)
     }
     */
     auto image = json::parse(image_str);
+
     if(!image.contains("material")) return false;
 	if(!obj.contains("size")) {
 		if(image.contains("width")) {
@@ -101,9 +94,8 @@ bool ImageObject::From_json(const json& obj)
 		else return false;
 	}
 		
-	if(image.contains("autosize"))
-		autosize_ = image.at("autosize").get<bool>();
-	// gen combos before material and effect
+	GET_JSON_NAME_VALUE_NOWARN(obj, "autosize", m_autosize);
+
 	GenBaseCombos();
 
     std::string material_str = fs::GetContent(WallpaperGL::GetPkgfs(), image.at("material"));
@@ -196,7 +188,7 @@ void ImageObject::Render(WPRender& wpRender)
 
 	wpRender.glWrapper.BindFramebufferViewport(m_curFbo);
 
-	if(copybackground_ || m_fullscreen)	{
+	if(m_copybackground || m_fullscreen)	{
 		wpRender.Clear(0.0f);
 		if(IsCompose() || m_fullscreen) {
 			wpRender.glWrapper.ActiveTexture(0);

@@ -36,16 +36,16 @@ public:
 
 class Effect : public Renderable {
 public:
-    Effect(ImageObject& img,std::vector<int> size):imgObject_(img),size_(size),m_visible(true) {};
+    Effect(ImageObject& img,std::vector<int> size):m_imgObject(img),m_size(size),m_visible(true) {};
     ~Effect() {};
     Effect(const Effect&) = delete;
     Effect& operator=(const Effect&) = delete;
 
-    Effect(Effect&& o):imgObject_(o.imgObject_),
-		name_(o.name_),
-		size_(std::move(o.size_)),
-		materials_(std::move(o.materials_)),
-		fboDataMap_(std::move(o.fboDataMap_)) {};
+    Effect(Effect&& o):m_imgObject(o.m_imgObject),
+		m_name(o.m_name),
+		m_size(std::move(o.m_size)),
+		m_materials(std::move(o.m_materials)),
+		m_fboDataMap(std::move(o.m_fboDataMap)) {};
 
     bool From_json(const nlohmann::json&);
     void Load(WPRender&);
@@ -53,14 +53,14 @@ public:
 
 	bool Visible() const {return m_visible;};
 
-    const std::string& Name() {return name_;};
+    const std::string& Name() {return m_name;};
 private:
-    ImageObject& imgObject_;
-	std::string name_;
-	std::vector<int> size_;
-	std::vector<MaterialData> materials_;
-	std::unordered_map<std::string, FboData> fboDataMap_;
-    gl::VerticeArray vertices_;
+    ImageObject& m_imgObject;
+	std::string m_name;
+	std::vector<int> m_size;
+	std::vector<MaterialData> m_materials;
+	std::unordered_map<std::string, FboData> m_fboDataMap;
+    gl::VerticeArray m_vertices;
 	
 	bool m_visible;
 };

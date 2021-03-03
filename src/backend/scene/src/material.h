@@ -35,20 +35,20 @@ public:
     ~Material(){};
     void Load(WPRender&);
     void Render(WPRender&);
-	const std::string& GetShader() const {return shader_;};
-	const gl::Shadervalues& GetShadervalues() const {return shadervalues_;};
-	gl::Shadervalues& GetShadervalues() {return shadervalues_;};
-	void SetSize(const std::vector<int>& value) {size_ = value;};
+	const std::string& GetShader() const {return m_shader;};
+	const gl::Shadervalues& GetShadervalues() const {return m_shadervalues;};
+	gl::Shadervalues& GetShadervalues() {return m_shadervalues;};
+	void SetSize(const std::vector<int>& value) {m_size = value;};
 
 private:
-    RenderObject& object_;
-	std::vector<int> size_;
-    bool depthtest_;
-    std::string shader_;
+    RenderObject& m_object;
+	std::vector<int> m_size;
+    bool m_depthtest;
+    std::string m_shader;
     std::vector<std::string> textures_;
-	gl::Combos combos_;
-	std::string constShadervalues_;
-	gl::Shadervalues shadervalues_;
+	gl::Combos m_combos;
+	std::string m_constShadervalues;
+	gl::Shadervalues m_shadervalues;
 	std::vector<gl::GLTexture> glTextrues_;
 };
 

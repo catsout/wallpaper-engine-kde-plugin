@@ -11,6 +11,10 @@ void wp::gl::checkGlError(const char* file, const char* func, int line)
         std::cerr << "GL_ERROR: " << err << "  " << func << "  at: " << file << "  line: " << line << std::endl;
 }
 
+void wp::Logger::Log(const char* func, int line, const char* prefix, const char* text) {
+	Log(func, line, prefix, std::string(text));
+}
+
 void wp::Logger::Log(const char* func, int line, const char* prefix, const std::string& text) {
 	std::string linestr, prefixEnd;
 	if(line != -1)

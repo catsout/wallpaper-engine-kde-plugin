@@ -10,24 +10,27 @@ bool Effect::From_json(const nlohmann::json& effect_j) {
 	// effect code is at "file"
 	std::string file_src = fs::GetContent(pkgfs, effect_j.at("file"));
 	if(file_src.empty()) {
-		name_ = "unknown";
+		m_name = "unknown";
 		return false;
 	}
 	auto file_j = json::parse(file_src); 
-	name_ = file_j.at("name");	
 
-	if(effect_j.contains("visible") && effect_j.at("visible").is_boolean())
-		m_visible = effect_j.at("visible");
+	GET_JSON_NAME_VALUE(file_j, "name", m_name);
+
+	GET_JSON_NAME_VALUE_NOWARN(effect_j, "visible", m_visible);
 
 	// load fbos
 	if(file_j.contains("fbos")) {
 		auto& fbos = file_j.at("fbos");
 		for(auto& f:fbos) {
-			std::string name = f.at("name").get<std::string>();
-			float scale = f.at("scale");
-			fboDataMap_[name] = FboData(scale);
+			std::string name;
+			float scale = 1.0f;
+			GET_JSON_NAME_VALUE(f, "name", name);
+			GET_JSON_NAME_VALUE(f, "scale", scale);
+			m_fboDataMap[name] = FboData(scale);
 		}
 	}
+
 	// effect code must have passes, which contain material
 	if(!file_j.contains("passes")) return false;	
 	auto& file_passes_j = file_j.at("passes");
@@ -51,16 +54,16 @@ bool Effect::From_json(const nlohmann::json& effect_j) {
 			for(auto& el:material_pass_j.items())
 				content_j[el.key()] = el.value();
 		}
-		materials_.emplace_back((RenderObject&)imgObject_, size_);
-		auto& material = materials_.back();
+		m_materials.emplace_back((RenderObject&)m_imgObject, m_size);
+		auto& material = m_materials.back();
 		material.material.From_json(material_j);
 		//load bind
 		if(pass_j.contains("bind")) {
 			auto& binds_j = pass_j.at("bind");
 			for(auto& b:binds_j) {
 				BindInfo bi;
-				bi.name = b.at("name");
-				bi.index = b.at("index");
+				GET_JSON_NAME_VALUE(b, "name", bi.name);
+				GET_JSON_NAME_VALUE(b, "index", bi.index);
 				material.bindInfos.push_back(bi);
 			}
 		}
@@ -73,28 +76,28 @@ bool Effect::From_json(const nlohmann::json& effect_j) {
 
 void Effect::Load(WPRender& wpRender) {
 	auto modelviewpro_mat = glm::mat4(1.0f);
-	for(auto& f:fboDataMap_) {
+	for(auto& f:m_fboDataMap) {
 		float scale = f.second.scale;
-		f.second.fbo = std::unique_ptr<gl::GLFramebuffer>(wpRender.glWrapper.CreateFramebuffer(size_[0]/scale, size_[1]/scale));
+		f.second.fbo = std::unique_ptr<gl::GLFramebuffer>(wpRender.glWrapper.CreateFramebuffer(m_size[0]/scale, m_size[1]/scale));
 	}
-	for(auto& m:materials_) {
+	for(auto& m:m_materials) {
 		gl::Shadervalue::SetShadervalues(m.material.GetShadervalues(), "g_ModelViewProjectionMatrix", modelviewpro_mat);
 		m.material.Load(wpRender);
 	}
-	vertices_ = gl::VerticeArray::GenDefault(&wpRender.glWrapper);
-	vertices_.Update();
+	m_vertices = gl::VerticeArray::GenDefault(&wpRender.glWrapper);
+	m_vertices.Update();
 }
 		
 void Effect::Render(WPRender& wpRender) {
-	imgObject_.SetCurVertices(&vertices_);
-	for(auto& m:materials_) {
+	m_imgObject.SetCurVertices(&m_vertices);
+	for(auto& m:m_materials) {
 		bool switchFbo = false;
 		if(m.target == "default") {
-			wpRender.glWrapper.BindFramebufferViewport(imgObject_.TargetFbo());
+			wpRender.glWrapper.BindFramebufferViewport(m_imgObject.TargetFbo());
 			switchFbo = true;
 		}
 		else {
-			FboData& targetFboData = fboDataMap_.at(m.target);
+			FboData& targetFboData = m_fboDataMap.at(m.target);
 			wpRender.glWrapper.BindFramebufferViewport(targetFboData.fbo.get());
 		}
 		wpRender.Clear(0.0f);
@@ -102,12 +105,12 @@ void Effect::Render(WPRender& wpRender) {
 		for(auto& b:m.bindInfos) {
 			wpRender.glWrapper.ActiveTexture(b.index);
 			if(b.name == "previous")
-				wpRender.glWrapper.BindTexture(&(imgObject_.CurFbo())->color_texture);
+				wpRender.glWrapper.BindTexture(&(m_imgObject.CurFbo())->color_texture);
 			else
-				wpRender.glWrapper.BindTexture(&fboDataMap_.at(b.name).fbo->color_texture);
+				wpRender.glWrapper.BindTexture(&m_fboDataMap.at(b.name).fbo->color_texture);
 		}
 	    m.material.Render(wpRender);
 		if(switchFbo)	
-			imgObject_.SwitchFbo();
+			m_imgObject.SwitchFbo();
 	}
 }

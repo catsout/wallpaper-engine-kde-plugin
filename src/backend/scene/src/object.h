@@ -2,12 +2,12 @@
 #include <memory>
 #include <vector>
 #include <string>
-#include <nlohmann/json.hpp>
 #include "common.h"
 #include "material.h"
 #include "effect.h"
 #include "WPRender.h"
 #include "GLVertice.h"
+#include "WPJson.h"
 
 namespace wallpaper
 {
@@ -88,8 +88,8 @@ private:
 	std::unique_ptr<gl::GLFramebuffer> m_fbo2;
 
 	std::vector<int> size_;
-	bool autosize_ = false;
-	bool copybackground_ = false;
+	bool m_autosize = false;
+	bool m_copybackground = false;
 	bool m_compose = false;
 	bool m_fullscreen = false;
 	float m_alpha = 1.0f;

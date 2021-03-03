@@ -30,6 +30,8 @@ add_library(wallpaper
 	src/teximage.h
 	src/wallpaper.cpp
 	src/wallpaper.h
+	src/WPJson.cpp
+	src/WPJson.h
 	src/WPRender.cpp
 	src/WPRender.h
 	src/WPShaderManager.cpp
