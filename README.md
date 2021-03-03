@@ -1,5 +1,5 @@
 ## Wallpaper Engine for Kde
-A wallpaper plgin integrating [wallpaper engine](https://store.steampowered.com/app/431960/Wallpaper_Engine) into kde wallpaper setting.  
+A wallpaper plugin integrating [wallpaper engine](https://store.steampowered.com/app/431960/Wallpaper_Engine) into kde wallpaper setting.  
 It's simple and small.  
 
 ### Warning for scene support
@@ -65,7 +65,9 @@ need compile c++ plugin.
 
 ### Credits
 
-- [Smart Video Wallpaper](https://store.kde.org/p/1316299/)                                                                                                                                                                                                                                                                          
+- [Smart Video Wallpaper](https://store.kde.org/p/1316299/)     
+- [RePKG](https://github.com/notscuffed/repkg)                  
+- [linux-wallpaperengine](https://github.com/Almamu/linux-wallpaperengine)                                                                                                                                                                                                                                             
 
 ### Preview
 ![](https://cdn.pling.com/img/e/8/d/f/b0c358d344d8e9132cb09f08c7d83d02563f959cbc754ad7446b2ac6e017d61d0ede.png)
