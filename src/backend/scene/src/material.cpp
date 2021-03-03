@@ -25,8 +25,11 @@ bool wp::Material::From_json(const json& obj_json) {
     if(!content.contains("depthtest"))
         depthtest_ = content.at("depthtest") == "disabled" ? false : true;
 	if(content.contains("combos")) {
-		for(auto& c:content.at("combos").items())
-			combos_[c.key()] = c.value().get<int>();
+		for(auto& c:content.at("combos").items()) {
+			std::string name = c.key(); 
+			std::transform(name.begin(), name.end(), name.begin(), ::toupper);
+			combos_[name] = c.value().get<int>();
+		}
 	}
 	if(content.contains("constantshadervalues")) {
 		constShadervalues_ = content.at("constantshadervalues").dump();
@@ -107,6 +110,16 @@ void wp::Material::Render(WPRender& wpRender) {
 			continue;
 		wpRender.glWrapper.ActiveTexture(i);
 		auto* tex = wpRender.texCache.GetTexture(textures_[i]);
+		if(tex->IsSprite()) {
+			auto sf = tex->NextSpriteFrame(wpRender.timeDiffFrame);
+			if(sf != nullptr) {
+				using namespace gl;
+				std::string texgl = "g_Texture" +std::to_string(i);
+				Shadervalue::SetShadervalues(shadervalues_, texgl + "Translation", SpriteFrame::GetTranslation(*sf));
+				Shadervalue::SetShadervalues(shadervalues_, texgl + "Rotation", SpriteFrame::GetRotation(*sf));
+				tex->SwitchTex(sf->imageId);
+			}
+		}
 		tex->Bind();
 	}
 	wpRender.shaderMgr.BindShader(shader_);

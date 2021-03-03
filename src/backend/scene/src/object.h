@@ -94,6 +94,7 @@ private:
 	bool m_fullscreen = false;
 	float m_alpha = 1.0f;
 	float m_brightness  = 1.0f;
+	int m_blendmode = -1;
 	std::vector<float> m_color = {1.0f,1.0f,1.0f};
 };
 

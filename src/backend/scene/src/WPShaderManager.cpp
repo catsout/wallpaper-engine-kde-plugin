@@ -263,7 +263,13 @@ std::string PreShaderSrc(GLenum shader_type, const std::string& src, Combos& com
         new_src += line + '\n';
 		if(update_pos)
 			last_var_pos = new_src.size();
+		if(line.find("void main()") != std::string::npos) {
+			new_src += src.substr(content.tellg());
+			break;
+		}
 	}
+	if(new_src.substr(last_var_pos, 6) == "#endif")
+		last_var_pos += 7;
 	LoadShaderWithInclude(include);
     new_src.insert(last_var_pos, include);
 	return new_src;
@@ -289,6 +295,10 @@ std::string WPShaderManager::CreateShader(const std::string& name, const Combos&
 			auto& shaderCombos = el.second.combos;
 			auto& defaultCombos = el.second.combos;
 			bool flag = true;
+			for(auto& c:combos) {
+				if(shaderCombos.count(c.first) == 0 || c.second != shaderCombos.at(c.first))
+					flag = false;
+			}
 			// shadersCombos == active combos
 			for(auto& c:shaderCombos) {
 				if(combos.count(c.first) == 0) {
@@ -315,7 +325,7 @@ std::string WPShaderManager::CreateShader(const std::string& name, const Combos&
 		shaderCombos = defaultCombos;
 
 		for(const auto& c:combos) {
-			if(shaderCombos.count(c.first) != 0) 
+//			if(shaderCombos.count(c.first) != 0) 
 				shaderCombos[c.first] = c.second;
 		}
 		shaderName = name+'+';

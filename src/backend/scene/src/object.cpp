@@ -71,6 +71,9 @@ bool ImageObject::From_json(const json& obj)
 	if(obj.contains("brightness") && obj.at("brightness").is_number())
 		m_brightness = obj.at("brightness");
 
+	if(obj.contains("colorBlendMode"))
+		m_blendmode = obj.at("colorBlendMode");
+
 
 	if(obj.contains("alpha") && obj.at("alpha").is_number())
 		m_alpha = obj.at("alpha");
@@ -193,11 +196,11 @@ void ImageObject::Render(WPRender& wpRender)
 
 	wpRender.glWrapper.BindFramebufferViewport(m_curFbo);
 
-	if(copybackground_)	{
+	if(copybackground_ || m_fullscreen)	{
 		wpRender.Clear(0.0f);
-		if(IsCompose()) {
+		if(IsCompose() || m_fullscreen) {
 			wpRender.glWrapper.ActiveTexture(0);
-			wpRender.glWrapper.BindTexture(&wpRender.GlobalFbo()->color_texture);
+			wpRender.glWrapper.BindFramebufferTex(wpRender.GlobalFbo());
 		}
 	}
 	else {
@@ -233,6 +236,8 @@ void ImageObject::GenBaseCombos() {
 	m_basecombos.clear();
 //{"material":"ui_editor_properties_composite","combo":"COMPOSITE","type":"options","default":0,"options":{"ui_editor_properties_normal":0,"ui_editor_properties_blend":1,"ui_editor_properties_under":2,"ui_editor_properties_cutout":3}}
 	m_basecombos["COMPOSITE"] = IsCompose()?0:1;
+	if(m_fullscreen)
+		m_basecombos["TRANSFORM"] = 1;
 }
 
 

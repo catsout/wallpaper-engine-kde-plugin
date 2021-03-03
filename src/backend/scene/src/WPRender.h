@@ -10,7 +10,7 @@ class wallpaperGL;
 class WPRender {
 
 public:
-	WPRender():glWrapper(),shaderMgr(&glWrapper),texCache(&glWrapper),clearcolor_({0.7f,0.7f,0.7f}) {};
+	WPRender():glWrapper(),shaderMgr(&glWrapper),texCache(&glWrapper),clearcolor_({0.7f,0.7f,0.7f}),timeDiffFrame(0) {};
 	~WPRender() {};
 	bool Init(void *get_proc_address(const char*));
 	void Clear();
@@ -25,7 +25,7 @@ public:
 	gl::WPShaderManager shaderMgr;	
 	gl::WPTextureCache texCache;
 
-
+	int timeDiffFrame;
 
 //	gl::GLFramebuffer* GlobalFbo;
 private:

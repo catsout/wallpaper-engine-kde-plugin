@@ -93,6 +93,8 @@ void WallpaperGL::Render(uint fbo, int width, int height) {
 			*nowtime = lasttime;
 			return;
 		}
+		if(diff > 0)
+			m_wpRender.timeDiffFrame = diff;
 	}
 	gl::GLFramebuffer defaultFbo(width, height);
 	defaultFbo.framebuffer = fbo;

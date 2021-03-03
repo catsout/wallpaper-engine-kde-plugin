@@ -78,6 +78,13 @@ int wp::readInt32(std::ifstream& f)
     return i;
 }
 
+
+float wp::ReadFloat(std::ifstream& f) {
+    float i;
+    f.read(reinterpret_cast<char *>(&i),sizeof(i));
+    return i;
+}
+
 std::string wp::readSizedString(std::ifstream& f)
 {
     uint len = readInt32(f);

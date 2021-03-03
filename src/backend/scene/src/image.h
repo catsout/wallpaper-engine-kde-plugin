@@ -140,7 +140,6 @@ public:
 	auto Format() const {return m_format;}
 	auto Type() const {return m_type;}
 
-	// only used for opengl api
 	const char* RawData() const {return m_data.get();};
 	size_t Size() const {return m_size;}
 private:
