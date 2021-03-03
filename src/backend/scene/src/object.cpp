@@ -179,7 +179,8 @@ void ImageObject::Load(WPRender& wpRender)
 		e.Load(wpRender);
 	}
 	m_fbo1 = std::unique_ptr<gl::GLFramebuffer>(wpRender.glWrapper.CreateFramebuffer(size_[0], size_[1]));
-	m_fbo2 = std::unique_ptr<gl::GLFramebuffer>(wpRender.glWrapper.CreateFramebuffer(size_[0], size_[1]));
+	if(effects_.size() > 0)
+		m_fbo2 = std::unique_ptr<gl::GLFramebuffer>(wpRender.glWrapper.CreateFramebuffer(size_[0], size_[1]));
 }
 
 void ImageObject::Render(WPRender& wpRender)
