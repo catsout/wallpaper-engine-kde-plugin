@@ -6,6 +6,7 @@ WebEngineView {
     anchors.fill: parent
     audioMuted: background.mute
     url: background.source
+    activeFocusOnPress: false
     
     onContextMenuRequested: function(request) {
         request.accepted = true;
