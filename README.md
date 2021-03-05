@@ -3,10 +3,24 @@ A wallpaper plugin integrating [wallpaper engine](https://store.steampowered.com
 It's simple and small.  
 
 ### Known issue
-- With web type, desktop right click not work.  
-  Need hold leftclick on the desktop to get `Configure Desktop and Wallpaper` 
+- Web type doesn't support mouse focus.  
 - Some case scene wallpaper may crash your kde.  
   Remove `WallpaperFilePath` line in `~/.config/plasma-org.kde.plasma.desktop-appletsrc` and restart kde to fix.  
+
+### Scene support status
+Scene wallpaper is supportted by direct opengl(3.1).  
+It's almost usable.  
+#### performance
+I'm not vary familiar with graphic programming, So don't expect high performance.  
+- 4k wallpaper with complex effects need at least GTX1050
+- 80Mb+ wallpaper may require 1.4GB+ VRAM at now
+#### not work
+- Particle System   
+- Scene script  
+- Camera shake and zoom  
+- Global bloom effect  
+- Perspective renderable  
+- ColorBlendMode  
 
 ### Note
 - Support **scene(2d)**,**video**,**web** types
@@ -20,8 +34,9 @@ You need to choose your steam library directory. Like `~/.local/share/Steam`
 ### How to use:
 1. Use steam+proton or wine+steam
 2. Buy and install wallpaper engine
-3. Select steam library dir(like .local/share/Steam) in plugin
-4. Enjoy
+3. Subscribe some wallpapers  
+4. Select steam library dir(like .local/share/Steam) in plugin
+5. Enjoy
 
 
 ### Install
