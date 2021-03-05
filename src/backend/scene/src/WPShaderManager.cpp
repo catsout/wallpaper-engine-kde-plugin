@@ -51,8 +51,8 @@ GlobalUniform::GlobalUniform() {
 	camera_.center = glm::vec3(0.0f,0.0f,0.0f);
 	camera_.eye = glm::vec3(0.0f,0.0f,1.0f);
 	camera_.up = glm::vec3(0.0f,1.0f,0.0f);
-	size_[0] = 1920.0f;
-	size_[1] = 1080.0f;
+	size_[0] = 1.0f/1920.0f;
+	size_[1] = 1.0f/1080.0f;
 	pointerPosition_[0] = 0.0f;
 	pointerPosition_[1] = 0.0f;
 }
@@ -83,8 +83,8 @@ void GlobalUniform::SetOrtho(int w, int h) {
 
 
 void GlobalUniform::SetSize(int w, int h) {
-	size_[0] = (float)w;
-	size_[1] = (float)h;
+	size_[0] = 1.0f/(float)w;
+	size_[1] = 1.0f/(float)h;
 }
 
 void GlobalUniform::SetPointerPos(float x, float y) {
