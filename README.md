@@ -82,4 +82,4 @@ need compile c++ plugin.
 - [linux-wallpaperengine](https://github.com/Almamu/linux-wallpaperengine)                                                                                                                                                                                                                                             
 
 ### Preview
-![](https://cdn.pling.com/img/e/8/d/f/b0c358d344d8e9132cb09f08c7d83d02563f959cbc754ad7446b2ac6e017d61d0ede.png)
+![](https://cdn.pling.com/img/a/6/b/6/5a487e675a82563f53d1121eadc3a8d9a0161f8aecfc3a45ae8a413dc0c78baa6518.jpg)
