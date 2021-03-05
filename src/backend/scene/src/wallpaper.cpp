@@ -51,6 +51,7 @@ void WallpaperGL::Load(const std::string& pkg_path) {
 	}
     auto scene_json = json::parse(scene_src);
 
+	//camera
 	auto& camera = scene_json.at("camera");
 	std::vector<float> center,eye,up,clearcolor;
 	if(!StringToVec<float>(camera.at("center"), center)) return;
@@ -61,7 +62,17 @@ void WallpaperGL::Load(const std::string& pkg_path) {
 	auto& general_json = scene_json.at("general");
 	if(!StringToVec<float>(general_json.at("clearcolor"), clearcolor)) return;
 	m_wpRender.SetClearcolor(clearcolor);
+	
+	CameraParallax cameraParallax;
+	GET_JSON_NAME_VALUE_NOWARN(general_json, "cameraparallax", cameraParallax.enable);
+	if(cameraParallax.enable) {
+		GET_JSON_NAME_VALUE(general_json, "cameraparallaxamount", cameraParallax.amount);
+		GET_JSON_NAME_VALUE(general_json, "cameraparallaxdelay", cameraParallax.delay);
+		GET_JSON_NAME_VALUE(general_json, "cameraparallaxmouseinfluence", cameraParallax.mouseinfluence);
+		m_wpRender.SetCameraParallax(cameraParallax);
+	}
 
+	if(!general_json.contains("orthogonalprojection")) return;
 	auto& ortho_j = general_json.at("orthogonalprojection");
 	std::vector<int> ortho({ortho_j.at("width"), ortho_j.at("height")});
 	m_wpRender.shaderMgr.globalUniforms.SetOrtho(ortho.at(0), ortho.at(1));
@@ -113,8 +124,13 @@ void WallpaperGL::Render(uint fbo, int width, int height) {
 	}
 	gl::GLFramebuffer defaultFbo(width, height);
 	defaultFbo.framebuffer = fbo;
-
-	m_wpRender.shaderMgr.globalUniforms.SetPointerPos(m_mousePos[0]/defaultFbo.width, m_mousePos[1]/defaultFbo.height);
+	
+	float mouseX = m_mousePos[0]/defaultFbo.width;
+	float mouseY = m_mousePos[1]/defaultFbo.height;
+	const auto& ortho = m_wpRender.shaderMgr.globalUniforms.Ortho();
+	m_wpRender.shaderMgr.globalUniforms.SetPointerPos(mouseX, mouseY);
+	if(m_wpRender.GetCameraParallax().enable)
+		m_wpRender.GenCameraParallaxVec(mouseX, mouseY, ortho[0], ortho[1]);
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -132,7 +148,6 @@ void WallpaperGL::Render(uint fbo, int width, int height) {
 
 	glm::mat4 fboTrans(1.0f);
 	if(m_keepAspect) {
-		const auto& ortho = m_wpRender.shaderMgr.globalUniforms.Ortho();
 		float aspect = (float)ortho.at(0) / (float)ortho.at(1);
 		fboTrans = GetAspectScaleMatrix(defaultFbo.width, defaultFbo.height, aspect);
 	}

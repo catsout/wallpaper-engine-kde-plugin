@@ -42,3 +42,9 @@ void WPRender::UseGlobalFbo(const gl::Shadervalues& shadervalues) {
 	shaderMgr.BindShader("displayFbo");
 	shaderMgr.UpdateUniforms("displayFbo", shadervalues);
 }
+		
+void WPRender::GenCameraParallaxVec(float x, float y, int orthWidth, int orthHeight) {
+	float w = (0.5f - x) * 2.0f * m_cameraParallax.amount * 0.25f;
+	float h = (0.5f - y) * 2.0f * m_cameraParallax.amount * 0.25f;
+	m_cameraParallaxVec = std::vector<float>({w, h});
+}

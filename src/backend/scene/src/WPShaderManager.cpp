@@ -28,6 +28,10 @@ void Shadervalue::SetShadervalues(Shadervalues& shadervalues, const std::string&
 	shadervalues[glname] = sv;
 }
 
+void Shadervalue::SetShadervalues(Shadervalues& shadervalues, const std::string& glname, float value) {
+	SetShadervalues(shadervalues, glname, std::vector<float>({value}));
+}
+
 void Shadervalue::SetShadervalues(Shadervalues& shadervalues, const std::string& glname, const glm::mat4& value) {
 	const float* value_ptr = glm::value_ptr(value);
 	SetShadervalues(shadervalues, glname, std::vector<float>(value_ptr, value_ptr + 4*4));

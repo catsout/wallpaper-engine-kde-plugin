@@ -45,6 +45,8 @@ bool wallpaper::RenderObject::From_json(const json& obj)
 
 	GET_JSON_NAME_VALUE(obj, "angles", m_angles);
 
+	GET_JSON_NAME_VALUE_NOWARN(obj, "parallaxDepth", m_parallaxDepth);
+
 	GET_JSON_NAME_VALUE_NOWARN(obj, "visible", m_visible);
 
     return true;
@@ -134,7 +136,7 @@ void ImageObject::Load(WPRender& wpRender)
 	// fbo shadervalues	
 	auto viewpro_mat = wpRender.shaderMgr.globalUniforms.GetViewProjectionMatrix();
 	auto scale = Scale();
-	//2. move to origin
+	//3. move to origin
 	auto model_mat = glm::translate(glm::mat4(1.0f), glm::vec3(ori[0],ori[1],ori[2]));
 	//2. rotation
 	model_mat = glm::rotate(model_mat, -Angles()[2], glm::vec3(0,0,1)); // z, need negative
@@ -142,8 +144,8 @@ void ImageObject::Load(WPRender& wpRender)
 	model_mat = glm::rotate(model_mat, Angles()[1], glm::vec3(0,1,0)); // y
 	//1. scale
 	model_mat = glm::scale(model_mat, glm::vec3(scale[0], scale[1], scale[2]));
-	auto modelviewpro_mat = viewpro_mat * model_mat;
-	gl::Shadervalue::SetShadervalues(shadervalues_, "fboTrans", modelviewpro_mat);
+	m_fboTrans = viewpro_mat * model_mat;
+	gl::Shadervalue::SetShadervalues(shadervalues_, "fboTrans", m_fboTrans);
 
 	// material shadervalues
 	model_mat = glm::mat4(1.0f);
@@ -164,11 +166,11 @@ void ImageObject::Load(WPRender& wpRender)
 		model_mat = glm::translate(glm::mat4(1.0f), glm::vec3(size_[0]/2.0f, size_[1]/2.0f, 0.0f)) * model_mat;
 		viewpro_mat = glm::ortho(0.0f, (float)size_[0], 0.0f, (float)size_[1], -100.0f, 100.0f);
 	}
-	modelviewpro_mat = viewpro_mat * model_mat;
+	auto modelviewpro_mat = viewpro_mat * model_mat;
 	gl::Shadervalue::SetShadervalues(m_material.GetShadervalues(), "g_ModelViewProjectionMatrix", modelviewpro_mat);
-	gl::Shadervalue::SetShadervalues(m_material.GetShadervalues(), "g_UserAlpha", std::vector<float>({m_alpha}));
-	gl::Shadervalue::SetShadervalues(m_material.GetShadervalues(), "g_Brightness", std::vector<float>({m_brightness}));
-	gl::Shadervalue::SetShadervalues(m_material.GetShadervalues(), "g_Alpha", std::vector<float>({m_alpha}));
+	gl::Shadervalue::SetShadervalues(m_material.GetShadervalues(), "g_UserAlpha", m_alpha);
+	gl::Shadervalue::SetShadervalues(m_material.GetShadervalues(), "g_Brightness", m_brightness);
+	gl::Shadervalue::SetShadervalues(m_material.GetShadervalues(), "g_Alpha", m_alpha);
 	gl::Shadervalue::SetShadervalues(m_material.GetShadervalues(), "g_Color", m_color);
 
 
@@ -211,11 +213,19 @@ void ImageObject::Render(WPRender& wpRender)
 		if(index++ == WallpaperGL::EffNum()) break;
 		e.Render(wpRender);
 	}
+	// parallaxDepth
+	if(wpRender.GetCameraParallax().enable) {
+		const auto& camParaVec = wpRender.GetCameraParallaxVec();
+		const auto& depth = ParallaxDepth();
+		auto transVec = glm::vec3(camParaVec[0]*depth[0], camParaVec[1]*depth[1], 0.0f);
+		auto trans = glm::translate(glm::mat4(1.0f), transVec);
+		gl::Shadervalue::SetShadervalues(shadervalues_, "fboTrans", trans*m_fboTrans);
+	}
 
 	glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
 	wpRender.UseGlobalFbo(shadervalues_);
 	wpRender.glWrapper.ActiveTexture(0);
-	wpRender.glWrapper.BindTexture(&CurFbo()->color_texture);
+	wpRender.glWrapper.BindFramebufferTex(CurFbo());
 	Vertices().Draw();
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }

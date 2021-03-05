@@ -22,8 +22,11 @@ namespace RenderableType
 class RenderObject : public Renderable
 {
 public:
-    RenderObject():m_name(""),m_angles({0.0f,0.0f,0.0f}),m_origin(3),m_scale({1.0f,1.0f,1.0f}),m_visible(true) {};
-
+    RenderObject():m_name(""),m_angles({0.0f,0.0f,0.0f}),
+							m_origin(3),
+							m_scale({1.0f,1.0f,1.0f}),
+							m_parallaxDepth({1.0f,1.0f}),
+							m_visible(true) {};
 	
     virtual ~RenderObject() {
         m_vertices.Delete();
@@ -38,6 +41,7 @@ public:
     const auto& Origin() const {return m_origin;};
     const auto& Angles() const {return m_angles;};
     const auto& Scale() const {return m_scale;};
+    const auto& ParallaxDepth() const {return m_parallaxDepth;};
     bool Visible() const {return m_visible;};
 
     auto& Vertices() {return m_vertices;};
@@ -52,6 +56,7 @@ private:
     std::vector<float> m_angles;
     std::vector<float> m_origin;
     std::vector<float> m_scale;
+	std::vector<float> m_parallaxDepth;
     bool m_visible;
     gl::VerticeArray m_vertices;
     gl::VerticeArray* m_curVertices;
@@ -86,6 +91,7 @@ private:
 	gl::GLFramebuffer* m_curFbo;
 	std::unique_ptr<gl::GLFramebuffer> m_fbo1;
 	std::unique_ptr<gl::GLFramebuffer> m_fbo2;
+	glm::mat4 m_fboTrans;
 
 	std::vector<int> size_;
 	bool m_autosize = false;

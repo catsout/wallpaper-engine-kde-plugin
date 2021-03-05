@@ -6,11 +6,23 @@
 
 namespace wallpaper {
 
+struct CameraParallax {
+	bool enable = false;
+	float amount;
+	float delay;
+	float mouseinfluence;
+};
+
 class wallpaperGL;
 class WPRender {
 
 public:
-	WPRender():glWrapper(),shaderMgr(&glWrapper),texCache(&glWrapper),clearcolor_({0.7f,0.7f,0.7f}),timeDiffFrame(0) {};
+	WPRender():glWrapper(),
+			   shaderMgr(&glWrapper),
+			   texCache(&glWrapper),
+			   clearcolor_({0.7f,0.7f,0.7f}),
+			   m_cameraParallaxVec({1.0f, 1.0f}),
+			   timeDiffFrame(0) {};
 	~WPRender() {};
 	bool Init(void *get_proc_address(const char*));
 	void Clear();
@@ -20,6 +32,11 @@ public:
 	void UseGlobalFbo();
 	void UseGlobalFbo(const gl::Shadervalues& shadervalues);
 	gl::GLFramebuffer* GlobalFbo() {return fbo_.get();};
+	const CameraParallax& GetCameraParallax() const {return m_cameraParallax;};
+	void SetCameraParallax(const CameraParallax& value) {m_cameraParallax = value;};
+	const std::vector<float>& GetCameraParallaxVec() const {return m_cameraParallaxVec;};
+	// x, y is at [0,1]
+	void GenCameraParallaxVec(float x, float y, int orthWidth, int orthHeight);
 
 	gl::GLWrapper glWrapper;
 	gl::WPShaderManager shaderMgr;	
@@ -31,6 +48,8 @@ public:
 private:
 	std::unique_ptr<gl::GLFramebuffer> fbo_;
 	std::vector<float> clearcolor_;
+	CameraParallax m_cameraParallax;
+	std::vector<float> m_cameraParallaxVec;
 };
 
 class Renderable

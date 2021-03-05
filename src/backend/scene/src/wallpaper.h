@@ -8,7 +8,6 @@
 
 namespace wallpaper
 {
-
 class WallpaperGL
 {
 public:
