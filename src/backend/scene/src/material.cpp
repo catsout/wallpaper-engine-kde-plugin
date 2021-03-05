@@ -46,7 +46,7 @@ bool wp::Material::From_json(const json& obj_json) {
 }
 
 void wp::Material::Load(WPRender& wpRender) {
-	m_shader = wpRender.shaderMgr.CreateShader(m_shader, m_combos, m_shadervalues);
+	m_shader = wpRender.shaderMgr.CreateShader(m_shader, m_combos, m_shadervalues, textures_.size());
 	auto* lks = wpRender.shaderMgr.CreateLinkedShader(m_shader);
 	/*
 	for(auto& el:lks->GetUniforms()) {

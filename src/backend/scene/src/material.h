@@ -1,10 +1,10 @@
 #pragma once
-#include <nlohmann/json.hpp>
 #include <unordered_map>
 #include <memory.h>
 #include "common.h"
 #include "WPRender.h"
 #include "GLVertice.h"
+#include "WPJson.h"
 
 namespace wallpaper
 {

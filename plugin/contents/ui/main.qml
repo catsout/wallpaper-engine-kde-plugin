@@ -2,6 +2,7 @@ import QtQuick 2.5
 import org.kde.plasma.core 2.0 as PlasmaCore
 import "checker.js" as Checker
 
+
 Rectangle {
     id: background
     anchors.fill: parent
@@ -20,6 +21,7 @@ Rectangle {
             loadBackend();
     }
 
+    
     // lauch pause time to avoid freezing
     Timer {
         id: lauchPauseTimer
@@ -27,7 +29,7 @@ Rectangle {
         repeat: false
         interval: 300
         onTriggered: {
-                backendLoder.item.pause();
+                backendLoader.item.pause();
                 playTimer.start();
         }
     }
@@ -39,11 +41,27 @@ Rectangle {
         onTriggered: { background.autoPause(); }
     }
     // lauch pause end
-    
-    // main  
+   // main  
     Loader { 
-        id: backendLoder
+        id: backendLoader
         anchors.fill: parent
+    }
+    FocusScope {
+        focus: true
+        Item {
+            id: fso
+            focus: true
+            Keys.onPressed: {
+                if(event.key == Qt.Key_Z && (event.modifiers & Qt.ShiftModifier) && (event.modifiers & Qt.ControlModifier)) {
+                    backendLoader.item.setMouseListener();
+                    event.accepted = false;
+                }
+            }
+            onActiveFocusChanged: {
+                fso.forceActiveFocus();
+            }
+        }
+        
     }
     Component.onCompleted: {
         // load first backend
@@ -54,8 +72,6 @@ Rectangle {
         background.okChanged.connect(autoPause);
         lauchPauseTimer.start();
     }
-    
-    
     function loadBackend(){
         var qmlsource = "";
         var properties = {};
@@ -64,7 +80,7 @@ Rectangle {
         if(!background.source || background.source == "") {
             qmlsource = "backend/InfoShow.qml";
             properties = {"info":"Error: source is empty.\n The config may be broken."};
-            backendLoder.setSource(qmlsource, properties);
+            backendLoader.setSource(qmlsource, properties);
             return;
         }
         // choose backend
@@ -92,7 +108,7 @@ Rectangle {
                 break
         }
         console.log("load backend: "+qmlsource);
-        backendLoder.setSource(qmlsource, properties);
+        backendLoader.setSource(qmlsource, properties);
         sourceCallback();
     }
     
@@ -113,8 +129,8 @@ Rectangle {
     // auto pause
     property bool ok: windowModel.playVideoWallpaper
     function autoPause() {background.ok
-                    ? backendLoder.item.play()
-                    : backendLoder.item.pause()
+                    ? backendLoader.item.play()
+                    : backendLoader.item.pause()
     }
     WindowModel {
         id: windowModel

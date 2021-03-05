@@ -114,6 +114,8 @@ void WallpaperGL::Render(uint fbo, int width, int height) {
 	gl::GLFramebuffer defaultFbo(width, height);
 	defaultFbo.framebuffer = fbo;
 
+	m_wpRender.shaderMgr.globalUniforms.SetPointerPos(m_mousePos[0]/defaultFbo.width, m_mousePos[1]/defaultFbo.height);
+
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	CHECK_GL_ERROR_IF_DEBUG();

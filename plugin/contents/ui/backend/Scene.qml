@@ -35,4 +35,10 @@ Item{
     function pause() {
         player.pause();
     }
+    function setMouseListener(){
+        if(player.captureMouse)
+            player.setCaptureMouse(false);
+        else
+            player.setCaptureMouse(true);
+    }
 }

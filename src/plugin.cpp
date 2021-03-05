@@ -3,6 +3,7 @@
 #include "weProjectLoader.h"
 #include "mpvbackend.h"
 #include "SceneViewer.h"
+#include "WPCommon.h"
 
 class Port : public QQmlExtensionPlugin
 {

@@ -19,9 +19,10 @@ WebEngineView {
         WebEngine.settings.showScrollBars = false
         background.nowBackend = "QtWebEngine";
     }
-
     function play(){
     }
     function pause(){
+    }
+    function setMouseListener(){
     }
 }

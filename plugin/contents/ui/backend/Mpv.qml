@@ -76,4 +76,6 @@ Item{
             player.pause();
         }
     }
+    function setMouseListener(){
+    }  
 }

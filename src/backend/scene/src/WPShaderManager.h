@@ -66,6 +66,8 @@ public:
 	void* ViewProjectionMatrix();
 	void* ModelViewProjectionMatrix();
 	void* ModelViewProjectionMatrixInverse();
+	void* EffectTextureProjectionMatrix();
+	void* EffectTextureProjectionMatrixInverse();
 	void* FboTrans();
 	const glm::mat4& GetViewProjectionMatrix();
 private:
@@ -87,6 +89,8 @@ private:
 	glm::mat4 modelMatrixInverse_;
 	glm::mat4 modelViewProjectionMatrix_;
 	glm::mat4 modelViewProjectionMatrixInverse_;
+	glm::mat4 effectTextureProjectionMatrix_;
+	glm::mat4 effectTextureProjectionMatrixInverse_;
 	glm::mat4 fboTrans_;
 };
 
@@ -126,7 +130,7 @@ private:
 class WPShaderManager {
 public:
 	WPShaderManager(GLWrapper* glWrapper):glWrapper_(glWrapper) {};
-	std::string CreateShader(const std::string& name, const Combos& combos, Shadervalues& shadervalues);
+	std::string CreateShader(const std::string& name, const Combos& combos, Shadervalues& shadervalues, int texcount);
 	void CreateShader(const std::string& name, const std::string& vsCode, const std::string& fgCode);
 	LinkedShader* CreateLinkedShader(const std::string& name);
 	void BindShader(const std::string& name);

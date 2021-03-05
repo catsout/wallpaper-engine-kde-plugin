@@ -5,6 +5,7 @@
 #include "WPRender.h"
 #include "material.h"
 #include "GLWrapper.h"
+#include "WPJson.h"
 
 
 namespace wallpaper

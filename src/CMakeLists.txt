@@ -8,6 +8,7 @@ add_library(${PROJECT_NAME} SHARED
 	viewModel.h
 	weProjectLoader.cpp
 	weProjectLoader.h
+	WPCommon.h
 	qmldir
 )
 

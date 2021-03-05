@@ -80,4 +80,6 @@ Item{
         }
     }
 
+    function setMouseListener(){
+    }
 }

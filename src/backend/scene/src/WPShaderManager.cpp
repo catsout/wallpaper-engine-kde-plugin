@@ -3,7 +3,7 @@
 #include "WPShaderManager.h"
 #include "wallpaper.h"
 #include "pkg.h"
-#include <nlohmann/json.hpp>
+#include "WPJson.h"
 #include <ctype.h>
 
 namespace wp = wallpaper;
@@ -45,6 +45,8 @@ GlobalUniform::GlobalUniform() {
 	funcmap_["g_ViewProjectionMatrix"] = &GlobalUniform::ViewProjectionMatrix;
 	funcmap_["g_ModelViewProjectionMatrix"] = &GlobalUniform::ModelViewProjectionMatrix;
 	funcmap_["g_ModelViewProjectionMatrixInverse"] = &GlobalUniform::ModelViewProjectionMatrixInverse;
+	funcmap_["g_EffectTextureProjectionMatrix"] = &GlobalUniform::EffectTextureProjectionMatrix;
+	funcmap_["g_EffectTextureProjectionMatrixInverse"] = &GlobalUniform::EffectTextureProjectionMatrixInverse;
 	funcmap_["fboTrans"] = &GlobalUniform::FboTrans;
 	camera_.center = glm::vec3(0.0f,0.0f,0.0f);
 	camera_.eye = glm::vec3(0.0f,0.0f,1.0f);
@@ -105,6 +107,7 @@ void* GlobalUniform::Daytime() {
 }
 
 void* GlobalUniform::PointerPosition() {
+	LOG_INFO(std::to_string(pointerPosition_[0]*100));
 	return pointerPosition_;
 }
 
@@ -147,6 +150,18 @@ void* GlobalUniform::ModelViewProjectionMatrixInverse() {
 	modelViewProjectionMatrixInverse_ = glm::inverse(modelViewProjectionMatrix_);
 	return glm::value_ptr(modelViewProjectionMatrixInverse_);
 }
+
+void* GlobalUniform::EffectTextureProjectionMatrix() {
+	effectTextureProjectionMatrix_ = glm::mat4(1.0f);
+	return glm::value_ptr(effectTextureProjectionMatrix_);
+}
+
+void* GlobalUniform::EffectTextureProjectionMatrixInverse() {
+	GetValue("g_EffectTextureProjectionMatrix");
+	effectTextureProjectionMatrixInverse_ = glm::inverse(effectTextureProjectionMatrix_);
+	return glm::value_ptr(effectTextureProjectionMatrixInverse_);
+}
+
 void* GlobalUniform::FboTrans() {
 	fboTrans_ = glm::mat4(1.0f);
 	return glm::value_ptr(fboTrans_);
@@ -209,7 +224,7 @@ void LoadShaderWithInclude(std::string& source)
     }
 }
 
-std::string PreShaderSrc(GLenum shader_type, const std::string& src, Combos& combos, Shadervalues& shadervalues) {
+std::string PreShaderSrc(GLenum shader_type, const std::string& src, Combos& combos, Shadervalues& shadervalues, int texcount) {
 	std::string new_src = "";
 	std::string include;
     std::string line;
@@ -234,8 +249,10 @@ std::string PreShaderSrc(GLenum shader_type, const std::string& src, Combos& com
 		else if(line.find("// [COMBO]") != std::string::npos) {
 			auto combo_json = json::parse(line.substr(line.find_first_of('{')));
 			if(combo_json.contains("combo")) {
-				auto name = combo_json.at("combo").get<std::string>();
-				int value = combo_json.contains("default")?combo_json.at("default").get<int>():0;
+				std::string name;
+				int value = 0;
+				GET_JSON_NAME_VALUE(combo_json, "combo", name);
+				GET_JSON_NAME_VALUE(combo_json, "default", value);
 				combos[name] = value;
 				line = "";
 			}
@@ -254,10 +271,27 @@ std::string PreShaderSrc(GLenum shader_type, const std::string& src, Combos& com
 					auto value = sv_json.at("default");
 					if(value.is_string())
 						Shadervalue::SetValue(sv, value);
-					if(value.is_number())
-						sv.value = std::vector<float>({value.get<float>()});
+                    if(value.is_number())
+                        sv.value = std::vector<float>({value.get<float>()});
+				/*
+						GET_JSON_VALUE(value, sv.value);
+					else {
+						sv.value.resize(1);
+						GET_JSON_VALUE(value, sv.value.at(0));
+					}
+				*/
 				}
 				shadervalues[sv.glname] = sv;
+				if(sv_json.contains("combo")) {
+					std::string name;
+					int value = 1;
+					GET_JSON_NAME_VALUE(sv_json, "combo", name);
+					if(sv.glname.compare(0, 9, "g_Texture") == 0) {
+						if(std::stoi(sv.glname.substr(9)) >= texcount)
+							value = 0;
+					}
+					combos[name] = value;
+				}
 			}
 		}
         new_src += line + '\n';
@@ -287,7 +321,7 @@ Shader* WPShaderManager::CreateShader_(const std::string& name, GLuint stage, co
 }
 
 
-std::string WPShaderManager::CreateShader(const std::string& name, const Combos& combos, Shadervalues& shadervalues) {
+std::string WPShaderManager::CreateShader(const std::string& name, const Combos& combos, Shadervalues& shadervalues, int texcount) {
 	std::string shaderName;
 	bool IsInCache = false;
 	for(auto& el:shaderCache_) {
@@ -320,8 +354,8 @@ std::string WPShaderManager::CreateShader(const std::string& name, const Combos&
 		std::string fgCode = wp::fs::GetContent(wp::WallpaperGL::GetPkgfs(),"shaders/"+name+".frag");
 		gl::Combos shaderCombos,defaultCombos;
 		gl::Shadervalues shadervalues;
-		svCode = PreShaderSrc(GL_VERTEX_SHADER, svCode, defaultCombos, shadervalues);
-		fgCode = PreShaderSrc(GL_FRAGMENT_SHADER, fgCode, defaultCombos, shadervalues);
+		svCode = PreShaderSrc(GL_VERTEX_SHADER, svCode, defaultCombos, shadervalues, texcount);
+		fgCode = PreShaderSrc(GL_FRAGMENT_SHADER, fgCode, defaultCombos, shadervalues, texcount);
 		shaderCombos = defaultCombos;
 
 		for(const auto& c:combos) {
@@ -443,7 +477,6 @@ const std::string WPShaderManager::pre_shader_code = "#version 330\n"
                                               "#define texture2DLod texture2D\n"
                                               "#define atan2 atan\n"
                                               "#define ddx dFdx\n"
-                                              "#define MASK 1\n"
                                               //"#define VERSION\n"
 											  "#define max(x, y) max(y, x)\n"
                                               "#define ddy(x) dFdy(-(x))\n\n";

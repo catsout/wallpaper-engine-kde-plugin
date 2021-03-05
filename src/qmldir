@@ -1,3 +1,5 @@
 module com.github.catsout.wallpaperEngineKde
 plugin WallpaperEngineKde
-classname WEPorject MpvObject SceneViewer
+classname WEPorject
+classname SceneViewer
+classname MpvObject

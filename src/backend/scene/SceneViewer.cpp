@@ -56,6 +56,10 @@ public:
 			m_wgl.SetKeepAspect(m_keepAspect);
 			needUpdate = true;
 		}
+		if(m_mousePos != m_viewer->m_mousePos) {
+			m_mousePos = m_viewer->m_mousePos;
+			m_wgl.SetMousePos(m_mousePos.x(), m_mousePos.y());
+		}
 		if(m_source != m_viewer->source() && !m_viewer->assets().isEmpty()) {
 			auto assets = QDir::toNativeSeparators(m_viewer->assets().toLocalFile()).toStdString();
 			m_wgl.SetAssets(assets);
@@ -81,10 +85,10 @@ private:
 	QUrl m_source;
 	wallpaper::WallpaperGL m_wgl;
 	bool m_keepAspect;
+	QPointF m_mousePos;
 };
 
-SceneViewer::SceneViewer(QQuickItem * parent)
-    : QQuickFramebufferObject(parent) {
+SceneViewer::SceneViewer(QQuickItem * parent):QQuickFramebufferObject(parent),m_mousePos(0,0) {
     int framerate = 35;
      m_updateTimer.setInterval(1000 / framerate);
      connect(&m_updateTimer, &QTimer::timeout, this, [this]() {
@@ -102,11 +106,43 @@ QQuickFramebufferObject::Renderer * SceneViewer::createRenderer() const {
     return new SceneRenderer(const_cast<SceneViewer *>(this));
 }
 
+
+void SceneViewer::setCaptureMouse(bool value) {
+	if(value == m_captureMouse)
+		return;
+
+	m_captureMouse = value;
+	if(value) {
+		setAcceptedMouseButtons(Qt::LeftButton);
+		grabMouse();
+	} else {
+		setAcceptedMouseButtons(Qt::NoButton);
+		ungrabMouse();
+	}
+	Q_EMIT captureMouseChanged();
+}
+
+void SceneViewer::mouseUngrabEvent() {
+	if(m_captureMouse)
+		grabMouse();
+}
+
+void SceneViewer::mousePressEvent(QMouseEvent *event) {
+	QQuickItem::mousePressEvent(event);
+}
+
+void SceneViewer::mouseMoveEvent(QMouseEvent *event) {
+	QQuickItem::mouseMoveEvent(event);
+	m_mousePos = event->localPos();
+}
+
 QUrl SceneViewer::source() const { return m_source; }
 
 QUrl SceneViewer::assets() const { return m_assets; }
 
 bool SceneViewer::keepAspect() const { return m_keepAspect; }
+
+bool SceneViewer::captureMouse() const { return m_captureMouse; }
 
 void SceneViewer::setSource(const QUrl& source) {
 	if(source == m_source) return;
