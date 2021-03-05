@@ -11,7 +11,7 @@ It's simple and small.
 Scene wallpaper is supportted by direct opengl(3.1).  
 It's almost usable.  
 #### performance
-I'm not vary familiar with graphic programming, So don't expect high performance.  
+I'm not vary familiar with graphic programming, so don't expect high performance.  
 - 4k wallpaper with complex effects need at least GTX1050
 - 80Mb+ wallpaper may require 1.4GB+ VRAM at now
 #### not work
