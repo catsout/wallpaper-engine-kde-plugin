@@ -21,7 +21,7 @@ public:
 			   shaderMgr(&glWrapper),
 			   texCache(&glWrapper),
 			   clearcolor_({0.7f,0.7f,0.7f}),
-			   m_cameraParallaxVec({1.0f, 1.0f}),
+			   m_cameraParallaxVec({0.0f, 0.0f}),
 			   timeDiffFrame(0) {};
 	~WPRender() {};
 	bool Init(void *get_proc_address(const char*));
