@@ -99,8 +99,6 @@ void GlobalUniform::SetPointerPos(float x, float y) {
 void* GlobalUniform::Time() {
 	using namespace std::chrono;
 	time_ = duration_cast<milliseconds>(steady_clock::now() - startTime_).count() / 1000.0f;
-	if(time_ > 60.0f)
-		startTime_ = steady_clock::now();
 	return &time_;
 }
 
