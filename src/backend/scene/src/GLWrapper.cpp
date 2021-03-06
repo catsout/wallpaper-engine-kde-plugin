@@ -73,7 +73,7 @@ GLFramebuffer* GLWrapper::CreateFramebuffer(int width, int height) {
 	GLFramebuffer* fbo = new GLFramebuffer(width, height);
 	glGenFramebuffers(1, &fbo->framebuffer);
 	GLTexture* tex = CreateTexture(GL_TEXTURE_2D , width, height, 0);
-	TextureImage(tex, 0, width, height, TextureFormat::RGBA8, NULL, true, 0);
+	TextureImage(tex, 0, width, height, TextureFormat::RGBA8, NULL, true, true, 0);
 	fbo->color_texture.texture = tex->texture;
 	delete tex;
 	glBindFramebuffer(GL_FRAMEBUFFER, fbo->framebuffer);

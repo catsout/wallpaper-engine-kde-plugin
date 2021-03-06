@@ -162,6 +162,7 @@ void ImageObject::Load(WPRender& wpRender)
 		// compose need to know wordcoord and use global ViewProjectionMatrix
 		// this is ok for fullscreen as ori at (0,0,0)
 		model_mat = glm::translate(glm::mat4(1.0f), glm::vec3(ori[0], ori[1], ori[2])) * model_mat;
+		model_mat = glm::scale(model_mat, glm::vec3(scale[0], scale[1], scale[2]));
 	} else {
 		model_mat = glm::translate(glm::mat4(1.0f), glm::vec3(size_[0]/2.0f, size_[1]/2.0f, 0.0f)) * model_mat;
 		viewpro_mat = glm::ortho(0.0f, (float)size_[0], 0.0f, (float)size_[1], -100.0f, 100.0f);
