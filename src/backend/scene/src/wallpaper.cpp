@@ -132,9 +132,6 @@ void WallpaperGL::Render(uint fbo, int width, int height) {
 	if(m_wpRender.GetCameraParallax().enable)
 		m_wpRender.GenCameraParallaxVec(mouseX, mouseY, ortho[0], ortho[1]);
 
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	CHECK_GL_ERROR_IF_DEBUG();
 	m_wpRender.shaderMgr.globalUniforms.SetSize(width, height);
 	m_wpRender.UseGlobalFbo();
 	m_wpRender.Clear();
@@ -153,7 +150,7 @@ void WallpaperGL::Render(uint fbo, int width, int height) {
 	}
 	gl::Shadervalue::SetShadervalues(m_shadervalues, "fboTrans", fboTrans * m_fboTrans);
 
-
+	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	m_wpRender.glWrapper.BindFramebufferViewport(&defaultFbo);
 	CHECK_GL_ERROR_IF_DEBUG();

@@ -202,12 +202,12 @@ void ImageObject::Render(WPRender& wpRender)
 		wpRender.Clear();
 	}		
 
-	glBlendFunc(GL_ONE, GL_ZERO);
+	glDisable(GL_BLEND);
+	//glBlendFunc(GL_ONE, GL_ZERO);
 	SetCurVertices(&Vertices());
     m_material.Render(wpRender);
 
 
-	glBlendFunc(GL_ONE, GL_ZERO);
 	int index = 0;
 	for(auto& e:effects_) {
 		if(index++ == WallpaperGL::EffNum()) break;
@@ -222,12 +222,12 @@ void ImageObject::Render(WPRender& wpRender)
 		gl::Shadervalue::SetShadervalues(shadervalues_, "fboTrans", trans*m_fboTrans);
 	}
 
+	glEnable(GL_BLEND);
 	glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
 	wpRender.UseGlobalFbo(shadervalues_);
 	wpRender.glWrapper.ActiveTexture(0);
 	wpRender.glWrapper.BindFramebufferTex(CurFbo());
 	Vertices().Draw();
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
 
