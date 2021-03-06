@@ -13,7 +13,7 @@ It's almost usable.
 #### performance
 I'm not vary familiar with graphic programming, so don't expect high performance.  
 - 4k wallpaper with complex effects need at least GTX1050
-- 80Mb+ wallpaper may require 1.4GB+ VRAM at now
+- 80Mb+ wallpaper may require 1GB+ VRAM at now
 #### not work
 - Particle System   
 - Scene script  
