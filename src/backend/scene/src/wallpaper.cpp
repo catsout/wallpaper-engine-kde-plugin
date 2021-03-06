@@ -69,8 +69,8 @@ void WallpaperGL::Load(const std::string& pkg_path) {
 		GET_JSON_NAME_VALUE(general_json, "cameraparallaxamount", cameraParallax.amount);
 		GET_JSON_NAME_VALUE(general_json, "cameraparallaxdelay", cameraParallax.delay);
 		GET_JSON_NAME_VALUE(general_json, "cameraparallaxmouseinfluence", cameraParallax.mouseinfluence);
-		m_wpRender.SetCameraParallax(cameraParallax);
 	}
+	m_wpRender.SetCameraParallax(cameraParallax);
 
 	if(!general_json.contains("orthogonalprojection")) return;
 	auto& ortho_j = general_json.at("orthogonalprojection");
