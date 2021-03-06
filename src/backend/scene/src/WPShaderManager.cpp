@@ -465,6 +465,16 @@ void WPShaderManager::ClearShaderCache() {
 }
 
 
+
+bool WPShaderManager::ShaderContainUnifom(const std::string& name, const std::string& glname) {
+	const auto& uniforms = linkedCache_.at(name)->GetUniforms();
+	for(const auto& u:uniforms)
+		if(u.name == glname)
+			return true;
+	return false;
+}
+
+
 const std::string WPShaderManager::pre_shader_code = "#version 330\n"
                                               "#define highp\n"
                                               "#define mediump\n"

@@ -169,6 +169,6 @@ void wp::Material::Render(WPRender& wpRender) {
 		glDisable(GL_DEPTH_TEST);
 	//Blending::ApplayBlending(m_blending);		
 	CHECK_GL_ERROR_IF_DEBUG();
-	m_object.CurVertices()->Draw();
+	m_vertices->Draw();
 	CHECK_GL_ERROR_IF_DEBUG();
 }

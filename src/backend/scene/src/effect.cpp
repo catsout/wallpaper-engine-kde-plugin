@@ -75,21 +75,37 @@ bool Effect::From_json(const nlohmann::json& effect_j) {
 }
 
 void Effect::Load(WPRender& wpRender) {
-	auto modelviewpro_mat = glm::mat4(1.0f);
+	m_vertices = gl::VerticeArray::GenSizedBox(&wpRender.glWrapper, std::vector<float>(m_size.begin(),m_size.end()));
+	m_vertices.Update();
+    m_vertices_default = gl::VerticeArray::GenDefault(&wpRender.glWrapper);
+	m_vertices_default.Update();
+
 	for(auto& f:m_fboDataMap) {
 		float scale = f.second.scale;
 		f.second.fbo = std::unique_ptr<gl::GLFramebuffer>(wpRender.glWrapper.CreateFramebuffer(m_size[0]/scale, m_size[1]/scale));
 	}
+
+	auto model_mat = glm::translate(glm::mat4(1.0f), glm::vec3(m_size[0]/2.0f, m_size[1]/2.0f, 0.0f));
+	auto viewpro_mat = glm::ortho(0.0f, (float)m_size[0], 0.0f, (float)m_size[1], -100.0f, 100.0f);
+	auto size_modelviewpro_mat = viewpro_mat * model_mat;
 	for(auto& m:m_materials) {
-		gl::Shadervalue::SetShadervalues(m.material.GetShadervalues(), "g_ModelViewProjectionMatrix", modelviewpro_mat);
 		m.material.Load(wpRender);
+		// after material Load
+		glm::mat4 modelviewpro_mat(1.0f);
+		if(wpRender.shaderMgr.ShaderContainUnifom(m.material.GetShader(), "g_ModelViewProjectionMatrix")) {
+			modelviewpro_mat = size_modelviewpro_mat;
+			m.material.SetVertices(&m_vertices);
+		}
+		else {
+			modelviewpro_mat = glm::mat4(1.0f);
+			m.material.SetVertices(&m_vertices_default);
+		}
+
+		gl::Shadervalue::SetShadervalues(m.material.GetShadervalues(), "g_ModelViewProjectionMatrix", modelviewpro_mat);
 	}
-	m_vertices = gl::VerticeArray::GenDefault(&wpRender.glWrapper);
-	m_vertices.Update();
 }
 		
 void Effect::Render(WPRender& wpRender) {
-	m_imgObject.SetCurVertices(&m_vertices);
 	for(auto& m:m_materials) {
 		bool switchFbo = false;
 		if(m.target == "default") {

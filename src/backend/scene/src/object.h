@@ -45,9 +45,6 @@ public:
     bool Visible() const {return m_visible;};
 
     auto& Vertices() {return m_vertices;};
-
-    auto* CurVertices() {return m_curVertices;};
-    void SetCurVertices(gl::VerticeArray* value) {m_curVertices = value;};
 protected:
     auto& Origin() {return m_origin;};
 
@@ -59,7 +56,6 @@ private:
 	std::vector<float> m_parallaxDepth;
     bool m_visible;
     gl::VerticeArray m_vertices;
-    gl::VerticeArray* m_curVertices;
 };
 
 class ImageObject : public RenderObject

@@ -205,7 +205,7 @@ void ImageObject::Render(WPRender& wpRender)
 
 	glDisable(GL_BLEND);
 	//glBlendFunc(GL_ONE, GL_ZERO);
-	SetCurVertices(&Vertices());
+	m_material.SetVertices(&Vertices());
     m_material.Render(wpRender);
 
 

@@ -120,6 +120,7 @@ public:
 	~LinkedShader();
 	GLProgram* program;
 	GLUniform* GetUniform(int index);
+	const std::vector<GLUniform>& GetUniforms() const {return uniforms_;};
 	std::vector<GLUniform>& GetUniforms() {return uniforms_;};
 private:
 	std::string name_;
@@ -139,6 +140,9 @@ public:
 	void SetTextures(const std::string& name, Shadervalues& shadervalues);
 	void ClearCache();
 	void ClearShaderCache();
+
+	bool ShaderContainUnifom(const std::string& name, const std::string& glname);
+
 	GlobalUniform globalUniforms;
 	static const std::string pre_shader_code;
 private:

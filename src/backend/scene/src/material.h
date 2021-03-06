@@ -49,6 +49,7 @@ public:
 	gl::Shadervalues& GetShadervalues() {return m_shadervalues;};
 	void SetSize(const std::vector<int>& value) {m_size = value;};
 	const Blending::Type& Blending() const {return m_blending;};
+	void SetVertices(const gl::VerticeArray* value) {m_vertices = value;};
 
 private:
     RenderObject& m_object;
@@ -59,8 +60,11 @@ private:
     std::vector<std::string> textures_;
 	gl::Combos m_combos;
 	std::string m_constShadervalues;
+	// shader value only include the shader specific uniform
 	gl::Shadervalues m_shadervalues;
 	std::vector<gl::GLTexture> glTextrues_;
+
+    const gl::VerticeArray* m_vertices;
 };
 
 }

@@ -88,7 +88,7 @@ void VerticeArray::Update() {
     Bind(0);
 }
 
-void VerticeArray::Draw() {
+void VerticeArray::Draw() const {
 	Bind(VAO_);
 	glDrawArrays(GL_TRIANGLES, 0, 6);//vertices.size()/vertice_size_);
 	CHECK_GL_ERROR_IF_DEBUG();

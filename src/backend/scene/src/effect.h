@@ -62,6 +62,7 @@ private:
 	std::vector<MaterialData> m_materials;
 	std::unordered_map<std::string, FboData> m_fboDataMap;
     gl::VerticeArray m_vertices;
+    gl::VerticeArray m_vertices_default;
 	
 	bool m_visible;
 };

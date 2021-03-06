@@ -28,7 +28,7 @@ public:
     std::vector<int> format;
     void Update();
     void Delete();
-	void Draw();
+	void Draw() const;
 
 	static VerticeArray GenVerticeArray(GLWrapper* glWrapper, const std::vector<float>& pts, std::vector<int> format);
 	static VerticeArray GenDefault(GLWrapper* glWrapper);
