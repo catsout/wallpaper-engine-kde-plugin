@@ -52,7 +52,9 @@ public:
 	int MipmapNum() const {return MipmapNum(0);};
 
 	bool Loaded() {return true;};
-	bool IsSprite() {return m_header.flags.sprite;};
+	bool IsSprite() const  {return m_header.flags.sprite;};
+	bool PointFilter() const {return m_header.flags.noInterpolation;};
+	bool ClampEdge() const {return m_header.flags.clampUVs;};
 	void GetResolution(int*);
 	std::string Type() const;
 

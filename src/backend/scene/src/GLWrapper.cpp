@@ -231,7 +231,7 @@ void TextureFormat2GLFormat(TextureFormat::Format texformat, GLint& internalForm
 	}
 }
 
-void GLWrapper::TextureImage(GLTexture* texture, int level, int width, int height, TextureFormat::Format texformat, uint8_t *data, bool linearFilter, size_t imgsize) {
+void GLWrapper::TextureImage(GLTexture* texture, int level, int width, int height, TextureFormat::Format texformat, uint8_t *data, bool linearFilter, bool clampEdge, size_t imgsize) {
 	GLTexture *tex = texture;
 	BindTexture(texture);
 
@@ -251,8 +251,8 @@ void GLWrapper::TextureImage(GLTexture* texture, int level, int width, int heigh
 	}
 	CHECK_GL_ERROR_IF_DEBUG();
 	
-	tex->wrapS = GL_CLAMP_TO_EDGE;
-	tex->wrapT = GL_CLAMP_TO_EDGE;
+	tex->wrapS = clampEdge ? GL_CLAMP_TO_EDGE : GL_REPEAT;
+	tex->wrapT = clampEdge ? GL_CLAMP_TO_EDGE : GL_REPEAT;
 	tex->magFilter = linearFilter ? GL_LINEAR : GL_NEAREST;
 	tex->minFilter = linearFilter ? GL_LINEAR : GL_NEAREST;
 	glTexParameteri(tex->target, GL_TEXTURE_WRAP_S, tex->wrapS);

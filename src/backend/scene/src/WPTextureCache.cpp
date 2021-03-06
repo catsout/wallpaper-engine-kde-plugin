@@ -35,7 +35,9 @@ Texture::Texture(GLWrapper* glWrapper,const std::string& name):m_glWrapper(glWra
 		// mipmaps
 		for(int i_mip=0;i_mip < mip_count;i_mip++){
 			Image& img = tex.Mipmap(i_img, i_mip);
-			m_glWrapper->TextureImage(texture, i_mip, img.Width(), img.Height(), m_format ,(uint8_t*)img.RawData(), true, img.Size());
+			bool bilinear = !tex.PointFilter();
+			bool clampEdge = tex.ClampEdge();
+			m_glWrapper->TextureImage(texture, i_mip, img.Width(), img.Height(), m_format ,(uint8_t*)img.RawData(), bilinear, clampEdge,img.Size());
 		}
 	}
 	if(img_count > 0)

@@ -127,7 +127,7 @@ public:
 	void DeleteFramebuffer(GLFramebuffer *framebuffer);
 
     void BufferSubData(GLBuffer* buffer, size_t size, const float* data);
-	void TextureImage(GLTexture *texture, int level, int width, int height, TextureFormat::Format texformat, uint8_t *data, bool linearFilter=false, size_t imgsize=0);
+	void TextureImage(GLTexture *texture, int level, int width, int height, TextureFormat::Format texformat, uint8_t *data, bool linearFilter=false, bool clampEdge=false,size_t imgsize=0);
 
 	int GetUniforms(GLProgram* program, std::vector<GLUniform>& uniforms);
 	void SetUniformF(GLint loc, int count, const float *udata);
