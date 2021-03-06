@@ -61,7 +61,7 @@ private:
 class ImageObject : public RenderObject
 {
 public:
-    ImageObject():m_material(*this),size_(2) {};
+    ImageObject():m_material(*this),m_size(2) {};
     bool From_json(const nlohmann::json&);
     ~ImageObject();
     void Load(WPRender&);
@@ -78,7 +78,7 @@ private:
 	void GenBaseCombos();
 
 	Material m_material;
-	std::vector<Effect> effects_;
+	std::vector<Effect> m_effects;
 
 	gl::Combos m_basecombos;
 	gl::Shadervalues shadervalues_;
@@ -89,7 +89,7 @@ private:
 	std::unique_ptr<gl::GLFramebuffer> m_fbo2;
 	glm::mat4 m_fboTrans;
 
-	std::vector<int> size_;
+	std::vector<int> m_size;
 	bool m_autosize = false;
 	bool m_copybackground = false;
 	bool m_compose = false;

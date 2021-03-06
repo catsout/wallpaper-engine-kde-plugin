@@ -57,12 +57,12 @@ private:
 	Blending::Type m_blending;
     bool m_depthtest;
     std::string m_shader;
-    std::vector<std::string> textures_;
+    std::vector<std::string> m_textures;
 	gl::Combos m_combos;
 	std::string m_constShadervalues;
 	// shader value only include the shader specific uniform
 	gl::Shadervalues m_shadervalues;
-	std::vector<gl::GLTexture> glTextrues_;
+//	std::vector<gl::GLTexture> m_glTextrues;
 
     const gl::VerticeArray* m_vertices;
 };

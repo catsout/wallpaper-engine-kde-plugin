@@ -35,7 +35,7 @@ bool wp::Material::From_json(const json& obj_json) {
 
 	if(content.contains("textures"))
 		for(auto& t:content.at("textures"))
-			textures_.push_back(t.is_null()?"":t);
+			m_textures.push_back(t.is_null()?"":t);
 
 	std::string blending("translucent");
 	if(GET_JSON_NAME_VALUE(content, "blending", blending)) {
@@ -76,7 +76,7 @@ bool wp::Material::From_json(const json& obj_json) {
 }
 
 void wp::Material::Load(WPRender& wpRender) {
-	m_shader = wpRender.shaderMgr.CreateShader(m_shader, m_combos, m_shadervalues, textures_.size());
+	m_shader = wpRender.shaderMgr.CreateShader(m_shader, m_combos, m_shadervalues, m_textures.size());
 	auto* lks = wpRender.shaderMgr.CreateLinkedShader(m_shader);
 	/*
 	for(auto& el:lks->GetUniforms()) {
@@ -106,12 +106,12 @@ void wp::Material::Load(WPRender& wpRender) {
 		if(el.second.glname.compare(0, 9, "g_Texture") == 0 && el.second.glname.size()<11) {
 			int index = std::stoi(&el.second.glname[9]);
 			
-			if(index >= textures_.size()) 
-				textures_.resize(index+1, "_rt_replace");
-			if(!el.second.value_str.empty() && textures_[index] == "_rt_replace") {
-					textures_[index] = el.second.value_str;
+			if(index >= m_textures.size()) 
+				m_textures.resize(index+1, "_rt_replace");
+			if(!el.second.value_str.empty() && m_textures[index] == "_rt_replace") {
+					m_textures[index] = el.second.value_str;
 			}
-			auto& texture = textures_[index];
+			auto& texture = m_textures[index];
 
 			//resolution and load tex
 			std::string sv_resolution = "g_Texture"+std::to_string(index)+"Resolution";
@@ -144,11 +144,11 @@ void wp::Material::Load(WPRender& wpRender) {
 
 void wp::Material::Render(WPRender& wpRender) {
 	wpRender.shaderMgr.BindShader(m_shader);
-	for(int i=0;i < textures_.size();i++){
-		if(textures_[i].empty() || textures_[i].compare(0,4,"_rt_") == 0) 
+	for(int i=0;i < m_textures.size();i++){
+		if(m_textures[i].empty() || m_textures[i].compare(0,4,"_rt_") == 0) 
 			continue;
 		wpRender.glWrapper.ActiveTexture(i);
-		auto* tex = wpRender.texCache.GetTexture(textures_[i]);
+		auto* tex = wpRender.texCache.GetTexture(m_textures[i]);
 		if(tex->IsSprite()) {
 			auto sf = tex->NextSpriteFrame(wpRender.timeDiffFrame);
 			if(sf != nullptr) {

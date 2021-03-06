@@ -63,7 +63,7 @@ bool ImageObject::From_json(const json& obj)
 	if(obj.contains("size")) {
 		std::vector<float> fsize;
 		if(!StringToVec<float>(obj.at("size"), fsize)) return false;
-		size_ = std::vector<int>(fsize.begin(), fsize.end());
+		m_size = std::vector<int>(fsize.begin(), fsize.end());
 	}
 	GET_JSON_NAME_VALUE_NOWARN(obj, "copybackground", m_copybackground);
 
@@ -87,8 +87,8 @@ bool ImageObject::From_json(const json& obj)
     if(!image.contains("material")) return false;
 	if(!obj.contains("size")) {
 		if(image.contains("width")) {
-			size_[0] = image.at("width");
-			size_[1] = image.at("height");
+			m_size[0] = image.at("width");
+			m_size[1] = image.at("height");
 		}
 		else if(image.contains("fullscreen")) {
 			m_fullscreen = true;
@@ -105,13 +105,13 @@ bool ImageObject::From_json(const json& obj)
     if(!m_material.From_json(mat_j)) return false;
 	
 
-	m_material.SetSize(size_);
+	m_material.SetSize(m_size);
 	if(obj.contains("effects")) {
 		for(auto& e:obj.at("effects")) {
-			effects_.push_back(Effect(*this, size_));
-			if(!effects_.back().From_json(e)) {
-				LOG_INFO("object: " + Name() + "'s effect: " + effects_.back().Name() + " not load");
-				effects_.pop_back();
+			m_effects.push_back(Effect(*this, m_size));
+			if(!m_effects.back().From_json(e)) {
+				LOG_INFO("object: " + Name() + "'s effect: " + m_effects.back().Name() + " not load");
+				m_effects.pop_back();
 			}
 		}
 	}
@@ -122,13 +122,13 @@ void ImageObject::Load(WPRender& wpRender)
 {
 	// fullscreen
 	if(m_fullscreen) {
-		size_ = wpRender.shaderMgr.globalUniforms.Ortho();
-		Origin() = std::vector<float>({size_[0]/2.0f, size_[1]/2.0f, 0.0f});
+		m_size = wpRender.shaderMgr.globalUniforms.Ortho();
+		Origin() = std::vector<float>({m_size[0]/2.0f, m_size[1]/2.0f, 0.0f});
 	}
 	auto ori = Origin();
 	ori[1] = wpRender.shaderMgr.globalUniforms.Ortho()[1] - ori[1];
 	auto& verArry = Vertices();
-	verArry = gl::VerticeArray::GenSizedBox(&wpRender.glWrapper, std::vector<float>(size_.begin(),size_.end()));
+	verArry = gl::VerticeArray::GenSizedBox(&wpRender.glWrapper, std::vector<float>(m_size.begin(),m_size.end()));
     verArry.Update();
 
     m_material.Load(wpRender);
@@ -153,9 +153,9 @@ void ImageObject::Load(WPRender& wpRender)
 		// remove black edge
 		auto& sv = m_material.GetShadervalues().at("g_Texture0Resolution");
 		if(sv.value[0] != sv.value[2] || sv.value[1] != sv.value[3]) {
-			model_mat = glm::translate(glm::mat4(1.0f), -glm::vec3(size_[0]/2.0f,size_[1]/2.0f,0.0f));
+			model_mat = glm::translate(glm::mat4(1.0f), -glm::vec3(m_size[0]/2.0f,m_size[1]/2.0f,0.0f));
 			model_mat = glm::scale(model_mat, glm::vec3(sv.value[0]/sv.value[2], sv.value[1]/sv.value[3], 1.0f));
-			model_mat = glm::translate(model_mat, glm::vec3(size_[0]/2.0f,size_[1]/2.0f,0.0f));
+			model_mat = glm::translate(model_mat, glm::vec3(m_size[0]/2.0f,m_size[1]/2.0f,0.0f));
 		}
 	}
 	if(IsCompose()) {
@@ -164,8 +164,8 @@ void ImageObject::Load(WPRender& wpRender)
 		model_mat = glm::translate(glm::mat4(1.0f), glm::vec3(ori[0], ori[1], ori[2])) * model_mat;
 		model_mat = glm::scale(model_mat, glm::vec3(scale[0], scale[1], scale[2]));
 	} else {
-		model_mat = glm::translate(glm::mat4(1.0f), glm::vec3(size_[0]/2.0f, size_[1]/2.0f, 0.0f)) * model_mat;
-		viewpro_mat = glm::ortho(0.0f, (float)size_[0], 0.0f, (float)size_[1], -100.0f, 100.0f);
+		model_mat = glm::translate(glm::mat4(1.0f), glm::vec3(m_size[0]/2.0f, m_size[1]/2.0f, 0.0f)) * model_mat;
+		viewpro_mat = glm::ortho(0.0f, (float)m_size[0], 0.0f, (float)m_size[1], -100.0f, 100.0f);
 	}
 	auto modelviewpro_mat = viewpro_mat * model_mat;
 	gl::Shadervalue::SetShadervalues(m_material.GetShadervalues(), "g_ModelViewProjectionMatrix", modelviewpro_mat);
@@ -176,14 +176,14 @@ void ImageObject::Load(WPRender& wpRender)
 
 
 	int index = 0;
-	for(auto& e:effects_){
+	for(auto& e:m_effects){
 		if(index++ == WallpaperGL::EffNum()) break;
 		LOG_INFO("\n---Loading effect---");
 		e.Load(wpRender);
 	}
-	m_fbo1 = std::unique_ptr<gl::GLFramebuffer>(wpRender.glWrapper.CreateFramebuffer(size_[0], size_[1]));
-	if(effects_.size() > 0)
-		m_fbo2 = std::unique_ptr<gl::GLFramebuffer>(wpRender.glWrapper.CreateFramebuffer(size_[0], size_[1]));
+	m_fbo1 = std::unique_ptr<gl::GLFramebuffer>(wpRender.glWrapper.CreateFramebuffer(m_size[0], m_size[1]));
+	if(m_effects.size() > 0)
+		m_fbo2 = std::unique_ptr<gl::GLFramebuffer>(wpRender.glWrapper.CreateFramebuffer(m_size[0], m_size[1]));
 }
 
 void ImageObject::Render(WPRender& wpRender)
@@ -210,7 +210,7 @@ void ImageObject::Render(WPRender& wpRender)
 
 
 	int index = 0;
-	for(auto& e:effects_) {
+	for(auto& e:m_effects) {
 		if(index++ == WallpaperGL::EffNum()) break;
 		e.Render(wpRender);
 	}
