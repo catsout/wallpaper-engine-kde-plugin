@@ -124,6 +124,11 @@ void WallpaperGL::Render(uint fbo, int width, int height) {
 	}
 	gl::GLFramebuffer defaultFbo(width, height);
 	defaultFbo.framebuffer = fbo;
+	// back to center if at (0,0), this fix without mouse
+	if((int)m_mousePos[0] == 0 && (int)m_mousePos[1] == 0) {
+		m_mousePos[0] = defaultFbo.width/2.0f;
+		m_mousePos[1] = defaultFbo.height/2.0f;
+	}
 	
 	float mouseX = m_mousePos[0]/defaultFbo.width;
 	float mouseY = m_mousePos[1]/defaultFbo.height;
