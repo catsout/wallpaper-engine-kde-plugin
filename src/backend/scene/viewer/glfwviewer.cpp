@@ -72,7 +72,9 @@ int main(int argc, char**argv)
     while (!glfwWindowShouldClose(window))
     {
 		glfwPollEvents();
-
+		double xpos, ypos;
+		glfwGetCursorPos(window, &xpos, &ypos);
+		wgl.SetMousePos(xpos, ypos);
         wgl.Render(0,SCR_WIDTH,SCR_HEIGHT);
         glfwSwapInterval(1.5);
         glfwSwapBuffers(window);
