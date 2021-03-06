@@ -223,7 +223,8 @@ void ImageObject::Render(WPRender& wpRender)
 	}
 
 	glEnable(GL_BLEND);
-	glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
+	Blending::ApplayBlending(m_material.Blending());
+//	glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
 	wpRender.UseGlobalFbo(shadervalues_);
 	wpRender.glWrapper.ActiveTexture(0);
 	wpRender.glWrapper.BindFramebufferTex(CurFbo());

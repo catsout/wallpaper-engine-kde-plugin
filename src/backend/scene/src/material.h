@@ -24,6 +24,15 @@ namespace wallpaper
 }
 */
 
+namespace Blending {
+	enum Type {
+		normal,
+		translucent,
+		additive
+	};
+	void ApplayBlending(Blending::Type);
+}
+
 class RenderObject;
 
 class Material : public Renderable
@@ -39,10 +48,12 @@ public:
 	const gl::Shadervalues& GetShadervalues() const {return m_shadervalues;};
 	gl::Shadervalues& GetShadervalues() {return m_shadervalues;};
 	void SetSize(const std::vector<int>& value) {m_size = value;};
+	const Blending::Type& Blending() const {return m_blending;};
 
 private:
     RenderObject& m_object;
 	std::vector<int> m_size;
+	Blending::Type m_blending;
     bool m_depthtest;
     std::string m_shader;
     std::vector<std::string> textures_;

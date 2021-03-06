@@ -7,6 +7,19 @@
 using json = nlohmann::json;
 namespace wp = wallpaper;
 
+void wp::Blending::ApplayBlending(wp::Blending::Type type) {
+	switch(type) {
+	case Blending::normal:
+		glBlendFuncSeparate(GL_ONE, GL_ZERO, GL_ONE, GL_ZERO);
+		break;
+	case Blending::translucent:
+		glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
+		break;
+	case Blending::additive:
+		glBlendFuncSeparate(GL_ONE, GL_ONE, GL_ONE, GL_ONE);
+		break;
+	}
+}
 
 wp::Material::Material(RenderObject& object, const std::vector<int>& size):m_object(object),m_size(size) {
 };
@@ -24,9 +37,26 @@ bool wp::Material::From_json(const json& obj_json) {
 		for(auto& t:content.at("textures"))
 			textures_.push_back(t.is_null()?"":t);
 
-	std::string depthtest;
+	std::string blending("translucent");
+	if(GET_JSON_NAME_VALUE(content, "blending", blending)) {
+		if(blending == "translucent")
+			m_blending = Blending::translucent;
+		else if(blending == "additive")
+			m_blending = Blending::additive;
+		else if(blending == "normal")
+			m_blending = Blending::normal;
+		else LOG_ERROR("Unknown blending type" + blending);
+	}
+
+	std::string depthtest("disabled");
 	if(GET_JSON_NAME_VALUE(content, "depthtest", depthtest))
         m_depthtest = depthtest == "disabled" ? false : true;
+	
+	std::string cullmode("nocull");
+	if(GET_JSON_NAME_VALUE(content, "depthtest", depthtest)) {
+		if(cullmode != "nocull") 
+			LOG_INFO("Not supported cullmode yet, " + cullmode);
+	}
 
 	if(content.contains("combos")) {
 		for(auto& c:content.at("combos").items()) {
@@ -133,6 +163,12 @@ void wp::Material::Render(WPRender& wpRender) {
 	}
 	wpRender.shaderMgr.BindShader(m_shader);
 	wpRender.shaderMgr.UpdateUniforms(m_shader, m_shadervalues);
+	if(m_depthtest)
+		glEnable(GL_DEPTH_TEST);
+	else
+		glDisable(GL_DEPTH_TEST);
+	//Blending::ApplayBlending(m_blending);		
+	CHECK_GL_ERROR_IF_DEBUG();
 	m_object.CurVertices()->Draw();
 	CHECK_GL_ERROR_IF_DEBUG();
 }
