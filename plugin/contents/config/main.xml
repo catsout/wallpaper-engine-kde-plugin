@@ -6,7 +6,7 @@
   <kcfgfile name=""/>
 
   <group name="General">
-	<entry name="SteamLibraryPath" type="String">
+	<entry name="SteamLibraryPath" type="Path">
       <label>Steam workshop path</label>
       <default></default>
     </entry>
@@ -14,7 +14,7 @@
       <label>Wallpaper workshopid</label>
       <default></default>
     </entry>
-    <entry name="WallpaperFilePath" type="String">
+    <entry name="WallpaperFilePath" type="Path">
       <label>Wallpaper file path</label>
       <default></default>
     </entry>
