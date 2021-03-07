@@ -36,14 +36,7 @@ Item {
 
         onPausedChanged: {
             if(paused) {
-                web.grabToImage(function(result) {
-                    // check for paused changed again
-                    if(web.visible == false || web.visible == false) return;
-                    pauseImage.source = result.url;
-                    pauseImage.visible = true;
-                    web.visible = false;
-                    web.lifecycleState = WebEngineView.LifecycleState.Frozen;
-                });
+                pauseTimer.start();
             }
             else {
                 web.visible = true;
@@ -53,11 +46,15 @@ Item {
         }
 
         Component.onCompleted: {
-            WebEngine.settings.fullscreenSupportEnabled = true
-            WebEngine.settings.printElementBackgrounds = false
-            WebEngine.settings.playbackRequiresUserGesture = false
-            WebEngine.settings.pdfViewerEnabled = false
-            WebEngine.settings.showScrollBars = false
+            WebEngine.settings.fullscreenSupportEnabled = true;
+            WebEngine.settings.autoLoadIconsForPage = false;
+            WebEngine.settings.printElementBackgrounds = false;
+            WebEngine.settings.playbackRequiresUserGesture = false;
+            WebEngine.settings.pdfViewerEnabled = false;
+            WebEngine.settings.showScrollBars = false;
+
+//            WebEngine.settings.localContentCanAccessRemoteUrls = true
+
             background.nowBackend = "QtWebEngine";
         }
 
@@ -69,14 +66,24 @@ Item {
         repeat: false
         interval: 300 
         onTriggered: {
-            web.paused = true;
+            // only check paused status on timer, not set
+            // this is async
+            web.grabToImage(function(result) {
+                // check for paused again, make sure web is visible
+                if(web.paused == false || web.visible == false) return;
+                pauseImage.source = result.url;
+                pauseImage.visible = true;
+                web.visible = false;
+                web.lifecycleState = WebEngineView.LifecycleState.Frozen;
+            });
         }   
     }   
     function play(){
         web.paused = false;
     }
     function pause(){
-        pauseTimer.start();
+        // Set status first
+        web.paused = true;
     }
     function setMouseListener(){
     }
