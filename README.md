@@ -12,7 +12,8 @@ Scene wallpaper is supportted by direct opengl(3.1).
 It's almost usable.  
 #### performance
 I'm not vary familiar with graphic programming, so don't expect high performance.  
-- 4k wallpaper with complex effects need at least GTX1050
+- Wallpaper with simple effects just like play a video  
+- Some 4k wallpapers with complex effects need GTX1050 on 30fps  
 - 80Mb+ wallpaper may require 1GB+ VRAM at now
 #### not work
 - Particle System   
