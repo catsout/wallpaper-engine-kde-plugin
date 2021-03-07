@@ -4,10 +4,6 @@ add_subdirectory(backend/scene)
 
 add_library(${PROJECT_NAME} SHARED
 	plugin.cpp
-	viewModel.cpp
-	viewModel.h
-	weProjectLoader.cpp
-	weProjectLoader.h
 	WPCommon.h
 	qmldir
 )
