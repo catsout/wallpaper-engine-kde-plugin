@@ -3,7 +3,6 @@ A wallpaper plugin integrating [wallpaper engine](https://store.steampowered.com
 It's simple and small.  
 
 ### Known issue
-- Web type doesn't support mouse focus.  
 - Some case scene wallpaper may crash your kde.  
   Remove `WallpaperFilePath` line in `~/.config/plasma-org.kde.plasma.desktop-appletsrc` and restart kde to fix.  
 
