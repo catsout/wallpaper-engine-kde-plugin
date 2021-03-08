@@ -56,7 +56,7 @@ plasmapkg2 -r wallpaper-engine-kde-plugin/plugin
 ### Compile c++ part
 ```sh
 mkdir build && cd build
-cmake ..
+cmake -DCMAKE_BUILD_TYPE=Release ..
 make
 sudo make install
 ```
