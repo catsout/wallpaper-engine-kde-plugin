@@ -106,25 +106,11 @@ QQuickFramebufferObject::Renderer * SceneViewer::createRenderer() const {
     return new SceneRenderer(const_cast<SceneViewer *>(this));
 }
 
-
-void SceneViewer::setCaptureMouse(bool value) {
-	if(value == m_captureMouse)
-		return;
-
-	m_captureMouse = value;
-	if(value) {
+void SceneViewer::setAcceptMouse(bool value) {
+	if(value)
 		setAcceptedMouseButtons(Qt::LeftButton);
-		grabMouse();
-	} else {
+	else
 		setAcceptedMouseButtons(Qt::NoButton);
-		ungrabMouse();
-	}
-	Q_EMIT captureMouseChanged();
-}
-
-void SceneViewer::mouseUngrabEvent() {
-	if(m_captureMouse)
-		grabMouse();
 }
 
 void SceneViewer::mousePressEvent(QMouseEvent *event) {
@@ -141,8 +127,6 @@ QUrl SceneViewer::source() const { return m_source; }
 QUrl SceneViewer::assets() const { return m_assets; }
 
 bool SceneViewer::keepAspect() const { return m_keepAspect; }
-
-bool SceneViewer::captureMouse() const { return m_captureMouse; }
 
 void SceneViewer::setSource(const QUrl& source) {
 	if(source == m_source) return;

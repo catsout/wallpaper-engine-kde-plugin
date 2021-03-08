@@ -22,6 +22,13 @@ Item{
         source: ""
         assets: sceneItem.assets
     }
+
+    MouseGrabber {
+        id: mg
+        anchors.fill: parent
+        target: player
+    }
+
     Component.onCompleted: {
         background.nowBackend = "scene";
     }
@@ -35,10 +42,15 @@ Item{
     function pause() {
         player.pause();
     }
+    
     function setMouseListener(){
-        if(player.captureMouse)
-            player.setCaptureMouse(false);
-        else
-            player.setCaptureMouse(true);
+        if(mg.captureMouse) {
+            player.setAcceptMouse(false);
+            mg.captureMouse = false;
+        }
+        else {
+            player.setAcceptMouse(true);
+            mg.captureMouse = true;
+        }
     }
 }

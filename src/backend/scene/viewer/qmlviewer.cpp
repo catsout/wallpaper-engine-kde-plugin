@@ -26,6 +26,6 @@ int main(int argc, char **argv)
 	sv->setProperty("assets", QUrl::fromLocalFile(argv[1]));
 	sv->setProperty("source", QUrl::fromLocalFile(argv[2]));
 	sv->setProperty("keepAspect", true);
-	sv->setCaptureMouse(true);
+	sv->setAcceptMouse(true);
     return app.exec();
 }

@@ -38,6 +38,10 @@
       <label>Mute audio</label>
       <default>true</default>
     </entry>
+    <entry name="CapMouse" type="bool">
+      <label>Capture mouse</label>
+      <default>false</default>
+	</entry>
     <entry name="UseMpv" type="bool">
       <label>Use Mpv</label>
       <default>false</default>

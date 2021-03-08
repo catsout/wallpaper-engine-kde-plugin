@@ -12,15 +12,21 @@ Rectangle {
     property string source: wallpaper.configuration.WallpaperFilePath
     property bool mute: wallpaper.configuration.MuteAudio
     property bool displayMode: wallpaper.configuration.DisplayMode
+    property bool capMouse: wallpaper.configuration.CapMouse
     property bool useMpv: wallpaper.configuration.UseMpv
     
     property string nowBackend: ""
 
     onSourceChanged: {
+        fso.forceActiveFocus();
         if(background.nowBackend === "InfoShow")
             loadBackend();
     }
-
+    
+    onCapMouseChanged: {
+        if(background.capMouse)
+            fso.forceActiveFocus();
+    }
     
     // lauch pause time to avoid freezing
     Timer {
@@ -54,11 +60,13 @@ Rectangle {
             Keys.onPressed: {
                 if(event.key == Qt.Key_Z && (event.modifiers & Qt.ShiftModifier) && (event.modifiers & Qt.ControlModifier)) {
                     backendLoader.item.setMouseListener();
-                    event.accepted = false;
+                    console.log("switch mouse capture");
                 }
+                event.accepted = false;
             }
             onActiveFocusChanged: {
-                fso.forceActiveFocus();
+                if(background.capMouse)
+                    fso.forceActiveFocus();
             }
         }
         
@@ -72,7 +80,7 @@ Rectangle {
         background.okChanged.connect(autoPause);
         lauchPauseTimer.start();
     }
-    function loadBackend(){
+    function loadBackend() {
         var qmlsource = "";
         var properties = {};
 

@@ -24,8 +24,10 @@ ColumnLayout {
     property string cfg_BackgroundColor: "black"
     property int  cfg_DisplayMode: Common.DisplayMode.Aspect
     property int  cfg_PauseMode: Common.PauseMode.Never
-    property bool cfg_MuteAudio: true
-    property bool cfg_UseMpv: false
+
+    property alias cfg_MuteAudio: muteAudio.checked
+    property alias cfg_CapMouse: capMouse.checked
+    property alias cfg_UseMpv: useMpv.checked
 
     RowLayout {
         id: selectRow
@@ -107,26 +109,29 @@ ColumnLayout {
         CheckBox {
             id: muteAudio
             text: "Mute Audio"
-            checked: cfg_MuteAudio
-            onCheckedChanged: {
-                    cfg_MuteAudio = muteAudio.checked;
-            }
         }          
+        Label{
+            text: "|"
+            Layout.alignment: Qt.AlignLeft 
+        }
+        CheckBox {
+            id: capMouse
+            text: "Capture Mouse"
+            hoverEnabled: true
+
+            ToolTip.visible: hovered
+            ToolTip.text: qsTr("Use ctrl+shift+z to switch")
+
+        }
         RowLayout{
             visible: Checker.checklib_wallpaper(checkRow)
-
             Label{
                 text: "|"
                 Layout.alignment: Qt.AlignLeft 
             }
-
             CheckBox{
                 id: useMpv
                 text: "Use mpv"
-                checked: cfg_UseMpv 
-                onCheckedChanged: {
-                    cfg_UseMpv = useMpv.checked;
-                }
             }
         }
 

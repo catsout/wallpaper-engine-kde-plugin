@@ -1,15 +1,19 @@
 import QtQuick 2.5
 import QtWebEngine 1.10
+import "../checker.js" as Checker
+
 Item {
     id: webItem
     anchors.fill: parent
+    property bool hasLib: Checker.checklib_wallpaper(webItem)
+
     Image {
         id: pauseImage
-        property bool paused: false
         anchors.fill: parent
         visible: true
         enabled: false
     }
+
     WebEngineView {
     //WebView {
         id: web
@@ -77,7 +81,20 @@ Item {
                 web.lifecycleState = WebEngineView.LifecycleState.Frozen;
             });
         }   
-    }   
+    }
+    property var mg
+    Component.onCompleted: {
+        if(webItem.hasLib) {
+            webItem.mg = Qt.createQmlObject(`import QtQuick 2.5;
+                    import com.github.catsout.wallpaperEngineKde 1.0
+                    MouseGrabber {
+                        id: mg
+                        anchors.fill: parent
+                        target: web.children[0]
+                    }`, webItem);
+        }
+    }
+
     function play(){
         web.paused = false;
     }
@@ -86,5 +103,15 @@ Item {
         web.paused = true;
     }
     function setMouseListener(){
+        if(web.activeFocusOnPress) {
+            web.activeFocusOnPress = false;
+            if(webItem.mg)
+                webItem.mg.captureMouse = false;
+        }
+        else {
+            web.activeFocusOnPress = true;
+            if(webItem.mg)
+                webItem.mg.captureMouse = true;
+        }
     }
 }

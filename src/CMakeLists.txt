@@ -5,6 +5,8 @@ add_subdirectory(backend/scene)
 add_library(${PROJECT_NAME} SHARED
 	plugin.cpp
 	WPCommon.h
+	MouseGrabber.h
+	MouseGrabber.cpp
 	qmldir
 )
 
