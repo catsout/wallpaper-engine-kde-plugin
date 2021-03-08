@@ -23,6 +23,10 @@ I'm not vary familiar with graphic programming, so don't expect high performance
 - Perspective renderable  
 - ColorBlendMode  
 
+### Web support status
+Currently no web api specific to Wallpaper Engine supported.  
+Some wallpaper may not work.  
+
 ### Note
 - Support **scene(2d)**,**video**,**web** types
 - Compile needed for scene type and mpv video backend, also ok for using without compiling.
