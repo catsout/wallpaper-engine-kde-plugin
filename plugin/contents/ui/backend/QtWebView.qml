@@ -1,5 +1,6 @@
 import QtQuick 2.5
 import QtWebEngine 1.10
+import QtWebChannel 1.10
 import ".."
 
 Item {
@@ -13,6 +14,30 @@ Item {
         visible: true
         enabled: false
     }
+    QtObject {
+        id: webobj
+        WebChannel.id: "wpeQml"
+        signal sigGeneralProperties(var properties)
+        signal sigUserProperties(var properties)
+        signal sigAudio(var audioArray)
+        property bool loaded: false
+        property var userProperties 
+        property var generalProperties
+        onLoadedChanged: {
+            if(!webobj.generalProperties)
+                webobj.generalProperties = {fps: 15};
+            webobj.sigGeneralProperties(webobj.generalProperties);
+            Common.readTextFile(background.getWorkshopPath() + "/project.json", function(text) { 
+                let json = Common.parseJson(text);
+                webobj.userProperties = json.general.properties;
+                webobj.sigUserProperties(webobj.userProperties);
+            });
+        }
+    }
+    WebChannel {
+        id: channel
+        registeredObjects: [webobj]
+    }
 
     WebEngineView {
     //WebView {
@@ -22,9 +47,51 @@ Item {
         audioMuted: background.mute
         url: background.source
         activeFocusOnPress: false
+        webChannel: channel
+        userScripts: [
+            WebEngineScript {
+                injectionPoint: WebEngineScript.DocumentCreation
+                worldId: WebEngineScript.MainWorld
+                name: "QWebChannel"
+                sourceUrl: "qrc:///qtwebchannel/qwebchannel.js"
+            },
+            WebEngineScript {
+                injectionPoint: WebEngineScript.DocumentCreation
+                worldId: WebEngineScript.MainWorld
+                name: "Audio"
+                sourceCode: `
+                    window.ddwallpaperRegisterAudioListener = function(listener) {
+                        if(window.wpeQml)
+                            window.wpeQml.sigAudio.connect(audioArray);
+                        else
+                            window.wallpaperRAed = listener;
+                    }
+                `
+            },
+            WebEngineScript {
+                worldId: WebEngineScript.MainWorld
+                injectionPoint: WebEngineScript.Deferred
+                name: "ObjectInjector"
+                sourceCode: `
+                    new QWebChannel(qt.webChannelTransport, function(channel) {
+                        window.wpeQml = channel.objects.wpeQml;
+                        let wpeQml = window.wpeQml;
+                        let propertyListener = window.wallpaperPropertyListener;
+                        if(window.wallpaperRAed)
+                            wpeQml.sigAudio.connect(window.wallpaperRAed);
+                        if(propertyListener) {
+                            if(propertyListener.applyGeneralProperties)
+                                wpeQml.sigGeneralProperties.connect(propertyListener.applyGeneralProperties);
+                            if(propertyListener.applyUserProperties)
+                                wpeQml.sigUserProperties.connect(propertyListener.applyUserProperties);
+                        }
+                        wpeQml.loaded = true;
+                    });`
+            }
+        ]
 
         property bool paused: false
-        
+
         //onContextMenuRequested: function(request) {
         //    request.accepted = true;
         //}

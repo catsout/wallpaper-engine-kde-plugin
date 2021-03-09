@@ -7,6 +7,7 @@ Rectangle {
     anchors.fill: parent
     color: wallpaper.configuration.BackgroundColor
     property string steamlibrary: wallpaper.configuration.SteamLibraryPath
+    property string workshopid: wallpaper.configuration.WallpaperWorkShopId
     property string type: wallpaper.configuration.WallpaperType
     property string source: wallpaper.configuration.WallpaperFilePath
     property bool mute: wallpaper.configuration.MuteAudio
@@ -18,6 +19,10 @@ Rectangle {
     property bool ok: windowModel.playVideoWallpaper
 
     property string nowBackend: ""
+    
+    function getWorkshopPath() {
+        return steamlibrary + Common.wpenginePath + '/' + workshopid;
+    }
 
     onSourceChanged: {
         fso.forceActiveFocus();
