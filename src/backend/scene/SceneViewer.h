@@ -28,10 +28,12 @@ public:
 	void setKeepAspect(bool);
 
 	Q_INVOKABLE void setAcceptMouse(bool);
+	Q_INVOKABLE void setAcceptHover(bool);
 
 protected:
 	void mousePressEvent(QMouseEvent *event);
 	void mouseMoveEvent(QMouseEvent *event);
+	void hoverMoveEvent(QHoverEvent *event);
 
 public slots:
 	void play();

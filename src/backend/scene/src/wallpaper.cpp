@@ -135,7 +135,7 @@ void WallpaperGL::Render(uint fbo, int width, int height) {
 	const auto& ortho = m_wpRender.shaderMgr.globalUniforms.Ortho();
 	m_wpRender.shaderMgr.globalUniforms.SetPointerPos(mouseX, mouseY);
 	if(m_wpRender.GetCameraParallax().enable)
-		m_wpRender.GenCameraParallaxVec(mouseX, mouseY, ortho[0], ortho[1]);
+		m_wpRender.GenCameraParallaxVec(mouseX, mouseY);
 
 	m_wpRender.shaderMgr.globalUniforms.SetSize(width, height);
 	m_wpRender.UseGlobalFbo();

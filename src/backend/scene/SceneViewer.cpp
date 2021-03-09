@@ -108,18 +108,24 @@ QQuickFramebufferObject::Renderer * SceneViewer::createRenderer() const {
 
 void SceneViewer::setAcceptMouse(bool value) {
 	if(value)
-		setAcceptedMouseButtons(Qt::LeftButton);
+		setAcceptedMouseButtons(Qt::AllButtons);
 	else
 		setAcceptedMouseButtons(Qt::NoButton);
 }
 
+void SceneViewer::setAcceptHover(bool value) {
+	setAcceptHoverEvents(value);
+}
+
 void SceneViewer::mousePressEvent(QMouseEvent *event) {
-	QQuickItem::mousePressEvent(event);
 }
 
 void SceneViewer::mouseMoveEvent(QMouseEvent *event) {
-	QQuickItem::mouseMoveEvent(event);
 	m_mousePos = event->localPos();
+}
+
+void SceneViewer::hoverMoveEvent(QHoverEvent *event) {
+	m_mousePos = event->posF();
 }
 
 QUrl SceneViewer::source() const { return m_source; }

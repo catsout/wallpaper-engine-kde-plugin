@@ -36,7 +36,7 @@ public:
 	void SetCameraParallax(const CameraParallax& value) {m_cameraParallax = value;};
 	const std::vector<float>& GetCameraParallaxVec() const {return m_cameraParallaxVec;};
 	// x, y is at [0,1]
-	void GenCameraParallaxVec(float x, float y, int orthWidth, int orthHeight);
+	void GenCameraParallaxVec(float x, float y);
 
 	gl::GLWrapper glWrapper;
 	gl::WPShaderManager shaderMgr;	
