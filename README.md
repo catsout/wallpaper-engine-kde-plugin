@@ -23,8 +23,9 @@ I'm not vary familiar with graphic programming, so don't expect high performance
 - ColorBlendMode  
 
 ### Web support status
-Currently no web api specific to Wallpaper Engine supported.  
-Some wallpaper may not work.  
+Basic web api supportted  
+But WebEngineView in plasmashell can't init opengl  
+Some wallpaper using webgl may not work, and performance may be bad   
 
 ### Note
 - Support **scene(2d)**,**video**,**web** types
