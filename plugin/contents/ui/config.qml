@@ -10,8 +10,6 @@ import org.kde.kirigami 2.12 as Kirigami
 
 import Qt.labs.folderlistmodel 2.12
 
-import "checker.js" as Checker
-
 
 ColumnLayout {
     id: root
@@ -95,13 +93,13 @@ ColumnLayout {
         Layout.alignment: Qt.AlignCenter
         text: "No qt-labs-folderlistmodel found, please install it in your linux distro."
         color: "red"
-        visible: !Checker.checklib_folderlist(checkRow) 
+        visible: !Common.checklib_folderlist(checkRow) 
     }
     Text {
         Layout.alignment: Qt.AlignCenter
         text: "Scene wallpaper may crash kde earily, make sure you know how to fix."
         color: "yellow"
-        visible: Checker.checklib_wallpaper(checkRow)
+        visible: Common.checklib_wallpaper(checkRow)
     }
     RowLayout {
         id: checkRow
@@ -124,7 +122,7 @@ ColumnLayout {
 
         }
         RowLayout{
-            visible: Checker.checklib_wallpaper(checkRow)
+            visible: Common.checklib_wallpaper(checkRow)
             Label{
                 text: "|"
                 Layout.alignment: Qt.AlignLeft 
@@ -194,72 +192,65 @@ ColumnLayout {
 
     FolderListModel {
         id: wplist
+        // use var not list as doc
         property var files
         property var name_to_index
-        property var lock: false
-        folder: cfg_SteamLibraryPath + "/steamapps/workshop/content/431960" 
+        property bool lock: false
+        folder: cfg_SteamLibraryPath + Common.wpenginePath//"/steamapps/workshop/content/431960" 
         onStatusChanged: {
             if (wplist.status == FolderListModel.Ready && cfg_SteamLibraryPath !== "")
             {
-                wplist.files = {};
+                wplist.files = [];
                 wplist.name_to_index = {};
                 wplist.lock = false;
                 projectModel.clear();
-                for(var i=0;i < wplist.count;i++)
+                for(let i=0;i < wplist.count;i++)
                 {
-                    var k = i;
-                    var v = {
+                    let v = {
                         "workshopid": wplist.get(i,"fileName"),
                         "path": wplist.get(i,"filePath"),
                         "loaded": false,
-                        "enabled": false,
-                        "index": i
+                        "title": "unknown",
+                        "preview": "unknown",
+                        "type": "unknown",
                     };
-                    wplist.files[k] = v;
+                    wplist.files.push(v);
                 }
-                Object.entries(wplist.files).forEach(([k,v]) => {
-                    readTextFile(v["path"] + "/project.json",
-                            function (text) {
-                                //console.log("read project:" + v["workshopid"])
-                                var json = JSON.parse(text);    
-                                v["title"] = json["title"]?json["title"]:"unknown";
-                                v["preview"] = json["preview"];
-                                v["file"] = json["file"];
-                                v["type"] = json["type"]?json["type"]:"unknown";
-                                v["loaded"] = true;
-                                v["type"] = v["type"].toLowerCase();
-                                check();
-                            }
-                    );
+                wplist.files.forEach(function(el) {
+                    Common.readTextFile(el["path"] + "/project.json", (text) => readCallback(text, el));
                 });
             }
         }
+        function readCallback(text, el) {
+            //console.log("read project:" + v["workshopid"])
+            let project = Common.parseJson(text);    
+            if(project !== null) {
+                if("title" in project)
+                    el["title"] = project["title"];
+                if("preview" in project)
+                    el["preview"] = project["preview"];
+                if("file" in project)
+                    el["file"] = project["file"];
+                if("type" in project)
+                    el["type"] = project["type"].toLowerCase();
+            }
+            el["loaded"] = true;
+            check();
+        }
         function check() {
-            for(var k in wplist.files)
-                if(!wplist.files[k]["loaded"]) return;
+            for(let i=0;i < wplist.files.length;i++)
+                if(!wplist.files[i]["loaded"]) return;
             if(wplist.lock) return;
             wplist.lock = true; 
-            var currentIndex = 0;
-            for(var i=0;wplist.files.hasOwnProperty(i);i++) {
-                var v = wplist.files[i];
-                projectModel.append(v);
-                wplist.name_to_index[v["workshopid"]] = i;
-            }
-            picView.view.currentIndex = wplist.name_to_index[cfg_WallpaperWorkShopId];
-        }
-        function readTextFile(fileUrl, callback){
-            var xhr = new XMLHttpRequest;
-            xhr.open("GET", fileUrl);
-            xhr.onreadystatechange = function () {
-                if(xhr.readyState === XMLHttpRequest.DONE){
-                    var response = xhr.responseText;
-                    if(response)
-                        callback(response);
-                    else
-                        callback("{}");
-                }
-            }
-            xhr.send();
+            // -1 for no select
+            let currentIndex = -1;
+            wplist.files.forEach(function(el, index) {
+                projectModel.append(el);
+                if(el["workshopid"] === cfg_WallpaperWorkShopId)
+                    currentIndex = index;
+            });
+ //           projectModel.sync();
+            picView.view.currentIndex = currentIndex;
         }
     }
 
@@ -279,24 +270,24 @@ ColumnLayout {
 
         view.model: projectModel 
         view.delegate: KCM.GridDelegate {
-        text: title
-        actions: [
-        Kirigami.Action {
-            icon.name: "document-open-folder"
-            tooltip: "Open Containing Folder"
-            onTriggered: projectModel.openContainingFolder(index)
-        }]
-        thumbnail:Image {
-            anchors.fill: parent
-            source: path + "/" + preview
-        }
-        onClicked: {
-               cfg_WallpaperWorkShopId = workshopid;
-               cfg_WallpaperFilePath = path + "/" + file;
-               cfg_WallpaperType = type;
-               picView.view.currentIndex = wplist.name_to_index[workshopid];
-           }
-        }
+            text: title
+            actions: [
+            Kirigami.Action {
+                icon.name: "document-open-folder"
+                tooltip: "Open Containing Folder"
+                onTriggered: projectModel.openContainingFolder(index)
+            }]
+            thumbnail:Image {
+                anchors.fill: parent
+                source: path + "/" + preview
+            }
+            onClicked: {
+                   cfg_WallpaperWorkShopId = workshopid;
+                   cfg_WallpaperFilePath = path + "/" + file;
+                   cfg_WallpaperType = type;
+                   picView.view.currentIndex = index;
+               }
+            }
     }
 
     FileDialog {
@@ -306,9 +297,7 @@ ColumnLayout {
         selectMultiple : false
         nameFilters: [ "All files (*)" ]
         onAccepted: {
-            var path = wpDialog.fileUrls[0];
-            if(path.slice(-1) === '/')
-                path = path.slice(0,-1);
+            var path = Common.trimCharR(wpDialog.fileUrls[0], '/');
             cfg_SteamLibraryPath = path;
         }
     }

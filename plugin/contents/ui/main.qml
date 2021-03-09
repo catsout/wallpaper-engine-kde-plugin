@@ -1,6 +1,5 @@
 import QtQuick 2.5
 import org.kde.plasma.core 2.0 as PlasmaCore
-import "checker.js" as Checker
 
 
 Rectangle {
@@ -15,6 +14,9 @@ Rectangle {
     property bool capMouse: wallpaper.configuration.CapMouse
     property bool useMpv: wallpaper.configuration.UseMpv
     
+    // auto pause
+    property bool ok: windowModel.playVideoWallpaper
+
     property string nowBackend: ""
 
     onSourceChanged: {
@@ -28,6 +30,10 @@ Rectangle {
             fso.forceActiveFocus();
     }
     
+    WindowModel {
+        id: windowModel
+    }
+
     // lauch pause time to avoid freezing
     Timer {
         id: lauchPauseTimer
@@ -35,8 +41,8 @@ Rectangle {
         repeat: false
         interval: 300
         onTriggered: {
-                backendLoader.item.pause();
-                playTimer.start();
+            backendLoader.item.pause();
+            playTimer.start();
         }
     }
     Timer{
@@ -47,11 +53,27 @@ Rectangle {
         onTriggered: { background.autoPause(); }
     }
     // lauch pause end
-   // main  
+
+    // As always autoplay for refresh lastframe, sourceChange need autoPause
+    // need a time for delay, which is needed for refresh
+    function sourceCallback() {
+        sourcePauseTimer.start();   
+    }
+    Timer {
+        id: sourcePauseTimer
+        running: false
+        repeat: false
+        interval: 200
+        onTriggered: background.autoPause();
+    }
+
+    // main  
     Loader { 
         id: backendLoader
         anchors.fill: parent
     }
+    
+    // capture keyboard
     FocusScope {
         focus: true
         Item {
@@ -71,18 +93,10 @@ Rectangle {
         }
         
     }
-    Component.onCompleted: {
-        // load first backend
-        loadBackend(); // background signal connect
-        background.typeChanged.connect(loadBackend);
-        background.useMpvChanged.connect(loadBackend);
-        background.sourceChanged.connect(sourceCallback);
-        background.okChanged.connect(autoPause);
-        lauchPauseTimer.start();
-    }
+    
     function loadBackend() {
-        var qmlsource = "";
-        var properties = {};
+        let qmlsource = "";
+        let properties = {};
 
         // check source
         if(!background.source || background.source == "") {
@@ -94,7 +108,7 @@ Rectangle {
         // choose backend
         switch (background.type) {
             case 'video':
-                if(background.useMpv && Checker.checklib_wallpaper(background))
+                if(background.useMpv && Common.checklib_wallpaper(background))
                     qmlsource = "backend/Mpv.qml";
                 else qmlsource = "backend/QtMultimedia.qml";
                 break;
@@ -102,7 +116,7 @@ Rectangle {
                 qmlsource = "backend/QtWebView.qml";
                 break;
             case 'scene':
-                if(Checker.checklib_wallpaper(background)) {
+                if(Common.checklib_wallpaper(background)) {
                     qmlsource = "backend/Scene.qml";
                     properties = {"assets": background.steamlibrary + "/steamapps/common/wallpaper_engine/assets"};
                 } else {
@@ -119,29 +133,22 @@ Rectangle {
         backendLoader.setSource(qmlsource, properties);
         sourceCallback();
     }
-    
-    // As always autoplay for refresh lastframe, sourceChange need autoPause
-    // need a time for delay, which is needed for refresh
-    function sourceCallback() {
-        sourcePauseTimer.start();   
-    }
-    Timer {
-        id: sourcePauseTimer
-        running: false
-        repeat: false
-        interval: 200
-        onTriggered: background.autoPause();
-    }
-
    
-    // auto pause
-    property bool ok: windowModel.playVideoWallpaper
     function autoPause() {background.ok
                     ? backendLoader.item.play()
                     : backendLoader.item.pause()
     }
-    WindowModel {
-        id: windowModel
-    }
+    
+    Component.onCompleted: {
+        // load first backend
+        loadBackend(); 
 
+        // background signal connect
+        background.typeChanged.connect(loadBackend);
+        background.useMpvChanged.connect(loadBackend);
+        background.sourceChanged.connect(sourceCallback);
+        background.okChanged.connect(autoPause);
+
+        lauchPauseTimer.start();
+    }
 }

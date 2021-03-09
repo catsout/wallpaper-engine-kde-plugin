@@ -1,11 +1,11 @@
 import QtQuick 2.5
 import QtWebEngine 1.10
-import "../checker.js" as Checker
+import ".."
 
 Item {
     id: webItem
     anchors.fill: parent
-    property bool hasLib: Checker.checklib_wallpaper(webItem)
+    property bool hasLib: Common.checklib_wallpaper(webItem)
 
     Image {
         id: pauseImage
@@ -90,7 +90,7 @@ Item {
                     MouseGrabber {
                         id: mg
                         anchors.fill: parent
-                        target: web.children[0]
+                        target: web.children[0] ? web.children[0] : null
                     }`, webItem);
         }
     }

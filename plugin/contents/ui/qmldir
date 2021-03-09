@@ -1,0 +1,2 @@
+singleton Common Common.qml
+WindowModel WindowModel.qml
