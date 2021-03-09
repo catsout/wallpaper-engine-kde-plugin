@@ -25,7 +25,7 @@ Item {
         property var generalProperties
         onLoadedChanged: {
             if(!webobj.generalProperties)
-                webobj.generalProperties = {fps: 15};
+                webobj.generalProperties = {fps: 24};
             webobj.sigGeneralProperties(webobj.generalProperties);
             Common.readTextFile(background.getWorkshopPath() + "/project.json", function(text) { 
                 let json = Common.parseJson(text);
@@ -62,7 +62,7 @@ Item {
                 sourceCode: `
                     window.wallpaperRegisterAudioListener = function(listener) {
                         if(window.wpeQml)
-                            window.wpeQml.sigAudio.connect(audioArray);
+                            window.wpeQml.sigAudio.connect(listener);
                         else
                             window.wallpaperRAed = listener;
                     }
@@ -124,7 +124,7 @@ Item {
             WebEngine.settings.pdfViewerEnabled = false;
             WebEngine.settings.showScrollBars = false;
 
-//            WebEngine.settings.localContentCanAccessRemoteUrls = true
+            WebEngine.settings.localContentCanAccessRemoteUrls = true
 
             background.nowBackend = "QtWebEngine";
         }
