@@ -20,8 +20,8 @@ ColumnLayout {
     property string cfg_WallpaperFilePath
     property string cfg_WallpaperType
     property string cfg_BackgroundColor: "black"
-    property int  cfg_DisplayMode: Common.DisplayMode.Aspect
-    property int  cfg_PauseMode: Common.PauseMode.Never
+    property int  cfg_DisplayMode
+    property int  cfg_PauseMode
 
     property alias cfg_MuteAudio: muteAudio.checked
     property alias cfg_CapMouse: capMouse.checked

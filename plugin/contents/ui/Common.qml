@@ -56,7 +56,7 @@ QtObject {
         while(str.slice(pos - 1, str.length + pos) === c) {
             pos -= 1;
         }
-        return str.slice(0, pos);
+        return str.slice(0, str.length + pos);
     }
 
     function parseJson(str) {

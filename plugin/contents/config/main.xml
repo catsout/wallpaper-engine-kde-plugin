@@ -28,11 +28,11 @@
     </entry>
     <entry name="DisplayMode" type="int">
       <label>Video display mode</label>
-      <default>2</default>
+      <default>0</default>
     </entry>
 	<entry name="PauseMode" type="int">
       <label>Video Pause mode</label>
-      <default>1</default>
+      <default>0</default>
     </entry>
     <entry name="MuteAudio" type="bool">
       <label>Mute audio</label>
