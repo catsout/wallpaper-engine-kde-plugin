@@ -69,14 +69,6 @@ Qt using GStreamer for video backend.
 You need make your system gstreamer have vaapi plugin installed.  
 on debian using `apt install gstreamer1.0-vaapi`.   
 
-#### egl
-put `export QT_XCB_GL_INTEGRATION=xcb_egl` to where the xorg-sever will read.  
-on debian `~/.xsessionrc` is ok.  
-
-##### kwin display wrong
-egl may break kwin.  
-use `export QT_XCB_GL_INTEGRATION=xcb_glx kwin --replace`.
-
 #### use mpv 
 need compile c++ plugin.
 
