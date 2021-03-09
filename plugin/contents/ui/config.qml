@@ -13,7 +13,7 @@ import Qt.labs.folderlistmodel 2.12
 
 ColumnLayout {
     id: root
-    Layout.alignment: Qt.AlignCenter
+    anchors.fill: parent
     
     property string cfg_SteamLibraryPath
     property string cfg_WallpaperWorkShopId
@@ -22,6 +22,7 @@ ColumnLayout {
     property string cfg_BackgroundColor: "black"
     property int  cfg_DisplayMode
     property int  cfg_PauseMode
+    property alias cfg_FilterMode: comboxFilter.currentIndex
 
     property alias cfg_MuteAudio: muteAudio.checked
     property alias cfg_CapMouse: capMouse.checked
@@ -138,8 +139,6 @@ ColumnLayout {
     RowLayout {
         id: infoRow
         Layout.alignment: Qt.AlignCenter
-        
-
         Label {
             id: workshopidLabel
             text: 'Shopid: <a href="https://steamcommunity.com/sharedfiles/filedetails/?id='+ cfg_WallpaperWorkShopId + '">'+ cfg_WallpaperWorkShopId +'</a>'
@@ -148,7 +147,6 @@ ColumnLayout {
         Label {text: '|'}
         Label {
             text: "Type: " + cfg_WallpaperType
-            Layout.alignment: Qt.AlignLeft
         }
         Label {text: '|'}
         Button {
@@ -188,22 +186,53 @@ ColumnLayout {
                 }
             }
         }
+        ComboBox {
+            id: comboxFilter
+            model: [
+                {
+                    text: "Show All",
+                    value: "All"
+                },
+                {
+                    text: "Show Scene",
+                    value: "scene"
+                },
+                {
+                    text: "Show Web",
+                    value: "web"
+                },
+                {
+                    text: "Show Video",
+                    value: "video"
+                }
+            ]
+            textRole: "text"
+            valueRole: "value"
+            onActivated: {
+                wplist.upToListModel(getFilter());
+            }
+            function getFilter() {
+                return function(el) {
+                    if(currentValue === "All" || el.type === currentValue) 
+                        return true;
+                    else
+                        return false;
+                };
+            }
+        }
     }
 
     FolderListModel {
         id: wplist
         // use var not list as doc
         property var files
-        property var name_to_index
         property bool lock: false
-        folder: cfg_SteamLibraryPath + Common.wpenginePath//"/steamapps/workshop/content/431960" 
+        folder: cfg_SteamLibraryPath + Common.wpenginePath
         onStatusChanged: {
             if (wplist.status == FolderListModel.Ready && cfg_SteamLibraryPath !== "")
             {
                 wplist.files = [];
-                wplist.name_to_index = {};
                 wplist.lock = false;
-                projectModel.clear();
                 for(let i=0;i < wplist.count;i++)
                 {
                     let v = {
@@ -217,50 +246,53 @@ ColumnLayout {
                     wplist.files.push(v);
                 }
                 wplist.files.forEach(function(el) {
-                    Common.readTextFile(el["path"] + "/project.json", (text) => readCallback(text, el));
+                    Common.readTextFile(el.path + "/project.json", (text) => readCallback(text, el));
                 });
             }
         }
         function readCallback(text, el) {
-            //console.log("read project:" + v["workshopid"])
             let project = Common.parseJson(text);    
             if(project !== null) {
                 if("title" in project)
-                    el["title"] = project["title"];
+                    el.title = project.title;
                 if("preview" in project)
-                    el["preview"] = project["preview"];
+                    el.preview = project.preview;
                 if("file" in project)
-                    el["file"] = project["file"];
+                    el.file = project.file;
                 if("type" in project)
-                    el["type"] = project["type"].toLowerCase();
+                    el.type = project.type.toLowerCase();
             }
-            el["loaded"] = true;
+            el.loaded = true;
             check();
         }
         function check() {
             for(let i=0;i < wplist.files.length;i++)
-                if(!wplist.files[i]["loaded"]) return;
+                if(!wplist.files[i].loaded) return;
             if(wplist.lock) return;
             wplist.lock = true; 
+            upToListModel(comboxFilter.getFilter());
+        }
+        function upToListModel(filterFunc) {
+            if(typeof(filterFunc) === "undefined" )
+                filterFunc = (el) => true;
+
+            projectModel.clear();
             // -1 for no select
             let currentIndex = -1;
-            wplist.files.forEach(function(el, index) {
+            wplist.files.forEach(function(el) {
+                if(!filterFunc(el)) return;
                 projectModel.append(el);
-                if(el["workshopid"] === cfg_WallpaperWorkShopId)
-                    currentIndex = index;
+                if(el.workshopid === cfg_WallpaperWorkShopId)
+                    currentIndex = projectModel.count - 1;
             });
- //           projectModel.sync();
             picView.view.currentIndex = currentIndex;
+
         }
     }
 
 
     ListModel {
         id: projectModel
-        function openContainingFolder(index){
-            var now = projectModel.get(index)
-            Qt.openUrlExternally("file://"+now["path"]) 
-        }
     }
 
     KCM.GridView {
@@ -275,7 +307,7 @@ ColumnLayout {
             Kirigami.Action {
                 icon.name: "document-open-folder"
                 tooltip: "Open Containing Folder"
-                onTriggered: projectModel.openContainingFolder(index)
+                onTriggered: Qt.openUrlExternally(path) 
             }]
             thumbnail:Image {
                 anchors.fill: parent
