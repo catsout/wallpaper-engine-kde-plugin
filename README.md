@@ -17,6 +17,7 @@ I'm not vary familiar with graphic programming, so don't expect high performance
 #### not work
 - Particle System   
 - Scene script  
+- Text layer  
 - Camera shake and zoom  
 - Global bloom effect  
 - Perspective renderable  
