@@ -60,7 +60,7 @@ Item {
                 worldId: WebEngineScript.MainWorld
                 name: "Audio"
                 sourceCode: `
-                    window.ddwallpaperRegisterAudioListener = function(listener) {
+                    window.wallpaperRegisterAudioListener = function(listener) {
                         if(window.wpeQml)
                             window.wpeQml.sigAudio.connect(audioArray);
                         else
