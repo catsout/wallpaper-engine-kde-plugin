@@ -108,7 +108,7 @@ QQuickFramebufferObject::Renderer * SceneViewer::createRenderer() const {
 
 void SceneViewer::setAcceptMouse(bool value) {
 	if(value)
-		setAcceptedMouseButtons(Qt::AllButtons);
+		setAcceptedMouseButtons(Qt::LeftButton);
 	else
 		setAcceptedMouseButtons(Qt::NoButton);
 }
