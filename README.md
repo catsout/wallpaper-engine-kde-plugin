@@ -18,6 +18,7 @@ I'm not vary familiar with graphic programming, so don't expect high performance
 - Particle System   
 - Scene script  
 - Text layer  
+- Audio play
 - Camera shake and zoom  
 - Global bloom effect  
 - Perspective renderable  
