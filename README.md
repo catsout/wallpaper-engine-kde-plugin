@@ -6,6 +6,42 @@ It's simple and small.
 - Some case scene wallpaper may crash your kde.  
   Remove `WallpaperFilePath` line in `~/.config/plasma-org.kde.plasma.desktop-appletsrc` and restart kde to fix.  
 
+### Note
+- Support **scene(2d)**,**video**,**web** types
+- The plugin has a lib need compile which is needed for `mpv`,`scene` support. 
+The lib will be autodetect after install
+
+You need to choose your steam library directory. Like `~/.local/share/Steam`  
+
+#### Install kde plugin
+```sh
+git clone https://github.com/catsout/wallpaper-engine-kde-plugin.git
+plasmapkg2 -i wallpaper-engine-kde-plugin/plugin
+
+# update
+plasmapkg2 -u wallpaper-engine-kde-plugin/plugin
+
+# Uninstall
+plasmapkg2 -r wallpaper-engine-kde-plugin/plugin
+```
+Need restart plasma after update
+Try: `killall plasmashell && kstart5 plasmashell`
+
+### Build and install plugin lib
+```sh
+mkdir build && cd build
+cmake -DCMAKE_BUILD_TYPE=Release ..
+make
+sudo make install
+```
+
+### How to use:
+1. Use steam+proton or wine+steam
+2. Buy and install wallpaper engine
+3. Subscribe some wallpapers  
+4. Select steam library dir(like .local/share/Steam) in plugin
+5. Enjoy
+
 ### Scene support status
 Scene wallpaper is supportted by direct opengl(3.1).  
 It's almost usable.  
@@ -29,40 +65,6 @@ Basic web api supportted
 But WebEngineView in plasmashell can't init opengl  
 Some wallpaper using webgl may not work, and performance may be bad   
 
-### Note
-- Support **scene(2d)**,**video**,**web** types
-- Compile needed for scene type and mpv video backend, also ok for using without compiling.
-- Only test on x11.
-- Need Qt >= 5.13, for loop video support without black screen.
-- The code is just work, the performance may be slow.  
-
-You need to choose your steam library directory. Like `~/.local/share/Steam`  
-
-### How to use:
-1. Use steam+proton or wine+steam
-2. Buy and install wallpaper engine
-3. Subscribe some wallpapers  
-4. Select steam library dir(like .local/share/Steam) in plugin
-5. Enjoy
-
-
-### Install
-```sh
-git clone https://github.com/catsout/wallpaper-engine-kde-plugin.git
-plasmapkg2 -i wallpaper-engine-kde-plugin/plugin
-```
-### Uninstall
-```sh
-plasmapkg2 -r wallpaper-engine-kde-plugin/plugin
-```
-
-### Compile c++ part
-```sh
-mkdir build && cd build
-cmake -DCMAKE_BUILD_TYPE=Release ..
-make
-sudo make install
-```
 
 ### Better performance for intel card
 May not greatly improve.  
