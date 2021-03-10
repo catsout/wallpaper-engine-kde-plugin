@@ -1,4 +1,3 @@
-set(CMAKE_CXX_STANDARD 14)
 project(scenebackend)
 
 if (CMAKE_BUILD_TYPE EQUAL "DEBUG")
