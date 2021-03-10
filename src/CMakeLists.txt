@@ -2,6 +2,10 @@ find_package(Qt5 COMPONENTS Qml REQUIRED)
 add_subdirectory(backend/mpv)
 add_subdirectory(backend/scene)
 
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
+set(CMAKE_AUTOUIC ON)
+
 add_library(${PROJECT_NAME} SHARED
 	plugin.cpp
 	WPCommon.h

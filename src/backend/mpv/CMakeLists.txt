@@ -1,11 +1,14 @@
+project(mpvbackend)
+
 find_package(Qt5 COMPONENTS Gui Quick X11Extras REQUIRED)
 include_directories(${Qt5Gui_PRIVATE_INCLUDE_DIRS})
 
-if(PKG_CONFIG_FOUND)
-  pkg_check_modules(PC_MPV QUIET mpv)
-endif(PKG_CONFIG_FOUND)
+pkg_check_modules(MPV QUIET mpv)
 
-project(mpvbackend)
+set(CMAKE_AUTOMOC ON) 
+set(CMAKE_AUTORCC ON) 
+set(CMAKE_AUTOUIC ON) 
+
 add_library(${PROJECT_NAME}
 	mpvbackend.cpp  
 	mpvbackend.h  
@@ -16,6 +19,6 @@ target_link_libraries(${PROJECT_NAME}
         Qt5::Quick
         Qt5::Gui
 		Qt5::X11Extras
-		mpv
+		${MPV_LIBRARIES}
 )
 target_include_directories(${PROJECT_NAME} PUBLIC .) #${INCLUDE_DIRECTORIES})
