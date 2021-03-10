@@ -109,7 +109,6 @@ void* GlobalUniform::Daytime() {
 }
 
 void* GlobalUniform::PointerPosition() {
-	LOG_INFO(std::to_string(pointerPosition_[0]*100));
 	return pointerPosition_;
 }
 
