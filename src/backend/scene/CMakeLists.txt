@@ -21,7 +21,7 @@ target_link_libraries(${PROJECT_NAME}
 		Qt5::X11Extras
 		wallpaper
 )
-target_include_directories(${PROJECT_NAME} PUBLIC src)
+target_include_directories(${PROJECT_NAME} PUBLIC src include)
 
 
 add_executable(${PROJECT_NAME}-viewer-qml

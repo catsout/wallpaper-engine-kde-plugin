@@ -1,5 +1,4 @@
 #pragma once
-#include "wallpaper.h"
 #include <QtQuick/QQuickFramebufferObject>
 #include <QTimer>
 

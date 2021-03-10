@@ -1,4 +1,5 @@
 #include "SceneViewer.h"
+#include "wallpaper.h"
 
 #include <stdexcept>
 #include <clocale>
