@@ -240,12 +240,7 @@ std::string PreShaderSrc(GLenum shader_type, const std::string& src, Combos& com
 			include.append(line + "\n");
 			line = "";
 		}
-        else if(line.find("attribute ") != std::string::npos) {
-            line = "in" + line.substr(sizeof("attribute")-1);
-			update_pos = true;
-		}
-        else if(line.find("varying ") != std::string::npos) {
-            line = (shader_type==GL_FRAGMENT_SHADER?"in":"out") + line.substr(sizeof("varying")-1);
+        else if(line.find("attribute ") != std::string::npos || line.find("varying ") != std::string::npos) {
 			update_pos = true;
 		}
 		else if(line.find("// [COMBO]") != std::string::npos) {
@@ -473,7 +468,7 @@ bool WPShaderManager::ShaderContainUnifom(const std::string& name, const std::st
 }
 
 
-const std::string WPShaderManager::pre_shader_code = "#version 330\n"
+const std::string WPShaderManager::pre_shader_code = "#version 150\n"
                                               "#define highp\n"
                                               "#define mediump\n"
                                               "#define lowp\n"

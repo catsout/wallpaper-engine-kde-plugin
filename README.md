@@ -43,7 +43,7 @@ sudo make install
 5. Enjoy
 
 ### Scene support status
-Scene wallpaper is supportted by direct opengl(3.1).  
+Scene wallpaper is supportted by direct opengl(3.2).  
 It's almost usable.  
 #### performance
 I'm not vary familiar with graphic programming, so don't expect high performance.  
