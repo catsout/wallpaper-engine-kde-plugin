@@ -29,6 +29,7 @@ Try: `killall plasmashell && kstart5 plasmashell`
 
 ### Build and install plugin lib
 ```sh
+cd wallpaper-engine-kde-plugin
 mkdir build && cd build
 cmake -DCMAKE_BUILD_TYPE=Release ..
 make
