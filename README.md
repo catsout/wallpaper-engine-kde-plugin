@@ -13,18 +13,18 @@ The lib will be autodetect after install
 
 You need to choose your steam library directory. Like `~/.local/share/Steam`  
 
-#### Install kde plugin
+### Install kde plugin
 ```sh
 git clone https://github.com/catsout/wallpaper-engine-kde-plugin.git
 plasmapkg2 -i wallpaper-engine-kde-plugin/plugin
 
-# update
+# Update
 plasmapkg2 -u wallpaper-engine-kde-plugin/plugin
 
 # Uninstall
 plasmapkg2 -r wallpaper-engine-kde-plugin/plugin
 ```
-Need restart plasma after update
+Need restart plasma after update  
 Try: `killall plasmashell && kstart5 plasmashell`
 
 ### Build and install plugin lib
@@ -62,9 +62,9 @@ I'm not vary familiar with graphic programming, so don't expect high performance
 - ColorBlendMode  
 
 ### Web support status
-Basic web api supportted  
-But WebEngineView in plasmashell can't init opengl  
-Some wallpaper using webgl may not work, and performance may be bad   
+Basic web api supportted, the audio api is not send data at now.  
+But WebEngineView in plasmashell can't init opengl.  
+Some wallpaper using webgl may not work, and performance may be bad.   
 
 
 ### Better performance for intel card
