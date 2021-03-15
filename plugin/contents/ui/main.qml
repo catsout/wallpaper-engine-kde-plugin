@@ -10,8 +10,9 @@ Rectangle {
     property string workshopid: wallpaper.configuration.WallpaperWorkShopId
     property string type: wallpaper.configuration.WallpaperType
     property string source: wallpaper.configuration.WallpaperFilePath
+
+    property int displayMode: wallpaper.configuration.DisplayMode
     property bool mute: wallpaper.configuration.MuteAudio
-    property bool displayMode: wallpaper.configuration.DisplayMode
     property bool capMouse: wallpaper.configuration.CapMouse
     property bool useMpv: wallpaper.configuration.UseMpv
     
