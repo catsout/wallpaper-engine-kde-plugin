@@ -79,6 +79,10 @@ ColumnLayout {
                     value: Common.DisplayMode.Aspect
                 },
                 {
+                    text: "Scaling and crop",
+                    value: Common.DisplayMode.Crop
+                },
+                {
                     text: "Scale to fill",
                     value: Common.DisplayMode.Scale
                 },

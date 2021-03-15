@@ -9,6 +9,7 @@ QtObject {
     }
     enum DisplayMode {
         Aspect,
+        Crop,
         Scale
     }
     property string wpenginePath: "/steamapps/workshop/content/431960"
