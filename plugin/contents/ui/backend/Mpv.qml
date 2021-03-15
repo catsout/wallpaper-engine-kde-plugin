@@ -9,12 +9,12 @@ Item{
     property int displayMode: background.displayMode
     
     onDisplayModeChanged: {
-        var value = -1;
-        if(displayMode == Common.DisplayMode.Scale)
-            value = "no";
-        else if(displayMode == Common.DisplayMode.Aspect)
-            value = -1;
-        player.setProperty("video-aspect-override", value);
+        let value = 0.0;
+        if(videoItem.displayMode == Common.DisplayMode.Scale)
+            value = 1.0;
+        else if(videoItem.displayMode == Common.DisplayMode.Aspect)
+            value = 0.0;
+        player.setProperty("panscan", value);
     }
 
     // logfile
