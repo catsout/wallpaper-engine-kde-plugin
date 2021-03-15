@@ -15,6 +15,7 @@ You need to choose your steam library directory. Like `~/.local/share/Steam`
 
 ### Install kde plugin
 ```sh
+# Install
 git clone https://github.com/catsout/wallpaper-engine-kde-plugin.git
 plasmapkg2 -i wallpaper-engine-kde-plugin/plugin
 
@@ -62,8 +63,9 @@ I'm not vary familiar with graphic programming, so don't expect high performance
 - ColorBlendMode  
 
 ### Web support status
-Basic web api supportted, the audio api is not send data at now.  
-But WebEngineView in plasmashell can't init opengl.  
+Basic web api supportted, the audio api dose not send data at now.  
+#### no webgl
+WebEngineView in plasmashell can't init opengl.  
 Some wallpaper using webgl may not work, and performance may be bad.   
 
 
