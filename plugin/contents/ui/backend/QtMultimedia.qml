@@ -13,6 +13,8 @@ Item{
             videoView.fillMode = VideoOutput.Stretch;
         else if(displayMode == Common.DisplayMode.Aspect)
             videoView.fillMode = VideoOutput.PreserveAspectFit;
+        else if(displayMode == Common.DisplayMode.Crop)
+            videoView.fillMode = VideoOutput.PreserveAspectCrop;
     }
 
     VideoOutput {
