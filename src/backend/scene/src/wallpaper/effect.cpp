@@ -102,6 +102,7 @@ void Effect::Load(WPRender& wpRender) {
 		}
 
 		gl::Shadervalue::SetShadervalues(m.material.GetShadervalues(), "g_ModelViewProjectionMatrix", modelviewpro_mat);
+		gl::Shadervalue::SetShadervalues(m.material.GetShadervalues(), "g_ModelViewProjectionMatrixInverse", glm::inverse(modelviewpro_mat));
 	}
 }
 		
