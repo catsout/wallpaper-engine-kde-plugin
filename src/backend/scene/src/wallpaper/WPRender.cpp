@@ -16,18 +16,17 @@ void WPRender::Clear(float alpha) {
 }
 
 void WPRender::CreateGlobalFbo(int width, int height) {
-	std::string vsCode = "#version 330 core\n"
+	std::string vsCode = "#version 150\n"
 		"uniform mat4 fboTrans;\n"
-		"in vec3 a_position;\n"
-		"in vec2 a_texCoord;\n"
-		"out vec2 TexCoord;\n"
+		"attribute vec3 a_position;\n"
+		"attribute vec2 a_texCoord;\n"
+		"varying vec2 TexCoord;\n"
 		"void main()\n"
 		"{gl_Position = fboTrans*vec4(a_position, 1.0f);TexCoord = a_texCoord;}";
-	std::string fgCode = "#version 330 core\n"
-		"in vec2 TexCoord;\n"
-		"out vec4 color;\n"
+	std::string fgCode = "#version 150\n"
+		"varying vec2 TexCoord;\n"
 		"uniform sampler2D g_Texture0;\n"
-		"void main() {color = texture2D(g_Texture0, TexCoord);}";
+		"void main() {gl_FragColor = texture2D(g_Texture0, TexCoord);}";
 	shaderMgr.CreateShader("displayFbo", vsCode, fgCode);
 	shaderMgr.CreateLinkedShader("displayFbo");
 	fbo_ = std::unique_ptr<gl::GLFramebuffer>(glWrapper.CreateFramebuffer(width, height));
