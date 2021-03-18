@@ -1,10 +1,12 @@
 #pragma once
 #include <memory>
 #include <vector>
+#include <cstdint>
 #include "pkg.h"
 #include "object.h"
 #include "WPRender.h"
 #include "GLVertice.h"
+#include "FpsCounter.h"
 
 namespace wallpaper
 {
@@ -46,6 +48,8 @@ private:
 
 	gl::VerticeArray m_vertices;
 	gl::Shadervalues m_shadervalues;
+
+	FpsCounter fpsCounter;
 
     // for debug
     static int m_objnum;

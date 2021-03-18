@@ -54,6 +54,8 @@ public:
 	void SetOrtho(int w, int h);
 	void SetSize(int w, int h);
 	void SetPointerPos(float x, float y);
+	void SetTime(float time);
+	void AddTime(const std::chrono::duration<double>& time);
 	void ClearCache() {cache_.clear();}
 	bool CacheEmpty() {return cache_.empty();}
 

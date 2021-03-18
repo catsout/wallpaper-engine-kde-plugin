@@ -70,6 +70,11 @@ public:
 			m_wgl.Load(source);
 			needUpdate = true;
 		}
+		if(m_paused != m_viewer->m_paused) {
+			m_paused = m_viewer->m_paused;
+			if(!m_paused)
+				needUpdate = true;
+		}
 		if(needUpdate) {
 			m_viewer->window()->resetOpenGLState();
 			m_viewer->update();
@@ -78,8 +83,12 @@ public:
 
     void render() {
         QOpenGLFramebufferObject *fbo = framebufferObject();
-		m_wgl.Render(fbo->handle(), fbo->width(), fbo->height());
-        m_viewer->window()->resetOpenGLState();
+		if(!m_paused) {
+			m_wgl.Render(fbo->handle(), fbo->width(), fbo->height());
+			m_viewer->window()->resetOpenGLState();
+			// use signal to update at gui thread
+			emit m_viewer->onUpdate();
+		}
     }
 private:
 	SceneViewer* m_viewer;
@@ -87,15 +96,11 @@ private:
 	wallpaper::WallpaperGL m_wgl;
 	bool m_keepAspect;
 	QPointF m_mousePos;
+	bool m_paused;
 };
 
 SceneViewer::SceneViewer(QQuickItem * parent):QQuickFramebufferObject(parent),m_mousePos(0,0) {
-    int framerate = 35;
-     m_updateTimer.setInterval(1000 / framerate);
-     connect(&m_updateTimer, &QTimer::timeout, this, [this]() {
-         update();
-     });
-     m_updateTimer.start();
+    connect(this, &SceneViewer::onUpdate, this, &SceneViewer::update, Qt::QueuedConnection);
 }
 
 SceneViewer::~SceneViewer() {
@@ -155,9 +160,10 @@ void SceneViewer::setKeepAspect(bool value) {
 };
 
 void SceneViewer::play() {
-	m_updateTimer.start();
+	m_paused = false;
+	update();
 };
 
 void SceneViewer::pause() {
-	m_updateTimer.stop();
+	m_paused = true;
 };

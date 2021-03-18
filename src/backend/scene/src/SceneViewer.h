@@ -39,6 +39,7 @@ public slots:
 	void pause();
 
 signals:
+	void onUpdate();
 	void sourceChanged();
 	void keepAspectChanged();
 
@@ -48,4 +49,5 @@ private:
     QTimer m_updateTimer;
 	bool m_keepAspect = false;
 	QPointF m_mousePos;
+	bool m_paused = false;
 };

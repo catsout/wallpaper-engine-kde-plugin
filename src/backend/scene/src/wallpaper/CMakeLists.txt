@@ -3,7 +3,7 @@ project(wallpaper)
 find_package(OpenGL REQUIRED)
 pkg_check_modules(LZ4 REQUIRED liblz4)
 
-if (CMAKE_BUILD_TYPE EQUAL "DEBUG")
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
 	add_compile_definitions(DEBUG_OPENGL=1)
 endif ()
 
@@ -36,6 +36,8 @@ add_library(${PROJECT_NAME}
 	WPShaderManager.h
 	WPTextureCache.cpp
 	WPTextureCache.h
+	FpsCounter.h
+	FpsCounter.cpp
 )
 set_property(TARGET ${PROJECT_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
 target_link_libraries(${PROJECT_NAME}

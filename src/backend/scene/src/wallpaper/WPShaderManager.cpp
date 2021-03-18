@@ -59,6 +59,7 @@ GlobalUniform::GlobalUniform() {
 	size_[1] = 1.0f/1080.0f;
 	pointerPosition_[0] = 0.0f;
 	pointerPosition_[1] = 0.0f;
+	time_ = 0.0f;
 }
 
 bool GlobalUniform::IsGlobalUniform(const std::string& name) {
@@ -96,9 +97,19 @@ void GlobalUniform::SetPointerPos(float x, float y) {
 	pointerPosition_[1] = y;
 }
 
-void* GlobalUniform::Time() {
+void GlobalUniform::SetTime(float time) {
+	time_ = time;
+}
+
+void GlobalUniform::AddTime(const std::chrono::duration<double>& time) {
 	using namespace std::chrono;
-	time_ = duration_cast<milliseconds>(steady_clock::now() - startTime_).count() / 1000.0f;
+	uint32_t utime = (uint32_t)(time_*1000) + duration_cast<milliseconds>(time).count();
+	time_ = utime / 1000.0f;
+}
+
+void* GlobalUniform::Time() {
+//	using namespace std::chrono;
+//	time_ = duration_cast<milliseconds>(steady_clock::now() - startTime_).count() / 1000.0f;
 	return &time_;
 }
 

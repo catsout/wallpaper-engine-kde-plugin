@@ -150,7 +150,7 @@ void wp::Material::Render(WPRender& wpRender) {
 		wpRender.glWrapper.ActiveTexture(i);
 		auto* tex = wpRender.texCache.GetTexture(m_textures[i]);
 		if(tex->IsSprite()) {
-			auto sf = tex->NextSpriteFrame(wpRender.timeDiffFrame);
+			auto sf = tex->NextSpriteFrame(wpRender.frametime);
 			if(sf != nullptr) {
 				using namespace gl;
 				std::string texgl = "g_Texture" +std::to_string(i);

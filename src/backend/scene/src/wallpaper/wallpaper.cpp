@@ -1,6 +1,9 @@
 #include "wallpaper.h"
 #include <nlohmann/json.hpp>
 #include <iostream>
+#include <chrono>
+#include <ctime>
+#include <thread>
 
 typedef wallpaper::fs::file_node file_node;
 using json = nlohmann::json;
@@ -110,18 +113,21 @@ void WallpaperGL::Load(const std::string& pkg_path) {
 
 void WallpaperGL::Render(uint fbo, int width, int height) {
 	if(!m_inited || !m_loaded) return;
-	if(!m_wpRender.shaderMgr.globalUniforms.CacheEmpty()) {
-		float lasttime = *(float*)m_wpRender.shaderMgr.globalUniforms.GetValue("g_Time");
-		m_wpRender.shaderMgr.globalUniforms.ClearCache();
-		float* nowtime = (float*)m_wpRender.shaderMgr.globalUniforms.GetValue("g_Time");
-		int diff = (int)(*nowtime*1000) - (int)(lasttime*1000);
-		if(diff < 1000 / 30 && diff > 0) {
-			*nowtime = lasttime;
-			return;
-		}
-		if(diff > 0)
-			m_wpRender.timeDiffFrame = diff;
-	}
+
+	using namespace std::chrono;
+	auto enterFrame = steady_clock::now();
+
+	// out of frame time
+	static auto outFrame = steady_clock::now();
+	duration<double> outFrametime = enterFrame - outFrame;
+
+	// fps
+	auto time = duration_cast<milliseconds>(enterFrame.time_since_epoch());
+	uint32_t timep = (time - duration_cast<hours>(time)).count();
+	fpsCounter.RegisterFrame(timep);
+
+	//--------------
+	m_wpRender.shaderMgr.globalUniforms.ClearCache();
 	gl::GLFramebuffer defaultFbo(width, height);
 	defaultFbo.framebuffer = fbo;
 	// back to center if at (0,0), this fix without mouse
@@ -167,6 +173,18 @@ void WallpaperGL::Render(uint fbo, int width, int height) {
 	m_vertices.Draw();
 	// no gldelete
 	defaultFbo.framebuffer = 0;
+	// ---------------
+
+	duration<double> frametime = (steady_clock::now() - enterFrame);
+	duration<double> idealtime = microseconds(1000*1000) / 15 - outFrametime;
+	if (frametime < idealtime) {
+		std::this_thread::sleep_for(idealtime - frametime);
+	}
+	outFrame = steady_clock::now();
+
+	idealtime += outFrametime;
+	m_wpRender.shaderMgr.globalUniforms.AddTime(idealtime);
+	m_wpRender.frametime = duration_cast<milliseconds>(idealtime).count();
 }
 
 void WallpaperGL::Clear()
