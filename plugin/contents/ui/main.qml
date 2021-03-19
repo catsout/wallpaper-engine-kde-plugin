@@ -86,11 +86,14 @@ Rectangle {
             id: fso
             focus: true
             Keys.onPressed: {
-                if(event.key == Qt.Key_Z && (event.modifiers & Qt.ShiftModifier) && (event.modifiers & Qt.ControlModifier)) {
-                    backendLoader.item.setMouseListener();
-                    console.log("switch mouse capture");
-                }
-                event.accepted = false;
+                if(event.key == Qt.Key_Z && (event.modifiers & Qt.ControlModifier)) {
+                    if(event.modifiers & Qt.ShiftModifier) {
+                        backendLoader.item.setMouseListener();
+                        console.log("switch mouse capture");
+                    }
+                    event.accepted = true;
+                } else 
+                    event.accepted = false;
             }
             onActiveFocusChanged: {
                 if(background.capMouse)
