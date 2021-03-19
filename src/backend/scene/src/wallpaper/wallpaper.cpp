@@ -63,7 +63,7 @@ void WallpaperGL::Load(const std::string& pkg_path) {
 	m_wpRender.shaderMgr.globalUniforms.SetCamera(center,eye,up);
 
 	auto& general_json = scene_json.at("general");
-	if(!StringToVec<float>(general_json.at("clearcolor"), clearcolor)) return;
+	GET_JSON_NAME_VALUE_NOWARN(general_json, "clearclolor", clearcolor);
 	m_wpRender.SetClearcolor(clearcolor);
 	
 	CameraParallax cameraParallax;
@@ -77,7 +77,9 @@ void WallpaperGL::Load(const std::string& pkg_path) {
 
 	if(!general_json.contains("orthogonalprojection")) return;
 	auto& ortho_j = general_json.at("orthogonalprojection");
-	std::vector<int> ortho({ortho_j.at("width"), ortho_j.at("height")});
+	std::vector<int> ortho(2);
+	if(!GET_JSON_NAME_VALUE(ortho_j, "width", ortho.at(0))) return;
+	GET_JSON_NAME_VALUE(ortho_j, "height", ortho.at(1));
 	m_wpRender.shaderMgr.globalUniforms.SetOrtho(ortho.at(0), ortho.at(1));
 	m_wpRender.CreateGlobalFbo(ortho.at(0), ortho.at(1));
 	
