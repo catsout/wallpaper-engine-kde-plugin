@@ -43,6 +43,7 @@ void WPRender::UseGlobalFbo(const gl::Shadervalues& shadervalues) {
 }
 		
 void WPRender::GenCameraParallaxVec(float x, float y) {
+	// *2.0f to -1,1
 	float w = (0.5f - x) * 2.0f * m_cameraParallax.amount * m_cameraParallax.mouseinfluence;
 	float h = (0.5f - y) * 2.0f * m_cameraParallax.amount * m_cameraParallax.mouseinfluence;
 	m_cameraParallaxVec = std::vector<float>({w, h});

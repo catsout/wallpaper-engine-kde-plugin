@@ -39,11 +39,11 @@ bool wallpaper::RenderObject::From_json(const json& obj)
 	if(!GET_JSON_NAME_VALUE(obj, "name", m_name))
 		return false;
 
-	GET_JSON_NAME_VALUE(obj, "origin", m_origin);
+	GET_JSON_NAME_VALUE_NOWARN(obj, "origin", m_origin);
 
-	GET_JSON_NAME_VALUE(obj, "scale", m_scale);
+	GET_JSON_NAME_VALUE_NOWARN(obj, "scale", m_scale);
 
-	GET_JSON_NAME_VALUE(obj, "angles", m_angles);
+	GET_JSON_NAME_VALUE_NOWARN(obj, "angles", m_angles);
 
 	GET_JSON_NAME_VALUE_NOWARN(obj, "parallaxDepth", m_parallaxDepth);
 
@@ -229,7 +229,7 @@ void ImageObject::Render(WPRender& wpRender)
 	}
 
 	// parallaxDepth
-	if(wpRender.GetCameraParallax().enable) {
+	if(wpRender.GetCameraParallax().enable && !m_fullscreen) {
 		const auto& camParaVec = wpRender.GetCameraParallaxVec();
 		const auto& depth = ParallaxDepth();
 		auto transVec = glm::vec3(camParaVec[0]*depth[0], camParaVec[1]*depth[1], 0.0f);
