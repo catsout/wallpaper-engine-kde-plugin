@@ -159,34 +159,30 @@ void ImageObject::Load(WPRender& wpRender)
 	model_mat = glm::scale(model_mat, glm::vec3(scale[0], scale[1], scale[2]));
 	m_fboTrans = viewpro_mat * model_mat;
 	gl::Shadervalue::SetShadervalues(shadervalues_, "g_ModelViewProjectionMatrix", m_fboTrans);
-
+	if(!IsCompose()) {
 	// material shadervalues
-	model_mat = glm::mat4(1.0f);
-	if(m_material.GetShadervalues().count("g_Texture0Resolution") != 0) {
-		// remove black edge
-		auto& sv = m_material.GetShadervalues().at("g_Texture0Resolution");
-		if(sv.value[0] != sv.value[2] || sv.value[1] != sv.value[3]) {
-			model_mat = glm::translate(glm::mat4(1.0f), -glm::vec3(m_size[0]/2.0f,m_size[1]/2.0f,0.0f));
-			model_mat = glm::scale(model_mat, glm::vec3(sv.value[0]/sv.value[2], sv.value[1]/sv.value[3], 1.0f));
-			model_mat = glm::translate(model_mat, glm::vec3(m_size[0]/2.0f,m_size[1]/2.0f,0.0f));
+		model_mat = glm::mat4(1.0f);
+		if(m_material.GetShadervalues().count("g_Texture0Resolution") != 0) {
+			// remove black edge
+			auto& sv = m_material.GetShadervalues().at("g_Texture0Resolution");
+			if(sv.value[0] != sv.value[2] || sv.value[1] != sv.value[3]) {
+				model_mat = glm::translate(glm::mat4(1.0f), -glm::vec3(m_size[0]/2.0f,m_size[1]/2.0f,0.0f));
+				model_mat = glm::scale(model_mat, glm::vec3(sv.value[0]/sv.value[2], sv.value[1]/sv.value[3], 1.0f));
+				model_mat = glm::translate(model_mat, glm::vec3(m_size[0]/2.0f,m_size[1]/2.0f,0.0f));
+			}
 		}
-	}
-	if(IsCompose()) {
-		// compose need to know wordcoord and use global ViewProjectionMatrix
-		// this is ok for fullscreen as ori at (0,0,0)
-		model_mat = glm::translate(glm::mat4(1.0f), glm::vec3(ori[0], ori[1], ori[2])) * model_mat;
-		model_mat = glm::scale(model_mat, glm::vec3(scale[0], scale[1], scale[2]));
+			model_mat = glm::translate(glm::mat4(1.0f), glm::vec3(m_size[0]/2.0f, m_size[1]/2.0f, 0.0f)) * model_mat;
+			viewpro_mat = glm::ortho(0.0f, (float)m_size[0], 0.0f, (float)m_size[1], -100.0f, 100.0f);
+		auto modelviewpro_mat = viewpro_mat * model_mat;
+		gl::Shadervalue::SetShadervalues(m_material.GetShadervalues(), "g_ModelViewProjectionMatrix", modelviewpro_mat);
+		gl::Shadervalue::SetShadervalues(m_material.GetShadervalues(), "g_UserAlpha", m_alpha);
+		gl::Shadervalue::SetShadervalues(m_material.GetShadervalues(), "g_Brightness", m_brightness);
+		gl::Shadervalue::SetShadervalues(m_material.GetShadervalues(), "g_Alpha", m_alpha);
+		gl::Shadervalue::SetShadervalues(m_material.GetShadervalues(), "g_Color", m_color);
 	} else {
-		model_mat = glm::translate(glm::mat4(1.0f), glm::vec3(m_size[0]/2.0f, m_size[1]/2.0f, 0.0f)) * model_mat;
-		viewpro_mat = glm::ortho(0.0f, (float)m_size[0], 0.0f, (float)m_size[1], -100.0f, 100.0f);
+		// use trans contain pos info for compose
+		gl::Shadervalue::SetShadervalues(m_material.GetShadervalues(), "g_ModelViewProjectionMatrix", m_fboTrans);
 	}
-	auto modelviewpro_mat = viewpro_mat * model_mat;
-	gl::Shadervalue::SetShadervalues(m_material.GetShadervalues(), "g_ModelViewProjectionMatrix", modelviewpro_mat);
-	gl::Shadervalue::SetShadervalues(m_material.GetShadervalues(), "g_UserAlpha", m_alpha);
-	gl::Shadervalue::SetShadervalues(m_material.GetShadervalues(), "g_Brightness", m_brightness);
-	gl::Shadervalue::SetShadervalues(m_material.GetShadervalues(), "g_Alpha", m_alpha);
-	gl::Shadervalue::SetShadervalues(m_material.GetShadervalues(), "g_Color", m_color);
-
 
 	int index = 0;
 	for(auto& e:m_effects){
@@ -216,6 +212,20 @@ void ImageObject::Render(WPRender& wpRender)
 		wpRender.Clear();
 	}		
 
+	// parallaxDepth
+	if(wpRender.GetCameraParallax().enable && !m_fullscreen) {
+		const auto& camParaVec = wpRender.GetCameraParallaxVec();
+		const auto& depth = ParallaxDepth();
+		auto transVec = glm::vec3(camParaVec[0]*depth[0], camParaVec[1]*depth[1], 0.0f);
+		auto trans = glm::translate(glm::mat4(1.0f), transVec);
+		auto newfboTrans = trans*m_fboTrans;
+		// for render to global
+		gl::Shadervalue::SetShadervalues(shadervalues_, "g_ModelViewProjectionMatrix", newfboTrans);
+		// for compose layer get right area
+		if(IsCompose())
+			gl::Shadervalue::SetShadervalues(m_material.GetShadervalues(), "g_ModelViewProjectionMatrix", newfboTrans);
+	}
+
 	glDisable(GL_BLEND);
 	//glBlendFunc(GL_ONE, GL_ZERO);
 	m_material.SetVertices(&Vertices());
@@ -228,14 +238,6 @@ void ImageObject::Render(WPRender& wpRender)
 		e.Render(wpRender);
 	}
 
-	// parallaxDepth
-	if(wpRender.GetCameraParallax().enable && !m_fullscreen) {
-		const auto& camParaVec = wpRender.GetCameraParallaxVec();
-		const auto& depth = ParallaxDepth();
-		auto transVec = glm::vec3(camParaVec[0]*depth[0], camParaVec[1]*depth[1], 0.0f);
-		auto trans = glm::translate(glm::mat4(1.0f), transVec);
-		gl::Shadervalue::SetShadervalues(shadervalues_, "g_ModelViewProjectionMatrix", trans*m_fboTrans);
-	}
 	if(m_blendmode != 0) {
 		glDisable(GL_BLEND);
 		wpRender.glWrapper.BindFramebufferViewport(wpRender.GlobalFbo());
