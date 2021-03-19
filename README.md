@@ -60,7 +60,7 @@ I'm not vary familiar with graphic programming, so don't expect high performance
 - Camera shake and zoom  
 - Global bloom effect  
 - Perspective renderable  
-- ColorBlendMode  
+- ~~ColorBlendMode~~  
 
 ### Web support status
 Basic web api supportted, the audio api dose not send data at now.  
@@ -69,15 +69,19 @@ WebEngineView in plasmashell can't init opengl.
 Some wallpaper using webgl may not work, and performance may be bad.   
 
 
-### Better performance for intel card
-May not greatly improve.  
-#### hwdecode
-Qt using GStreamer for video backend.  
-You need make your system gstreamer have vaapi plugin installed.  
-on debian using `apt install gstreamer1.0-vaapi`.   
+### HWdecode for video
+#### QtMultimedia
+Default video backend of this plugin.  
+It's using GStreamer to play video.  
+- GStreamer plugin installed
+like `gstreamer1.0-vaapi` in debain
+- `GST_VAAPI_ALL_DRIVERS=1`
+this for enable vaapi support  
+put it to where the xserver read.  
 
-#### use mpv 
-need compile c++ plugin.
+#### Mpv
+Need to compile plugin lib.  
+The config is set to `hwdec=auto`, and not configurable at now.  
 
 ### Credits
 
