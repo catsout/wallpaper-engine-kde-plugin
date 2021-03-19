@@ -83,9 +83,13 @@ GLFramebuffer* GLWrapper::CreateFramebuffer(int width, int height) {
 	case GL_FRAMEBUFFER_COMPLETE:
 		break;
 	case GL_FRAMEBUFFER_UNSUPPORTED:
+		LOG_ERROR("GL_FRAMEBUFFER_UNSUPPORTED");
+		break;
 	case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
+		LOG_ERROR("GL_FRAMEBUFFER_UNSUPPORTED");
+		break;
 	default:
-		LOG_ERROR("framebuffer not complite");
+		LOG_ERROR("framebuffer not complite " + std::to_string(status));
 		break;
 	}
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -136,6 +140,22 @@ GLShader* GLWrapper::CreateShader(GLuint stage, const std::string& source) {
     }
 	CHECK_GL_ERROR_IF_DEBUG();
 	return shader;
+}
+
+
+GLTexture* GLWrapper::CopyTexture(GLFramebuffer* fbo) {
+	GLFramebuffer* backfbo = m_curFbo;
+	BindFramebuffer(fbo);
+	glReadBuffer(GL_COLOR_ATTACHMENT0);
+
+	int width = fbo->width,height = fbo->height;
+	GLTexture* tex = CreateTexture(GL_TEXTURE_2D , width, height, 0);
+	TextureImage(tex, 0, width, height, TextureFormat::RGBA8, NULL, true, true, 0);
+	BindTexture(tex);
+	glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, width, height);
+//	BindFramebuffer(backfbo);
+	CHECK_GL_ERROR_IF_DEBUG();
+	return tex;
 }
 
 void GLWrapper::Viewport(int x,int y,int w,int h) {

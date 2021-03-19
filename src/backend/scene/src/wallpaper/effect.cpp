@@ -51,8 +51,22 @@ bool Effect::From_json(const nlohmann::json& effect_j) {
 		// pass effect passes to material
 		if(pass_j.contains("material_pass")) {
 			auto& material_pass_j = pass_j.at("material_pass");
-			for(auto& el:material_pass_j.items())
-				content_j[el.key()] = el.value();
+			// merge
+			for(auto& el:material_pass_j.items()) {
+				if(content_j.contains(el.key())) {
+					auto& content_c_j = content_j.at(el.key());
+					auto& value = el.value();
+					if(content_c_j.is_array()) {
+						int index=0;
+						for(auto& v:value)
+							content_c_j[index++] = v;
+					} else {
+						for(auto& v:value.items())
+							content_c_j[v.key()] = v.value();
+					}
+				} else
+					content_j[el.key()] = el.value();
+			}
 		}
 		m_materials.emplace_back((RenderObject&)m_imgObject, m_size);
 		auto& material = m_materials.back();
@@ -75,6 +89,7 @@ bool Effect::From_json(const nlohmann::json& effect_j) {
 }
 
 void Effect::Load(WPRender& wpRender) {
+	m_size = m_imgObject.Size();
 	m_vertices = gl::VerticeArray::GenSizedBox(&wpRender.glWrapper, std::vector<float>(m_size.begin(),m_size.end()));
 	m_vertices.Update();
     m_vertices_default = gl::VerticeArray::GenDefault(&wpRender.glWrapper);
@@ -82,6 +97,7 @@ void Effect::Load(WPRender& wpRender) {
 
 	for(auto& f:m_fboDataMap) {
 		float scale = f.second.scale;
+		LOG_INFO("fbo:" + f.first);
 		f.second.fbo = std::unique_ptr<gl::GLFramebuffer>(wpRender.glWrapper.CreateFramebuffer(m_size[0]/scale, m_size[1]/scale));
 	}
 
@@ -89,6 +105,7 @@ void Effect::Load(WPRender& wpRender) {
 	auto viewpro_mat = glm::ortho(0.0f, (float)m_size[0], 0.0f, (float)m_size[1], -100.0f, 100.0f);
 	auto size_modelviewpro_mat = viewpro_mat * model_mat;
 	for(auto& m:m_materials) {
+		m.material.SetSize(m_size);
 		m.material.Load(wpRender);
 		// after material Load
 		glm::mat4 modelviewpro_mat(1.0f);

@@ -87,6 +87,11 @@ void WallpaperGL::Load(const std::string& pkg_path) {
 
 	m_vertices = gl::VerticeArray::GenDefault(&m_wpRender.glWrapper);
 	m_vertices.Update();
+	
+	gl::Combos combos;combos["TRANSFORM"] = 1;
+	gl::Shadervalues shadervalues;
+	m_wpRender.shaderMgr.CreateShader("passthrough", combos, shadervalues, 1);
+	m_wpRender.shaderMgr.CreateLinkedShader("passthrough+TRANSFORM1");
 
     auto& objects = scene_json.at("objects");
     for(auto& object:objects) {
@@ -104,6 +109,8 @@ void WallpaperGL::Load(const std::string& pkg_path) {
 		LOG_INFO("\n-----Loading object: " + iter->Name() + "-----");
         iter->Load(m_wpRender);
 	}
+
+	
 	// clean useless shadercache
 	m_wpRender.shaderMgr.ClearShaderCache();
 	// clear for first frame
@@ -159,17 +166,16 @@ void WallpaperGL::Render(uint fbo, int width, int height) {
 		float aspect = (float)ortho.at(0) / (float)ortho.at(1);
 		fboTrans = GetAspectScaleMatrix(defaultFbo.width, defaultFbo.height, aspect);
 	}
-	gl::Shadervalue::SetShadervalues(m_shadervalues, "fboTrans", fboTrans * m_fboTrans);
+	gl::Shadervalue::SetShadervalues(m_shadervalues, "g_ModelViewProjectionMatrix", fboTrans * m_fboTrans);
 
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glDisable(GL_BLEND);
 	m_wpRender.glWrapper.BindFramebufferViewport(&defaultFbo);
 	CHECK_GL_ERROR_IF_DEBUG();
 	m_wpRender.Clear();
 	m_wpRender.glWrapper.ActiveTexture(0);
 	m_wpRender.glWrapper.BindFramebufferTex(m_wpRender.GlobalFbo());
-	m_wpRender.shaderMgr.BindShader("displayFbo");
-	m_wpRender.shaderMgr.UpdateUniforms("displayFbo", m_shadervalues);
+	m_wpRender.shaderMgr.BindShader("passthrough+TRANSFORM1");
+	m_wpRender.shaderMgr.UpdateUniforms("passthrough+TRANSFORM1", m_shadervalues);
 	m_vertices.Draw();
 	// no gldelete
 	defaultFbo.framebuffer = 0;

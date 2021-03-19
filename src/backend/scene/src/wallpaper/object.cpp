@@ -115,6 +115,15 @@ bool ImageObject::From_json(const json& obj)
 			}
 		}
 	}
+	if(m_blendmode != 0) {
+		material_str = fs::GetContent(WallpaperGL::GetPkgfs(), "materials/util/effectpassthrough.json");
+		auto matEff_j = json::parse(material_str);
+		auto& combos = matEff_j.at("passes")[0].at("combos");
+		combos["BONECOUNT"] = 1;
+		combos["BLENDMODE"] = m_blendmode;
+		if(!m_materialEffePass.From_json(matEff_j)) return false;
+		m_materialEffePass.SetSize(m_size);
+	}
     return true;
 }
 
@@ -132,7 +141,11 @@ void ImageObject::Load(WPRender& wpRender)
     verArry.Update();
 
     m_material.Load(wpRender);
-
+	if(m_blendmode != 0) {
+		m_materialEffePass.Load(wpRender);
+		m_materialEffePass.GetTextures()[1] = "_rt_";
+	}
+	
 	// fbo shadervalues	
 	auto viewpro_mat = wpRender.shaderMgr.globalUniforms.GetViewProjectionMatrix();
 	auto scale = Scale();
@@ -145,7 +158,7 @@ void ImageObject::Load(WPRender& wpRender)
 	//1. scale
 	model_mat = glm::scale(model_mat, glm::vec3(scale[0], scale[1], scale[2]));
 	m_fboTrans = viewpro_mat * model_mat;
-	gl::Shadervalue::SetShadervalues(shadervalues_, "fboTrans", m_fboTrans);
+	gl::Shadervalue::SetShadervalues(shadervalues_, "g_ModelViewProjectionMatrix", m_fboTrans);
 
 	// material shadervalues
 	model_mat = glm::mat4(1.0f);
@@ -214,22 +227,44 @@ void ImageObject::Render(WPRender& wpRender)
 		if(index++ == WallpaperGL::EffNum()) break;
 		e.Render(wpRender);
 	}
+
 	// parallaxDepth
 	if(wpRender.GetCameraParallax().enable) {
 		const auto& camParaVec = wpRender.GetCameraParallaxVec();
 		const auto& depth = ParallaxDepth();
 		auto transVec = glm::vec3(camParaVec[0]*depth[0], camParaVec[1]*depth[1], 0.0f);
 		auto trans = glm::translate(glm::mat4(1.0f), transVec);
-		gl::Shadervalue::SetShadervalues(shadervalues_, "fboTrans", trans*m_fboTrans);
+		gl::Shadervalue::SetShadervalues(shadervalues_, "g_ModelViewProjectionMatrix", trans*m_fboTrans);
 	}
+	if(m_blendmode != 0) {
+		glDisable(GL_BLEND);
+		wpRender.glWrapper.BindFramebufferViewport(wpRender.GlobalFbo());
+		m_materialEffePass.GetShadervalues() = shadervalues_;
 
-	glEnable(GL_BLEND);
-	Blending::ApplayBlending(m_material.Blending());
-//	glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
-	wpRender.UseGlobalFbo(shadervalues_);
-	wpRender.glWrapper.ActiveTexture(0);
-	wpRender.glWrapper.BindFramebufferTex(CurFbo());
-	Vertices().Draw();
+		auto* tex = wpRender.glWrapper.CopyTexture(wpRender.GlobalFbo());
+		wpRender.glWrapper.BindFramebufferViewport(wpRender.GlobalFbo());
+		wpRender.glWrapper.ActiveTexture(0);
+		wpRender.glWrapper.BindFramebufferTex(CurFbo());
+
+		wpRender.glWrapper.ActiveTexture(1);
+		wpRender.glWrapper.BindTexture(tex);
+
+		m_materialEffePass.SetVertices(&Vertices());
+		m_materialEffePass.Render(wpRender);	
+		wpRender.glWrapper.DeleteTexture(tex);
+		delete tex;
+	} else {
+		glEnable(GL_BLEND);
+		Blending::ApplayBlending(m_material.Blending());
+	//	glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
+//		wpRender.UseGlobalFbo(shadervalues_);
+		wpRender.glWrapper.BindFramebufferViewport(wpRender.GlobalFbo());
+		wpRender.shaderMgr.BindShader("passthrough+TRANSFORM1");
+		wpRender.shaderMgr.UpdateUniforms("passthrough+TRANSFORM1", shadervalues_);
+		wpRender.glWrapper.ActiveTexture(0);
+		wpRender.glWrapper.BindFramebufferTex(CurFbo());
+		Vertices().Draw();
+	}
 }
 
 
@@ -239,8 +274,9 @@ bool ImageObject::IsCompose() const {
 
 void ImageObject::GenBaseCombos() {
 	m_basecombos.clear();
-//{"material":"ui_editor_properties_composite","combo":"COMPOSITE","type":"options","default":0,"options":{"ui_editor_properties_normal":0,"ui_editor_properties_blend":1,"ui_editor_properties_under":2,"ui_editor_properties_cutout":3}}
-	m_basecombos["COMPOSITE"] = IsCompose()?0:1;
+	//{"material":"ui_editor_properties_composite","combo":"COMPOSITE","type":"options","default":0,"options":{"ui_editor_properties_normal":0,"ui_editor_properties_blend":1,"ui_editor_properties_under":2,"ui_editor_properties_cutout":3}}
+	// used for blur_combine 
+	m_basecombos["COMPOSITE"] = 1;//IsCompose()?0:1;
 	if(m_fullscreen)
 		m_basecombos["TRANSFORM"] = 1;
 }

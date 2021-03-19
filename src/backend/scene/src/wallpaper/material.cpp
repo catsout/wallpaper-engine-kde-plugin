@@ -118,6 +118,7 @@ void wp::Material::Load(WPRender& wpRender) {
 			sv_resolutions.push_back(gl::Shadervalue());
 			sv_resolutions.back().glname = sv_resolution;
 
+			//LOG_INFO(texture);
 			if(texture.empty()) {
 				std::vector<int> re = {m_size[0],m_size[1],m_size[0],m_size[1]};
 				sv_resolutions.back().value = std::vector<float>(re.begin(),re.end());
@@ -125,7 +126,7 @@ void wp::Material::Load(WPRender& wpRender) {
 			}else if(texture.compare(0, 4, "_rt_") == 0) {
 				std::vector<int> re_i = {m_size[0],m_size[1],m_size[0],m_size[1]};
 				std::vector<float> re(re_i.begin(), re_i.end());
-				if(texture.compare(4, 14, "FullFrameBuffer") == 0) {
+				if(texture.compare(0, 8, "_rt_Full") == 0) {
 					const auto& ortho = wpRender.shaderMgr.globalUniforms.Ortho();
 					std::vector<float> ortho_f(ortho.begin(), ortho.end());
 					re = std::vector<float>({ortho_f[0], ortho_f[1], ortho_f[0], ortho_f[1]});
@@ -145,8 +146,15 @@ void wp::Material::Load(WPRender& wpRender) {
 void wp::Material::Render(WPRender& wpRender) {
 	wpRender.shaderMgr.BindShader(m_shader);
 	for(int i=0;i < m_textures.size();i++){
-		if(m_textures[i].empty() || m_textures[i].compare(0,4,"_rt_") == 0) 
+		if(m_textures[i].empty())
 			continue;
+		if(m_textures[i].compare(0,4,"_rt_") == 0) {
+			if(m_textures[i].compare(0, 8, "_rt_Full") == 0) {
+				wpRender.glWrapper.ActiveTexture(i);
+				wpRender.glWrapper.BindFramebufferTex(wpRender.GlobalFbo());
+			}
+			continue;
+		}
 		wpRender.glWrapper.ActiveTexture(i);
 		auto* tex = wpRender.texCache.GetTexture(m_textures[i]);
 		if(tex->IsSprite()) {
