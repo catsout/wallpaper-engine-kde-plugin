@@ -29,7 +29,6 @@ static void *get_proc_address(const char *name)
 
 }
 
-
 class SceneRenderer : public QQuickFramebufferObject::Renderer
 {
    
@@ -47,15 +46,15 @@ public:
     }
 
 	void synchronize(QQuickFramebufferObject *item) {
-		bool needUpdate = false;
 
 		if(!framebufferObject()) {
 			m_wgl.Init(get_proc_address);
+			m_wgl.SetUpdateCallback(std::bind(&SceneRenderer::updateViewer, this));
+			m_viewer->m_wgl = &m_wgl;
 		}
 		if(m_keepAspect != m_viewer->keepAspect()) {
 			m_keepAspect = m_viewer->keepAspect();
 			m_wgl.SetKeepAspect(m_keepAspect);
-			needUpdate = true;
 		}
 		if(m_mousePos != m_viewer->m_mousePos) {
 			m_mousePos = m_viewer->m_mousePos;
@@ -68,28 +67,31 @@ public:
 			m_source = m_viewer->source();
 			auto source = QDir::toNativeSeparators(m_source.toLocalFile()).toStdString();
 			m_wgl.Load(source);
-			needUpdate = true;
+			m_viewer->window()->resetOpenGLState();
 		}
 		if(m_paused != m_viewer->m_paused) {
 			m_paused = m_viewer->m_paused;
-			if(!m_paused)
-				needUpdate = true;
+			if(m_paused)
+				m_wgl.Stop();
+			else
+				m_wgl.Start();
 		}
-		if(needUpdate) {
-			m_viewer->window()->resetOpenGLState();
-			m_viewer->update();
+		if(m_viewer->fps() != m_wgl.Fps()) {
+			m_wgl.SetFps(m_viewer->fps());
 		}
+
+		m_viewer->m_curFps = m_wgl.CurrentFps();
     }
 
     void render() {
         QOpenGLFramebufferObject *fbo = framebufferObject();
-		if(!m_paused) {
-			m_wgl.Render(fbo->handle(), fbo->width(), fbo->height());
-			m_viewer->window()->resetOpenGLState();
-			// use signal to update at gui thread
-			emit m_viewer->onUpdate();
-		}
+		m_wgl.Render(fbo->handle(), fbo->width(), fbo->height());
+		m_viewer->window()->resetOpenGLState();
     }
+
+	void updateViewer() {
+		emit m_viewer->onUpdate();
+	}
 private:
 	SceneViewer* m_viewer;
 	QUrl m_source;
@@ -99,11 +101,18 @@ private:
 	bool m_paused;
 };
 
-SceneViewer::SceneViewer(QQuickItem * parent):QQuickFramebufferObject(parent),m_mousePos(0,0) {
+SceneViewer::SceneViewer(QQuickItem * parent):QQuickFramebufferObject(parent),
+		m_mousePos(0,0),
+		m_fps(15),
+		m_paused(false),
+		m_keepAspect(false) {
     connect(this, &SceneViewer::onUpdate, this, &SceneViewer::update, Qt::QueuedConnection);
 }
 
 SceneViewer::~SceneViewer() {
+	// make sure stop m_wgl before destory
+	if(m_wgl != nullptr)
+		static_cast<wallpaper::WallpaperGL*>(m_wgl)->Stop();
 }
 
 QQuickFramebufferObject::Renderer * SceneViewer::createRenderer() const {
@@ -140,6 +149,10 @@ QUrl SceneViewer::assets() const { return m_assets; }
 
 bool SceneViewer::keepAspect() const { return m_keepAspect; }
 
+int SceneViewer::curFps() const { return m_curFps; }
+
+int SceneViewer::fps() const { return m_fps; }
+
 void SceneViewer::setSource(const QUrl& source) {
 	if(source == m_source) return;
 	m_source = source;
@@ -158,6 +171,14 @@ void SceneViewer::setKeepAspect(bool value) {
 	update();
 	Q_EMIT keepAspectChanged();
 };
+
+
+void SceneViewer::setFps(int value) {
+	if(m_fps == value) return;
+	m_fps = value;
+	Q_EMIT fpsChanged();
+};
+
 
 void SceneViewer::play() {
 	m_paused = false;

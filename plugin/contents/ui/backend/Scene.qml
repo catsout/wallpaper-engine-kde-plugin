@@ -19,6 +19,7 @@ Item{
     SceneViewer {
         id: player
         anchors.fill: parent
+        fps: background.fps
         source: ""
         assets: sceneItem.assets
     }

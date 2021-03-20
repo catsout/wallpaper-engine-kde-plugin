@@ -19,6 +19,10 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
 	SCR_HEIGHT = height;
 }
 
+void updateCallback() {
+	glfwPostEmptyEvent();
+}
+
 int main(int argc, char**argv)
 {
 	int result = 0,objnum = -1,effnum = -1;
@@ -43,6 +47,7 @@ int main(int argc, char**argv)
 		<< "-e effect amount to render\n";
 		return 1;
 	}
+
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -67,16 +72,17 @@ int main(int argc, char**argv)
     //const wallpaper::fs::file_node& x = wallpaper::WallpaperGL::GetPkgfs();
     wgl.Load(argv[optind+1]);
 
+	wgl.SetUpdateCallback(updateCallback);
 
-	glClear(GL_COLOR_BUFFER_BIT);
     while (!glfwWindowShouldClose(window))
     {
-		glfwPollEvents();
+		glfwWaitEvents();
+
 		double xpos, ypos;
 		glfwGetCursorPos(window, &xpos, &ypos);
 		wgl.SetMousePos(xpos, ypos);
         wgl.Render(0,SCR_WIDTH,SCR_HEIGHT);
-        glfwSwapInterval(1.5);
+
         glfwSwapBuffers(window);
     }
     delete wgl_ptr;

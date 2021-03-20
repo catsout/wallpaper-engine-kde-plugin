@@ -7,6 +7,14 @@ Item {
     id: webItem
     anchors.fill: parent
     property bool hasLib: Common.checklib_wallpaper(webItem)
+    property int fps: background.fps
+
+    onFpsChanged: {
+        if(webobj.loaded) {
+            webobj.generalProperties.fps = webItem.fps;
+            webobj.sigGeneralProperties(webobj.sigGeneralProperties);
+        }
+    }
 
     Image {
         id: pauseImage

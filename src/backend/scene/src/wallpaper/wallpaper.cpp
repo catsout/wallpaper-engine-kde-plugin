@@ -123,76 +123,68 @@ void WallpaperGL::Load(const std::string& pkg_path) {
 void WallpaperGL::Render(uint fbo, int width, int height) {
 	if(!m_inited || !m_loaded) return;
 
-	using namespace std::chrono;
-	auto enterFrame = steady_clock::now();
+	if(!m_frameTimer.NoFrame()) {
+		// fps
+		using namespace std::chrono;
+		auto enterFrame = steady_clock::now();
+		auto time = duration_cast<milliseconds>(enterFrame.time_since_epoch());
+		uint32_t timep = (time - duration_cast<hours>(time)).count();
+		m_fpsCounter.RegisterFrame(timep);
 
-	// out of frame time
-	static auto outFrame = steady_clock::now();
-	duration<double> outFrametime = enterFrame - outFrame;
+		//--------------
+		m_wpRender.shaderMgr.globalUniforms.ClearCache();
+		gl::GLFramebuffer defaultFbo(width, height);
+		defaultFbo.framebuffer = fbo;
+		// back to center if at (0,0), this fix without mouse
+		if((int)m_mousePos[0] == 0 && (int)m_mousePos[1] == 0) {
+			m_mousePos[0] = defaultFbo.width/2.0f;
+			m_mousePos[1] = defaultFbo.height/2.0f;
+		}
+		
+		float mouseX = m_mousePos[0]/defaultFbo.width;
+		float mouseY = m_mousePos[1]/defaultFbo.height;
+		const auto& ortho = m_wpRender.shaderMgr.globalUniforms.Ortho();
+		m_wpRender.shaderMgr.globalUniforms.SetPointerPos(mouseX, mouseY);
+		if(m_wpRender.GetCameraParallax().enable)
+			m_wpRender.GenCameraParallaxVec(mouseX, mouseY);
 
-	// fps
-	auto time = duration_cast<milliseconds>(enterFrame.time_since_epoch());
-	uint32_t timep = (time - duration_cast<hours>(time)).count();
-	fpsCounter.RegisterFrame(timep);
+		m_wpRender.shaderMgr.globalUniforms.SetSize(width, height);
+		m_wpRender.UseGlobalFbo();
+		m_wpRender.Clear();
 
-	//--------------
-	m_wpRender.shaderMgr.globalUniforms.ClearCache();
-	gl::GLFramebuffer defaultFbo(width, height);
-	defaultFbo.framebuffer = fbo;
-	// back to center if at (0,0), this fix without mouse
-	if((int)m_mousePos[0] == 0 && (int)m_mousePos[1] == 0) {
-		m_mousePos[0] = defaultFbo.width/2.0f;
-		m_mousePos[1] = defaultFbo.height/2.0f;
+		int index = 0;
+		for(auto& iter:m_objects){
+			if(index++ == ObjNum()) break;
+			if(!iter->Visible()) continue;
+			iter->Render(m_wpRender);
+		}
+
+		glm::mat4 fboTrans(1.0f);
+		if(m_keepAspect) {
+			float aspect = (float)ortho.at(0) / (float)ortho.at(1);
+			fboTrans = GetAspectScaleMatrix(defaultFbo.width, defaultFbo.height, aspect);
+		}
+		gl::Shadervalue::SetShadervalues(m_shadervalues, "g_ModelViewProjectionMatrix", fboTrans * m_fboTrans);
+
+		glDisable(GL_BLEND);
+		m_wpRender.glWrapper.BindFramebufferViewport(&defaultFbo);
+		CHECK_GL_ERROR_IF_DEBUG();
+		m_wpRender.Clear();
+		m_wpRender.glWrapper.ActiveTexture(0);
+		m_wpRender.glWrapper.BindFramebufferTex(m_wpRender.GlobalFbo());
+		m_wpRender.shaderMgr.BindShader("passthrough+TRANSFORM1");
+		m_wpRender.shaderMgr.UpdateUniforms("passthrough+TRANSFORM1", m_shadervalues);
+		m_vertices.Draw();
+		// no gldelete
+		defaultFbo.framebuffer = 0;
+		// ---------------
+
+		duration<double> idealtime = milliseconds(1000) / m_frameTimer.Fps();
+		m_wpRender.shaderMgr.globalUniforms.AddTime(idealtime);
+		m_wpRender.frametime = duration_cast<milliseconds>(idealtime).count();
+
+		m_frameTimer.RenderFrame();
 	}
-	
-	float mouseX = m_mousePos[0]/defaultFbo.width;
-	float mouseY = m_mousePos[1]/defaultFbo.height;
-	const auto& ortho = m_wpRender.shaderMgr.globalUniforms.Ortho();
-	m_wpRender.shaderMgr.globalUniforms.SetPointerPos(mouseX, mouseY);
-	if(m_wpRender.GetCameraParallax().enable)
-		m_wpRender.GenCameraParallaxVec(mouseX, mouseY);
-
-	m_wpRender.shaderMgr.globalUniforms.SetSize(width, height);
-	m_wpRender.UseGlobalFbo();
-	m_wpRender.Clear();
-
-	int index = 0;
-    for(auto& iter:m_objects){
-		if(index++ == ObjNum()) break;
-		if(!iter->Visible()) continue;
-        iter->Render(m_wpRender);
-	}
-
-	glm::mat4 fboTrans(1.0f);
-	if(m_keepAspect) {
-		float aspect = (float)ortho.at(0) / (float)ortho.at(1);
-		fboTrans = GetAspectScaleMatrix(defaultFbo.width, defaultFbo.height, aspect);
-	}
-	gl::Shadervalue::SetShadervalues(m_shadervalues, "g_ModelViewProjectionMatrix", fboTrans * m_fboTrans);
-
-	glDisable(GL_BLEND);
-	m_wpRender.glWrapper.BindFramebufferViewport(&defaultFbo);
-	CHECK_GL_ERROR_IF_DEBUG();
-	m_wpRender.Clear();
-	m_wpRender.glWrapper.ActiveTexture(0);
-	m_wpRender.glWrapper.BindFramebufferTex(m_wpRender.GlobalFbo());
-	m_wpRender.shaderMgr.BindShader("passthrough+TRANSFORM1");
-	m_wpRender.shaderMgr.UpdateUniforms("passthrough+TRANSFORM1", m_shadervalues);
-	m_vertices.Draw();
-	// no gldelete
-	defaultFbo.framebuffer = 0;
-	// ---------------
-
-	duration<double> frametime = (steady_clock::now() - enterFrame);
-	duration<double> idealtime = microseconds(1000*1000) / 15 - outFrametime;
-	if (frametime < idealtime) {
-		std::this_thread::sleep_for(idealtime - frametime);
-	}
-	outFrame = steady_clock::now();
-
-	idealtime += outFrametime;
-	m_wpRender.shaderMgr.globalUniforms.AddTime(idealtime);
-	m_wpRender.frametime = duration_cast<milliseconds>(idealtime).count();
 }
 
 void WallpaperGL::Clear()
@@ -214,4 +206,17 @@ void WallpaperGL::SetAssets(const std::string& path) {
 void WallpaperGL::SetObjEffNum(int obj, int eff) {
 	WallpaperGL::m_objnum = obj;
 	WallpaperGL::m_effnum = eff;
+}
+
+void WallpaperGL::SetUpdateCallback(const std::function<void()>& func) {
+	m_frameTimer.SetCallback(func);
+	m_frameTimer.Run();
+}
+
+void WallpaperGL::Start() {
+	m_frameTimer.Run();
+}
+
+void WallpaperGL::Stop() {
+	m_frameTimer.Stop();
 }

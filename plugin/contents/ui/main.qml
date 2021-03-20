@@ -15,6 +15,8 @@ Rectangle {
     property bool mute: wallpaper.configuration.MuteAudio
     property bool capMouse: wallpaper.configuration.CapMouse
     property bool useMpv: wallpaper.configuration.UseMpv
+
+    property int fps: wallpaper.configuration.Fps
     
     // auto pause
     property bool ok: windowModel.playVideoWallpaper

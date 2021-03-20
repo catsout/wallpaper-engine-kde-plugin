@@ -7,6 +7,7 @@
 #include "WPRender.h"
 #include "GLVertice.h"
 #include "FpsCounter.h"
+#include "FrameTimer.h"
 
 namespace wallpaper
 {
@@ -27,10 +28,17 @@ public:
 	void SetFlip(bool value) {m_flip = value;};
 	void SetKeepAspect(bool value) {m_keepAspect = value;};
 	void SetMousePos(float x, float y) {m_mousePos = std::vector<float>({x,y});};
+	uint32_t CurrentFps() const {return m_fpsCounter.Fps();};
+	uint8_t Fps() const {return m_frameTimer.Fps();}
+	void SetFps(uint8_t value) {m_frameTimer.SetFps(value);}
+	void SetUpdateCallback(const std::function<void()>&);
     static int ObjNum() {return m_objnum;};
     static int EffNum() {return m_effnum;};
 
 	bool Loaded() const {return m_loaded;};
+
+	void Start();
+	void Stop();
 
 private:
     static fs::file_node m_pkgfs;
@@ -49,7 +57,8 @@ private:
 	gl::VerticeArray m_vertices;
 	gl::Shadervalues m_shadervalues;
 
-	FpsCounter fpsCounter;
+	FpsCounter m_fpsCounter;
+	FrameTimer m_frameTimer;
 
     // for debug
     static int m_objnum;

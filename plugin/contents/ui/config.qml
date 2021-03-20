@@ -10,7 +10,6 @@ import org.kde.kirigami 2.12 as Kirigami
 
 import Qt.labs.folderlistmodel 2.12
 
-
 ColumnLayout {
     id: root
     anchors.fill: parent
@@ -27,6 +26,8 @@ ColumnLayout {
     property alias cfg_MuteAudio: muteAudio.checked
     property alias cfg_CapMouse: capMouse.checked
     property alias cfg_UseMpv: useMpv.checked
+
+    property alias cfg_Fps: sliderFps.value
 
     RowLayout {
         id: selectRow
@@ -136,6 +137,20 @@ ColumnLayout {
                 id: useMpv
                 text: "Use mpv"
             }
+        }
+        Label{
+            text: "|"
+        }
+        Label{
+            text: "Fps: " + sliderFps.value.toString()
+        }
+        Slider {
+            id: sliderFps
+            implicitWidth: 100
+            from: 5
+            to: 60
+            stepSize: 1.0
+            snapMode: Slider.SnapOnRelease
         }
 
     }
