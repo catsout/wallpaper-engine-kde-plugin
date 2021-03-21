@@ -1,4 +1,4 @@
-import QtQuick 2.5
+import QtQuick 2.6
 import QtQuick.Controls 2.3
 import QtQuick.Controls.Styles 1.4
 import QtQuick.Dialogs 1.0
@@ -10,9 +10,11 @@ import org.kde.kirigami 2.12 as Kirigami
 
 import Qt.labs.folderlistmodel 2.12
 
-ColumnLayout {
+Column {
     id: root
     anchors.fill: parent
+    anchors.verticalCenter: parent.verticalCenter
+    spacing: 5
     
     property string cfg_SteamLibraryPath
     property string cfg_WallpaperWorkShopId
@@ -28,148 +30,158 @@ ColumnLayout {
     property alias cfg_UseMpv: useMpv.checked
 
     property alias cfg_Fps: sliderFps.value
-
-    RowLayout {
-        id: selectRow
-        Layout.alignment: Qt.AlignCenter
-        Layout.topMargin: 10.0
-
-        Label {
-            text: "Pause:"
-            Layout.alignment: Qt.AlignLeft 
+    Column { 
+        id: warnRow
+        anchors.horizontalCenter: parent.horizontalCenter
+        Text {
+            text: "No qt-labs-folderlistmodel found, please install it in your linux distro."
+            color: "red"
+            visible: !Common.checklib_folderlist(warnRow) 
         }
-        
-        ComboBox {
-            id: pauseMode
-            model: [
-                {
-                    text: "Maximied Window",
-                    value: Common.PauseMode.Max
-                },
-                {
-                    text: "Any Window",
-                    value: Common.PauseMode.Any
-                },
-                {
-                    text: "Never Pause",
-                    value: Common.PauseMode.Never
+        Text {
+            text: "Scene wallpaper may crash kde earily, make sure you know how to fix."
+            color: "yellow"
+            visible: Common.checklib_wallpaper(warnRow)
+        }
+    }
+    Row {
+        id: configRow
+        anchors.horizontalCenter: parent.horizontalCenter
+        spacing: 30
+        Column {
+            id: configCol
+            anchors.verticalCenter: parent.verticalCenter
+            Row {
+                Label {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: "Pause:"
                 }
-            ]
-            textRole: "text"
-            valueRole: "value"
-            onActivated: cfg_PauseMode = currentValue
-            Component.onCompleted: currentIndex = indexOfValue(cfg_PauseMode)
-        }
-
-        Label {
-            text: "|"
-            Layout.alignment: Qt.AlignLeft 
-        }
- 
-
-        Label {
-            text: "Display:"
-            Layout.alignment: Qt.AlignLeft 
-        }
-        
-        ComboBox {
-            id: displayMode
-            model: [
-                {
-                    text: "Keep aspect radio",
-                    value: Common.DisplayMode.Aspect
-                },
-                {
-                    text: "Scaling and crop",
-                    value: Common.DisplayMode.Crop
-                },
-                {
-                    text: "Scale to fill",
-                    value: Common.DisplayMode.Scale
-                },
-            ]
-            textRole: "text"
-            valueRole: "value"
-            onActivated: cfg_DisplayMode = currentValue
-            Component.onCompleted: currentIndex = indexOfValue(cfg_DisplayMode)
-        }
-        
-    }
-    Text {
-        Layout.alignment: Qt.AlignCenter
-        text: "No qt-labs-folderlistmodel found, please install it in your linux distro."
-        color: "red"
-        visible: !Common.checklib_folderlist(checkRow) 
-    }
-    Text {
-        Layout.alignment: Qt.AlignCenter
-        text: "Scene wallpaper may crash kde earily, make sure you know how to fix."
-        color: "yellow"
-        visible: Common.checklib_wallpaper(checkRow)
-    }
-    RowLayout {
-        id: checkRow
-        Layout.alignment: Qt.AlignCenter
-        CheckBox {
-            id: muteAudio
-            text: "Mute Audio"
-        }          
-        Label{
-            text: "|"
-            Layout.alignment: Qt.AlignLeft 
-        }
-        CheckBox {
-            id: capMouse
-            text: "Capture Mouse"
-            hoverEnabled: true
-
-            ToolTip.visible: hovered
-            ToolTip.text: qsTr("Use ctrl+shift+z to switch")
-
-        }
-        RowLayout{
-            visible: Common.checklib_wallpaper(checkRow)
-            Label{
-                text: "|"
-                Layout.alignment: Qt.AlignLeft 
+                ComboBox {
+                    id: pauseMode
+                    model: [
+                        {
+                            text: "Maximied Window",
+                            value: Common.PauseMode.Max
+                        },
+                        {
+                            text: "Any Window",
+                            value: Common.PauseMode.Any
+                        },
+                        {
+                            text: "Never Pause",
+                            value: Common.PauseMode.Never
+                        }
+                    ]
+                    textRole: "text"
+                    valueRole: "value"
+                    onActivated: cfg_PauseMode = currentValue
+                    Component.onCompleted: currentIndex = indexOfValue(cfg_PauseMode)
+                }
             }
-            CheckBox{
-                id: useMpv
-                text: "Use mpv"
+            Row {
+                Label {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: "Display:"
+                }
+                ComboBox {
+                    id: displayMode
+                    model: [
+                        {
+                            text: "Keep aspect radio",
+                            value: Common.DisplayMode.Aspect
+                        },
+                        {
+                            text: "Scaling and crop",
+                            value: Common.DisplayMode.Crop
+                        },
+                        {
+                            text: "Scale to fill",
+                            value: Common.DisplayMode.Scale
+                        },
+                    ]
+                    textRole: "text"
+                    valueRole: "value"
+                    onActivated: cfg_DisplayMode = currentValue
+                    Component.onCompleted: currentIndex = indexOfValue(cfg_DisplayMode)
+                }
+            }
+            CheckBox {
+                id: muteAudio
+                text: "Mute Audio"
+            }          
+            CheckBox {
+                id: capMouse
+                text: "Capture Mouse"
+                hoverEnabled: true
+
+                ToolTip.visible: hovered
+                ToolTip.text: qsTr("Use ctrl+shift+z to switch")
+
+            }
+            Row {
+                visible: Common.checklib_wallpaper(configCol)
+                CheckBox{
+                    id: useMpv
+                    text: "Use mpv"
+                }
+            }
+            Row {
+                spacing: fpsLabel.width * 0.2
+                Label{
+                    id: fpsLabel
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: "Fps: " + (sliderFps.value<10?"0":"") + sliderFps.value.toString()
+                }
+                Slider {
+                    id: sliderFps
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: configCol.width - fpsLabel.width * 1.4
+                    from: 5
+                    to: 60
+                    stepSize: 1.0
+                    snapMode: Slider.SnapOnRelease
+                }
             }
         }
-        Label{
-            text: "|"
-        }
-        Label{
-            text: "Fps: " + sliderFps.value.toString()
-        }
-        Slider {
-            id: sliderFps
-            implicitWidth: 100
-            from: 5
-            to: 60
-            stepSize: 1.0
-            snapMode: Slider.SnapOnRelease
-        }
+        AnimatedImage {
+            id: previewAnim
+            anchors.verticalCenter: parent.verticalCenter
 
+            property var nullItem: QtObject {
+                property string source: ""
+            }
+            property var picItem: picView.view.currentItem ? picView.view.currentItem.thumbnail[1] : nullItem
+
+            height: configCol.height
+            width: height*(16.0/9.0)
+            source: picItem.source
+            onStatusChanged: playing = (status == AnimatedImage.Ready) 
+            onPicItemChanged: {
+                if(picItem != nullItem) {
+                    height = picItem.height * 1.5;
+                }
+            }
+        }
     }
 
-    RowLayout {
+    Row {
         id: infoRow
-        Layout.alignment: Qt.AlignCenter
+        anchors.horizontalCenter: parent.horizontalCenter
+        spacing: 10
+
         Label {
             id: workshopidLabel
+            anchors.verticalCenter: parent.verticalCenter
             text: 'Shopid: <a href="https://steamcommunity.com/sharedfiles/filedetails/?id='+ cfg_WallpaperWorkShopId + '">'+ cfg_WallpaperWorkShopId +'</a>'
             onLinkActivated: Qt.openUrlExternally(link)
         }
-        Label {text: '|'}
         Label {
+            anchors.verticalCenter: parent.verticalCenter
             text: "Type: " + cfg_WallpaperType
         }
-        Label {text: '|'}
         Button {
             id: wpFolderButton
+            anchors.verticalCenter: parent.verticalCenter
             implicitWidth: height
             PlasmaCore.IconItem {
                 anchors.fill: parent
@@ -186,6 +198,7 @@ ColumnLayout {
         }
         Button {
             id: refreshButton
+            anchors.verticalCenter: parent.verticalCenter
             implicitWidth: height
             PlasmaCore.IconItem {
                 anchors.fill: parent
@@ -207,6 +220,7 @@ ColumnLayout {
         }
         ComboBox {
             id: comboxFilter
+            anchors.verticalCenter: parent.verticalCenter
             model: [
                 {
                     text: "Show All",
@@ -240,6 +254,7 @@ ColumnLayout {
             }
         }
     }
+
 
     FolderListModel {
         id: wplist
@@ -296,8 +311,8 @@ ColumnLayout {
                 filterFunc = (el) => true;
 
             projectModel.clear();
-            // -1 for no select
-            let currentIndex = -1;
+            // 0 for default
+            let currentIndex = wplist.files.length==0?-1:0;
             wplist.files.forEach(function(el) {
                 if(!filterFunc(el)) return;
                 projectModel.append(el);
@@ -313,11 +328,11 @@ ColumnLayout {
     ListModel {
         id: projectModel
     }
-
     KCM.GridView {
         id: picView
-        Layout.fillWidth: true
-        Layout.fillHeight: true
+        height: root.height - configRow.height - infoRow.height - warnRow.height
+        anchors.left: parent.left
+        anchors.right: parent.right
 
         view.model: projectModel 
         view.delegate: KCM.GridDelegate {
@@ -337,8 +352,9 @@ ColumnLayout {
                    cfg_WallpaperFilePath = path + "/" + file;
                    cfg_WallpaperType = type;
                    picView.view.currentIndex = index;
-               }
+                   // picView.view.currentItem.thumbnail[1]
             }
+        }
     }
 
     FileDialog {

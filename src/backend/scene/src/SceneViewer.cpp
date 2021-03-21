@@ -50,6 +50,7 @@ public:
 		if(!framebufferObject()) {
 			m_wgl.Init(get_proc_address);
 			m_wgl.SetUpdateCallback(std::bind(&SceneRenderer::updateViewer, this));
+			// Set m_wgl visible to viewer, only for stop when destroy
 			m_viewer->m_wgl = &m_wgl;
 		}
 		if(m_keepAspect != m_viewer->keepAspect()) {
@@ -105,12 +106,13 @@ SceneViewer::SceneViewer(QQuickItem * parent):QQuickFramebufferObject(parent),
 		m_mousePos(0,0),
 		m_fps(15),
 		m_paused(false),
-		m_keepAspect(false) {
+		m_keepAspect(false),
+		m_wgl(nullptr) {
     connect(this, &SceneViewer::onUpdate, this, &SceneViewer::update, Qt::QueuedConnection);
 }
 
 SceneViewer::~SceneViewer() {
-	// make sure stop m_wgl before destory
+	// make sure stop m_wgl before destroy
 	if(m_wgl != nullptr)
 		static_cast<wallpaper::WallpaperGL*>(m_wgl)->Stop();
 }
