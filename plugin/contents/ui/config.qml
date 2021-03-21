@@ -355,6 +355,13 @@ Column {
                             break;
                         }
                     }
+                    if(view.currentIndex == -1 && projectModel.count != 0)
+                        view.currentIndex = 0;
+
+                    if(!cfg_WallpaperFilePath || cfg_WallpaperFilePath == "")
+                        if(view.currentIndex != -1)
+                            view.currentItem.onClicked();
+
                     resolve();
                 });
             }
