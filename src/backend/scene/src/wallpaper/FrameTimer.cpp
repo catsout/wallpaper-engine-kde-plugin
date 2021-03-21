@@ -31,6 +31,8 @@ void FrameTimer::Run() {
 	m_thread = std::thread([this]() {
 		m_clock = steady_clock::now();
 		while(m_running) {   
+			++m_frames;
+			m_callback();
 			auto idealTime = milliseconds(1000/m_fps);
 			auto callTime = steady_clock::now() - m_clock;
 			{   
@@ -43,8 +45,6 @@ void FrameTimer::Run() {
 				return;
 			}   
 			m_clock = steady_clock::now();
-			++m_frames;
-			m_callback();
 		}
 	});
 }

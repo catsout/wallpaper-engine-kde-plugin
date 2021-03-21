@@ -150,15 +150,17 @@ Column {
             property var nullItem: QtObject {
                 property string source: ""
             }
-            property var picItem: picView.view.currentItem ? picView.view.currentItem.thumbnail[1] : nullItem
-
+            property var picItem: (picViewLoader.status == Loader.Ready && picViewLoader.item.view.currentItem)
+                                ? picViewLoader.item.view.currentItem
+                                : nullItem
             height: configCol.height
             width: height*(16.0/9.0)
-            source: picItem.source
+            source: ""
             onStatusChanged: playing = (status == AnimatedImage.Ready) 
             onPicItemChanged: {
                 if(picItem != nullItem) {
-                    height = picItem.height * 1.5;
+                    height = picItem.thumbnail[1].height * 1.5;
+                    source = picItem.thumbnail[1].source;
                 }
             }
         }
@@ -242,117 +244,119 @@ Column {
             textRole: "text"
             valueRole: "value"
             onActivated: {
-                wplist.upToListModel(getFilter());
-            }
-            function getFilter() {
-                return function(el) {
-                    if(currentValue === "All" || el.type === currentValue) 
-                        return true;
-                    else
-                        return false;
-                };
+                folderWorker.filter();
             }
         }
     }
 
+    WorkerScript {
+        id: folderWorker
+        source: "folderWorker.mjs"
+        // use var not list as doc
+        property var proxyModel
+        onMessage: {
+            if(messageObject.reply == "loadFolder") {
+                proxyModel = messageObject.data;
+                filter();
+            } else if(messageObject.reply == "filter") {
+                if(picViewLoader.status == Loader.Ready) {
+                    picViewLoader.item.setCurIndex(); 
+                }
+            }
+        }
+        function filter() {
+            let msg = {
+                "action": "filter", 
+                "data": folderWorker.proxyModel,
+                "model": projectModel,
+                "type": comboxFilter.currentValue
+            };
+            folderWorker.sendMessage(msg);
+        }
+    }
 
     FolderListModel {
         id: wplist
-        // use var not list as doc
-        property var files
-        property bool lock: false
         folder: cfg_SteamLibraryPath + Common.wpenginePath
         onStatusChanged: {
-            if (wplist.status == FolderListModel.Ready && cfg_SteamLibraryPath !== "")
-            {
-                wplist.files = [];
-                wplist.lock = false;
-                for(let i=0;i < wplist.count;i++)
-                {
-                    let v = {
-                        "workshopid": wplist.get(i,"fileName"),
-                        "path": wplist.get(i,"filePath"),
-                        "loaded": false,
-                        "title": "unknown",
-                        "preview": "unknown",
-                        "type": "unknown",
-                    };
-                    wplist.files.push(v);
-                }
-                wplist.files.forEach(function(el) {
-                    Common.readTextFile(el.path + "/project.json", (text) => readCallback(text, el));
+            if(cfg_SteamLibraryPath === "")
+                return;
+            if (wplist.status == FolderListModel.Ready) {
+                new Promise(function (resolve, reject) {
+                    folderWorker.proxyModel = [];
+                    for(let i=0;i < wplist.count;i++) {
+                        let v = {
+                            "workshopid": wplist.get(i,"fileName"),
+                            "path": wplist.get(i,"filePath"),
+                            "loaded": false,
+                            "title": "unknown",
+                            "preview": "unknown",
+                            "type": "unknown",
+                        };
+                        folderWorker.proxyModel.push(v);
+                    }
+                    resolve();
+                }).then(function(value) {    
+                    let msg = {"action": "loadFolder", "data": folderWorker.proxyModel};
+                    folderWorker.sendMessage(msg);
                 });
             }
         }
-        function readCallback(text, el) {
-            let project = Common.parseJson(text);    
-            if(project !== null) {
-                if("title" in project)
-                    el.title = project.title;
-                if("preview" in project)
-                    el.preview = project.preview;
-                if("file" in project)
-                    el.file = project.file;
-                if("type" in project)
-                    el.type = project.type.toLowerCase();
-            }
-            el.loaded = true;
-            check();
-        }
-        function check() {
-            for(let i=0;i < wplist.files.length;i++)
-                if(!wplist.files[i].loaded) return;
-            if(wplist.lock) return;
-            wplist.lock = true; 
-            upToListModel(comboxFilter.getFilter());
-        }
-        function upToListModel(filterFunc) {
-            if(typeof(filterFunc) === "undefined" )
-                filterFunc = (el) => true;
-
-            projectModel.clear();
-            // 0 for default
-            let currentIndex = wplist.files.length==0?-1:0;
-            wplist.files.forEach(function(el) {
-                if(!filterFunc(el)) return;
-                projectModel.append(el);
-                if(el.workshopid === cfg_WallpaperWorkShopId)
-                    currentIndex = projectModel.count - 1;
-            });
-            picView.view.currentIndex = currentIndex;
-
-        }
     }
-
 
     ListModel {
         id: projectModel
     }
-    KCM.GridView {
-        id: picView
-        height: root.height - configRow.height - infoRow.height - warnRow.height
+
+    Loader {
+        id: picViewLoader
+        asynchronous: true
+        sourceComponent: picViewCom
+        visible: status == Loader.Ready
+
+        height: root.height - configRow.height - infoRow.height - warnRow.height - root.spacing*3
         anchors.left: parent.left
         anchors.right: parent.right
+        onStatusChanged: {
+            if(status == Loader.Ready)
+                picViewLoader.item.setCurIndex();
+        }
+    }
+    Component { 
+        id: picViewCom
+        KCM.GridView {
+            anchors.fill: parent
 
-        view.model: projectModel 
-        view.delegate: KCM.GridDelegate {
-            text: title
-            actions: [
-            Kirigami.Action {
-                icon.name: "document-open-folder"
-                tooltip: "Open Containing Folder"
-                onTriggered: Qt.openUrlExternally(path) 
-            }]
-            thumbnail:Image {
-                anchors.fill: parent
-                source: path + "/" + preview
+            view.model: projectModel
+            view.delegate: KCM.GridDelegate {
+                text: title
+                actions: [
+                Kirigami.Action {
+                    icon.name: "document-open-folder"
+                    tooltip: "Open Containing Folder"
+                    onTriggered: Qt.openUrlExternally(path) 
+                }]
+                thumbnail:Image {
+                    anchors.fill: parent
+                    source: path + "/" + preview
+                }
+                onClicked: {
+                       cfg_WallpaperFilePath = path + "/" + file;
+                       cfg_WallpaperType = type;
+                       cfg_WallpaperWorkShopId = workshopid;
+                       view.currentIndex = index;
+                }
             }
-            onClicked: {
-                   cfg_WallpaperWorkShopId = workshopid;
-                   cfg_WallpaperFilePath = path + "/" + file;
-                   cfg_WallpaperType = type;
-                   picView.view.currentIndex = index;
-                   // picView.view.currentItem.thumbnail[1]
+            function setCurIndex() {
+                new Promise(function(reoslve, reject) {
+                    for(let i=0;i < projectModel.count;i++) {
+                        if(projectModel.get(i).workshopid === cfg_WallpaperWorkShopId) {
+                            view.currentIndex = i;
+                            break;
+                        }
+                    }
+                    resolve();
+                });
             }
         }
     }
