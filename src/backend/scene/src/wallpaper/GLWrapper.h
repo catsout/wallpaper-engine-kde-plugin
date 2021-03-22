@@ -112,6 +112,7 @@ public:
 							 std::vector<GLProgram::AttribLoc> attribLocs);
 
 	GLShader* CreateShader(GLuint stage, const std::string& source);
+	GLTexture* CopyTexture(GLFramebuffer* fbo);
 	void Viewport(int ,int ,int ,int);
 	void ActiveTexture(int);
 	void BindTexture(GLTexture *tex);

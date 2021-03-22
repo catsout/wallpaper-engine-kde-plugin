@@ -22,7 +22,7 @@ public:
 			   texCache(&glWrapper),
 			   clearcolor_({0.7f,0.7f,0.7f}),
 			   m_cameraParallaxVec({0.0f, 0.0f}),
-			   timeDiffFrame(0) {};
+			   frametime(0) {};
 	~WPRender() {};
 	bool Init(void *get_proc_address(const char*));
 	void Clear();
@@ -42,7 +42,7 @@ public:
 	gl::WPShaderManager shaderMgr;	
 	gl::WPTextureCache texCache;
 
-	int timeDiffFrame;
+	uint32_t frametime;
 
 //	gl::GLFramebuffer* GlobalFbo;
 private:

@@ -26,29 +26,33 @@
       <label>Last folder used</label>
       <default>black</default>
     </entry>
-    <entry name="DisplayMode" type="int">
+    <entry name="DisplayMode" type="Int">
       <label>Video display mode</label>
       <default>0</default>
     </entry>
-	<entry name="PauseMode" type="int">
+	<entry name="PauseMode" type="Int">
       <label>Video Pause mode</label>
       <default>0</default>
     </entry>
-	<entry name="FilterMode" type="int">
+	<entry name="FilterMode" type="Int">
       <label>Filter mode</label>
       <default>0</default>
     </entry>
-    <entry name="MuteAudio" type="bool">
+    <entry name="MuteAudio" type="Bool">
       <label>Mute audio</label>
       <default>true</default>
     </entry>
-    <entry name="CapMouse" type="bool">
+    <entry name="CapMouse" type="Bool">
       <label>Capture mouse</label>
       <default>false</default>
 	</entry>
-    <entry name="UseMpv" type="bool">
+    <entry name="UseMpv" type="Bool">
       <label>Use Mpv</label>
       <default>false</default>
+    </entry>
+    <entry name="Fps" type="Int">
+      <label>Fps</label>
+      <default>15</default>
     </entry>
   </group>
 </kcfg>

@@ -15,6 +15,8 @@ Rectangle {
     property bool mute: wallpaper.configuration.MuteAudio
     property bool capMouse: wallpaper.configuration.CapMouse
     property bool useMpv: wallpaper.configuration.UseMpv
+
+    property int fps: wallpaper.configuration.Fps
     
     // auto pause
     property bool ok: windowModel.playVideoWallpaper
@@ -86,11 +88,14 @@ Rectangle {
             id: fso
             focus: true
             Keys.onPressed: {
-                if(event.key == Qt.Key_Z && (event.modifiers & Qt.ShiftModifier) && (event.modifiers & Qt.ControlModifier)) {
-                    backendLoader.item.setMouseListener();
-                    console.log("switch mouse capture");
-                }
-                event.accepted = false;
+                if(event.key == Qt.Key_Z && (event.modifiers & Qt.ControlModifier)) {
+                    if(event.modifiers & Qt.ShiftModifier) {
+                        backendLoader.item.setMouseListener();
+                        console.log("switch mouse capture");
+                    }
+                    event.accepted = true;
+                } else 
+                    event.accepted = false;
             }
             onActiveFocusChanged: {
                 if(background.capMouse)
