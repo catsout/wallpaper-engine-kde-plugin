@@ -85,15 +85,16 @@ bool ImageObject::From_json(const json& obj)
     auto image = json::parse(image_str);
 
     if(!image.contains("material")) return false;
-	if(!obj.contains("size")) {
+	if(image.contains("fullscreen")) {
+		GET_JSON_NAME_VALUE(image, "fullscreen", m_fullscreen);
+	}
+	if(!obj.contains("size") && !m_fullscreen) {
 		if(image.contains("width")) {
-			m_size[0] = image.at("width");
-			m_size[1] = image.at("height");
+			GET_JSON_NAME_VALUE(image, "width", m_size[0]);
+			GET_JSON_NAME_VALUE(image, "height", m_size[1]);
 		}
-		else if(image.contains("fullscreen")) {
-			m_fullscreen = true;
-		}
-		else return false;
+		else 
+			return false;
 	}
 		
 	GET_JSON_NAME_VALUE_NOWARN(obj, "autosize", m_autosize);
@@ -136,9 +137,11 @@ void ImageObject::Load(WPRender& wpRender)
 	}
 	auto ori = Origin();
 	ori[1] = wpRender.shaderMgr.globalUniforms.Ortho()[1] - ori[1];
-	auto& verArry = Vertices();
-	verArry = gl::VerticeArray::GenSizedBox(&wpRender.glWrapper, std::vector<float>(m_size.begin(),m_size.end()));
-    verArry.Update();
+
+	auto& mesh = Mesh();
+	SceneMesh::GenCardMesh(mesh, m_size);
+	wpRender.glWrapper.LoadMesh(mesh);
+
 
     m_material.Load(wpRender);
 	if(m_blendmode != 0) {
@@ -158,7 +161,9 @@ void ImageObject::Load(WPRender& wpRender)
 	//1. scale
 	model_mat = glm::scale(model_mat, glm::vec3(scale[0], scale[1], scale[2]));
 	m_fboTrans = viewpro_mat * model_mat;
+	m_modelTrans = model_mat;
 	gl::Shadervalue::SetShadervalues(shadervalues_, "g_ModelViewProjectionMatrix", m_fboTrans);
+
 	if(!IsCompose()) {
 	// material shadervalues
 		model_mat = glm::mat4(1.0f);
@@ -201,22 +206,25 @@ void ImageObject::Render(WPRender& wpRender)
 
 	wpRender.glWrapper.BindFramebufferViewport(m_curFbo);
 
-	if(m_copybackground || m_fullscreen)	{
-		wpRender.Clear(0.0f);
-		if(IsCompose() || m_fullscreen) {
-			wpRender.glWrapper.ActiveTexture(0);
-			wpRender.glWrapper.BindFramebufferTex(wpRender.GlobalFbo());
-		}
+	if(IsCompose() || m_fullscreen) {
+		wpRender.glWrapper.ActiveTexture(0);
+		wpRender.glWrapper.BindFramebufferTex(wpRender.GlobalFbo());
 	}
-	else {
-		wpRender.Clear();
-	}		
 
 	// parallaxDepth
 	if(wpRender.GetCameraParallax().enable && !m_fullscreen) {
-		const auto& camParaVec = wpRender.GetCameraParallaxVec();
+		auto amount = wpRender.GetCameraParallax().amount;
 		const auto& depth = ParallaxDepth();
-		auto transVec = glm::vec3(camParaVec[0]*depth[0], camParaVec[1]*depth[1], 0.0f);
+		const auto& Ortho = wpRender.shaderMgr.globalUniforms.Ortho();
+
+		std::vector<float> objPos; 
+		objPos.push_back(((float)Origin()[0]*2.0f - Ortho[0]) / (float)Ortho[0]);
+		objPos.push_back(((float)Origin()[1]*2.0f - Ortho[1]) / (float)Ortho[1]);
+
+		const auto& mousePos = wpRender.GetMouseParallaxVec();
+
+		auto transVec = glm::vec3(amount*depth[0]*(objPos[0] - mousePos[0]), 
+								amount*depth[1]*(objPos[1] - mousePos[1]), 0);
 		auto trans = glm::translate(glm::mat4(1.0f), transVec);
 		auto newfboTrans = trans*m_fboTrans;
 		// for render to global
@@ -228,7 +236,7 @@ void ImageObject::Render(WPRender& wpRender)
 
 	glDisable(GL_BLEND);
 	//glBlendFunc(GL_ONE, GL_ZERO);
-	m_material.SetVertices(&Vertices());
+	m_material.SetMesh(&Mesh());
     m_material.Render(wpRender);
 
 
@@ -237,12 +245,10 @@ void ImageObject::Render(WPRender& wpRender)
 		if(index++ == WallpaperGL::EffNum()) break;
 		e.Render(wpRender);
 	}
-
+	
 	if(m_blendmode != 0) {
 		glDisable(GL_BLEND);
-		wpRender.glWrapper.BindFramebufferViewport(wpRender.GlobalFbo());
 		m_materialEffePass.GetShadervalues() = shadervalues_;
-
 		auto* tex = wpRender.glWrapper.CopyTexture(wpRender.GlobalFbo());
 		wpRender.glWrapper.BindFramebufferViewport(wpRender.GlobalFbo());
 		wpRender.glWrapper.ActiveTexture(0);
@@ -251,21 +257,19 @@ void ImageObject::Render(WPRender& wpRender)
 		wpRender.glWrapper.ActiveTexture(1);
 		wpRender.glWrapper.BindTexture(tex);
 
-		m_materialEffePass.SetVertices(&Vertices());
+		m_materialEffePass.SetMesh(&Mesh());
 		m_materialEffePass.Render(wpRender);	
 		wpRender.glWrapper.DeleteTexture(tex);
 		delete tex;
 	} else {
 		glEnable(GL_BLEND);
 		Blending::ApplayBlending(m_material.Blending());
-	//	glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
-//		wpRender.UseGlobalFbo(shadervalues_);
 		wpRender.glWrapper.BindFramebufferViewport(wpRender.GlobalFbo());
 		wpRender.shaderMgr.BindShader("passthrough+TRANSFORM1");
 		wpRender.shaderMgr.UpdateUniforms("passthrough+TRANSFORM1", shadervalues_);
 		wpRender.glWrapper.ActiveTexture(0);
 		wpRender.glWrapper.BindFramebufferTex(CurFbo());
-		Vertices().Draw();
+		wpRender.glWrapper.RenderMesh(Mesh());
 	}
 }
 

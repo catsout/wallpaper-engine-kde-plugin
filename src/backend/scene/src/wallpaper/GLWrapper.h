@@ -4,6 +4,8 @@
 #include <unordered_map>
 #include "common.h"
 
+#include "SceneMesh.h"
+
 namespace wallpaper
 {
 namespace gl
@@ -136,10 +138,17 @@ public:
 	void SetUniformMat4(GLint loc, const float *udata);
 	void SetUniform(GLProgram* program, GLUniform* uniform, const void* value);
 
+	// scene
+	void LoadMesh(SceneMesh&);
+	void RenderMesh(const SceneMesh&);
+	void CleanMeshBuf();
+
 	GLFramebuffer* GetNowFramebuffer();
 private:
 	std::unordered_map<int, int> uniformCount_;	
 	GLFramebuffer* m_curFbo;
+
+	std::vector<uint32_t> m_meshBuf;
 };
 }
 }

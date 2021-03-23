@@ -13,8 +13,6 @@ add_library(${PROJECT_NAME}
 	common.h
 	effect.cpp
 	effect.h
-	GLVertice.cpp
-	GLVertice.h
 	GLWrapper.cpp
 	GLWrapper.h
 	image.cpp
@@ -41,6 +39,11 @@ add_library(${PROJECT_NAME}
 	FpsCounter.cpp
 	FrameTimer.h
 	FrameTimer.cpp
+	SceneIndexArray.h
+	SceneIndexArray.cpp
+	SceneVertexArray.h
+	SceneVertexArray.cpp
+	SceneMesh.h
 )
 set_property(TARGET ${PROJECT_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
 target_link_libraries(${PROJECT_NAME}

@@ -177,6 +177,6 @@ void wp::Material::Render(WPRender& wpRender) {
 		glDisable(GL_DEPTH_TEST);
 	//Blending::ApplayBlending(m_blending);		
 	CHECK_GL_ERROR_IF_DEBUG();
-	m_vertices->Draw();
+	wpRender.glWrapper.RenderMesh(*m_mesh);
 	CHECK_GL_ERROR_IF_DEBUG();
 }

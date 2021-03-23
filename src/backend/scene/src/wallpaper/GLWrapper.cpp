@@ -373,6 +373,58 @@ void GLWrapper::SetUniform(GLProgram* program, GLUniform* uniform,const void* va
     }   
 }
 
+void GLWrapper::LoadMesh(SceneMesh& mesh) {
+    glGenVertexArrays(1, &mesh.vao);
+    glBindVertexArray(mesh.vao);
+
+	GLuint bufId;
+	auto verCount = mesh.VertexCount();
+	// vertices
+	for(size_t i=0;i < verCount;i++) {
+		const auto& vArray = mesh.GetVertexArray(i);
+
+		glGenBuffers(1, &bufId);
+		glBindBuffer(GL_ARRAY_BUFFER, bufId);
+		glBufferData(GL_ARRAY_BUFFER, vArray.DataSize(), vArray.Data(), GL_STATIC_DRAW);
+		CHECK_GL_ERROR_IF_DEBUG();
+
+		glEnableVertexAttribArray(i);
+		glVertexAttribPointer(i, vArray.TypeCount(), GL_FLOAT, GL_FALSE, 0, 0);
+		CHECK_GL_ERROR_IF_DEBUG();
+		m_meshBuf.push_back(bufId);
+	}
+
+	auto indexCount = mesh.IndexCount();
+	for(size_t i=0;i < indexCount;i++) {
+		const auto& iArray = mesh.GetIndexArray(i);
+		glGenBuffers(1, &bufId);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bufId);
+	    glBufferData(GL_ELEMENT_ARRAY_BUFFER, iArray.DataSize(), iArray.Data(), GL_STATIC_DRAW);
+		CHECK_GL_ERROR_IF_DEBUG();
+		m_meshBuf.push_back(bufId);
+		// current only use one index
+		break;
+	}
+    glBindVertexArray(0);
+}
+
+void GLWrapper::RenderMesh(const SceneMesh& mesh) {
+	glBindVertexArray(mesh.vao);
+	auto count = mesh.GetIndexArray(0).DataCount();
+	glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, 0);
+	CHECK_GL_ERROR_IF_DEBUG();
+	glBindVertexArray(0);
+}
+
+void GLWrapper::CleanMeshBuf() {
+	for(auto& v:m_meshBuf) {
+		if(v != 0)
+			glDeleteBuffers(1, &v);
+	}
+	CHECK_GL_ERROR_IF_DEBUG();
+}
+
+
 GLFramebuffer* GLWrapper::GetNowFramebuffer() {
 	return m_curFbo;
 }

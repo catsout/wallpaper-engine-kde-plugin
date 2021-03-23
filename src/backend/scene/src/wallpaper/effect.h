@@ -6,7 +6,7 @@
 #include "material.h"
 #include "GLWrapper.h"
 #include "WPJson.h"
-
+#include "SceneMesh.h"
 
 namespace wallpaper
 {
@@ -61,8 +61,8 @@ private:
 	std::vector<int> m_size;
 	std::vector<MaterialData> m_materials;
 	std::unordered_map<std::string, FboData> m_fboDataMap;
-    gl::VerticeArray m_vertices;
-    gl::VerticeArray m_vertices_default;
+	
+	SceneMesh m_mesh_normal;
 	
 	bool m_visible;
 };

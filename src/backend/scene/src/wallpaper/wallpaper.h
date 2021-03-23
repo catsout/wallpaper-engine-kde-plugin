@@ -5,9 +5,9 @@
 #include "pkg.h"
 #include "object.h"
 #include "WPRender.h"
-#include "GLVertice.h"
 #include "FpsCounter.h"
 #include "FrameTimer.h"
+#include "SceneMesh.h"
 
 namespace wallpaper
 {
@@ -18,7 +18,7 @@ public:
         return m_pkgfs;
     }
     WallpaperGL():m_fboTrans(1.0f),m_mousePos({0,0}) {};
-    ~WallpaperGL() {m_vertices.Delete();};
+    ~WallpaperGL() { Clear(); };
 	bool Init(void *get_proc_address(const char *));
     void Load(const std::string& pkg_path);
     void Render(uint fbo, int width, int height);
@@ -54,8 +54,8 @@ private:
 	bool m_keepAspect = false;
 	std::vector<float> m_mousePos;
 
-	gl::VerticeArray m_vertices;
 	gl::Shadervalues m_shadervalues;
+	SceneMesh m_mesh;
 
 	FpsCounter m_fpsCounter;
 	FrameTimer m_frameTimer;

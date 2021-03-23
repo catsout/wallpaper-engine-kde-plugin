@@ -89,12 +89,7 @@ bool Effect::From_json(const nlohmann::json& effect_j) {
 }
 
 void Effect::Load(WPRender& wpRender) {
-	m_size = m_imgObject.Size();
-	m_vertices = gl::VerticeArray::GenSizedBox(&wpRender.glWrapper, std::vector<float>(m_size.begin(),m_size.end()));
-	m_vertices.Update();
-    m_vertices_default = gl::VerticeArray::GenDefault(&wpRender.glWrapper);
-	m_vertices_default.Update();
-
+	m_size = m_imgObject.Size();	
 	for(auto& f:m_fboDataMap) {
 		float scale = f.second.scale;
 		LOG_INFO("fbo:" + f.first);
@@ -111,11 +106,14 @@ void Effect::Load(WPRender& wpRender) {
 		glm::mat4 modelviewpro_mat(1.0f);
 		if(wpRender.shaderMgr.ShaderContainUnifom(m.material.GetShader(), "g_ModelViewProjectionMatrix")) {
 			modelviewpro_mat = size_modelviewpro_mat;
-			m.material.SetVertices(&m_vertices);
+			const auto& mesh = ((const ImageObject&)m_imgObject).Mesh();
+			m.material.SetMesh(&mesh);
 		}
 		else {
 			modelviewpro_mat = glm::mat4(1.0f);
-			m.material.SetVertices(&m_vertices_default);
+			SceneMesh::GenCardMesh(m_mesh_normal, {2,2});
+			wpRender.glWrapper.LoadMesh(m_mesh_normal);
+			m.material.SetMesh(&m_mesh_normal);
 		}
 
 		gl::Shadervalue::SetShadervalues(m.material.GetShadervalues(), "g_ModelViewProjectionMatrix", modelviewpro_mat);

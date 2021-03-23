@@ -6,8 +6,8 @@
 #include "material.h"
 #include "effect.h"
 #include "WPRender.h"
-#include "GLVertice.h"
 #include "WPJson.h"
+#include "SceneMesh.h"
 
 namespace wallpaper
 {
@@ -29,7 +29,6 @@ public:
 							m_visible(true) {};
 	
     virtual ~RenderObject() {
-        m_vertices.Delete();
     }
     virtual void Load(WPRender&) = 0;
     virtual void Render(WPRender&) = 0;
@@ -37,16 +36,18 @@ public:
 	virtual RenderableType::Type Type() const = 0;
 
 
-	const std::string& Name() const {return m_name;};
-    const auto& Origin() const {return m_origin;};
-    const auto& Angles() const {return m_angles;};
-    const auto& Scale() const {return m_scale;};
-    const auto& ParallaxDepth() const {return m_parallaxDepth;};
-    bool Visible() const {return m_visible;};
+	const std::string& Name() const {return m_name;}
+    const auto& Origin() const {return m_origin;}
+    const auto& Angles() const {return m_angles;}
+    const auto& Scale() const {return m_scale;}
+    const auto& ParallaxDepth() const {return m_parallaxDepth;}
+    bool Visible() const {return m_visible;}
 
-    auto& Vertices() {return m_vertices;};
+    const auto& Mesh() const { return m_mesh; }
+
 protected:
-    auto& Origin() {return m_origin;};
+    auto& Origin() {return m_origin;}
+    auto& Mesh() { return m_mesh; }
 
 private:
     std::string m_name;
@@ -55,7 +56,9 @@ private:
     std::vector<float> m_scale;
 	std::vector<float> m_parallaxDepth;
     bool m_visible;
-    gl::VerticeArray m_vertices;
+
+	// try mesh
+	SceneMesh m_mesh;
 };
 
 class ImageObject : public RenderObject
@@ -85,12 +88,12 @@ private:
 
 	gl::Combos m_basecombos;
 	gl::Shadervalues shadervalues_;
-	gl::VerticeArray m_verticesDefault;
 
 	gl::GLFramebuffer* m_curFbo;
 	std::unique_ptr<gl::GLFramebuffer> m_fbo1;
 	std::unique_ptr<gl::GLFramebuffer> m_fbo2;
 	glm::mat4 m_fboTrans;
+	glm::mat4 m_modelTrans;
 	std::string m_shader;
 
 	std::vector<int> m_size;

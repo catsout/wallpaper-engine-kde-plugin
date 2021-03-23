@@ -57,9 +57,9 @@ void WallpaperGL::Load(const std::string& pkg_path) {
 	//camera
 	auto& camera = scene_json.at("camera");
 	std::vector<float> center,eye,up,clearcolor;
-	if(!StringToVec<float>(camera.at("center"), center)) return;
-	if(!StringToVec<float>(camera.at("eye"), eye)) return;
-	if(!StringToVec<float>(camera.at("up"), up)) return;
+	GET_JSON_NAME_VALUE(camera, "center", center);
+	GET_JSON_NAME_VALUE(camera, "eye", eye);
+	GET_JSON_NAME_VALUE(camera, "up", up);
 	m_wpRender.shaderMgr.globalUniforms.SetCamera(center,eye,up);
 
 	auto& general_json = scene_json.at("general");
@@ -87,8 +87,8 @@ void WallpaperGL::Load(const std::string& pkg_path) {
 		m_fboTrans = glm::rotate(glm::mat4(1.0f), glm::radians(180.0f), glm::vec3(1.0f,0,0));
 	gl::Shadervalue::SetShadervalues(m_shadervalues, "fboTrans", m_fboTrans);
 
-	m_vertices = gl::VerticeArray::GenDefault(&m_wpRender.glWrapper);
-	m_vertices.Update();
+	SceneMesh::GenCardMesh(m_mesh, {2,2});
+	m_wpRender.glWrapper.LoadMesh(m_mesh);
 	
 	gl::Combos combos;combos["TRANSFORM"] = 1;
 	gl::Shadervalues shadervalues;
@@ -146,10 +146,11 @@ void WallpaperGL::Render(uint fbo, int width, int height) {
 		const auto& ortho = m_wpRender.shaderMgr.globalUniforms.Ortho();
 		m_wpRender.shaderMgr.globalUniforms.SetPointerPos(mouseX, mouseY);
 		if(m_wpRender.GetCameraParallax().enable)
-			m_wpRender.GenCameraParallaxVec(mouseX, mouseY);
+			m_wpRender.GenMouseParallaxVec(mouseX, mouseY);
 
 		m_wpRender.shaderMgr.globalUniforms.SetSize(width, height);
 		m_wpRender.UseGlobalFbo();
+		CHECK_GL_ERROR_IF_DEBUG();
 		m_wpRender.Clear();
 
 		int index = 0;
@@ -174,7 +175,7 @@ void WallpaperGL::Render(uint fbo, int width, int height) {
 		m_wpRender.glWrapper.BindFramebufferTex(m_wpRender.GlobalFbo());
 		m_wpRender.shaderMgr.BindShader("passthrough+TRANSFORM1");
 		m_wpRender.shaderMgr.UpdateUniforms("passthrough+TRANSFORM1", m_shadervalues);
-		m_vertices.Draw();
+		m_wpRender.glWrapper.RenderMesh(m_mesh);
 		// no gldelete
 		defaultFbo.framebuffer = 0;
 		// ---------------
@@ -194,7 +195,7 @@ void WallpaperGL::Clear()
 	m_wpRender.shaderMgr.ClearCache();
 	m_wpRender.texCache.Clear();	
     m_objects.clear();
-	m_vertices.Delete();
+	m_wpRender.glWrapper.CleanMeshBuf();
 	LOG_INFO("Date cleared");
 }
 

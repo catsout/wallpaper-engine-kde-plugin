@@ -3,8 +3,8 @@
 #include <memory.h>
 #include "common.h"
 #include "WPRender.h"
-#include "GLVertice.h"
 #include "WPJson.h"
+#include "SceneMesh.h"
 
 namespace wallpaper
 {
@@ -50,7 +50,7 @@ public:
 	std::vector<std::string>& GetTextures() {return m_textures;};
 	void SetSize(const std::vector<int>& value) {m_size = value;};
 	const Blending::Type& Blending() const {return m_blending;};
-	void SetVertices(const gl::VerticeArray* value) {m_vertices = value;};
+	void SetMesh(const SceneMesh* mesh) {m_mesh = mesh;};
 
 private:
     RenderObject& m_object;
@@ -65,7 +65,7 @@ private:
 	gl::Shadervalues m_shadervalues;
 //	std::vector<gl::GLTexture> m_glTextrues;
 
-    const gl::VerticeArray* m_vertices;
+    const SceneMesh* m_mesh;
 };
 
 }

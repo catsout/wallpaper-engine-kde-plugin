@@ -332,7 +332,7 @@ std::string WPShaderManager::CreateShader(const std::string& name, const Combos&
 	std::string shaderName;
 	bool IsInCache = false;
 	for(auto& el:shaderCache_) {
-		if(el.first.compare(0, name.size(), name) == 0) {
+		if(el.first.substr(0, el.first.find_first_of('+')) == name) {
 			auto& shaderCombos = el.second.combos;
 			auto& defaultCombos = el.second.combos;
 			bool flag = true;

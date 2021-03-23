@@ -21,7 +21,7 @@ public:
 			   shaderMgr(&glWrapper),
 			   texCache(&glWrapper),
 			   clearcolor_({0.7f,0.7f,0.7f}),
-			   m_cameraParallaxVec({0.0f, 0.0f}),
+			   m_mouseParallaxVec({0.0f, 0.0f}),
 			   frametime(0) {};
 	~WPRender() {};
 	bool Init(void *get_proc_address(const char*));
@@ -34,9 +34,10 @@ public:
 	gl::GLFramebuffer* GlobalFbo() {return fbo_.get();};
 	const CameraParallax& GetCameraParallax() const {return m_cameraParallax;};
 	void SetCameraParallax(const CameraParallax& value) {m_cameraParallax = value;};
-	const std::vector<float>& GetCameraParallaxVec() const {return m_cameraParallaxVec;};
+
+	const std::vector<float>& GetMouseParallaxVec() const {return m_mouseParallaxVec;};
 	// x, y is at [0,1]
-	void GenCameraParallaxVec(float x, float y);
+	void GenMouseParallaxVec(float x, float y);
 
 	gl::GLWrapper glWrapper;
 	gl::WPShaderManager shaderMgr;	
@@ -49,7 +50,7 @@ private:
 	std::unique_ptr<gl::GLFramebuffer> fbo_;
 	std::vector<float> clearcolor_;
 	CameraParallax m_cameraParallax;
-	std::vector<float> m_cameraParallaxVec;
+	std::vector<float> m_mouseParallaxVec;
 };
 
 class Renderable
