@@ -63,7 +63,7 @@ void WallpaperGL::Load(const std::string& pkg_path) {
 	m_wpRender.shaderMgr.globalUniforms.SetCamera(center,eye,up);
 
 	auto& general_json = scene_json.at("general");
-	GET_JSON_NAME_VALUE_NOWARN(general_json, "clearclolor", clearcolor);
+	GET_JSON_NAME_VALUE(general_json, "clearcolor", clearcolor);
 	m_wpRender.SetClearcolor(clearcolor);
 	
 	CameraParallax cameraParallax;
