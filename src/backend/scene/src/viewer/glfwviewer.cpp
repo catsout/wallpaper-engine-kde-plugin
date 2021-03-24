@@ -4,6 +4,7 @@
 #include <map>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <atomic>
 #include "pkg.h"
 #include "wallpaper.h"
 
@@ -13,13 +14,21 @@ using namespace std;
 
 unsigned int SCR_WIDTH = 1280;
 unsigned int SCR_HEIGHT = 720;
+atomic<bool> renderCall(false);
+wallpaper::WallpaperGL* pwgl = nullptr;
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
 	SCR_WIDTH = width;
 	SCR_HEIGHT = height;
 }
 
+void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
+	if(pwgl)
+		pwgl->SetMousePos(xpos, ypos);
+}
+
 void updateCallback() {
+	renderCall = true;
 	glfwPostEmptyEvent();
 }
 
@@ -54,8 +63,7 @@ int main(int argc, char**argv)
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "WP", NULL, NULL);
-    if (window == NULL)
-    {
+    if (window == NULL) {
         std::cout << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
         return -1;
@@ -63,8 +71,8 @@ int main(int argc, char**argv)
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
-    wallpaper::WallpaperGL* wgl_ptr = new wallpaper::WallpaperGL();
-    auto& wgl = *wgl_ptr;
+    pwgl = new wallpaper::WallpaperGL();
+    auto& wgl = *pwgl;
 	wgl.Init((GLADloadproc)glfwGetProcAddress);
 	wgl.SetAssets(argv[optind]);
 	wgl.SetObjEffNum(objnum, effnum);
@@ -74,18 +82,18 @@ int main(int argc, char**argv)
 
 	wgl.SetUpdateCallback(updateCallback);
 
-    while (!glfwWindowShouldClose(window))
-    {
+	// glfw callback
+	glfwSetCursorPosCallback(window, cursor_position_callback);
+
+    while (!glfwWindowShouldClose(window)) {
 		glfwWaitEvents();
-
-		double xpos, ypos;
-		glfwGetCursorPos(window, &xpos, &ypos);
-		wgl.SetMousePos(xpos, ypos);
-        wgl.Render(0,SCR_WIDTH,SCR_HEIGHT);
-
-        glfwSwapBuffers(window);
+		if(renderCall) {
+			renderCall = false;
+			wgl.Render(0,SCR_WIDTH,SCR_HEIGHT);
+			glfwSwapBuffers(window);
+		}
     }
-    delete wgl_ptr;
+    delete pwgl;
     //wgl.Clear();
     glfwTerminate();
     return 0;
