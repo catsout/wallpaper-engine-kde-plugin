@@ -75,6 +75,7 @@ TexHeader TexHeader::ReadTexHeader(std::ifstream& file) {
     tex.flags = TexFlag::LoadFlags(readInt32(file));
     tex.width = readInt32(file);
     tex.height = readInt32(file);
+    // in sprite this mean one pic 
     tex.pic_width = readInt32(file);
     tex.pic_height = readInt32(file);
     tex.unkown = readInt32(file);
@@ -185,10 +186,6 @@ TexImage TexImage::LoadFromFile(const std::string& path)
 			sf.unk0 = ReadFloat(file); 
 			sf.unk1 = ReadFloat(file); 
 			sf.height = ReadFloat(file) / height; 
-			if(texs == 2) {
-				sf.width = 1;
-				sf.height = 1;
-			}
 		}
 	}
 	return tex;

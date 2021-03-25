@@ -47,6 +47,7 @@ public:
 	const std::string& GetShader() const {return m_shader;};
 	const gl::Shadervalues& GetShadervalues() const {return m_shadervalues;};
 	gl::Shadervalues& GetShadervalues() {return m_shadervalues;};
+	const auto& GetTexture(int index) {return m_textures.at(index);};
 	std::vector<std::string>& GetTextures() {return m_textures;};
 	void SetSize(const std::vector<int>& value) {m_size = value;};
 	const Blending::Type& Blending() const {return m_blending;};

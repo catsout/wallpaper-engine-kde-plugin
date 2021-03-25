@@ -171,12 +171,15 @@ void ImageObject::Load(WPRender& wpRender)
 	// material shadervalues
 		model_mat = glm::mat4(1.0f);
 		if(m_material.GetShadervalues().count("g_Texture0Resolution") != 0) {
-			// remove black edge
-			auto& sv = m_material.GetShadervalues().at("g_Texture0Resolution");
-			if(sv.value[0] != sv.value[2] || sv.value[1] != sv.value[3]) {
-				model_mat = glm::translate(glm::mat4(1.0f), -glm::vec3(m_size[0]/2.0f,m_size[1]/2.0f,0.0f));
-				model_mat = glm::scale(model_mat, glm::vec3(sv.value[0]/sv.value[2], sv.value[1]/sv.value[3], 1.0f));
-				model_mat = glm::translate(model_mat, glm::vec3(m_size[0]/2.0f,m_size[1]/2.0f,0.0f));
+			auto tex = wpRender.texCache.GetTexture(m_material.GetTexture(0));
+			if(tex && !tex->IsSprite()) {
+				// remove black edge
+				auto& sv = m_material.GetShadervalues().at("g_Texture0Resolution");
+				if(sv.value[0] != sv.value[2] || sv.value[1] != sv.value[3]) {
+					model_mat = glm::translate(glm::mat4(1.0f), -glm::vec3(m_size[0]/2.0f,m_size[1]/2.0f,0.0f));
+					model_mat = glm::scale(model_mat, glm::vec3(sv.value[0]/sv.value[2], sv.value[1]/sv.value[3], 1.0f));
+					model_mat = glm::translate(model_mat, glm::vec3(m_size[0]/2.0f,m_size[1]/2.0f,0.0f));
+				}
 			}
 		}
 			model_mat = glm::translate(glm::mat4(1.0f), glm::vec3(m_size[0]/2.0f, m_size[1]/2.0f, 0.0f)) * model_mat;
