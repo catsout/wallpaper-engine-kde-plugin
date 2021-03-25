@@ -17,7 +17,7 @@ public:
     static const fs::file_node& GetPkgfs(){
         return m_pkgfs;
     }
-    WallpaperGL():m_fboTrans(1.0f),m_mousePos({0,0}) {};
+    WallpaperGL():m_fboTrans(1.0f),m_mousePos({0,0}),m_aspect(16.0f/9.0f) {};
     ~WallpaperGL() { Clear(); };
 	bool Init(void *get_proc_address(const char *));
     void Load(const std::string& pkg_path);
@@ -26,7 +26,6 @@ public:
 	void SetAssets(const std::string& path);
     void SetObjEffNum(int obj, int eff);
 	void SetFlip(bool value) {m_flip = value;};
-	void SetKeepAspect(bool value) {m_keepAspect = value;};
 	void SetMousePos(float x, float y) {m_mousePos = std::vector<float>({x,y});};
 	uint32_t CurrentFps() const {return m_fpsCounter.Fps();};
 	uint8_t Fps() const {return m_frameTimer.Fps();}
@@ -51,7 +50,6 @@ private:
 	bool m_loaded = false;
 	int m_framecount = 0;
 	bool m_flip = false;
-	bool m_keepAspect = false;
 	std::vector<float> m_mousePos;
 
 	gl::Shadervalues m_shadervalues;
@@ -59,6 +57,8 @@ private:
 
 	FpsCounter m_fpsCounter;
 	FrameTimer m_frameTimer;
+
+	float m_aspect;
 
     // for debug
     static int m_objnum;

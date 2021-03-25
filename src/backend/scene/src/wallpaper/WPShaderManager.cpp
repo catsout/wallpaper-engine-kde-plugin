@@ -86,6 +86,9 @@ void GlobalUniform::SetOrtho(int w, int h) {
 	ortho_ = {w,h};
 }
 
+void GlobalUniform::SetOrigin(float x, float y) {
+	origin_ = {x, y};
+}
 
 void GlobalUniform::SetSize(int w, int h) {
 	size_[0] = 1.0f/(float)w;
@@ -147,7 +150,11 @@ void* GlobalUniform::ModelMatrixInverse() {
 void* GlobalUniform::ViewProjectionMatrix() {
 //	auto view = glm::mat4(1.0f);
 	auto view = glm::lookAt(glm::vec3(0, 0, 0), glm::vec3(0, 0, -1), camera_.up);
-	viewProjectionMatrix_ = glm::ortho(0.0f, (float)ortho_[0], 0.0f, (float)ortho_[1], -100.0f, 100.0f)*view;
+	float left = origin_[0] - ortho_[0]/2.0f;
+	float right = origin_[0] + ortho_[0]/2.0f;
+	float bottom = origin_[1] - ortho_[1]/2.0f;
+	float up = origin_[1] + ortho_[1]/2.0f;
+	viewProjectionMatrix_ = glm::ortho(left, right, bottom, up, -100.0f, 100.0f) * view;
 	return glm::value_ptr(viewProjectionMatrix_);
 }
 

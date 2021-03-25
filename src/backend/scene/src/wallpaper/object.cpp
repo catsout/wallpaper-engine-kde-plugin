@@ -139,7 +139,7 @@ void ImageObject::Load(WPRender& wpRender)
 		Origin() = std::vector<float>({m_size[0]/2.0f, m_size[1]/2.0f, 0.0f});
 	}
 	auto ori = Origin();
-	ori[1] = wpRender.shaderMgr.globalUniforms.Ortho()[1] - ori[1];
+	ori[1] = wpRender.Origin()[1]*2 - ori[1];
 
 	auto& mesh = Mesh();
 	SceneMesh::GenCardMesh(mesh, m_size);
@@ -203,8 +203,15 @@ void ImageObject::Load(WPRender& wpRender)
 		m_fbo2 = std::unique_ptr<gl::GLFramebuffer>(wpRender.glWrapper.CreateFramebuffer(m_size[0], m_size[1]));
 }
 
-void ImageObject::Render(WPRender& wpRender)
-{
+void ImageObject::Render(WPRender& wpRender) {
+	if(m_fullscreen && m_size != wpRender.shaderMgr.globalUniforms.Ortho()) {
+		m_size = wpRender.shaderMgr.globalUniforms.Ortho();
+		m_fbo1 = std::unique_ptr<gl::GLFramebuffer>(wpRender.glWrapper.CreateFramebuffer(m_size[0], m_size[1]));
+		if(m_effects.size() > 0)
+			m_fbo2 = std::unique_ptr<gl::GLFramebuffer>(wpRender.glWrapper.CreateFramebuffer(m_size[0], m_size[1]));
+
+	}
+
 	m_curFbo = m_fbo1.get();
 
 	wpRender.glWrapper.BindFramebufferViewport(m_curFbo);
@@ -214,28 +221,32 @@ void ImageObject::Render(WPRender& wpRender)
 		wpRender.glWrapper.BindFramebufferTex(wpRender.GlobalFbo());
 	}
 
+	const auto& viewproTrans = wpRender.shaderMgr.globalUniforms.GetViewProjectionMatrix();
+	auto modelTrans = m_modelTrans;
 	// parallaxDepth
 	if(wpRender.GetCameraParallax().enable && !m_fullscreen) {
 		auto amount = wpRender.GetCameraParallax().amount;
 		const auto& depth = ParallaxDepth();
-		const auto& Ortho = wpRender.shaderMgr.globalUniforms.Ortho();
+		const auto& origin = wpRender.Origin();
 
 		std::vector<float> objPos; 
-		objPos.push_back(((float)Origin()[0]*2.0f - Ortho[0]) / (float)Ortho[0]);
-		objPos.push_back(((float)Origin()[1]*2.0f - Ortho[1]) / (float)Ortho[1]);
+		objPos.push_back(Origin()[0] - origin[0]);
+		objPos.push_back(Origin()[1] - origin[1]);
 
 		const auto& mousePos = wpRender.GetMouseParallaxVec();
 
 		auto transVec = glm::vec3(amount*depth[0]*(objPos[0] - mousePos[0]), 
 								amount*depth[1]*(objPos[1] - mousePos[1]), 0);
-		auto trans = glm::translate(glm::mat4(1.0f), transVec);
-		auto newfboTrans = trans*m_fboTrans;
-		// for render to global
-		gl::Shadervalue::SetShadervalues(shadervalues_, "g_ModelViewProjectionMatrix", newfboTrans);
+		modelTrans = glm::translate(glm::mat4(1.0f), transVec) * modelTrans;
+	}
+	if(!m_fullscreen) {
+		auto newTrans = viewproTrans * modelTrans;
+		gl::Shadervalue::SetShadervalues(shadervalues_, "g_ModelViewProjectionMatrix", newTrans);
 		// for compose layer get right area
 		if(IsCompose())
-			gl::Shadervalue::SetShadervalues(m_material.GetShadervalues(), "g_ModelViewProjectionMatrix", newfboTrans);
+			gl::Shadervalue::SetShadervalues(m_material.GetShadervalues(), "g_ModelViewProjectionMatrix", newTrans);
 	}
+
 
 	glDisable(GL_BLEND);
 	//glBlendFunc(GL_ONE, GL_ZERO);

@@ -52,6 +52,7 @@ public:
 	void SetCamera(std::vector<float>,std::vector<float>,std::vector<float>);
 	const std::vector<int>& Ortho() const {return ortho_;};
 	void SetOrtho(int w, int h);
+	void SetOrigin(float x, float y);
 	void SetSize(int w, int h);
 	void SetPointerPos(float x, float y);
 	void SetTime(float time);
@@ -76,6 +77,7 @@ public:
 private:
 	Camera camera_;
 	std::vector<int> ortho_;
+	std::vector<float> origin_;
 	std::deque<UniformValue> cache_;
 	typedef std::unordered_map<std::string, value_func> funcmap;
 	funcmap funcmap_;

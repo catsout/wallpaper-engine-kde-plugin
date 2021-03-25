@@ -9,7 +9,6 @@ class SceneViewer : public QQuickFramebufferObject
     Q_OBJECT
 	Q_PROPERTY(QUrl source READ source WRITE setSource NOTIFY sourceChanged)
 	Q_PROPERTY(QUrl assets READ assets WRITE setAssets)
-	Q_PROPERTY(bool keepAspect READ keepAspect WRITE setKeepAspect NOTIFY keepAspectChanged)
 	Q_PROPERTY(int curFps READ curFps)
 	Q_PROPERTY(int fps READ fps WRITE setFps NOTIFY fpsChanged)
 
@@ -22,13 +21,11 @@ public:
 
 	QUrl source() const;
 	QUrl assets() const;
-	bool keepAspect() const;
 	int curFps() const;
 	int fps() const;
 
 	void setSource(const QUrl& source);
 	void setAssets(const QUrl& assets);
-	void setKeepAspect(bool);
 	void setFps(int);
 
 	Q_INVOKABLE void setAcceptMouse(bool);
@@ -46,14 +43,12 @@ public slots:
 signals:
 	void onUpdate();
 	void sourceChanged();
-	void keepAspectChanged();
 	void fpsChanged();
 
 private:
 	QUrl m_source;
 	QUrl m_assets;
     QTimer m_updateTimer;
-	bool m_keepAspect;
 	QPointF m_mousePos;
 	bool m_paused;
 	int m_fps;

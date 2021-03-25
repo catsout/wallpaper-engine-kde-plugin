@@ -149,6 +149,7 @@ private:
 	GLFramebuffer* m_curFbo;
 
 	std::vector<uint32_t> m_meshBuf;
+	std::vector<uint32_t> m_meshVao;
 };
 }
 }

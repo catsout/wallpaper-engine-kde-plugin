@@ -406,6 +406,7 @@ void GLWrapper::LoadMesh(SceneMesh& mesh) {
 		break;
 	}
     glBindVertexArray(0);
+	m_meshVao.push_back(mesh.vao);
 }
 
 void GLWrapper::RenderMesh(const SceneMesh& mesh) {
@@ -417,11 +418,18 @@ void GLWrapper::RenderMesh(const SceneMesh& mesh) {
 }
 
 void GLWrapper::CleanMeshBuf() {
+	glBindVertexArray(0);
+	for(auto& v:m_meshVao) {
+		if(v != 0)
+			glDeleteVertexArrays(1, &v);
+	}
 	for(auto& v:m_meshBuf) {
 		if(v != 0)
 			glDeleteBuffers(1, &v);
 	}
 	CHECK_GL_ERROR_IF_DEBUG();
+	m_meshVao.clear();
+	m_meshBuf.clear();
 }
 
 

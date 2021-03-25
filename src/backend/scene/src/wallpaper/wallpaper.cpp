@@ -13,18 +13,6 @@ file_node wallpaper::WallpaperGL::m_pkgfs = file_node();
 int WallpaperGL::m_objnum = -1;
 int WallpaperGL::m_effnum = -1;
 
-glm::mat4 GetAspectScaleMatrix(int width, int height, float aspect) {
-	float fw = (float)width;
-	float fh = (float)height;
-	glm::mat4 result(1.0f);
-	if(aspect*height > width) {
-		result = glm::scale(result, glm::vec3(1.0f, (fw/aspect)/fh, 1.0f));	
-	}else {
-		result = glm::scale(result, glm::vec3((fh*aspect)/fw, 1.0f, 1.0f));	
-	}
-	return result;
-}
-
 bool WallpaperGL::Init(void *get_proc_address(const char *)) {
 	LOG_INFO("Init opengl");
 	m_inited = m_wpRender.Init(get_proc_address);
@@ -80,8 +68,13 @@ void WallpaperGL::Load(const std::string& pkg_path) {
 	std::vector<int> ortho(2);
 	if(!GET_JSON_NAME_VALUE(ortho_j, "width", ortho.at(0))) return;
 	GET_JSON_NAME_VALUE(ortho_j, "height", ortho.at(1));
+
 	m_wpRender.shaderMgr.globalUniforms.SetOrtho(ortho.at(0), ortho.at(1));
 	m_wpRender.CreateGlobalFbo(ortho.at(0), ortho.at(1));
+	m_wpRender.SetOrigin(ortho.at(0)/2.0f, ortho.at(1)/2.0f);
+	m_wpRender.shaderMgr.globalUniforms.SetOrigin(ortho.at(0)/2.0f, ortho.at(1)/2.0f);
+	m_aspect = ortho.at(0) / ortho.at(1);
+
 	
 	if(m_flip)
 		m_fboTrans = glm::rotate(glm::mat4(1.0f), glm::radians(180.0f), glm::vec3(1.0f,0,0));
@@ -131,6 +124,20 @@ void WallpaperGL::Render(uint fbo, int width, int height) {
 		uint32_t timep = (time - duration_cast<hours>(time)).count();
 		m_fpsCounter.RegisterFrame(timep);
 
+		if(int(m_aspect * height) != width) {
+			m_aspect = width / (float) height;
+			auto ortho = m_wpRender.Origin();
+			ortho[0] *= 2;
+			ortho[1] *= 2;
+			if(int(m_aspect * ortho.at(1)) > ortho.at(0))
+				ortho.at(1) =  ortho.at(0) / m_aspect;
+			else 
+				ortho.at(0) = ortho.at(1) * m_aspect;
+
+			m_wpRender.shaderMgr.globalUniforms.SetOrtho(ortho.at(0), ortho.at(1));
+			m_wpRender.CreateGlobalFbo(ortho.at(0), ortho.at(1));
+		}
+
 		//--------------
 		m_wpRender.shaderMgr.globalUniforms.ClearCache();
 		gl::GLFramebuffer defaultFbo(width, height);
@@ -149,8 +156,7 @@ void WallpaperGL::Render(uint fbo, int width, int height) {
 			m_wpRender.GenMouseParallaxVec(mouseX, mouseY);
 
 		m_wpRender.shaderMgr.globalUniforms.SetSize(width, height);
-		m_wpRender.UseGlobalFbo();
-		CHECK_GL_ERROR_IF_DEBUG();
+		m_wpRender.glWrapper.BindFramebufferViewport(m_wpRender.GlobalFbo());
 		m_wpRender.Clear();
 
 		int index = 0;
@@ -161,10 +167,6 @@ void WallpaperGL::Render(uint fbo, int width, int height) {
 		}
 
 		glm::mat4 fboTrans(1.0f);
-		if(m_keepAspect) {
-			float aspect = (float)ortho.at(0) / (float)ortho.at(1);
-			fboTrans = GetAspectScaleMatrix(defaultFbo.width, defaultFbo.height, aspect);
-		}
 		gl::Shadervalue::SetShadervalues(m_shadervalues, "g_ModelViewProjectionMatrix", fboTrans * m_fboTrans);
 
 		glDisable(GL_BLEND);

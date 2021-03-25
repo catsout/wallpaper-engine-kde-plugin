@@ -53,10 +53,6 @@ public:
 			// Set m_wgl visible to viewer, only for stop when destroy
 			m_viewer->m_wgl = &m_wgl;
 		}
-		if(m_keepAspect != m_viewer->keepAspect()) {
-			m_keepAspect = m_viewer->keepAspect();
-			m_wgl.SetKeepAspect(m_keepAspect);
-		}
 		if(m_mousePos != m_viewer->m_mousePos) {
 			m_mousePos = m_viewer->m_mousePos;
 			m_wgl.SetMousePos(m_mousePos.x(), m_mousePos.y());
@@ -97,7 +93,6 @@ private:
 	SceneViewer* m_viewer;
 	QUrl m_source;
 	wallpaper::WallpaperGL m_wgl;
-	bool m_keepAspect;
 	QPointF m_mousePos;
 	bool m_paused;
 };
@@ -106,7 +101,6 @@ SceneViewer::SceneViewer(QQuickItem * parent):QQuickFramebufferObject(parent),
 		m_mousePos(0,0),
 		m_fps(15),
 		m_paused(false),
-		m_keepAspect(false),
 		m_wgl(nullptr) {
     connect(this, &SceneViewer::onUpdate, this, &SceneViewer::update, Qt::QueuedConnection);
 }
@@ -149,7 +143,6 @@ QUrl SceneViewer::source() const { return m_source; }
 
 QUrl SceneViewer::assets() const { return m_assets; }
 
-bool SceneViewer::keepAspect() const { return m_keepAspect; }
 
 int SceneViewer::curFps() const { return m_curFps; }
 
@@ -166,14 +159,6 @@ void SceneViewer::setAssets(const QUrl& assets) {
 	if(m_assets == assets) return;
 	m_assets = assets;
 };
-
-void SceneViewer::setKeepAspect(bool value) {
-	if(m_keepAspect == value) return;
-	m_keepAspect = value;
-	update();
-	Q_EMIT keepAspectChanged();
-};
-
 
 void SceneViewer::setFps(int value) {
 	if(m_fps == value) return;

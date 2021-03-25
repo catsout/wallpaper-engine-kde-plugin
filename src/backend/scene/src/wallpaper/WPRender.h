@@ -22,6 +22,7 @@ public:
 			   texCache(&glWrapper),
 			   clearcolor_({0.7f,0.7f,0.7f}),
 			   m_mouseParallaxVec({0.0f, 0.0f}),
+			   m_origin({960, 540}),
 			   frametime(0) {};
 	~WPRender() {};
 	bool Init(void *get_proc_address(const char*));
@@ -29,8 +30,6 @@ public:
 	void Clear(float alpha);
 	void SetClearcolor(const std::vector<float>& value) {clearcolor_ = value;};
 	void CreateGlobalFbo(int width, int height);
-	void UseGlobalFbo();
-	void UseGlobalFbo(const gl::Shadervalues& shadervalues);
 	gl::GLFramebuffer* GlobalFbo() {return fbo_.get();};
 	const CameraParallax& GetCameraParallax() const {return m_cameraParallax;};
 	void SetCameraParallax(const CameraParallax& value) {m_cameraParallax = value;};
@@ -38,6 +37,9 @@ public:
 	const std::vector<float>& GetMouseParallaxVec() const {return m_mouseParallaxVec;};
 	// x, y is at [0,1]
 	void GenMouseParallaxVec(float x, float y);
+
+	const auto& Origin() const { return m_origin; }
+	void SetOrigin(uint32_t x, uint32_t y) { m_origin = std::vector<uint32_t>{x, y}; }
 
 	gl::GLWrapper glWrapper;
 	gl::WPShaderManager shaderMgr;	
@@ -51,6 +53,7 @@ private:
 	std::vector<float> clearcolor_;
 	CameraParallax m_cameraParallax;
 	std::vector<float> m_mouseParallaxVec;
+	std::vector<uint32_t> m_origin;
 };
 
 class Renderable
