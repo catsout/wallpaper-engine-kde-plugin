@@ -14,6 +14,7 @@ int main(int argc, char **argv)
 		std::cerr << "usage: "+ std::string(argv[0]) +" <assets dir> <pkg file>\n";
 		return 1;
 	}
+	QCoreApplication::setAttribute(Qt::AA_DisableHighDpiScaling);
     QGuiApplication app(argc, argv);
 
 	qmlRegisterType<SceneViewer>("scenetest", 1, 0, "SceneViewer");
