@@ -46,7 +46,9 @@ public:
 		m_name(o.m_name),
 		m_size(std::move(o.m_size)),
 		m_materials(std::move(o.m_materials)),
-		m_fboDataMap(std::move(o.m_fboDataMap)) {};
+		m_fboDataMap(std::move(o.m_fboDataMap)),
+		m_visible(o.m_visible),
+		m_mesh_normal(std::move(o.m_mesh_normal)) {};
 
     bool From_json(const nlohmann::json&);
     void Load(WPRender&);

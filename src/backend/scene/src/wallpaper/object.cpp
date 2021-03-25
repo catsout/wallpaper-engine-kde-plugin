@@ -114,6 +114,9 @@ bool ImageObject::From_json(const json& obj)
 				LOG_INFO("object: " + Name() + "'s effect: " + m_effects.back().Name() + " not load");
 				m_effects.pop_back();
 			}
+			else if(!m_effects.back().Visible()) {
+				m_effects.pop_back();
+			}
 		}
 	}
 	if(m_blendmode != 0) {

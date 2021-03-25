@@ -16,6 +16,7 @@ bool Effect::From_json(const nlohmann::json& effect_j) {
 	auto file_j = json::parse(file_src); 
 
 	GET_JSON_NAME_VALUE(file_j, "name", m_name);
+	
 
 	GET_JSON_NAME_VALUE_NOWARN(effect_j, "visible", m_visible);
 
