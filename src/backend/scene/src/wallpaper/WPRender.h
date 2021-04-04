@@ -54,6 +54,7 @@ private:
 	CameraParallax m_cameraParallax;
 	std::vector<float> m_mouseParallaxVec;
 	std::vector<uint32_t> m_origin;
+
 };
 
 class Renderable

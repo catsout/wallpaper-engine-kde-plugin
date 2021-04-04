@@ -1,5 +1,5 @@
 #include "SceneViewer.h"
-#include "wallpaper.h"
+
 
 #include <stdexcept>
 #include <clocale>
@@ -16,6 +16,7 @@
 #include <QtQuick/QQuickView>
 
 #include <QLoggingCategory>
+#include "wallpaper.h"
 
 
 namespace

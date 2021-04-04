@@ -10,4 +10,3 @@ SceneVertexArray::SceneVertexArray(const char* attr, const std::vector<float>& d
 	memcpy(newdata, &data[0], DataSize());
 	m_pData = newdata;
 };
-

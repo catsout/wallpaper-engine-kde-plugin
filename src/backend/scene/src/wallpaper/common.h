@@ -12,6 +12,8 @@
 #define LOG_ERROR(text) wallpaper::Logger::Log(__FUNCTION__, __LINE__, "Error at ", (text));
 #define LOG_INFO(text) wallpaper::Logger::Log("", -1, "", (text));
 
+#define STRCONV(str,t) wallpaper::StrConv((str), (t), __FUNCTION__, __LINE__);
+
 #if defined(DEBUG_OPENGL)
 #define CHECK_GL_ERROR_IF_DEBUG() wallpaper::gl::checkGlError(__FILE__, __FUNCTION__, __LINE__);
 #else
@@ -50,6 +52,7 @@ bool DeleteLine(std::string& src, LineStr& line);
 
 template<typename T>
 T StrConv(const std::string& str);
+
 template<> inline int StrConv<int>(const std::string& str) {
 	return std::stoi(str);
 }
@@ -66,13 +69,27 @@ bool StringToVec(const std::string& str, std::vector<T>& target) {
 		std::transform(str_list.begin(), str_list.end(), target.begin(), StrConv<T>);
 	}
 	catch (const std::invalid_argument& e) {
-		std::cerr << "Invalid argument: " << e.what() << std::endl;
+		std::cerr << "Invalid argument: " << e.what() << " " << str << std::endl;
 		return false;
 	}
 	catch (const std::out_of_range& e) {
 		std::cerr << "Out of range: " << e.what() << std::endl;
 		return false;
 	}
+	return true;
+}
+
+template<typename T>
+bool StrConv(const std::string& str, T& target, const char* func, int32_t line) {
+	T temp;
+	try { 
+		temp = StrConv<T>(str);
+	}
+	catch (const std::invalid_argument& e) {
+		Logger::Log(func, line, "Error converting string at ", std::string("invalid argument ") + e.what());
+		return false;
+	}
+	target = temp;
 	return true;
 }
 }

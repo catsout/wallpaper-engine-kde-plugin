@@ -1,23 +1,13 @@
 #pragma once
 #include "GLWrapper.h"
+#include "SceneTexture.h"
 #include <memory>
+
+#include "GraphicManager.h"
+#include "SpriteAnimation.h"
 
 namespace wallpaper {
 namespace gl {
-
-struct SpriteFrame
-{
-	int imageId;
-	float frametime;
-	float x;
-	float y;
-	float width;
-	float unk0;
-	float unk1;
-	float height;
-	static std::vector<float> GetTranslation(const SpriteFrame&);
-	static std::vector<float> GetRotation(const SpriteFrame&);
-};
 
 class Texture {
 public:
@@ -27,7 +17,7 @@ public:
 
 	void Bind();
 	GLTexture* texture;
-	TextureFormat::Format Format() {return m_format;};
+	TextureFormat Format() {return m_format;};
 	std::vector<int> GetResolution();
 	int Count() const {return m_textures.size();};
 	bool IsSprite() const {return m_isSprite;};
@@ -36,7 +26,7 @@ public:
 	void SwitchTex(int index);
 private:
 	std::string m_name;
-	TextureFormat::Format m_format;
+	TextureFormat m_format;
 	int m_resolution[4] = {0};
 	GLWrapper* m_glWrapper;
 	std::vector<GLTexture*> m_textures;
@@ -50,6 +40,7 @@ class WPTextureCache {
 public:
 	WPTextureCache(GLWrapper* glWrapper):m_glWrapper(glWrapper) {};
 	Texture* LoadTexture(const std::string& name);
+	Texture* LoadTextureHeader(const std::string& name);
 	Texture* GetTexture(const std::string& name);
 	void Clear();
 private:

@@ -12,3 +12,4 @@ _deps
 *.tar
 build
 *.swp
+.vscode

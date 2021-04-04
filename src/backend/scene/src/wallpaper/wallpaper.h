@@ -3,11 +3,16 @@
 #include <vector>
 #include <cstdint>
 #include "pkg.h"
-#include "object.h"
-#include "WPRender.h"
+#include "common.h"
+//#include "object.h"
+//#include "WPRender.h"
 #include "FpsCounter.h"
 #include "FrameTimer.h"
 #include "SceneMesh.h"
+
+#include "Scene.h"
+#include "WPSceneParser.h"
+#include "GLGraphicManager.h"
 
 namespace wallpaper
 {
@@ -42,8 +47,6 @@ public:
 private:
     static fs::file_node m_pkgfs;
 	std::string m_pkgPath;
-    std::vector<std::unique_ptr<RenderObject>> m_objects;
-	WPRender m_wpRender;
 	glm::mat4 m_fboTrans;
 
 	bool m_inited = false;
@@ -52,7 +55,6 @@ private:
 	bool m_flip = false;
 	std::vector<float> m_mousePos;
 
-	gl::Shadervalues m_shadervalues;
 	SceneMesh m_mesh;
 
 	FpsCounter m_fpsCounter;
@@ -63,6 +65,12 @@ private:
     // for debug
     static int m_objnum;
     static int m_effnum;
+
+	WPSceneParser m_parser;
+	GLGraphicManager m_gm;
+
+
+	std::unique_ptr<Scene> m_scene;
 };
 
 }

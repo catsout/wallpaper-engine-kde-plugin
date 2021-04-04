@@ -5,7 +5,7 @@
 
 using namespace wallpaper::gl;
 
-
+/*
 std::vector<float> SpriteFrame::GetTranslation(const SpriteFrame& sf) {
 	return {sf.x, sf.y};
 }
@@ -13,6 +13,7 @@ std::vector<float> SpriteFrame::GetTranslation(const SpriteFrame& sf) {
 std::vector<float> SpriteFrame::GetRotation(const SpriteFrame& sf) {
 	return {sf.width, 0.0f, 0.0f, sf.height};
 }
+*/
 
 Texture::Texture(GLWrapper* glWrapper,const std::string& name):m_glWrapper(glWrapper),m_name(name) {
 	TexImage tex = TexImage::LoadFromFile("materials/" +name+".tex");
@@ -52,7 +53,7 @@ Texture::~Texture() {
 }
 
 
-const SpriteFrame* Texture::NextSpriteFrame(int time) {
+const wallpaper::SpriteFrame* Texture::NextSpriteFrame(int time) {
 	if(m_spriteFrames.size() == 0)
 		return nullptr;
 	if((m_frametime -= time) <= 0) {
@@ -63,7 +64,7 @@ const SpriteFrame* Texture::NextSpriteFrame(int time) {
 	else return nullptr;
 }
 
-const SpriteFrame* Texture::NextSpriteFrame() {
+const wallpaper::SpriteFrame* Texture::NextSpriteFrame() {
 	if(m_spriteFrames.size() == 0) {
 //		LOG_ERROR("Use sprite but no sprite info data");
 		return nullptr;
