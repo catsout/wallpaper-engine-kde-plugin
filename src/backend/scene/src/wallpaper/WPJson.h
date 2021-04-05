@@ -18,11 +18,19 @@ namespace wallpaper {
 
 	template<> inline
 	bool wallpaper::GetJsonValue<std::vector<float>>(const nlohmann::json& json, std::vector<float>& value) {
-		std::string strvalue;
+		const auto* pjson = &json;
 		if(json.contains("value")) 
-			strvalue = json.at("value").get<std::string>();
-		else strvalue = json.get<std::string>();
-		return StringToVec<float>(strvalue, value);
+			pjson = &json.at("value");
+		const auto& njson = *pjson;
+		if(njson.is_number()) {
+			value = {njson.get<float>()};
+			return true;
+		}
+		else {
+			std::string strvalue;
+			strvalue = njson.get<std::string>();
+			return StringToVec<float>(strvalue, value);
+		}
 	}
 
 	template <typename T>

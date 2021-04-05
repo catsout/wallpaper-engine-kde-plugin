@@ -50,6 +50,11 @@ add_library(${PROJECT_NAME}
 	Interface/ISceneParser.h
 	Interface/IShaderValueUpdater.h
 	Interface/IImageParser.h
+	wpscene/WPImageObject.h
+	wpscene/WPImageObject.cpp
+	wpscene/WPMaterial.h
+	wpscene/WPMaterial.cpp
+	wpscene/WPScene.h
 	WPSceneParser.h
 	WPSceneParser.cpp
 	WPShaderValueUpdater.h

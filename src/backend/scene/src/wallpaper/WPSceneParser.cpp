@@ -3,16 +3,17 @@
 #include "pkg.h"
 #include "common.h"
 #include "wallpaper.h"
-//#include "teximage.h"
 #include "WPTexImageParser.h"
 #include "Type.h"
 
 #include "WPShaderValueUpdater.h"
+#include "wpscene/WPImageObject.h"
 
 #include <iostream>
 #include <sstream>
 #include <string>
 #include <unordered_map>
+
 
 using namespace wallpaper;
 
@@ -322,7 +323,6 @@ void ParseMaterial(nlohmann::json& json, Scene* pScene, SceneNode* pNode, SceneM
 
 std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 	auto json = nlohmann::json::parse(buf);
-	LOG_INFO(buf);
 	auto& general_j = json.at("general");
 
 	auto upScene = std::make_unique<Scene>();
@@ -363,6 +363,9 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
     for(auto& obj:objects) {
 		if(!obj.contains("image")) continue;
 		if(obj.at("image").is_null()) continue;
+		wpscene::WPImageObject wpimgobj;
+		wpimgobj.FromJson(obj);
+		LOG_INFO(nlohmann::json(wpimgobj).dump(4));
 		bool visible {true};
 		GET_JSON_NAME_VALUE_NOWARN(obj, "visible", visible);
 		if(!visible)
