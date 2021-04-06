@@ -30,6 +30,7 @@ public:
 class WPMaterial {
 public:
     bool FromJson(const nlohmann::json&);
+    void MergePass(const WPMaterialPass&);
     std::string blending {"translucent"};
     std::string cullmode {"nocull"};
     std::string shader;

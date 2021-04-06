@@ -55,6 +55,7 @@ add_library(${PROJECT_NAME}
 	wpscene/WPMaterial.h
 	wpscene/WPMaterial.cpp
 	wpscene/WPScene.h
+	wpscene/WPScene.cpp
 	WPSceneParser.h
 	WPSceneParser.cpp
 	WPShaderValueUpdater.h

@@ -35,6 +35,8 @@ bool WPImageEffect::FromJson(const nlohmann::json& json) {
         bool compose {false};
         for(const auto& jP:jEPasses) {
             if(!jP.contains("material")) {
+                if(jP.contains("command"))
+                    continue;
                 LOG_ERROR("no material in effect pass");
                 return false;
             }

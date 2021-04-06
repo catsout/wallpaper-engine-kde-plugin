@@ -6,6 +6,7 @@
 #define GET_JSON_NAME_VALUE(json, name, value) wallpaper::GetJsonValue(__FUNCTION__, __LINE__, (json), (name), (value))
 #define GET_JSON_VALUE_NOWARN(json, value) wallpaper::GetJsonValue(__FUNCTION__, __LINE__, (json), (value), false)
 #define GET_JSON_NAME_VALUE_NOWARN(json, name, value) wallpaper::GetJsonValue(__FUNCTION__, __LINE__, (json), (name), (value), false)
+#define PARSE_JSON(source, result) wallpaper::ParseJson(__FUNCTION__, __LINE__, (source), (result))
 
 namespace wallpaper {
 	template <typename T>
@@ -56,4 +57,6 @@ namespace wallpaper {
 		}
 		return GetJsonValue<T>(func, line, json.at(name), value, name.c_str());
 	}
+
+	bool ParseJson(const char* func, int line, const std::string& source, nlohmann::json& result);
 }

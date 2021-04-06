@@ -40,8 +40,8 @@ void WallpaperGL::Load(const std::string& pkg_path) {
 		return;
 	}
 	m_scene = m_parser.Parse(scene_src);	
-
-	m_gm.InitializeScene(m_scene.get());
+	if(m_scene)
+		m_gm.InitializeScene(m_scene.get());
 	m_loaded = true;
 }
 
@@ -55,14 +55,14 @@ void WallpaperGL::Render(uint fbo, int width, int height) {
 		auto time = duration_cast<milliseconds>(enterFrame.time_since_epoch());
 		uint32_t timep = (time - duration_cast<hours>(time)).count();
 		m_fpsCounter.RegisterFrame(timep);
-		
-		m_scene->shaderValueUpdater->MouseInput(m_mousePos[0], m_mousePos[1]);
-		m_gm.SetDefaultFbo(fbo, width, height);
-		m_gm.Draw();
-
-		// time elapsing
-		double idealtime = 1.0f / (double)m_frameTimer.Fps();
-		m_scene->elapsingTime += idealtime;
+		if(m_scene) {	
+			m_scene->shaderValueUpdater->MouseInput(m_mousePos[0], m_mousePos[1]);
+			m_gm.SetDefaultFbo(fbo, width, height);
+			m_gm.Draw();
+			// time elapsing
+			double idealtime = 1.0f / (double)m_frameTimer.Fps();
+			m_scene->elapsingTime += idealtime;
+		}
 		m_frameTimer.RenderFrame();
 	}
 }

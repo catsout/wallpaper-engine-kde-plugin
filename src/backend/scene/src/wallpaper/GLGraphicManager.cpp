@@ -101,7 +101,8 @@ void GLGraphicManager::RenderNode(SceneNode* node) {
 		glw.ActiveTexture(i_tex);
 		int32_t imageId = 0;
 		if(name.compare(0, 4, "_rt_") == 0) {
-			glw.BindFramebufferTex(m_rtm.GetFrameBuffer(name, m_scene->renderTargets.at(name)));
+			const auto& rt = m_scene->renderTargets.at(name);
+			glw.BindFramebufferTex(m_rtm.GetFrameBuffer(name, rt));
 		}
 		else if(glw.textureMap.count(name) != 0) {
 			// deal sprite
@@ -122,12 +123,14 @@ void GLGraphicManager::RenderNode(SceneNode* node) {
 	materialShader.updateValueList.clear();
 	glw.SetBlend(material->blenmode);
 	glw.RenderMesh(*mesh);
+
 	if(!node->Camera().empty()) {
 		auto& cam = m_scene->cameras.at(node->Camera());
 		if(cam->HasImgEffect()) {
 			auto& effs = cam->GetImgEffect();
 			for(int32_t i=0;i<effs->EffectCount();i++) {
-				for(auto& n:effs->GetEffect(i)->nodes) {
+				auto& eff = effs->GetEffect(i);
+				for(auto& n:eff->nodes) {
 					auto& name = n.output;
 					m_glw.BindFramebufferViewport(m_rtm.GetFrameBuffer(name, m_scene->renderTargets.at(name)));
 					if(name != "_rt_default") {
@@ -135,6 +138,24 @@ void GLGraphicManager::RenderNode(SceneNode* node) {
 					}
 					RenderNode(n.sceneNode.get());
 					m_glw.BindFramebufferViewport(m_rtm.GetFrameBuffer("_rt_default", m_scene->renderTargets.at("_rt_default")));
+				}
+			}
+
+			for(int32_t i=0;i<effs->EffectCount();i++) {
+				auto& eff = effs->GetEffect(i);
+				for(auto& n:eff->nodes) {
+					if(n.sceneNode->Mesh() == nullptr) continue;
+					const auto& mesh = n.sceneNode->Mesh();
+					if(mesh->Material() == nullptr) continue;
+					const auto& mat = mesh->Material();
+					for(const auto& t:mat->textures) {
+						if(t.compare(0, 4, "_rt_") == 0) {
+							const auto& rt = m_scene->renderTargets.at(t);
+							if(t != "_rt_default" && rt.allowReuse) {
+								m_rtm.ReleaseFrameBuffer(t, rt);
+							}
+						}
+					}
 				}
 			}
 		}

@@ -27,6 +27,24 @@ void WPMaterialPass::Update(const WPMaterialPass& p) {
     }
 }
 
+void WPMaterial::MergePass(const WPMaterialPass& p) {
+    int32_t i = -1;
+    for(const auto& el:p.textures) {
+        i++;
+        if(p.textures.size() > textures.size())
+            textures.resize(p.textures.size());
+        if(!el.empty()) {
+            textures[i] = el;
+        }
+    }
+    for(const auto& el:p.constantshadervalues) {
+        constantshadervalues[el.first] = el.second;
+    }
+    for(const auto& el:p.combos) {
+        combos[el.first] = el.second;
+    }
+}
+
 bool WPMaterialPass::FromJson(const nlohmann::json& json) {
     if(json.contains("textures")) {
         for(const auto& jT:json.at("textures")) {
@@ -83,7 +101,8 @@ bool WPMaterial::FromJson(const nlohmann::json& json) {
     if(jContent.contains("textures")) {
         for(const auto& jT:jContent.at("textures")) {
             std::string tex;
-            GET_JSON_VALUE(jT, tex);
+            if(!jT.is_null())
+                GET_JSON_VALUE(jT, tex);
             textures.push_back(tex);
         }
     }
