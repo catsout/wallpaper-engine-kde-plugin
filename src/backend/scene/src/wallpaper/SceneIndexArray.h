@@ -18,7 +18,7 @@ namespace wallpaper
 		}
 		SceneIndexArray(const SceneIndexArray&) = delete;
 		~SceneIndexArray() {
-			if(m_pData)
+			if(m_pData != nullptr)
 				delete[] m_pData;
 		}
 

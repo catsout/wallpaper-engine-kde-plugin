@@ -45,7 +45,7 @@ GLShader::~GLShader() {
 }
 
 GLFramebuffer::GLFramebuffer():width(0),height(0),color_texture(GL_TEXTURE_2D, width, height, 1) {}
-GLFramebuffer::GLFramebuffer(int _width, int _height)
+GLFramebuffer::GLFramebuffer(uint32_t _width, uint32_t _height)
 		: width(_width), height(_height),color_texture(GL_TEXTURE_2D, _width, _height, 1) {}
 /*
 GLFramebuffer::~GLFramebuffer() {
@@ -149,6 +149,9 @@ GLProgram* GLWrapper::CreateProgram(std::vector<GLShader *> shaders,
         std::string infoLog = GetInfoLog(program->program, glGetProgramiv, glGetProgramInfoLog);
         LOG_ERROR("LINKING_FAILED\n" + infoLog);
     }
+	for(auto& shader:shaders) {
+		DeleteShader(shader);
+	}
 	CHECK_GL_ERROR_IF_DEBUG();
     return program;
 }
@@ -277,8 +280,13 @@ void GLWrapper::DeleteProgram(GLProgram* program) {
 	CHECK_GL_ERROR_IF_DEBUG();
 }
 
-void GLWrapper::DeleteFramebuffer(GLFramebuffer *framebuffer) {
-	delete framebuffer;
+void GLWrapper::DeleteFramebuffer(GLFramebuffer *glfbo) {
+	if(glfbo == nullptr)
+		return;
+	if (glfbo->framebuffer)
+		glDeleteFramebuffers(1, &glfbo->framebuffer);
+	if (glfbo->color_texture.texture)
+		glDeleteTextures(1, &glfbo->color_texture.texture);
 	CHECK_GL_ERROR_IF_DEBUG();
 }
 
@@ -529,10 +537,6 @@ GLWrapper::GLWrapper() {
 }
 
 namespace wp = wallpaper;
-
-//static GLWrapper glw;
-//static WPTextureCache tex(&glw);
-//static wp::Scene* curScene;
 
 int32_t GLProgram::GetUniformLocation(GLProgram* pro, const std::string name) {
 	for(const auto& u:pro->uniformLocs) {

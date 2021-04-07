@@ -313,7 +313,7 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 		return nullptr;
 	wpscene::WPScene sc;
 	sc.FromJson(json);
-	LOG_INFO(nlohmann::json(sc).dump(4));
+	//LOG_INFO(nlohmann::json(sc).dump(4));
 
 	auto upScene = std::make_unique<Scene>();
 	upScene->sceneGraph = std::make_shared<SceneNode>();
@@ -351,7 +351,7 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 		if(obj.at("image").is_null()) continue;
 		wpscene::WPImageObject wpimgobj;
 		wpimgobj.FromJson(obj);
-		LOG_INFO(nlohmann::json(wpimgobj).dump(4));
+//		LOG_INFO(nlohmann::json(wpimgobj).dump(4));
 
 		if(!wpimgobj.visible)
 			continue;
@@ -366,7 +366,7 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 		if(!hasEffect && wpimgobj.fullscreen)
 			continue;
 
-		bool isCompose = wpimgobj.name == "Compose";
+		bool isCompose = wpimgobj.image == "models/util/composelayer.json";
 		// skip no effect compose layer
 		// it's no the correct behaviour, but do it for now
 		if(!hasEffect && isCompose)
@@ -389,6 +389,26 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 		WPShaderInfo shaderInfo;
 		shaderInfo.baseConstSvs = baseConstSvs;
 		LoadMaterial(wpimgobj.material, upScene.get(), spNode.get(), &material, &svData, &shaderInfo);
+		for(const auto& cs:wpimgobj.material.constantshadervalues) {
+			const auto& name = cs.first;
+			const std::vector<float>& value = cs.second;
+			std::string glname;
+			if(shaderInfo.alias.count(name) != 0) {
+				glname = shaderInfo.alias.at(name);
+			} else {
+				for(const auto& el:shaderInfo.alias) {
+					if(el.second.substr(2) == name) {
+						glname = el.second;
+						break;
+					}
+				}
+			}
+			if(glname.empty()) {
+				LOG_ERROR("ShaderValue: " +name+ " not found in glsl");
+			} else {
+				material.customShader.constValues[glname] = {glname, value}; 
+			}
+		}
 
 		// mesh
 		auto mesh = SceneMesh();
@@ -476,7 +496,7 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 					upScene->renderTargets[rtname] = {
 						(uint32_t)(wpimgobj.size[0]/wpfbo.scale), 
 						(uint32_t)(wpimgobj.size[1]/wpfbo.scale), 
-						i+2, 
+						(uint32_t)i+2, 
 						true
 					};
 					fboMap[wpfbo.name] = rtname;
@@ -525,10 +545,20 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 					for(const auto& cs:wpmat.constantshadervalues) {
 						const auto& name = cs.first;
 						const std::vector<float>& value = cs.second;
-						if(wpShaderInfo.alias.count(name) == 0) {
+						std::string glname;
+						if(wpShaderInfo.alias.count(name) != 0) {
+							glname = wpShaderInfo.alias.at(name);
+						} else {
+							for(const auto& el:wpShaderInfo.alias) {
+								if(el.second.substr(2) == name) {
+									glname = el.second;
+									break;
+								}
+							}
+						}
+						if(glname.empty()) {
 							LOG_ERROR("ShaderValue: " +name+ " not found in glsl");
 						} else {
-							const auto& glname = wpShaderInfo.alias.at(name);
 							material.customShader.constValues[glname] = {glname, value}; 
 						}
 					}

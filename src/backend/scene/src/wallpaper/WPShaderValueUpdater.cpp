@@ -66,6 +66,7 @@ void WPShaderValueUpdater::UpdateShaderValues(SceneNode* pNode, SceneShader* pSh
 		shadervs.push_back({"g_ModelViewProjectionMatrix", ShaderValue::ValueOf(modelTrans)});
 
 		shadervs.push_back({"g_Time", {(float)m_scene->elapsingTime}});
+
 		for(int32_t i=0;i<material->textures.size();i++) {
 			const auto& texname = material->textures.at(i);
 			if(m_scene->textures.count(texname) != 0) {

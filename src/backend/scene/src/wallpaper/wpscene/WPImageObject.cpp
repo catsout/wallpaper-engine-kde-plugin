@@ -78,11 +78,10 @@ bool WPImageEffect::FromJson(const nlohmann::json& json) {
 }
 
 bool WPImageObject::FromJson(const nlohmann::json& json) {
-    std::string imagePath;
-    GET_JSON_NAME_VALUE(json, "image", imagePath);
+    GET_JSON_NAME_VALUE(json, "image", image);
     GET_JSON_NAME_VALUE_NOWARN(json, "visible", visible);
-    auto image = nlohmann::json::parse(fs::GetContent(WallpaperGL::GetPkgfs(), imagePath));
-    GET_JSON_NAME_VALUE_NOWARN(image, "fullscreen", fullscreen);
+    auto jImage = nlohmann::json::parse(fs::GetContent(WallpaperGL::GetPkgfs(), image));
+    GET_JSON_NAME_VALUE_NOWARN(jImage, "fullscreen", fullscreen);
 	GET_JSON_NAME_VALUE_NOWARN(json, "name", name);
 	GET_JSON_NAME_VALUE_NOWARN(json, "id", id);
     LOG_INFO(name);
@@ -91,10 +90,10 @@ bool WPImageObject::FromJson(const nlohmann::json& json) {
 		GET_JSON_NAME_VALUE(json, "angles", angles);	
 		GET_JSON_NAME_VALUE(json, "scale", scale);	
 		GET_JSON_NAME_VALUE_NOWARN(json, "parallaxDepth", parallaxDepth);
-		if(image.contains("width")) {
+		if(jImage.contains("width")) {
 			int32_t w,h;
-			GET_JSON_NAME_VALUE(image, "width", w);	
-			GET_JSON_NAME_VALUE(image, "height", h);	
+			GET_JSON_NAME_VALUE(jImage, "width", w);	
+			GET_JSON_NAME_VALUE(jImage, "height", h);	
 			size = {(float)w, (float)h};
 		} else {
 			GET_JSON_NAME_VALUE(json, "size", size);	
@@ -103,9 +102,9 @@ bool WPImageObject::FromJson(const nlohmann::json& json) {
     GET_JSON_NAME_VALUE_NOWARN(json, "color", color);
     GET_JSON_NAME_VALUE_NOWARN(json, "alpha", alpha);
     GET_JSON_NAME_VALUE_NOWARN(json, "brightness", brightness);
-    if(image.contains("material")) {
+    if(jImage.contains("material")) {
         std::string matPath;
-		GET_JSON_NAME_VALUE(image, "material", matPath);	
+		GET_JSON_NAME_VALUE(jImage, "material", matPath);	
         auto jMat = nlohmann::json::parse(fs::GetContent(WallpaperGL::GetPkgfs(), matPath));
         material.FromJson(jMat);
     } else {

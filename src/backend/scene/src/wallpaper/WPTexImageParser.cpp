@@ -154,7 +154,6 @@ std::shared_ptr<Image> WPTexImageParser::Parse(const std::string& name) {
 				else { 
 					LOG_ERROR("lz4 decompress failed");
 					delete [] result;
-					delete [] decompressed_char;
 					return nullptr;
 				}
 			}
@@ -201,7 +200,7 @@ std::shared_ptr<Image> WPTexImageParser::ParseHeader(const std::string& name) {
 					int32_t LZ4_compressed = readInt32(file);
 					int32_t decompressed_size = readInt32(file);
 				}   
-				size_t src_size = readInt32(file);
+				std::streampos src_size = readInt32(file);
 				file.seekg(file.tellg() + src_size);
 			}
 		}

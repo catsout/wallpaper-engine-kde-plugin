@@ -5,63 +5,35 @@
 #include <unordered_map>
 #include <list>
 #include <string>
+#include <memory>
 
 namespace wallpaper
 {
 
 class GLRenderTargetManager {
 public:
-	GLRenderTargetManager(gl::GLWrapper* pGlw):m_pGlw(pGlw) {}
-	uint64_t GetID(const SceneRenderTarget& rt) const {
-		uint64_t id = 0;	
-		id += rt.width;
-		id <<= 14;
-		id += rt.height;
-		id <<= 1;
-		id += rt.withDepth;
-		return id;
+	GLRenderTargetManager(const std::shared_ptr<gl::GLWrapper> pGlw):m_pGlw(pGlw) {}
+	~GLRenderTargetManager() {
+		Clear();
 	}
-	gl::GLFramebuffer* GetFrameBuffer(const std::string& name, const SceneRenderTarget& rt) {
-		auto id = GetID(rt);
-		std::string keystr = name + std::to_string(id);
-		if(m_inuse.count(keystr) == 0) {
-			auto unuseEl = m_unuse.end();
-			for(auto it=m_unuse.begin();it != m_unuse.end();it++) {
-				if(id == it->first) {
-					unuseEl = it;	
-				}
-			}
-			if(unuseEl == m_unuse.end()) {
-				auto* fb = m_pGlw->CreateFramebuffer(rt.width, rt.height, rt.sample);
-				m_inuse[keystr] = fb;
-			} else {
-				m_inuse[keystr] = unuseEl->second;
-				m_unuse.erase(unuseEl);
-			}
-		}
-		return m_inuse.at(keystr);
-	}
-	void ReleaseFrameBuffer(const std::string& name, const SceneRenderTarget& rt) {
-		auto id = GetID(rt);
-		std::string keystr = name + std::to_string(id);
-		if(m_inuse.count(keystr) != 0) {
-			m_unuse.push_back({id, m_inuse.at(keystr)});
-			m_inuse.erase(keystr);
-		}
-	}
+	void Clear();
+	uint64_t GetID(const SceneRenderTarget& rt) const;
+	gl::GLFramebuffer* GetFrameBuffer(const std::string& name, const SceneRenderTarget& rt);
+	void ReleaseFrameBuffer(const std::string& name, const SceneRenderTarget& rt);
+	void ReleaseAndDeleteFrameBuffer(const std::string& name, const SceneRenderTarget& rt);
 private:
-	gl::GLWrapper* m_pGlw {nullptr};
+	std::shared_ptr<gl::GLWrapper> m_pGlw {nullptr};
 	std::unordered_map<std::string, gl::GLFramebuffer*> m_inuse;
 	std::list<std::pair<uint64_t, gl::GLFramebuffer*>> m_unuse;
 };
 
 class GLGraphicManager : public GraphicManager {
 public:
-	GLGraphicManager():m_glw(),m_rtm(&m_glw) {}
-	virtual ~GLGraphicManager() {}
+	GLGraphicManager():m_glw(new gl::GLWrapper()),m_rtm(m_glw) {}
+	virtual ~GLGraphicManager();
 	bool Initialize() override { return false; };
     bool Initialize(void *get_proc_addr(const char*)) override;
-    void Destroy() override {}
+    void Destroy() override;
 	void Draw() override;
     void InitializeScene(Scene*) override;
 	void SetDefaultFbo(uint fbo, uint32_t w, uint32_t h);
@@ -70,9 +42,12 @@ private:
 	void RenderNode(SceneNode*);
 
 	Scene* m_scene;
-	gl::GLWrapper m_glw;
+	std::shared_ptr<gl::GLWrapper> m_glw;
 	gl::GLFramebuffer m_defaultFbo;
 	std::shared_ptr<SceneNode> m_fboNode;
 	GLRenderTargetManager m_rtm;
+
+	std::unordered_map<void*, gl::GLProgram*> m_programMap;
+	std::unordered_map<std::string, std::vector<gl::GLTexture*>> m_textureMap;
 };
 }

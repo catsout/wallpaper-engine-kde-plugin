@@ -43,13 +43,14 @@ public:
     float brightness {1.0f};
     bool fullscreen {false};
     bool visible {true};
+    std::string image;
     WPMaterial material;    
     std::vector<WPImageEffect> effects;
 };
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(WPEffectFbo, name, scale);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(WPImageEffect, name, visible, passes, fbos, materials);
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(WPImageObject, name, origin, size, visible, material, effects);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(WPImageObject, name, origin, angles, size, visible, material, effects);
 
 }
 }

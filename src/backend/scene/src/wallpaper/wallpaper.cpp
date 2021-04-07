@@ -40,8 +40,9 @@ void WallpaperGL::Load(const std::string& pkg_path) {
 		return;
 	}
 	m_scene = m_parser.Parse(scene_src);	
-	if(m_scene)
+	if(m_scene) {
 		m_gm.InitializeScene(m_scene.get());
+	}
 	m_loaded = true;
 }
 
@@ -70,6 +71,7 @@ void WallpaperGL::Render(uint fbo, int width, int height) {
 void WallpaperGL::Clear()
 {
 	if(!m_inited) return;
+	m_gm.Destroy();
 	LOG_INFO("Date cleared");
 }
 

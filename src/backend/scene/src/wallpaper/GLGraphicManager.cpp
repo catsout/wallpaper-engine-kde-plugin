@@ -7,6 +7,70 @@
 
 using namespace wallpaper;
 
+// render target
+
+void GLRenderTargetManager::Clear() {
+	for(const auto& el:m_unuse) {
+		m_pGlw->DeleteFramebuffer(el.second);
+	}
+	m_unuse.clear();
+	for(const auto& el:m_inuse) {
+		m_pGlw->DeleteFramebuffer(el.second);
+	}	
+	m_inuse.clear();
+}
+
+uint64_t GLRenderTargetManager::GetID(const SceneRenderTarget& rt) const {
+	uint64_t id = 0;	
+	id += rt.width;
+	id <<= 14;
+	id += rt.height;
+	id <<= 1;
+	id += rt.withDepth;
+	return id;
+}
+
+gl::GLFramebuffer* GLRenderTargetManager::GetFrameBuffer(const std::string& name, const SceneRenderTarget& rt) {
+	auto id = GetID(rt);
+	std::string keystr = name + std::to_string(id);
+	if(m_inuse.count(keystr) == 0) {
+		auto unuseEl = m_unuse.end();
+		for(auto it=m_unuse.begin();it != m_unuse.end();it++) {
+			if(id == it->first) {
+				unuseEl = it;	
+			}
+		}
+		if(unuseEl == m_unuse.end()) {
+			auto* fb = m_pGlw->CreateFramebuffer(rt.width, rt.height, rt.sample);
+			m_inuse[keystr] = fb;
+		} else {
+			m_inuse[keystr] = unuseEl->second;
+			m_unuse.erase(unuseEl);
+		}
+	}
+	return m_inuse.at(keystr);
+}
+
+void GLRenderTargetManager::ReleaseFrameBuffer(const std::string& name, const SceneRenderTarget& rt) {
+	auto id = GetID(rt);
+	std::string keystr = name + std::to_string(id);
+	if(m_inuse.count(keystr) != 0) {
+		m_unuse.push_back({id, m_inuse.at(keystr)});
+		m_inuse.erase(keystr);
+	}
+}
+
+void GLRenderTargetManager::ReleaseAndDeleteFrameBuffer(const std::string& name, const SceneRenderTarget& rt) {
+	auto id = GetID(rt);
+	std::string keystr = name + std::to_string(id);
+	if(m_inuse.count(keystr) != 0) {
+		m_pGlw->DeleteFramebuffer(m_inuse.at(keystr));
+		m_inuse.erase(keystr);
+	}
+}
+
+
+// graphic manager
 static Scene* curScene;
 static gl::GLWrapper* pGlw;
 
@@ -17,9 +81,8 @@ std::string OutImageType(const Image& img) {
 		return ToString(img.type);
 }
 
-void LoadImage(const SceneTexture& tex, const Image& img) {
+std::vector<gl::GLTexture*> LoadImage(const SceneTexture& tex, const Image& img) {
     auto& glw = *pGlw;
-	if(glw.textureMap.count(tex.url) > 0) return;
 	LOG_INFO(std::string("Load tex ") + OutImageType(img) + " " + tex.url);
 	std::vector<gl::GLTexture*> texs;
 	for(int i_img=0;i_img < img.count;i_img++) {
@@ -36,7 +99,7 @@ void LoadImage(const SceneTexture& tex, const Image& img) {
 		}
 		texs.push_back(texture);
 	}
-	glw.textureMap[tex.url] = texs;
+	return texs;
 }
 
 void TraverseNode(GLGraphicManager* pMgr, void (GLGraphicManager::*func)(SceneNode*), SceneNode* node) {
@@ -55,16 +118,17 @@ void GLGraphicManager::LoadNode(SceneNode* node) {
 	auto* material = mesh->Material();
 	for(const auto& url:material->textures) {
 		if(url.empty() || url.compare(0, 4, "_rt_") == 0) continue;
+		if(m_textureMap.count(url) > 0) continue;
 		auto img = curScene->imageParser->Parse(url);;
-		LoadImage(*curScene->textures[url].get(), *img.get());
+		m_textureMap[url] = LoadImage(*curScene->textures[url].get(), *img.get());
 	}
 	auto& materialShader = material->customShader;
 	auto* shader = materialShader.shader.get();
 	
 	auto sv = glw.CreateShader(glw.ToGLType(ShaderType::VERTEX), shader->vertexCode);
 	auto fg = glw.CreateShader(glw.ToGLType(ShaderType::FRAGMENT), shader->fragmentCode);
-	glw.programMap[shader] = glw.CreateProgram({sv, fg}, shader->attrs);
-	auto* program = glw.programMap[shader];
+	m_programMap[shader] = glw.CreateProgram({sv, fg}, shader->attrs);
+	auto* program = m_programMap.at(shader);
 	glw.BindProgram(program);
 	glw.QueryProUniforms(program);
 	for(auto& el:shader->uniforms)
@@ -86,7 +150,7 @@ void GLGraphicManager::RenderNode(SceneNode* node) {
 		auto& cam = m_scene->cameras.at(node->Camera());
 		if(cam->HasImgEffect()) {
 			const auto& name = cam->GetImgEffect()->FirstTarget();
-			m_glw.BindFramebufferViewport(m_rtm.GetFrameBuffer(name, m_scene->renderTargets.at(name)));
+			m_glw->BindFramebufferViewport(m_rtm.GetFrameBuffer(name, m_scene->renderTargets.at(name)));
 		}
 	}
 	auto* material = mesh->Material();
@@ -104,19 +168,19 @@ void GLGraphicManager::RenderNode(SceneNode* node) {
 			const auto& rt = m_scene->renderTargets.at(name);
 			glw.BindFramebufferTex(m_rtm.GetFrameBuffer(name, rt));
 		}
-		else if(glw.textureMap.count(name) != 0) {
+		else if(m_textureMap.count(name) != 0) {
 			// deal sprite
 			if(curScene->textures.count(name) != 0) {
 				const auto& stex = curScene->textures.at(name);
 				if(stex->isSprite)
 					imageId = stex->spriteAnim.GetCurFrame().imageId;
 			}
-			auto& texs = glw.textureMap.at(name);
+			auto& texs = m_textureMap.at(name);
 			if(texs.size() > 0)
 				glw.BindTexture(texs[imageId]);
 		}
     }
-	auto program = glw.programMap[shader];
+	auto program = m_programMap.at(shader);
 	glw.BindProgram(program);
 	for(auto& el:materialShader.updateValueList)
 		glw.UpdateUniform(program, el);
@@ -132,12 +196,12 @@ void GLGraphicManager::RenderNode(SceneNode* node) {
 				auto& eff = effs->GetEffect(i);
 				for(auto& n:eff->nodes) {
 					auto& name = n.output;
-					m_glw.BindFramebufferViewport(m_rtm.GetFrameBuffer(name, m_scene->renderTargets.at(name)));
+					m_glw->BindFramebufferViewport(m_rtm.GetFrameBuffer(name, m_scene->renderTargets.at(name)));
 					if(name != "_rt_default") {
 						//m_glw.ClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 					}
 					RenderNode(n.sceneNode.get());
-					m_glw.BindFramebufferViewport(m_rtm.GetFrameBuffer("_rt_default", m_scene->renderTargets.at("_rt_default")));
+					m_glw->BindFramebufferViewport(m_rtm.GetFrameBuffer("_rt_default", m_scene->renderTargets.at("_rt_default")));
 				}
 			}
 
@@ -164,7 +228,7 @@ void GLGraphicManager::RenderNode(SceneNode* node) {
 
 void GLGraphicManager::InitializeScene(Scene* scene) {
 	curScene = scene;
-	pGlw = &m_glw;
+	pGlw = m_glw.get();
 	m_scene = scene;
 	for(auto& cam:m_scene->cameras) {
 		if(cam.second->HasImgEffect()) {
@@ -184,7 +248,7 @@ void GLGraphicManager::InitializeScene(Scene* scene) {
 			"varying vec2 TexCoord;\n"
 			"void main()\n"
 			"{gl_Position = vec4(a_position, 1.0f);TexCoord = a_texCoord;}";
-		std::string fgCode = "#version 150\n"
+		std::string fgCode = "#version 120\n"
 			"varying vec2 TexCoord;\n"
 			"uniform sampler2D g_Texture0;\n"
 			"void main() {gl_FragColor = texture2D(g_Texture0, TexCoord);}";
@@ -204,27 +268,51 @@ void GLGraphicManager::InitializeScene(Scene* scene) {
 }
 
 void GLGraphicManager::Draw() {
+	if(m_scene == nullptr) return;
 	m_rtm.GetFrameBuffer("_rt_default", m_scene->renderTargets.at("_rt_default"));
 	curScene->shaderValueUpdater->FrameBegin();
 	const auto& cc = m_scene->clearColor;
-	m_glw.BindFramebufferViewport(m_rtm.GetFrameBuffer("_rt_default", m_scene->renderTargets.at("_rt_default")));
-	m_glw.ClearColor(cc[0], cc[1], cc[2], 1.0f);
+	m_glw->BindFramebufferViewport(m_rtm.GetFrameBuffer("_rt_default", m_scene->renderTargets.at("_rt_default")));
+	m_glw->ClearColor(cc[0], cc[1], cc[2], 1.0f);
 	TraverseNode(this, &GLGraphicManager::RenderNode, m_scene->sceneGraph.get());
 	curScene->shaderValueUpdater->FrameEnd();
-	m_glw.BindFramebufferViewport(&m_defaultFbo);
-	m_glw.SetBlend(BlendMode::Disable);
-	m_glw.ClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	m_glw->BindFramebufferViewport(&m_defaultFbo);
+	m_glw->SetBlend(BlendMode::Disable);
+	m_glw->ClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	if(m_fboNode)
 		RenderNode(m_fboNode.get());
 }
 
 bool GLGraphicManager::Initialize(void *get_proc_addr(const char*)) {
-	bool ok = m_glw.Init(get_proc_addr);
+	bool ok = m_glw->Init(get_proc_addr);
 	return ok;
 }
 
 void GLGraphicManager::SetDefaultFbo(uint fbo, uint32_t w, uint32_t h) {
 	m_defaultFbo = {w, h};
+	if(m_scene->renderTargets.count("_rt_default") != 0)
+		m_rtm.ReleaseAndDeleteFrameBuffer("_rt_default", m_scene->renderTargets.at("_rt_default"));
 	m_scene->renderTargets["_rt_default"] = {w, h};
 	m_defaultFbo.framebuffer = fbo;
+}
+
+void GLGraphicManager::Destroy() {
+	m_scene = nullptr;
+	for(const auto& el:m_programMap) {
+		m_glw->DeleteProgram(el.second);
+	}
+	m_programMap.clear();
+	for(const auto& el:m_textureMap) {
+		for(const auto& t:el.second) {
+			m_glw->DeleteTexture(t);
+		}
+	}
+	m_textureMap.clear();
+	m_glw->CleanMeshBuf();
+	m_rtm.Clear();
+	m_fboNode = nullptr;
+}
+
+GLGraphicManager::~GLGraphicManager() {
+	Destroy();
 }

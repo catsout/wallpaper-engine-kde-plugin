@@ -29,7 +29,7 @@ namespace wallpaper
 		SceneVertexArray(const SceneVertexArray&) = delete;
 
 		~SceneVertexArray() {
-			if(m_pData)
+			if(m_pData != nullptr)
 				delete[] m_pData;
 		}
 		// Get

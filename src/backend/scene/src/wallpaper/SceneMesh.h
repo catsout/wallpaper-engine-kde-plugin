@@ -10,9 +10,9 @@ namespace wallpaper
 {
 class SceneMesh {
 public:
-	// temp use
-	uint32_t vao = 0;	
-	
+	// temp
+	uint32_t vao;
+
 	size_t VertexCount() const { return m_vertexArrays.size(); }
 	size_t IndexCount() const { return m_indexArrays.size(); }
 

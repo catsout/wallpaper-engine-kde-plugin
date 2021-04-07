@@ -64,13 +64,13 @@ public:
 class GLFramebuffer {
 public:
 	GLFramebuffer();
-	GLFramebuffer(int32_t w, int32_t h);
+	GLFramebuffer(uint32_t w, uint32_t h);
 
 	GLuint framebuffer = 0;
 	GLTexture color_texture;
 
-	int width;
-	int height;
+	uint32_t width;
+	uint32_t height;
 };
 
 struct GLUniform {
@@ -166,16 +166,12 @@ public:
 
 	GLFramebuffer* GetNowFramebuffer();
 
-	std::unordered_map<void*, GLProgram*> programMap;
-	std::unordered_map<std::string, std::vector<GLTexture*>> textureMap;
-
 private:
 	std::unordered_map<int, int> uniformCount_;	
 	GLFramebuffer* m_curFbo;
 
 	std::vector<uint32_t> m_meshBuf;
 	std::vector<uint32_t> m_meshVao;
-
 };
 }
 }
