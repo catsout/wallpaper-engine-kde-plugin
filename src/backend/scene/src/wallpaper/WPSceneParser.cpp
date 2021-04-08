@@ -252,37 +252,36 @@ void LoadMaterial(const wpscene::WPMaterial& wpmat, Scene* pScene, SceneNode* pN
 			LOG_ERROR("empty texture name");
 			continue;
 		}
+		std::vector<float> resolution;
 		if(name.compare(0, 4,"_rt_") == 0) {
 			if(pScene->renderTargets.count(name) == 0) {
 				LOG_INFO(name);
 			} else {
+				svData.renderTargetResolution.push_back({i, name});
 				const auto& rt = pScene->renderTargets.at(name);
-				svData.resolutions.push_back({
-					i,
+				resolution = {
 					(float)rt.width, 
 					(float)rt.height, 
 					(float)rt.width, 
 					(float)rt.height
-				});
+				};
 			}
 		} else {
 			auto texh = pScene->imageParser->ParseHeader(name);
 			if(texh->type == ImageType::UNKNOWN)
-				svData.resolutions.push_back({
-					i,
+				resolution = {
 					(float)texh->width, 
 					(float)texh->height, 
 					(float)texh->mapWidth, 
 					(float)texh->mapHeight
-				});
+				};
 			else
-				svData.resolutions.push_back({
-					i,
+				resolution = {
 					(float)texh->mapWidth, 
 					(float)texh->mapHeight, 
 					(float)texh->mapWidth, 
 					(float)texh->mapHeight
-				});
+				};
 			if(pScene->textures.count(name) == 0) {
 				SceneTexture stex;
 				stex.sample = texh->sample;
@@ -294,6 +293,10 @@ void LoadMaterial(const wpscene::WPMaterial& wpmat, Scene* pScene, SceneNode* pN
 				pScene->textures[name] = std::make_shared<SceneTexture>(stex);
 			}
 		}
+		if(!resolution.empty()) {
+			const std::string gResolution = "g_Texture" + std::to_string(i) + "Resolution";
+			materialShader.constValues[gResolution] = {gResolution, resolution};
+		}
 	}
 	if(wpmat.blending == "translucent" || wpmat.blending == "normal") {
 		material.blenmode = BlendMode::Normal;
@@ -302,8 +305,9 @@ void LoadMaterial(const wpscene::WPMaterial& wpmat, Scene* pScene, SceneNode* pN
 	} else {
 		LOG_ERROR("unknown blending "+wpmat.blending);
 	}
-
-	materialShader.constValues = pWPShaderInfo->baseConstSvs;
+	for(const auto& el:pWPShaderInfo->baseConstSvs) {
+		materialShader.constValues[el.first] = el.second;
+	}
 	material.customShader = materialShader;
 }
 
@@ -334,7 +338,7 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 	// effect camera 
 	upScene->cameras["effect"] = std::make_shared<SceneCamera>(2, 2, -1.0f, 1.0f);
 	auto spEffCamNode = std::make_shared<SceneNode>(); // at 0,0,0
-	upScene->cameras.at("effect")->AttatchNode(spEffCamNode.get());
+	upScene->cameras.at("effect")->AttatchNode(spEffCamNode);
 	upScene->sceneGraph->AppendChild(std::move(spEffCamNode));
 
 	// global camera
@@ -343,7 +347,7 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
     auto& objects = json.at("objects");
 	std::vector<float> cori{ortho.width/2.0f,ortho.height/2.0f,0},cscale{1.0f,1.0f,1.0f},cangle(3);
 	auto spCamNode = std::make_shared<SceneNode>(cori, cscale, cangle);
-	upScene->activeCamera->AttatchNode(spCamNode.get());
+	upScene->activeCamera->AttatchNode(spCamNode);
 	upScene->sceneGraph->AppendChild(std::move(spCamNode));
 
     for(auto& obj:objects) {
@@ -411,15 +415,16 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 		}
 
 		// mesh
-		auto mesh = SceneMesh();
+		auto spMesh = std::make_shared<SceneMesh>();
+		auto& mesh = *spMesh;
 		bool pow2Split = false;
 
 		std::string shadername = wpimgobj.material.shader;
 		if(shadername.compare(0, 12, "genericimage") == 0) {
-			if(svData.resolutions.size() == 1) {
-				const auto& rel = svData.resolutions[0];
-				pow2Split = (int32_t)rel.width != (int32_t)rel.mapWidth;
-				pow2Split = pow2Split || (int32_t)rel.height != (int32_t)rel.mapHeight;
+			if(material.customShader.constValues.count("g_Texture0Resolution") != 0) {
+				const auto& resolution = material.customShader.constValues.at("g_Texture0Resolution").value;
+				pow2Split = (int32_t)resolution[0] != (int32_t)resolution[2];
+				pow2Split = pow2Split || (int32_t)resolution[1] != (int32_t)resolution[3];
 			}
 		}
 
@@ -428,7 +433,7 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 		if(hasEffect)
 			material.blenmode = BlendMode::Disable;
 		mesh.AddMaterial(std::move(material));
-		spNode->AddMesh(std::move(mesh));
+		spNode->AddMesh(spMesh);
 
 		shaderValueUpdater->SetNodeData(spNode.get(), svData);
 		if(hasEffect) {
@@ -444,7 +449,7 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 				int32_t w = wpimgobj.size[0] * wpimgobj.scale[0];
 				int32_t h = wpimgobj.size[1] * wpimgobj.scale[1];
 				upScene->cameras[nodeAddr] = std::make_shared<SceneCamera>(w, h, -1.0f, 1.0f);
-				upScene->cameras.at(nodeAddr)->AttatchNode(spNode.get());
+				upScene->cameras.at(nodeAddr)->AttatchNode(spNode);
 			}
 			spNode->SetCamera(nodeAddr);
 			// set image effect
@@ -466,6 +471,10 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 				1, 
 				true
 			};
+			if(wpimgobj.fullscreen) {
+				upScene->fullScreenRenderTargets.push_back(effectRTs[0]);
+				upScene->fullScreenRenderTargets.push_back(effectRTs[1]);
+			}
 			imgEffectLayer->SetFirstTarget(effectRTs[0]);
 			int32_t i_eff = -1;
 			for(const auto& wpeffobj:wpimgobj.effects) {
@@ -535,6 +544,14 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 					auto spEffNode = std::make_shared<SceneNode>();
 					WPShaderInfo wpShaderInfo;
 					shaderInfo.baseConstSvs = baseConstSvs;
+					shaderInfo.baseConstSvs["g_EffectTextureProjectionMatrix"] = {
+						"g_EffectTextureProjectionMatrix", 
+						ShaderValue::ValueOf(glm::mat4(1.0f))
+					};
+					shaderInfo.baseConstSvs["g_EffectTextureProjectionMatrixInverse"] = {
+						"g_EffectTextureProjectionMatrixInverse", 
+						ShaderValue::ValueOf(glm::mat4(1.0f))
+					};
 					SceneMaterial material;
 					WPShaderValueData svData;
 					// fix 2304304373, disable it for now
@@ -562,9 +579,10 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 							material.customShader.constValues[glname] = {glname, value}; 
 						}
 					}
-					auto mesh = SceneMesh();
+					auto spMesh = std::make_shared<SceneMesh>();
+					auto& mesh = *spMesh;
 					// the last effect and last material
-					if(i_eff + 1 == count_eff && i_mat + 1 == wpeffobj.materials.size()) {
+					if((i_eff + 1 == count_eff && i_mat + 1 == wpeffobj.materials.size()) && !wpimgobj.fullscreen) {
 						SceneMesh::GenCardMesh(mesh, {(int32_t)wpimgobj.size[0], (int32_t)wpimgobj.size[1]}, false);
 						spEffNode->CopyTrans(*spNode);
 						svData.parallaxDepth = wpimgobj.parallaxDepth;
@@ -575,7 +593,7 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 						spEffNode->SetCamera("effect");
 					}
 					mesh.AddMaterial(std::move(material));
-					spEffNode->AddMesh(std::move(mesh));
+					spEffNode->AddMesh(spMesh);
 
 					shaderValueUpdater->SetNodeData(spEffNode.get(), svData);
 					imgEffect->nodes.push_back({matOutRT, spEffNode});

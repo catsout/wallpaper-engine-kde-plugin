@@ -8,12 +8,17 @@ It's simple and small.
 
 ### Note
 - Support **scene(2d)**,**video**,**web** types
-- The plugin has a lib need compile which is needed for `mpv`,`scene` support. 
+- Scene,mpv support require plugin lib, which need to be compiled   
 The lib will be autodetect after install
 
-You need to choose your steam library directory. Like `~/.local/share/Steam`  
+You need to choose your steam library directory(where *wallpaper engine* installed).  
+Like `~/.local/share/Steam`  
 
-### Install kde plugin
+### Kde plugin
+#### Dependencies
+qt-labs-folderlistmodel  
+qml-module-qtwebchannel
+#### Install
 ```sh
 # Install
 git clone https://github.com/catsout/wallpaper-engine-kde-plugin.git
@@ -28,7 +33,13 @@ plasmapkg2 -r wallpaper-engine-kde-plugin/plugin
 Need restart plasma after update  
 Try: `killall plasmashell && kstart5 plasmashell`
 
-### Build and install plugin lib
+### Plugin lib
+#### Dependencies
+Debian:  
+```sh
+sudo apt install liblz4-dev qtbase5-private-dev qtbase5-dev qtdeclarative5-dev libqt5x11extras5-dev libmpv-dev  qt5-default 
+```
+#### Build and install
 ```sh
 cd wallpaper-engine-kde-plugin
 mkdir build && cd build
@@ -49,13 +60,12 @@ Scene wallpaper is supportted by direct opengl(3.2).
 It's almost usable.  
 #### performance
 I'm not vary familiar with graphic programming, so don't expect high performance.  
-- Wallpaper with simple effects just like play a video  
-- Some 4k wallpapers with complex effects need GTX1050 on 30fps  
-- 80Mb+ wallpaper may require 1GB+ VRAM at now
+- Most likely 10~20% usage higher than *wallpaper engine* on windows.  
 #### not work
 - Particle System   
 - Scene script  
 - Text layer  
+- Pure gif scene
 - Audio play
 - Camera shake and zoom  
 - Global bloom effect  
@@ -63,11 +73,10 @@ I'm not vary familiar with graphic programming, so don't expect high performance
 - ~~ColorBlendMode~~  
 
 ### Web support status
-Basic web api supportted, the audio api dose not send data at now.  
+Basic web apis are supportted, but the audio api dose not send data at now.  
 #### no webgl
 WebEngineView in plasmashell can't init opengl.  
 Some wallpaper using webgl may not work, and performance may be bad.   
-
 
 ### HWdecode for video
 #### QtMultimedia
@@ -76,7 +85,7 @@ It's using GStreamer to play video.
 - GStreamer plugin installed
 like `gstreamer1.0-vaapi` in debain
 - `GST_VAAPI_ALL_DRIVERS=1`
-this for enable vaapi support  
+this needed for vaapi  
 put it to where the xserver read.  
 
 #### Mpv

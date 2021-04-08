@@ -230,6 +230,7 @@ void GLGraphicManager::InitializeScene(Scene* scene) {
 	curScene = scene;
 	pGlw = m_glw.get();
 	m_scene = scene;
+	m_aspect = -1.0f;
 	for(auto& cam:m_scene->cameras) {
 		if(cam.second->HasImgEffect()) {
 			auto& imgEffctLayer = cam.second->GetImgEffect();
@@ -253,16 +254,16 @@ void GLGraphicManager::InitializeScene(Scene* scene) {
 			"uniform sampler2D g_Texture0;\n"
 			"void main() {gl_FragColor = texture2D(g_Texture0, TexCoord);}";
 		m_fboNode = std::make_shared<SceneNode>();
-		auto mesh = SceneMesh();
-		SceneMesh::GenCardMesh(mesh, {2, 2}, false);
+		auto mesh = std::make_shared<SceneMesh>();
+		SceneMesh::GenCardMesh(*mesh, {2, 2}, false);
 		SceneMaterial material;
 		material.textures.push_back("_rt_default");
 		material.defines.push_back("g_Texture0");
 		material.customShader.shader = std::make_shared<SceneShader>();
 		material.customShader.shader->vertexCode = vsCode;
 		material.customShader.shader->fragmentCode = fgCode;
-		mesh.AddMaterial(std::move(material));
-		m_fboNode->AddMesh(std::move(mesh));
+		mesh->AddMaterial(std::move(material));
+		m_fboNode->AddMesh(mesh);
 		LoadNode(m_fboNode.get());
 	}
 }
@@ -289,11 +290,37 @@ bool GLGraphicManager::Initialize(void *get_proc_addr(const char*)) {
 }
 
 void GLGraphicManager::SetDefaultFbo(uint fbo, uint32_t w, uint32_t h) {
+	if(m_scene != nullptr) {
+		if(m_scene->renderTargets.count("_rt_default") == 0)
+			m_scene->renderTargets["_rt_default"] = {w, h};
+	} else return;
+	if(w == m_defaultFbo.width && h == m_defaultFbo.height && m_aspect > 0) return;
+	if(m_aspect < 0)
+		m_aspect = m_scene->activeCamera->Aspect();
+
 	m_defaultFbo = {w, h};
+	m_defaultFbo.framebuffer = fbo;
 	if(m_scene->renderTargets.count("_rt_default") != 0)
 		m_rtm.ReleaseAndDeleteFrameBuffer("_rt_default", m_scene->renderTargets.at("_rt_default"));
 	m_scene->renderTargets["_rt_default"] = {w, h};
-	m_defaultFbo.framebuffer = fbo;
+	for(const auto& el:m_scene->fullScreenRenderTargets) {
+		m_scene->renderTargets[el] = {w, h};
+	}
+	float screenAspect = w/(float)h;
+	float width,height;
+	if(m_aspect > m_scene->activeCamera->Aspect())
+		m_scene->activeCamera->SetWidth(m_scene->activeCamera->Height() * m_aspect);
+	else 
+		m_scene->activeCamera->SetHeight(m_scene->activeCamera->Width() / m_aspect);
+	if(m_aspect > screenAspect) {
+		height = m_scene->activeCamera->Height();	
+		width = height * screenAspect;
+		m_scene->activeCamera->SetWidth(width);
+	} else {
+		width = m_scene->activeCamera->Width();
+		height = width / screenAspect;
+		m_scene->activeCamera->SetHeight(height);
+	}
 }
 
 void GLGraphicManager::Destroy() {

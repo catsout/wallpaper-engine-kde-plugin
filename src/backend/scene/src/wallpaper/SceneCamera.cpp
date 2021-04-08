@@ -7,20 +7,6 @@
 
 using namespace wallpaper;
 
-glm::vec3 SceneCamera::GetPosition() const {
-	const float * value = &(m_node->Translate())[0];
-	return glm::make_vec3(value);
-}
-
-glm::vec3 SceneCamera::GetDirection() const {
-	const auto& angle = m_node->Rotation();
-	glm::mat4 mat4(1.0f);
-	mat4 = glm::rotate(glm::mat4(1.0f), -angle[2], glm::vec3(0,0,1));
-	mat4 = glm::rotate(mat4, angle[0], glm::vec3(1,0,0)); // x
-	mat4 = glm::rotate(mat4, angle[1], glm::vec3(0,1,0)); // y
-	return mat4 * glm::vec4(0, 0, -1.0f, 0);
-}
-
 glm::mat4 GetRotationMat(const std::vector<float>& angle) {
 	glm::mat4 mat4(1.0f);
 	mat4 = glm::rotate(glm::mat4(1.0f), -angle[2], glm::vec3(0,0,1));
@@ -29,12 +15,32 @@ glm::mat4 GetRotationMat(const std::vector<float>& angle) {
 	return mat4;
 }
 
+glm::vec3 SceneCamera::GetPosition() const {
+	if(m_node) {
+		const float * value = &(m_node->Translate())[0];
+		return glm::make_vec3(value);
+	}
+	return glm::vec3(0,0,0);
+}
+
+glm::vec3 SceneCamera::GetDirection() const {
+	if(m_node) {
+		const auto& angle = m_node->Rotation();
+		auto mat4 = GetRotationMat(angle);
+		return mat4 * glm::vec4(0, 0, -1.0f, 0);
+	}
+	return glm::vec3(0, -1.0f, 0);
+}
+
 glm::mat4 SceneCamera::GetViewMatrix() const {
-	const auto& pos = GetPosition();
-	const auto& rmat4 = GetRotationMat(m_node->Rotation());
-	glm::vec3 dir = rmat4 * glm::vec4(0, 0, -1.0f, 0);
-	glm::vec3 up = rmat4 * glm::vec4(0, 1.0f, 0, 0);
-	return glm::lookAt(pos, pos+dir, up);
+	if(m_node) {
+		const auto& pos = GetPosition();
+		const auto& rmat4 = GetRotationMat(m_node->Rotation());
+		glm::vec3 dir = rmat4 * glm::vec4(0, 0, -1.0f, 0);
+		glm::vec3 up = rmat4 * glm::vec4(0, 1.0f, 0, 0);
+		return glm::lookAt(pos, pos+dir, up);
+	} else 
+		return glm::mat4(1.0f);
 }
 
 glm::mat4 SceneCamera::GetProjectionMatrix() const {

@@ -18,7 +18,9 @@ bool WPImageEffect::FromJson(const nlohmann::json& json) {
     GET_JSON_NAME_VALUE_NOWARN(json, "visible", visible);
     GET_JSON_NAME_VALUE_NOWARN(json, "name", name);
 	GET_JSON_NAME_VALUE_NOWARN(json, "id", id);
-    const auto jEffect = nlohmann::json::parse(fs::GetContent(WallpaperGL::GetPkgfs(), filePath));
+    nlohmann::json jEffect;
+    if(!PARSE_JSON(fs::GetContent(WallpaperGL::GetPkgfs(), filePath), jEffect))
+        return false;
 	GET_JSON_NAME_VALUE_NOWARN(jEffect, "version", version);
     if(name.empty()) {
         GET_JSON_NAME_VALUE(jEffect, "name", name);
@@ -42,7 +44,9 @@ bool WPImageEffect::FromJson(const nlohmann::json& json) {
             }
             std::string matPath;
             GET_JSON_NAME_VALUE(jP, "material", matPath);
-            const auto jMat = nlohmann::json::parse(fs::GetContent(WallpaperGL::GetPkgfs(), matPath));
+            nlohmann::json jMat;
+            if(!PARSE_JSON(fs::GetContent(WallpaperGL::GetPkgfs(), matPath), jMat))
+                return false;
             WPMaterial material;
             material.FromJson(jMat);
             materials.push_back(std::move(material));
@@ -80,7 +84,9 @@ bool WPImageEffect::FromJson(const nlohmann::json& json) {
 bool WPImageObject::FromJson(const nlohmann::json& json) {
     GET_JSON_NAME_VALUE(json, "image", image);
     GET_JSON_NAME_VALUE_NOWARN(json, "visible", visible);
-    auto jImage = nlohmann::json::parse(fs::GetContent(WallpaperGL::GetPkgfs(), image));
+    nlohmann::json jImage;
+    if(!PARSE_JSON(fs::GetContent(WallpaperGL::GetPkgfs(), image), jImage))
+        return false;
     GET_JSON_NAME_VALUE_NOWARN(jImage, "fullscreen", fullscreen);
 	GET_JSON_NAME_VALUE_NOWARN(json, "name", name);
 	GET_JSON_NAME_VALUE_NOWARN(json, "id", id);
@@ -105,7 +111,9 @@ bool WPImageObject::FromJson(const nlohmann::json& json) {
     if(jImage.contains("material")) {
         std::string matPath;
 		GET_JSON_NAME_VALUE(jImage, "material", matPath);	
-        auto jMat = nlohmann::json::parse(fs::GetContent(WallpaperGL::GetPkgfs(), matPath));
+        nlohmann::json jMat;
+        if(!PARSE_JSON(fs::GetContent(WallpaperGL::GetPkgfs(), matPath), jMat))
+            return false;
         material.FromJson(jMat);
     } else {
         LOG_INFO("image object no material");

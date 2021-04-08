@@ -57,7 +57,7 @@ void WallpaperGL::Render(uint fbo, int width, int height) {
 		uint32_t timep = (time - duration_cast<hours>(time)).count();
 		m_fpsCounter.RegisterFrame(timep);
 		if(m_scene) {	
-			m_scene->shaderValueUpdater->MouseInput(m_mousePos[0], m_mousePos[1]);
+			m_scene->shaderValueUpdater->MouseInput(m_mousePos[0]/width, m_mousePos[1]/height);
 			m_gm.SetDefaultFbo(fbo, width, height);
 			m_gm.Draw();
 			// time elapsing

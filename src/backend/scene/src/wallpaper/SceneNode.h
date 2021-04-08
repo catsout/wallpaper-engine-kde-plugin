@@ -20,7 +20,7 @@ public:
 		  m_name(name) {};
 	const auto& Camera() const { return m_cameraName; }
 	void SetCamera(const std::string& name) { m_cameraName = name; }
-	void AddMesh(SceneMesh&& mesh) { m_mesh = std::make_shared<SceneMesh>(std::move(mesh)); }
+	void AddMesh(std::shared_ptr<SceneMesh> mesh) { m_mesh = mesh; }
 	void AppendChild(std::shared_ptr<SceneNode>&& sub) {
 		sub->m_parent = this;
 		m_children.push_back(std::move(sub));
@@ -29,6 +29,7 @@ public:
 
 	const auto& Translate() const { return m_translate; }
 	const auto& Rotation() const { return m_rotation; }
+	void SetTranslate(const std::vector<float>& value) { m_translate = value; }
 
 	void CopyTrans(const SceneNode& node) {
 		m_translate = node.m_translate;

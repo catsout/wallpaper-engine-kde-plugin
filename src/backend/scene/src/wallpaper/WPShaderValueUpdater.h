@@ -10,17 +10,10 @@ namespace wallpaper
 
 class Scene;
 
-struct WPResolution {
-	int32_t index;
-	float width;
-	float height;
-	float mapWidth;
-	float mapHeight;
-};
-
 struct WPShaderValueData {
 	std::vector<float> parallaxDepth {0.0f, 0.0f};
-	std::vector<WPResolution> resolutions;
+	// index + name
+	std::vector<std::pair<int32_t, std::string>> renderTargetResolution;
 };
 
 struct WPCameraParallax {
@@ -47,6 +40,7 @@ private:
 	WPCameraParallax m_parallax;
 	double m_lastTime {0.0f};
 	double m_timeDiff {0.0f};
+	double m_dayTime {0.0f};
 	std::vector<float> m_mousePos {0.5f, 0.5f};
 	std::unordered_map<void*, WPShaderValueData> m_nodeDataMap;
 };

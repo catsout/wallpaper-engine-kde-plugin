@@ -46,6 +46,7 @@ private:
 	gl::GLFramebuffer m_defaultFbo;
 	std::shared_ptr<SceneNode> m_fboNode;
 	GLRenderTargetManager m_rtm;
+	double m_aspect {-1.0f};
 
 	std::unordered_map<void*, gl::GLProgram*> m_programMap;
 	std::unordered_map<std::string, std::vector<gl::GLTexture*>> m_textureMap;

@@ -14,6 +14,7 @@ Column {
     id: root
     anchors.fill: parent
     anchors.verticalCenter: parent.verticalCenter
+    anchors.topMargin: 5
     spacing: 5
     
     property string cfg_SteamLibraryPath
@@ -34,13 +35,8 @@ Column {
         id: warnRow
         anchors.horizontalCenter: parent.horizontalCenter
         Text {
-            text: "No qt-labs-folderlistmodel found, please install it in your linux distro."
-            color: "red"
-            visible: !Common.checklib_folderlist(warnRow) 
-        }
-        Text {
             text: "Scene wallpaper may crash kde earily, make sure you know how to fix."
-            color: "yellow"
+            color: "darkorange"
             visible: Common.checklib_wallpaper(warnRow)
         }
     }
@@ -58,6 +54,7 @@ Column {
                 }
                 ComboBox {
                     id: pauseMode
+                    anchors.left: configRow.left
                     model: [
                         {
                             text: "Maximied Window",
@@ -131,6 +128,13 @@ Column {
                     id: fpsLabel
                     anchors.verticalCenter: parent.verticalCenter
                     text: "Fps: " + (sliderFps.value<10?"0":"") + sliderFps.value.toString()
+                    ToolTip.visible: fpsMouse.containsMouse
+                    ToolTip.text: qsTr("Control fps on scene wallpaper")
+                    MouseArea {
+                        id: fpsMouse
+                        anchors.fill: parent
+                        hoverEnabled: true
+                    }
                 }
                 Slider {
                     id: sliderFps
