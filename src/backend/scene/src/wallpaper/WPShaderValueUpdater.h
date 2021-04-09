@@ -32,6 +32,7 @@ public:
 	void UpdateShaderValues(SceneNode*, SceneShader*) override;
 	void FrameEnd() override;
 	void MouseInput(double, double) override;
+	virtual void SetTexelSize(float x, float y) override;
 
 	void SetNodeData(void*, const WPShaderValueData&);
 	void SetCameraParallax(const WPCameraParallax& value) { m_parallax = value; }
@@ -41,6 +42,7 @@ private:
 	double m_lastTime {0.0f};
 	double m_timeDiff {0.0f};
 	double m_dayTime {0.0f};
+	std::vector<float> m_texelSize {1.0f/1920.0f, 1.0f/1080.0f};
 	std::vector<float> m_mousePos {0.5f, 0.5f};
 	std::unordered_map<void*, WPShaderValueData> m_nodeDataMap;
 };

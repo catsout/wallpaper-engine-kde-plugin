@@ -88,6 +88,8 @@ void WPShaderValueUpdater::UpdateShaderValues(SceneNode* pNode, SceneShader* pSh
 		shadervs.push_back({"g_Time", {(float)m_scene->elapsingTime}});
 		shadervs.push_back({"g_DayTime", {(float)m_dayTime}});
 		shadervs.push_back({"g_PointerPosition", m_mousePos});
+		shadervs.push_back({"g_TexelSize", m_texelSize});
+		shadervs.push_back({"g_TexelSizeHalf", {m_texelSize[0]/2.0f, m_texelSize[1]/2.0f}});
 
 		for(int32_t i=0;i<material->textures.size();i++) {
 			const auto& texname = material->textures.at(i);
@@ -108,4 +110,8 @@ void WPShaderValueUpdater::UpdateShaderValues(SceneNode* pNode, SceneShader* pSh
 
 void WPShaderValueUpdater::SetNodeData(void* nodeAddr, const WPShaderValueData& data) {
 	m_nodeDataMap[nodeAddr] = data;
+}
+
+void WPShaderValueUpdater::SetTexelSize(float x, float y) {
+	m_texelSize = {x, y};
 }

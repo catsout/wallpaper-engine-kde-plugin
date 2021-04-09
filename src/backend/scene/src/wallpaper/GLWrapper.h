@@ -123,6 +123,7 @@ public:
 							 std::vector<ShaderAttribute> attribLocs);
 
 	GLShader* CreateShader(GLuint stage, const std::string& source);
+	void CopyTexture(GLFramebuffer* src, GLTexture* dst);
 	GLTexture* CopyTexture(GLFramebuffer* fbo);
 	void ClearColor(float r, float g, float b, float a);
 	void Viewport(int32_t ,int32_t ,int32_t ,int32_t);

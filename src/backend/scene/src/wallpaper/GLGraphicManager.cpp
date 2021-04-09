@@ -146,11 +146,14 @@ void GLGraphicManager::RenderNode(SceneNode* node) {
 	if(node->Mesh() == nullptr) return;
 	auto* mesh = node->Mesh();
 	if(mesh->Material() == nullptr) return;
+	gl::GLFramebuffer* target(nullptr);
+	// Bind target first, this make first frame show correct
 	if(!node->Camera().empty()) {
 		auto& cam = m_scene->cameras.at(node->Camera());
 		if(cam->HasImgEffect()) {
 			const auto& name = cam->GetImgEffect()->FirstTarget();
-			m_glw->BindFramebufferViewport(m_rtm.GetFrameBuffer(name, m_scene->renderTargets.at(name)));
+			target = m_rtm.GetFrameBuffer(name, m_scene->renderTargets.at(name));
+			m_glw->BindFramebufferViewport(target);
 		}
 	}
 	auto* material = mesh->Material();
@@ -165,7 +168,17 @@ void GLGraphicManager::RenderNode(SceneNode* node) {
 		glw.ActiveTexture(i_tex);
 		int32_t imageId = 0;
 		if(name.compare(0, 4, "_rt_") == 0) {
-			const auto& rt = m_scene->renderTargets.at(name);
+			auto& rt = m_scene->renderTargets.at(name);
+			if(m_scene->renderTargetBindMap.count(name) != 0) {
+				const auto& copy = m_scene->renderTargetBindMap.at(name);
+				if(copy.copy == true) {
+					const auto& rtcopy = m_scene->renderTargets.at(copy.name);
+					rt = rtcopy;
+					auto* gltex = &m_rtm.GetFrameBuffer(name, rt)->color_texture;
+					auto* glcopy = m_rtm.GetFrameBuffer(copy.name, rtcopy);
+					glw.CopyTexture(glcopy, gltex);
+				}
+			}
 			glw.BindFramebufferTex(m_rtm.GetFrameBuffer(name, rt));
 		}
 		else if(m_textureMap.count(name) != 0) {
@@ -186,6 +199,8 @@ void GLGraphicManager::RenderNode(SceneNode* node) {
 		glw.UpdateUniform(program, el);
 	materialShader.updateValueList.clear();
 	glw.SetBlend(material->blenmode);
+	if(target != nullptr)
+		m_glw->BindFramebufferViewport(target);
 	glw.RenderMesh(*mesh);
 
 	if(!node->Camera().empty()) {
@@ -303,8 +318,16 @@ void GLGraphicManager::SetDefaultFbo(uint fbo, uint32_t w, uint32_t h) {
 	if(m_scene->renderTargets.count("_rt_default") != 0)
 		m_rtm.ReleaseAndDeleteFrameBuffer("_rt_default", m_scene->renderTargets.at("_rt_default"));
 	m_scene->renderTargets["_rt_default"] = {w, h};
-	for(const auto& el:m_scene->fullScreenRenderTargets) {
-		m_scene->renderTargets[el] = {w, h};
+	for(const auto& el:m_scene->renderTargetBindMap) {
+		if(!el.second.copy && el.second.name == "_rt_default") {
+			uint32_t sw = w * el.second.scale;
+			uint32_t sh = h * el.second.scale;
+			if(sw == 0 || sh == 0) {
+				m_scene->renderTargets[el.first] = {w, h};
+			} else {
+				m_scene->renderTargets[el.first] = {sw, sh};
+			}
+		}
 	}
 	float screenAspect = w/(float)h;
 	float width,height;

@@ -35,6 +35,7 @@ public:
     float cameraparallaxmouseinfluence;
     bool isOrtho {true};
     Orthogonalprojection orthogonalprojection {1920, 1080};
+    float zoom {1.0f};
 };
 
 class WPScene {
@@ -46,7 +47,7 @@ public:
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Orthogonalprojection, width, height);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(WPSceneCamera, center, eye, up);
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(WPSceneGeneral, clearcolor, orthogonalprojection);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(WPSceneGeneral, clearcolor, orthogonalprojection, zoom);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(WPScene, camera, general);
 }
 } 

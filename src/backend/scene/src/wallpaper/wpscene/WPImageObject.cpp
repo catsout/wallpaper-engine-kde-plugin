@@ -81,6 +81,51 @@ bool WPImageEffect::FromJson(const nlohmann::json& json) {
     return true;
 }
 
+bool WPImageEffect::FromFileJson(const nlohmann::json& json) {
+    GET_JSON_NAME_VALUE(json, "name", name);
+    if(json.contains("fbos")) {
+        for(auto& jF:json.at("fbos")) {
+            WPEffectFbo fbo;
+            fbo.FromJson(jF);
+            fbos.push_back(std::move(fbo));
+        }
+    }
+    if(json.contains("passes")) {
+        const auto& jEPasses = json.at("passes");
+        bool compose {false};
+        for(const auto& jP:jEPasses) {
+            if(!jP.contains("material")) {
+                if(jP.contains("command"))
+                    continue;
+                LOG_ERROR("no material in effect pass");
+                return false;
+            }
+            std::string matPath;
+            GET_JSON_NAME_VALUE(jP, "material", matPath);
+            nlohmann::json jMat;
+            if(!PARSE_JSON(fs::GetContent(WallpaperGL::GetPkgfs(), matPath), jMat))
+                return false;
+            WPMaterial material;
+            material.FromJson(jMat);
+            materials.push_back(std::move(material));
+            WPMaterialPass pass;
+            pass.FromJson(jP);
+            passes.push_back(std::move(pass));
+            if(jP.contains("compose"))
+	            GET_JSON_NAME_VALUE(jP, "compose", compose);
+        }
+        if(compose) {
+            if(passes.size() != 2) {
+                LOG_ERROR("effect compose option error");
+            }
+        }
+    } else {
+        LOG_ERROR("no passes in effect file");
+        return false;
+    }
+    return true;
+}
+
 bool WPImageObject::FromJson(const nlohmann::json& json) {
     GET_JSON_NAME_VALUE(json, "image", image);
     GET_JSON_NAME_VALUE_NOWARN(json, "visible", visible);
@@ -91,6 +136,7 @@ bool WPImageObject::FromJson(const nlohmann::json& json) {
 	GET_JSON_NAME_VALUE_NOWARN(json, "name", name);
 	GET_JSON_NAME_VALUE_NOWARN(json, "id", id);
     LOG_INFO(name);
+	GET_JSON_NAME_VALUE_NOWARN(json, "colorBlendMode", colorBlendMode);
 	if(!fullscreen) {
 		GET_JSON_NAME_VALUE(json, "origin", origin);	
 		GET_JSON_NAME_VALUE(json, "angles", angles);	

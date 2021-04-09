@@ -59,7 +59,7 @@ sudo make install
 Scene wallpaper is supportted by direct opengl(3.2).  
 It's almost usable.  
 #### performance
-I'm not vary familiar with graphic programming, so don't expect high performance.  
+I'm not familiar with graphic programming.  
 - Most likely 10~20% usage higher than *wallpaper engine* on windows.  
 #### not work
 - Particle System   
@@ -67,7 +67,7 @@ I'm not vary familiar with graphic programming, so don't expect high performance
 - Text layer  
 - Pure gif scene
 - Audio play
-- Camera shake and zoom  
+- Camera shake,fade,~~zoom,parallax~~
 - Global bloom effect  
 - Perspective renderable  
 - ~~ColorBlendMode~~  

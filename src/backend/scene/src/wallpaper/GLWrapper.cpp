@@ -200,6 +200,15 @@ GLShader* GLWrapper::CreateShader(GLuint stage, const std::string& source) {
 }
 
 
+void GLWrapper::CopyTexture(GLFramebuffer* src, GLTexture* dst) {
+	GLFramebuffer* backfbo = m_curFbo;
+	BindFramebuffer(src);
+	glReadBuffer(GL_COLOR_ATTACHMENT0);
+	BindTexture(dst);
+	glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, src->width, src->height);
+	CHECK_GL_ERROR_IF_DEBUG();
+}
+
 GLTexture* GLWrapper::CopyTexture(GLFramebuffer* fbo) {
 	GLFramebuffer* backfbo = m_curFbo;
 	BindFramebuffer(fbo);

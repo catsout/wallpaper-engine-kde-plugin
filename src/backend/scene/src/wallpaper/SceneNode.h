@@ -21,9 +21,9 @@ public:
 	const auto& Camera() const { return m_cameraName; }
 	void SetCamera(const std::string& name) { m_cameraName = name; }
 	void AddMesh(std::shared_ptr<SceneMesh> mesh) { m_mesh = mesh; }
-	void AppendChild(std::shared_ptr<SceneNode>&& sub) {
+	void AppendChild(std::shared_ptr<SceneNode> sub) {
 		sub->m_parent = this;
-		m_children.push_back(std::move(sub));
+		m_children.push_back(sub);
 	}
 	glm::mat4 GetLocalTrans() const;
 

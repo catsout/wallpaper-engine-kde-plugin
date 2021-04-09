@@ -19,6 +19,7 @@ public:
 class WPImageEffect {
 public:
     bool FromJson(const nlohmann::json&);
+    bool FromFileJson(const nlohmann::json&);
     int32_t id;
     std::string name;
     bool visible {true};
@@ -39,6 +40,7 @@ public:
     std::vector<float> size {2.0f, 2.0f};
     std::vector<float> parallaxDepth {0.0f, 0.0f};
     std::vector<float> color {1.0f, 1.0f, 1.0f};
+    int32_t colorBlendMode {0};
     float alpha {1.0f};
     float brightness {1.0f};
     bool fullscreen {false};
@@ -50,7 +52,7 @@ public:
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(WPEffectFbo, name, scale);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(WPImageEffect, name, visible, passes, fbos, materials);
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(WPImageObject, name, origin, angles, size, visible, material, effects);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(WPImageObject, name, origin, angles, scale, size, visible, material, effects);
 
 }
 }
