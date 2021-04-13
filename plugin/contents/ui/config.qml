@@ -242,7 +242,6 @@ Column {
                 }
             ]
             textRole: "text"
-            valueRole: "value"
             onActivated: {
                 folderWorker.filter();
             }
