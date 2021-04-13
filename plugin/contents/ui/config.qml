@@ -1,14 +1,13 @@
-import QtQuick 2.6
-import QtQuick.Controls 2.3
-import QtQuick.Controls.Styles 1.4
-import QtQuick.Dialogs 1.0
-import QtQuick.Layouts 1.0
+import QtQuick 2.5
+import QtQuick.Controls 2.2
+import QtQuick.Dialogs 1.2
+import QtQuick.Layouts 1.2
 import org.kde.plasma.core 2.0 as PlasmaCore
 // for kcm gridview
 import org.kde.kcm 1.1 as KCM
 import org.kde.kirigami 2.4 as Kirigami
 
-import Qt.labs.folderlistmodel 2.12
+import Qt.labs.folderlistmodel 2.11
 
 Column {
     id: root
@@ -69,7 +68,6 @@ Column {
                         }
                     ]
                     textRole: "text"
-                    valueRole: "value"
                     onActivated: cfg_PauseMode = Common.cbCurrentValue(pauseMode)
                     Component.onCompleted: currentIndex = Common.cbIndexOfValue(pauseMode, cfg_PauseMode)
                 }
@@ -96,7 +94,6 @@ Column {
                         },
                     ]
                     textRole: "text"
-                    valueRole: "value"
                     onActivated: cfg_DisplayMode = Common.cbCurrentValue(displayMode)
                     Component.onCompleted: currentIndex = Common.cbIndexOfValue(displayMode, cfg_DisplayMode)
                 }
