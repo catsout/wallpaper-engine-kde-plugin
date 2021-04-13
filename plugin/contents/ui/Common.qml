@@ -74,4 +74,18 @@ QtObject {
         } 
         return obj_j;
     }
+
+    function cbCurrentValue(combo) {
+        return combo.model[combo.currentIndex].value;
+    }
+
+    function cbIndexOfValue(combo, value) {
+        let model = combo.model;
+        for(let i=0;i < model.length;i++) {
+            if(model[i].value == value) {
+                return i;
+            }
+        }
+        return -1;
+    }
 }

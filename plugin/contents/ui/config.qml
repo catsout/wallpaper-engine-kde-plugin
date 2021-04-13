@@ -54,7 +54,6 @@ Column {
                 }
                 ComboBox {
                     id: pauseMode
-                    anchors.left: configRow.left
                     model: [
                         {
                             text: "Maximied Window",
@@ -71,8 +70,8 @@ Column {
                     ]
                     textRole: "text"
                     valueRole: "value"
-                    onActivated: cfg_PauseMode = currentValue
-                    Component.onCompleted: currentIndex = indexOfValue(cfg_PauseMode)
+                    onActivated: cfg_PauseMode = Common.cbCurrentValue(pauseMode)
+                    Component.onCompleted: currentIndex = Common.cbIndexOfValue(pauseMode, cfg_PauseMode)
                 }
             }
             Row {
@@ -98,8 +97,8 @@ Column {
                     ]
                     textRole: "text"
                     valueRole: "value"
-                    onActivated: cfg_DisplayMode = currentValue
-                    Component.onCompleted: currentIndex = indexOfValue(cfg_DisplayMode)
+                    onActivated: cfg_DisplayMode = Common.cbCurrentValue(displayMode)
+                    Component.onCompleted: currentIndex = Common.cbIndexOfValue(displayMode, cfg_DisplayMode)
                 }
             }
             CheckBox {
@@ -273,7 +272,7 @@ Column {
                 "action": "filter", 
                 "data": folderWorker.proxyModel,
                 "model": projectModel,
-                "type": comboxFilter.currentValue
+                "type": Common.cbCurrentValue(comboxFilter)
             };
             folderWorker.sendMessage(msg);
         }
