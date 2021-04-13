@@ -30,8 +30,8 @@ plasmapkg2 -u wallpaper-engine-kde-plugin/plugin
 # Uninstall
 plasmapkg2 -r wallpaper-engine-kde-plugin/plugin
 ```
-Need restart plasma after update  
-Try: `killall plasmashell && kstart5 plasmashell`
+Need restart plasma(re-login) after update  
+Or try: `kquitapp5 plasmashell && kstart5 plasmashell`  
 
 ### Plugin lib
 #### Dependencies
@@ -61,6 +61,7 @@ It's almost usable.
 #### performance
 I'm not familiar with graphic programming.  
 - Most likely 10~20% usage higher than *wallpaper engine* on windows.  
+- Opengl driver will keep ram copies of textures, meaning ram is at same usage as vram.
 #### not work
 - Particle System   
 - Scene script  
