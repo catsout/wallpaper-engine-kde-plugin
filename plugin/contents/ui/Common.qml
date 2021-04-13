@@ -18,7 +18,7 @@ QtObject {
         let create = null;
          try {
             create = Qt.createQmlObject(
-            'import '+ libName +';import QtQml 2.13;QtObject{}',
+            'import '+ libName +';import QtQml 2.2; QtObject{}',
             parentItem);
 
         } catch (error) {}
