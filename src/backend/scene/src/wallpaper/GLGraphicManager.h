@@ -21,6 +21,7 @@ public:
 	gl::GLFramebuffer* GetFrameBuffer(const std::string& name, const SceneRenderTarget& rt);
 	void ReleaseFrameBuffer(const std::string& name, const SceneRenderTarget& rt);
 	void ReleaseAndDeleteFrameBuffer(const std::string& name, const SceneRenderTarget& rt);
+	size_t UnusedCount() const { return m_unuse.size(); }
 private:
 	std::shared_ptr<gl::GLWrapper> m_pGlw {nullptr};
 	std::unordered_map<std::string, gl::GLFramebuffer*> m_inuse;

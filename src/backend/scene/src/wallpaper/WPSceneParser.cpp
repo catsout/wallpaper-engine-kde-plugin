@@ -33,7 +33,7 @@ struct WPShaderInfo {
 	WPDefaultTexs defTexs;
 };
 
-const std::string pre_shader_code = "#version 130\n"
+const std::string pre_shader_code = "#version 120\n"
 									  "#define highp\n"
 									  "#define mediump\n"
 									  "#define lowp\n"
@@ -52,50 +52,46 @@ const std::string pre_shader_code = "#version 130\n"
 									  "#define max(x, y) max(y, x)\n"
 									  "#define ddy(x) dFdy(-(x))\n\n";
 
-void LoadShaderWithInclude2(std::string& source) 
-{
-	LineStr line;
+std::string LoadGlslInclude(const std::string& input) {
 	std::string::size_type pos = 0;
-	std::string find_str = "#include"; 
-    while(line = GetLineWith(source, find_str, pos),line.pos != std::string::npos)
-    { 
-		std::string new_src;
-		std::stringstream line_stream(line.value);
-		line_stream >> new_src; // drop #include
-		line_stream >> new_src;
-		new_src = new_src.substr(1, new_src.size()-2);  // drop "
+	std::string output;
+	std::string::size_type linePos = std::string::npos;
 
-		new_src = fs::GetContent(WallpaperGL::GetPkgfs(),"shaders/"+new_src);
-		if(new_src.empty()) return;
+	while(linePos = input.find("#include", pos), linePos != std::string::npos) {
+		auto lineEnd = input.find_first_of('\n', linePos);
+		auto lineSize = lineEnd - linePos;
+		auto lineStr = input.substr(linePos, lineSize);
+		output.append(input.substr(pos, linePos-pos));
 
-		LoadShaderWithInclude2(new_src);
+		auto inP = lineStr.find_first_of('\"') + 1;
+		auto inE = lineStr.find_last_of('\"');
+		auto includeName = lineStr.substr(inP, inE - inP);
+		auto includeSrc = fs::GetContent(WallpaperGL::GetPkgfs(),"shaders/"+includeName);
+		output.append(LoadGlslInclude(includeSrc));
 
-		DeleteLine(source, line);
-		source.insert(line.pos, new_src);
-		pos = line.pos + new_src.size();
-    }
+		pos = lineEnd;
+	}
+	output.append(input.substr(pos));
+	return output;
 }
 
-std::string PreShaderSrc(const std::string& src, int32_t texcount, WPShaderInfo* pWPShaderInfo) {
-	std::string new_src = "";
-	std::string include;
-    std::string line;
-    std::istringstream content(src);
-	size_t last_var_pos = 0;
-
+void ParseWPShader(const std::string& src, int32_t texcount, WPShaderInfo* pWPShaderInfo, std::string::size_type& includeInsertPos) {
 	auto& combos = pWPShaderInfo->combos;
 	auto& wpAliasDict = pWPShaderInfo->alias;
 	auto& shadervalues = pWPShaderInfo->svs;
 	auto& defTexs = pWPShaderInfo->defTexs;
+	// pos start of line
+	std::string::size_type pos = 0, lineEnd = std::string::npos;
+	while((lineEnd = src.find_first_of(('\n'), pos)), true) {
+		const auto clineEnd = lineEnd;
+		const auto line = src.substr(pos, lineEnd - pos);
 
-	
-    while(std::getline(content,line)) {
+		// no continue
 		bool update_pos = false;
-		if(line.find("#include") != std::string::npos) {
-			include.append(line + "\n");
-			line = "";
+        if(line.find("attribute ") != std::string::npos) {
+			update_pos = true;
 		}
-        else if(line.find("attribute ") != std::string::npos || line.find("varying ") != std::string::npos) {
+		else if(line.find("varying ") != std::string::npos) {
 			update_pos = true;
 		}
 		else if(line.find("// [COMBO]") != std::string::npos) {
@@ -107,7 +103,6 @@ std::string PreShaderSrc(const std::string& src, int32_t texcount, WPShaderInfo*
 					GET_JSON_NAME_VALUE(combo_json, "combo", name);
 					GET_JSON_NAME_VALUE(combo_json, "default", value);
 					combos[name] = value;
-					//line = "";
 				}
 			}
 		}
@@ -164,19 +159,43 @@ std::string PreShaderSrc(const std::string& src, int32_t texcount, WPShaderInfo*
 				}
 			}
 		}
-        new_src += line + '\n';
 		if(update_pos)
-			last_var_pos = new_src.size();
-		if(line.find("void main()") != std::string::npos) {
-			new_src += src.substr(content.tellg());
+			includeInsertPos = clineEnd;
+
+		// end
+		if(clineEnd == std::string::npos) {
 			break;
 		}
+		if(line.find("void main()") != std::string::npos) {
+			break;
+		}
+		pos = lineEnd + 1;	
+	} 
+	if(includeInsertPos == std::string::npos) 
+		includeInsertPos = 0; 
+	else includeInsertPos++;
+	if(src.substr(includeInsertPos, 6) == "#endif") {
+		includeInsertPos += 7;
 	}
-	if(new_src.substr(last_var_pos, 6) == "#endif")
-		last_var_pos += 7;
-	LoadShaderWithInclude2(include);
-    new_src.insert(last_var_pos, include);
-	return new_src;
+}
+
+std::string PreShaderSrc(const std::string& src, int32_t texcount, WPShaderInfo* pWPShaderInfo) {
+	std::string newsrc(src);
+	std::string::size_type pos = 0;
+	std::string include;
+	while(pos = src.find("#include", pos), pos != std::string::npos) {
+		auto begin = pos;
+		pos = src.find_first_of('\n', pos);	
+		newsrc.replace(begin, pos-begin, pos-begin, ' ');
+		include.append(src.substr(begin, pos - begin) + "\n");
+	}
+	include = LoadGlslInclude(include);
+	ParseWPShader(include, texcount, pWPShaderInfo, pos);
+	pos = 0;
+	ParseWPShader(newsrc, texcount, pWPShaderInfo, pos);
+
+	newsrc.insert(pos, include); 
+	return newsrc;
 }
 
 std::string PreShaderHeader(const std::string& src, const Combos& combos) {
@@ -579,9 +598,6 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 					};
 					SceneMaterial material;
 					WPShaderValueData svData;
-					// fix 2304304373, disable it for now
-//					if(wpmat.combos.count("COMPOSITE") == 0)
-//						wpmat.combos["COMPOSITE"] = 1; 
 					LoadMaterial(wpmat, upScene.get(), spEffNode.get(), &material, &svData, &wpShaderInfo);
 					// load glname from alias and load to constvalue
 					for(const auto& cs:wpmat.constantshadervalues) {

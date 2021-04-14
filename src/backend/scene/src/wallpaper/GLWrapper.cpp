@@ -195,6 +195,7 @@ GLShader* GLWrapper::CreateShader(GLuint stage, const std::string& source) {
     {
         std::string infolog = GetInfoLog(shader->shader, glGetShaderiv, glGetShaderInfoLog);
         LOG_ERROR("COMPILATION_FAILED\n" + infolog);
+		LOG_INFO(source);
     }
 	CHECK_GL_ERROR_IF_DEBUG();
 	return shader;
@@ -383,9 +384,9 @@ void GLWrapper::TextureImagePbo(GLTexture *texture, int level, int width, int he
 		glCompressedTexImage2D(tex->target, level, internalFormat, width, height, 0, imgsize, nullptr);
 		break;
 	}
+	glBindTexture(tex->target, 0);
 	glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 	glDeleteBuffers(1, &pbo);
-	glBindTexture(tex->target, 0);
 	CHECK_GL_ERROR_IF_DEBUG();
 }
 
