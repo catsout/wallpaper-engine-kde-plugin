@@ -65,8 +65,8 @@ void WPShaderValueUpdater::UpdateShaderValues(SceneNode* pNode, SceneShader* pSh
 				const auto& translate = pNode->Translate();
 				glm::vec3 nodePos = glm::make_vec3(&translate[0]);
 				glm::vec2 depth = glm::make_vec2(&nodeData.parallaxDepth[0]);
-				glm::vec2 camOrtho = glm::vec2{camera->Width(), camera->Height()};
-				glm::vec2 mouseVec = (glm::vec2{0.5f, 0.5f} - glm::make_vec2(&m_mousePos[0])) * camOrtho;
+				glm::vec2 ortho = glm::vec2{m_ortho[0], m_ortho[1]};
+				glm::vec2 mouseVec = (glm::vec2{0.5f, 0.5f} - glm::make_vec2(&m_mousePos[0])) * ortho;
 				mouseVec *= m_parallax.mouseinfluence;
 				if(camera) {
 					const auto& camPos = camera->GetPosition();

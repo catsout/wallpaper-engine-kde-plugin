@@ -4,6 +4,7 @@
 #include <memory>
 #include <vector>
 #include <unordered_map>
+#include <cstdint>
 
 namespace wallpaper
 {
@@ -36,6 +37,8 @@ public:
 
 	void SetNodeData(void*, const WPShaderValueData&);
 	void SetCameraParallax(const WPCameraParallax& value) { m_parallax = value; }
+
+	void SetOrtho(uint32_t w, uint32_t h) { m_ortho = {w, h}; }
 private:
 	Scene* m_scene;	
 	WPCameraParallax m_parallax;
@@ -44,6 +47,7 @@ private:
 	double m_dayTime {0.0f};
 	std::vector<float> m_texelSize {1.0f/1920.0f, 1.0f/1080.0f};
 	std::vector<float> m_mousePos {0.5f, 0.5f};
+	std::vector<uint32_t> m_ortho {1920, 1080};
 	std::unordered_map<void*, WPShaderValueData> m_nodeDataMap;
 };
 }

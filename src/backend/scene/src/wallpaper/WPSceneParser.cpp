@@ -344,6 +344,8 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 	upScene->imageParser = std::make_unique<WPTexImageParser>();
 	auto shaderValueUpdater = std::make_unique<WPShaderValueUpdater>(upScene.get());
 
+	shaderValueUpdater->SetOrtho(sc.general.orthogonalprojection.width, sc.general.orthogonalprojection.height);
+
 	upScene->clearColor = sc.general.clearcolor;
 	
 	WPCameraParallax cameraParallax;
