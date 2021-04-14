@@ -34,7 +34,7 @@ QtObject {
     }
 
     function checklib_folderlist(parentItem) {
-        return checklib('Qt.labs.folderlistmodel 2.12', parentItem)
+        return checklib('Qt.labs.folderlistmodel 2.11', parentItem)
     }
 
     function readTextFile(fileUrl, callback) {

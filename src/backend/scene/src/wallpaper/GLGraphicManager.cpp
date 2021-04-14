@@ -95,7 +95,7 @@ std::vector<gl::GLTexture*> LoadImage(const SceneTexture& tex, const Image& img)
 		// mipmaps
 		for(int i_mip=0;i_mip < mipmaps.size();i_mip++){
 			auto& imgData = mipmaps.at(i_mip);
-			glw.TextureImage(texture, i_mip, imgData.width, imgData.height, img.format, imgData.data.get(), imgData.size);
+			glw.TextureImagePbo(texture, i_mip, imgData.width, imgData.height, img.format, imgData.data.get(), imgData.size);
 		}
 		texs.push_back(texture);
 	}

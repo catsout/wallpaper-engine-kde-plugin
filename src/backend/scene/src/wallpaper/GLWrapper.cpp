@@ -4,6 +4,7 @@
 
 #include <functional>
 #include <glad/glad.h> 	
+#include <cstring>
 
 using namespace wallpaper::gl;
 
@@ -346,6 +347,45 @@ void GLWrapper::TextureImage(GLTexture* texture, int level, int width, int heigh
 		glCompressedTexImage2D(tex->target, level, internalFormat, width, height, 0, imgsize, data);
 		break;
 	}
+	glFlush();
+	glBindTexture(tex->target, 0);
+	CHECK_GL_ERROR_IF_DEBUG();
+}
+
+
+void GLWrapper::TextureImagePbo(GLTexture *texture, int level, int width, int height, TextureFormat texformat, uint8_t *data, size_t imgsize) {
+	GLTexture *tex = texture;
+	GLuint pbo;
+	glGenBuffers(1, &pbo);
+	glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbo);
+	glBufferData(GL_PIXEL_UNPACK_BUFFER, imgsize, nullptr, GL_STATIC_DRAW);
+	void* ptr = glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY);
+	CHECK_GL_ERROR_IF_DEBUG();
+	if(ptr == nullptr) {
+		LOG_ERROR("Can't map pbo buffer");
+		return;
+	}
+	memcpy(ptr, data, imgsize);
+	glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);	
+	BindTexture(texture);
+
+	GLenum format, type;	
+	GLint internalFormat;
+	TextureFormat2GLFormat(texformat, internalFormat, format, type);
+	switch(texformat) {
+	case TextureFormat::RGB8:
+	case TextureFormat::RGBA8:
+		glTexImage2D(tex->target, level, internalFormat, width, height, 0, format, type, nullptr);
+		break;
+	case TextureFormat::BC1:
+	case TextureFormat::BC2:
+	case TextureFormat::BC3:
+		glCompressedTexImage2D(tex->target, level, internalFormat, width, height, 0, imgsize, nullptr);
+		break;
+	}
+	glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+	glDeleteBuffers(1, &pbo);
+	glBindTexture(tex->target, 0);
 	CHECK_GL_ERROR_IF_DEBUG();
 }
 

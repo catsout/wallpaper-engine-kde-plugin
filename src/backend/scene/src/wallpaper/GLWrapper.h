@@ -142,6 +142,7 @@ public:
 
     void BufferSubData(GLBuffer* buffer, size_t size, const float* data);
 	void TextureImage(GLTexture *texture, int level, int width, int height, TextureFormat texformat, uint8_t *data, size_t imgsize=0);
+	void TextureImagePbo(GLTexture *texture, int level, int width, int height, TextureFormat texformat, uint8_t *data, size_t imgsize);
 
 	void SetBlend(BlendMode);
 
