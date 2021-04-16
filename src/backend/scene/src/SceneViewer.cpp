@@ -84,7 +84,9 @@ public:
     void render() {
         QOpenGLFramebufferObject *fbo = framebufferObject();
 		m_wgl.Render(fbo->handle(), fbo->width(), fbo->height());
-		m_viewer->window()->resetOpenGLState();
+		if(m_viewer->window() != nullptr) {
+			m_viewer->window()->resetOpenGLState();
+		}
     }
 
 	void updateViewer() {

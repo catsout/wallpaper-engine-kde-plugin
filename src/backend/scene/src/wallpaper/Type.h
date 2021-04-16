@@ -56,7 +56,7 @@ std::string ToString(const TextureFormat&);
 
 enum class BlendMode {
 	Disable,
-	Normal,
+	Translucent,
 	Additive
 };
 

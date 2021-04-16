@@ -317,7 +317,7 @@ void LoadMaterial(const wpscene::WPMaterial& wpmat, Scene* pScene, SceneNode* pN
 		}
 	}
 	if(wpmat.blending == "translucent" || wpmat.blending == "normal") {
-		material.blenmode = BlendMode::Normal;
+		material.blenmode = BlendMode::Translucent;
 	} else if(wpmat.blending == "additive") {
 		material.blenmode = BlendMode::Additive;
 	} else if(wpmat.blending == "disabled") {
@@ -382,7 +382,7 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 		if(obj.at("image").is_null()) continue;
 		wpscene::WPImageObject wpimgobj;
 		wpimgobj.FromJson(obj);
-		LOG_INFO(nlohmann::json(wpimgobj).dump(4));
+		//LOG_INFO(nlohmann::json(wpimgobj).dump(4));
 
 		if(!wpimgobj.visible)
 			continue;

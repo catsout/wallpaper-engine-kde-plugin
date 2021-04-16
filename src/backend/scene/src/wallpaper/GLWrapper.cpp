@@ -414,7 +414,7 @@ void GLWrapper::SetBlend(BlendMode bm) {
 	case BlendMode::Disable:
 		glDisable(GL_BLEND);
 		break;
-	case BlendMode::Normal:
+	case BlendMode::Translucent:
 		glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
 		break;
 	case BlendMode::Additive:

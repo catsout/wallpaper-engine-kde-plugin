@@ -20,7 +20,6 @@ class MpvObject : public QQuickFramebufferObject
 
 
     mpv_handle *mpv;
-    mpv_render_context *mpv_gl;
 
     friend class MpvRenderer;
 
@@ -63,9 +62,6 @@ signals:
 	void initFinished();
 	void statusChanged();
 	void sourceChanged();
-
-private slots:
-    void doUpdate();
 
 private:
 	bool inited = false;
