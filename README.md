@@ -100,5 +100,6 @@ The config is set to `hwdec=auto`, and not configurable at now.
 - [linux-wallpaperengine](https://github.com/Almamu/linux-wallpaperengine)                                                                                                                                                                                                                                             
 
 ### Preview
-![](https://cdn.pling.com/img/9/e/6/1/e77349a442e38812aa443a34de2f1488b4611d1f190b7432b081bd18fb6b2e0371eb.jpg)
+![](https://cdn.pling.com/img/f/b/9/f/63f1672d628422f92fd189fe55f60ee8c9f911a691d0745eeaf51d2c6fae6763b8f8.jpg)
+![](https://cdn.pling.com/img/d/7/9/f/c28d236408e66ba3cbca5173fb0bf4362b9df45e6e1c485deb6d9f7b4fe6adf93a2b.jpg)
 ![](https://cdn.pling.com/img/0/e/e/9/23b2aefba63630c7eb723afc202cdaaa2809d32d8a2ddca03b9fec8f82de62d721cd.jpg)
