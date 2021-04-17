@@ -5,8 +5,13 @@ using namespace wallpaper::wpscene;
 
 bool Orthogonalprojection::FromJson(const nlohmann::json& json) {
     if(json.is_null()) return false;
-    GET_JSON_NAME_VALUE(json, "width", width);
-    GET_JSON_NAME_VALUE(json, "height", height);
+	if(json.contains("auto")) {
+		GET_JSON_NAME_VALUE(json, "auto", auto_);
+	}
+	else {
+		GET_JSON_NAME_VALUE(json, "width", width);
+		GET_JSON_NAME_VALUE(json, "height", height);
+	}
     return true;
 }
 

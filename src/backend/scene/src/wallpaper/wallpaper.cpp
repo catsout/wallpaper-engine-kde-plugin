@@ -32,9 +32,11 @@ void WallpaperGL::Load(const std::string& pkg_path) {
 	}
 	m_pkgPath = pkg_path;
 	//fs::PrintFileTree(m_pkgfs, 100);
-
-    //read scene
-    std::string scene_src = wallpaper::fs::GetContent(m_pkgfs, "scene.json");
+	std::string scene_src;
+	if(wallpaper::fs::IsFileInNode(m_pkgfs, "scene.json"))
+		scene_src = wallpaper::fs::GetContent(m_pkgfs, "scene.json");
+	else if(wallpaper::fs::IsFileInNode(m_pkgfs, "gifscene.json"))
+		scene_src = wallpaper::fs::GetContent(m_pkgfs, "gifscene.json");
 	if(scene_src.empty()) {
 		LOG_ERROR("Not supported scene type");
 		return;

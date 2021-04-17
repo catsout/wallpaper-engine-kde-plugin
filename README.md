@@ -66,11 +66,11 @@ I'm not familiar with graphic programming.
 - Particle System   
 - Scene script  
 - Text layer  
-- Pure gif scene
 - Audio play
 - Camera shake,fade,~~zoom,parallax~~
 - Global bloom effect  
 - Perspective renderable  
+- ~~Gif scene~~
 - ~~ColorBlendMode~~  
 
 ### Web support status

@@ -15,6 +15,7 @@ public:
     bool FromJson(const nlohmann::json&);
     int32_t width;
     int32_t height;
+	bool auto_ {false};
 };
 
 class WPSceneCamera {

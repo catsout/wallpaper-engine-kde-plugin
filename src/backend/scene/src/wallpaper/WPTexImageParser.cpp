@@ -185,7 +185,6 @@ std::shared_ptr<Image> WPTexImageParser::ParseHeader(const std::string& name) {
 	if(!file.is_open()) return img_ptr;
 	LoadHeader(file, img);
 	int32_t image_count = img.count;
-
 	// load sprite info
 	if(img.isSprite) {
 		// bypass image data, store width and height
@@ -208,6 +207,9 @@ std::shared_ptr<Image> WPTexImageParser::ParseHeader(const std::string& name) {
 		// sprite pos
 		int32_t texs = ReadTexVesion(file);
 		int32_t framecount = readInt32(file);
+		if(texs > 3) {
+			LOG_ERROR("Unkown texs version");
+		}
 		if(texs == 3) {
 			int32_t width = readInt32(file);
             int32_t height = readInt32(file); 
@@ -220,12 +222,22 @@ std::shared_ptr<Image> WPTexImageParser::ParseHeader(const std::string& name) {
 			float spriteHeight = imageDatas.at(sf.imageId)[1];
 
 			sf.frametime = ReadFloat(file); 
-			sf.x = ReadFloat(file) / spriteWidth; 
-			sf.y = ReadFloat(file) / spriteHeight; 
-			sf.width = ReadFloat(file) / spriteWidth; 
-			sf.unk0 = ReadFloat(file); 
-			sf.unk1 = ReadFloat(file); 
-			sf.height = ReadFloat(file) / spriteHeight; 
+			if(texs == 1) {
+				sf.x = readInt32(file) / spriteWidth; 
+				sf.y = readInt32(file) / spriteHeight; 
+				sf.width = readInt32(file) / spriteWidth; 
+				sf.unk0 = readInt32(file); 
+				sf.unk1 = readInt32(file); 
+				sf.height = readInt32(file) / spriteHeight; 
+
+			} else {
+				sf.x = ReadFloat(file) / spriteWidth; 
+				sf.y = ReadFloat(file) / spriteHeight; 
+				sf.width = ReadFloat(file) / spriteWidth; 
+				sf.unk0 = ReadFloat(file); 
+				sf.unk1 = ReadFloat(file); 
+				sf.height = ReadFloat(file) / spriteHeight; 
+			}
 			img.spriteAnim.AppendFrame(sf);
 		}
 	}

@@ -111,10 +111,13 @@ bool WPImageObject::FromJson(const nlohmann::json& json) {
 			GET_JSON_NAME_VALUE(jImage, "width", w);	
 			GET_JSON_NAME_VALUE(jImage, "height", h);	
 			size = {(float)w, (float)h};
-		} else {
+		} else if(json.contains("size")) {
 			GET_JSON_NAME_VALUE(json, "size", size);	
-		}  
+		} else {
+			size = {origin.at(0)*2, origin.at(1)*2};
+		}
     }
+    GET_JSON_NAME_VALUE_NOWARN(jImage, "nopadding", nopadding);
     GET_JSON_NAME_VALUE_NOWARN(json, "color", color);
     GET_JSON_NAME_VALUE_NOWARN(json, "alpha", alpha);
     GET_JSON_NAME_VALUE_NOWARN(json, "brightness", brightness);

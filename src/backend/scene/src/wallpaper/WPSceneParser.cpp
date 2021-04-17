@@ -339,6 +339,30 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 	sc.FromJson(json);
 //	LOG_INFO(nlohmann::json(sc).dump(4));
 
+	std::vector<wpscene::WPImageObject> wpimgobjs;
+
+    for(auto& obj:json.at("objects")) {
+		if(!obj.contains("image")) continue;
+		if(obj.at("image").is_null()) continue;
+		wpscene::WPImageObject wpimgobj;
+		wpimgobj.FromJson(obj);
+		wpimgobjs.push_back(wpimgobj);
+		//LOG_INFO(nlohmann::json(wpimgobj).dump(4));
+	}
+	if(sc.general.orthogonalprojection.auto_) {
+		uint32_t w = 0, h = 0;
+		for(auto& obj:wpimgobjs) {
+			uint32_t size = obj.size.at(0) * obj.size.at(1);
+			if(size > w*h) {
+				w = obj.size.at(0);
+				h = obj.size.at(1);
+			}
+		}
+		sc.general.orthogonalprojection.width = w;
+		sc.general.orthogonalprojection.height = h;
+	}
+
+
 	auto upScene = std::make_unique<Scene>();
 	upScene->sceneGraph = std::make_shared<SceneNode>();
 	upScene->imageParser = std::make_unique<WPTexImageParser>();
@@ -371,19 +395,13 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 		-1.0f, 1.0f
 	);
 	upScene->activeCamera = upScene->cameras.at("global").get();
-    auto& objects = json.at("objects");
+
 	std::vector<float> cori{ortho.width/2.0f,ortho.height/2.0f,0},cscale{1.0f,1.0f,1.0f},cangle(3);
 	auto spCamNode = std::make_shared<SceneNode>(cori, cscale, cangle);
 	upScene->activeCamera->AttatchNode(spCamNode);
 	upScene->sceneGraph->AppendChild(spCamNode);
 
-    for(auto& obj:objects) {
-		if(!obj.contains("image")) continue;
-		if(obj.at("image").is_null()) continue;
-		wpscene::WPImageObject wpimgobj;
-		wpimgobj.FromJson(obj);
-		//LOG_INFO(nlohmann::json(wpimgobj).dump(4));
-
+    for(auto& wpimgobj:wpimgobjs) {
 		if(!wpimgobj.visible)
 			continue;
 		if(wpimgobj.colorBlendMode != 0) {
@@ -458,7 +476,7 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 		auto& mesh = *spMesh;
 		bool pow2Split = false;
 
-		if(material.customShader.constValues.count("g_Texture0Resolution") != 0) {
+		if(!wpimgobj.nopadding && material.customShader.constValues.count("g_Texture0Resolution") != 0) {
 			const auto& resolution = material.customShader.constValues.at("g_Texture0Resolution").value;
 			pow2Split = (int32_t)resolution[0] != (int32_t)resolution[2];
 			pow2Split = pow2Split || (int32_t)resolution[1] != (int32_t)resolution[3];

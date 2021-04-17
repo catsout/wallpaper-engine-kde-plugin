@@ -44,6 +44,7 @@ public:
     float alpha {1.0f};
     float brightness {1.0f};
     bool fullscreen {false};
+	bool nopadding {false};
     bool visible {true};
     std::string image;
     WPMaterial material;    
