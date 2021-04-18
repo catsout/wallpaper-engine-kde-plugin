@@ -11,10 +11,7 @@ function readTextFile(fileUrl) {
 				resolve(request);
 			} else {
 				// If failed
-				reject({
-					status: request.status,
-					statusText: request.statusText
-				});
+				reject(`failed load file(${request.status}): ${fileUrl}`);
 			}
 
 		};
@@ -58,9 +55,10 @@ WorkerScript.onMessage = function(msg) {
         let data = msg.data;
         let plist = [];
         data.forEach(function(el) {
+			// as no allSettled, catch any error
             let p = readTextFile(el.path + "/project.json").then(value => {
                     readCallback(value.response, el);
-                });
+                }).catch(reason => console.log(reason));
             plist.push(p);
         });
         Promise.all(plist).then(value => {
