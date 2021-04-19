@@ -88,4 +88,18 @@ QtObject {
         }
         return -1;
     }
+
+    function findItem(item, typename) {
+        let name = item.toString();
+        if(name.substring(0, typename.length) == typename) {
+            return item;
+        }
+        for (let i = 0; i < item.children.length; i++) {
+            let re = findItem(item.children[i], typename); 
+            if(re !== null) {
+                return re;
+            }
+        }
+        return null;
+    }
 }

@@ -14,12 +14,10 @@ Item{
         fps: background.fps
         source: ""
         assets: sceneItem.assets
-    }
-
-    MouseGrabber {
-        id: mg
-        anchors.fill: parent
-        target: player
+        Component.onCompleted: {
+            player.setAcceptMouse(true);
+            player.setAcceptHover(true);
+        }
     }
 
     Component.onCompleted: {
@@ -36,14 +34,7 @@ Item{
         player.pause();
     }
     
-    function setMouseListener(){
-        if(mg.captureMouse) {
-            player.setAcceptMouse(false);
-            mg.captureMouse = false;
-        }
-        else {
-            player.setAcceptMouse(true);
-            mg.captureMouse = true;
-        }
+    function getMouseTarget() {
+        return Qt.binding(function() { return player; })
     }
 }

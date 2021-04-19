@@ -42,10 +42,6 @@
       <label>Mute audio</label>
       <default>true</default>
     </entry>
-    <entry name="CapMouse" type="Bool">
-      <label>Capture mouse</label>
-      <default>false</default>
-	</entry>
     <entry name="UseMpv" type="Bool">
       <label>Use Mpv</label>
       <default>false</default>

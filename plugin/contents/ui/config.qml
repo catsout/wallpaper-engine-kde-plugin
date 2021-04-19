@@ -26,7 +26,6 @@ Column {
     property alias cfg_FilterMode: comboxFilter.currentIndex
 
     property alias cfg_MuteAudio: muteAudio.checked
-    property alias cfg_CapMouse: capMouse.checked
     property alias cfg_UseMpv: useMpv.checked
 
     property alias cfg_Fps: sliderFps.value
@@ -102,15 +101,6 @@ Column {
                 id: muteAudio
                 text: "Mute Audio"
             }          
-            CheckBox {
-                id: capMouse
-                text: "Capture Mouse"
-                hoverEnabled: true
-
-                ToolTip.visible: hovered
-                ToolTip.text: qsTr("Use ctrl+shift+z to switch")
-
-            }
             Row {
                 visible: Common.checklib_wallpaper(configCol)
                 CheckBox{

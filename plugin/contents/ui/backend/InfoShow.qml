@@ -21,6 +21,6 @@ Item {
     function play(){}
 
     function pause(){}
-    function setMouseListener(){
-    }  
+    function getMouseTarget() {
+    }
 }

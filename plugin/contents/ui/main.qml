@@ -1,4 +1,5 @@
-import QtQuick 2.5
+import QtQuick 2.12
+import QtQuick.Window 2.2
 import org.kde.plasma.core 2.0 as PlasmaCore
 
 
@@ -13,7 +14,6 @@ Rectangle {
 
     property int displayMode: wallpaper.configuration.DisplayMode
     property bool mute: wallpaper.configuration.MuteAudio
-    property bool capMouse: wallpaper.configuration.CapMouse
     property bool useMpv: wallpaper.configuration.UseMpv
 
     property int fps: wallpaper.configuration.Fps
@@ -22,22 +22,67 @@ Rectangle {
     property bool ok: windowModel.playVideoWallpaper
 
     property string nowBackend: ""
+
+    property var mouseHooker
+    property bool hasLib: Common.checklib_wallpaper(background)
+
+
+    Component.onDestruction: {
+        mouseHooker.target = mouseHooker.parent; 
+        mouseHooker.destroy();
+    }
     
     function getWorkshopPath() {
         return steamlibrary + Common.wpenginePath + '/' + workshopid;
     }
 
     onSourceChanged: {
-        fso.forceActiveFocus();
         if(background.nowBackend === "InfoShow")
             loadBackend();
     }
-    
-    onCapMouseChanged: {
-        if(background.capMouse)
-            fso.forceActiveFocus();
+
+    Timer {
+        id: hookTimer
+        running: true
+        repeat: false
+        interval: 2000
+        property int tryTimes: 0
+        onTriggered: {
+            tryTimes++; 
+            if(tryTimes == 10 || !background.hasLib)
+                return;
+            background.hookMouse();
+        }
+        Component.onCompleted: {
+            background.hookMouse.connect(background.hookMouseSlot);
+        }
     }
-    
+    signal hookMouse
+    function hookMouseSlot() {
+        if(!background.doHookMouse())
+            hookTimer.start();
+    }
+    function doHookMouse() {
+        if(background.Window) {
+            let screenArea = Common.findItem(Window.contentItem, "MouseEventListener");
+            if(screenArea === null)
+                return false;
+            let screenGrid = Common.findItem(screenArea, "QQuickGridView");
+            if(screenGrid === null)
+                return false;
+            console.log(screenGrid);
+            background.mouseHooker = Qt.createQmlObject(`import QtQuick 2.12;
+                    import com.github.catsout.wallpaperEngineKde 1.0
+                    MouseGrabber {
+                        z: -1
+                        anchors.fill: parent
+                    }
+            `, screenGrid);
+            return true;
+       }
+       return false;
+    }
+
     WindowModel {
         id: windowModel
     }
@@ -74,35 +119,24 @@ Rectangle {
         interval: 200
         onTriggered: background.autoPause();
     }
-
     // main  
     Loader { 
         id: backendLoader
         anchors.fill: parent
-    }
-    
-    // capture keyboard
-    FocusScope {
-        focus: true
-        Item {
-            id: fso
-            focus: true
-            Keys.onPressed: {
-                if(event.key == Qt.Key_Z && (event.modifiers & Qt.ControlModifier)) {
-                    if(event.modifiers & Qt.ShiftModifier) {
-                        backendLoader.item.setMouseListener();
-                        console.log("switch mouse capture");
-                    }
-                    event.accepted = true;
-                } else 
-                    event.accepted = false;
-            }
-            onActiveFocusChanged: {
-                if(background.capMouse)
-                    fso.forceActiveFocus();
+        Component.onCompleted: {
+            if(background.hasLib) {
+                backendLoader.loaded.connect(backendLoader.changeMouseTarget);
+                background.mouseHookerChanged.connect(backendLoader.changeMouseTarget);
             }
         }
-        
+        function changeMouseTarget() {
+           if(backendLoader.status == Loader.Ready && background.mouseHooker) {
+                let re = backendLoader.item.getMouseTarget();
+                if(!re)
+                    re = null;
+                background.mouseHooker.target = re;
+           }
+        }
     }
     
     function loadBackend() {
@@ -119,7 +153,7 @@ Rectangle {
         // choose backend
         switch (background.type) {
             case 'video':
-                if(background.useMpv && Common.checklib_wallpaper(background))
+                if(background.useMpv && background.hasLib)
                     qmlsource = "backend/Mpv.qml";
                 else qmlsource = "backend/QtMultimedia.qml";
                 break;
@@ -127,7 +161,7 @@ Rectangle {
                 qmlsource = "backend/QtWebView.qml";
                 break;
             case 'scene':
-                if(Common.checklib_wallpaper(background)) {
+                if(background.hasLib) {
                     qmlsource = "backend/Scene.qml";
                     properties = {"assets": background.steamlibrary + "/steamapps/common/wallpaper_engine/assets"};
                 } else {
@@ -149,7 +183,7 @@ Rectangle {
                     ? backendLoader.item.play()
                     : backendLoader.item.pause()
     }
-    
+
     Component.onCompleted: {
         // load first backend
         loadBackend(); 

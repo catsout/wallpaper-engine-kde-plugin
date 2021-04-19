@@ -157,17 +157,8 @@ Item {
             });
         }   
     }
-    property var mg
     Component.onCompleted: {
-        if(webItem.hasLib) {
-            webItem.mg = Qt.createQmlObject(`import QtQuick 2.5;
-                    import com.github.catsout.wallpaperEngineKde 1.0
-                    MouseGrabber {
-                        id: mg
-                        anchors.fill: parent
-                        target: web.children[0] ? web.children[0] : null
-                    }`, webItem);
-        }
+    //target: web.children[0] ? web.children[0] : null
     }
 
     function play(){
@@ -177,16 +168,8 @@ Item {
         // Set status first
         web.paused = true;
     }
-    function setMouseListener(){
-        if(web.activeFocusOnPress) {
-            web.activeFocusOnPress = false;
-            if(webItem.mg)
-                webItem.mg.captureMouse = false;
-        }
-        else {
-            web.activeFocusOnPress = true;
-            if(webItem.mg)
-                webItem.mg.captureMouse = true;
-        }
+    function getMouseTarget() {
+        web.activeFocusOnPress = true;
+        return Qt.binding(function() { return web.children[0]; })
     }
 }
