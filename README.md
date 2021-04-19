@@ -5,7 +5,7 @@ It's simple and small.
 ### Known issue
 - Some case scene wallpaper may crash your kde.  
   Remove `WallpaperFilePath` line in `~/.config/plasma-org.kde.plasma.desktop-appletsrc` and restart kde to fix.  
-- Long press is broken on desktop  
+- Long press(to enter panel edit mode) is broken on desktop  
 ### Note
 - Support **scene(2d)**,**video**,**web** types
 - Scene,mpv support require plugin lib, which need to be compiled   
