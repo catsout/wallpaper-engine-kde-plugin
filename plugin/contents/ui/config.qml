@@ -146,6 +146,8 @@ Column {
             height: configCol.height
             width: height*(16.0/9.0)
             source: ""
+            cache: false
+            asynchronous: true
             onStatusChanged: playing = (status == AnimatedImage.Ready) 
             onPicItemChanged: {
                 if(picItem != nullItem) {
@@ -325,9 +327,14 @@ Column {
                     tooltip: "Open Containing Folder"
                     onTriggered: Qt.openUrlExternally(path) 
                 }]
-                thumbnail:Image {
+                thumbnail: Image {
                     anchors.fill: parent
                     source: path + "/" + preview
+                    sourceSize.width: width
+                    sourceSize.height: height
+                    fillMode: Image.Stretch
+                    cache: false
+                    asynchronous: true
                 }
                 onClicked: {
                        cfg_WallpaperFilePath = path + "/" + file;

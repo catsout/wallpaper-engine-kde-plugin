@@ -28,8 +28,9 @@ Rectangle {
 
 
     Component.onDestruction: {
-        mouseHooker.target = mouseHooker.parent; 
-        mouseHooker.destroy();
+        if(mouseHooker) {
+            mouseHooker.destroy();
+        }
     }
     
     function getWorkshopPath() {
