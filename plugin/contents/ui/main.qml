@@ -50,7 +50,7 @@ Rectangle {
         property int tryTimes: 0
         onTriggered: {
             tryTimes++; 
-            if(tryTimes == 10 || !background.hasLib)
+            if(tryTimes >= 10 || !background.hasLib)
                 return;
             background.hookMouse();
         }

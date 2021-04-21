@@ -316,6 +316,7 @@ Column {
     Component { 
         id: picViewCom
         KCM.GridView {
+            id: picViewGrid
             anchors.fill: parent
 
             view.model: projectModel
@@ -343,6 +344,23 @@ Column {
                        view.currentIndex = index;
                 }
             }
+
+            Kirigami.Heading {
+                anchors.fill: parent
+                anchors.margins: Kirigami.Units.largeSpacing
+                // FIXME: this is needed to vertically center it in the grid for some reason
+                anchors.topMargin: picViewGrid.height
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
+                wrapMode: Text.WordWrap
+                visible: picViewGrid.view.count === 0
+                level: 2
+                text: cfg_SteamLibraryPath
+                    ?"There are no wallpapers in steam libary workshop"
+                    :"Select your steam libary through the folder selector above"
+                opacity: 0.5
+            }
+
             function setCurIndex() {
                 new Promise(function(reoslve, reject) {
                     for(let i=0;i < projectModel.count;i++) {
