@@ -9,12 +9,16 @@ Item{
     property int displayMode: background.displayMode
     
     onDisplayModeChanged: {
-        let value = 0.0;
-        if(videoItem.displayMode == Common.DisplayMode.Crop)
-            value = 1.0;
-        else if(videoItem.displayMode == Common.DisplayMode.Aspect)
-            value = 0.0;
-        player.setProperty("panscan", value);
+        if(videoItem.displayMode == Common.DisplayMode.Crop) {
+            player.setProperty("keepaspect", true);
+            player.setProperty("panscan", 1.0);
+        } else if(videoItem.displayMode == Common.DisplayMode.Aspect) {
+            player.setProperty("keepaspect", true);
+            player.setProperty("panscan", 0.0);
+        } else if(videoItem.displayMode == Common.DisplayMode.Scale) {
+            player.setProperty("keepaspect", false);
+            player.setProperty("panscan", 0.0);
+        }
     }
 
     // logfile
