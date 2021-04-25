@@ -1,12 +1,13 @@
 #pragma once
 #include <vector>
 #include <cstdint>
+#include <cstddef>
 
 namespace wallpaper
 {
 	class SceneIndexArray {
 	public:
-		SceneIndexArray(const uint32_t* data, const size_t count):m_pData(data),
+		SceneIndexArray(const uint32_t* data, const std::size_t count):m_pData(data),
 																m_count(count) {
 		};
 
@@ -23,12 +24,12 @@ namespace wallpaper
 		}
 
 		// Get
-		size_t DataSize() const { return m_count * sizeof(uint32_t); }
+		std::size_t DataSize() const { return m_count * sizeof(uint32_t); }
 		const uint32_t* Data() const { return m_pData; }
-		size_t DataCount() const { return m_count; }
+		std::size_t DataCount() const { return m_count; }
 
 	private:
 		const uint32_t* m_pData;
-		const size_t m_count;
+		const std::size_t m_count;
 	};
 }

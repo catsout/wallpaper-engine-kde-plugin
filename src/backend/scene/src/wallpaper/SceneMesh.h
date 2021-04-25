@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <memory>
+#include <cstddef>
 
 #include "SceneVertexArray.h"
 #include "SceneIndexArray.h"
@@ -13,11 +14,11 @@ public:
 	// temp
 	uint32_t vao;
 
-	size_t VertexCount() const { return m_vertexArrays.size(); }
-	size_t IndexCount() const { return m_indexArrays.size(); }
+	std::size_t VertexCount() const { return m_vertexArrays.size(); }
+	std::size_t IndexCount() const { return m_indexArrays.size(); }
 
-	const SceneVertexArray& GetVertexArray(const size_t index) const { return m_vertexArrays[index]; }
-	const SceneIndexArray& GetIndexArray(const size_t index) const { return m_indexArrays[index]; }	
+	const SceneVertexArray& GetVertexArray(const std::size_t index) const { return m_vertexArrays[index]; }
+	const SceneIndexArray& GetIndexArray(const std::size_t index) const { return m_indexArrays[index]; }	
 
 	void AddIndexArray(SceneIndexArray&& array) {
 		m_indexArrays.emplace_back(std::move(array));

@@ -2,6 +2,7 @@
 //#include <glad/glad.h>
 #include <string>
 #include <cstdint>
+#include <cstddef>
 #include <unordered_map>
 #include "common.h"
 
@@ -52,7 +53,7 @@ struct GLTexture{
 
 class GLBuffer {
 public:
-	GLBuffer(GLenum target, size_t size) : target(target), size((int)size) {}
+	GLBuffer(GLenum target, std::size_t size) : target(target), size((int)size) {}
 	~GLBuffer();
 	GLuint buffer = 0;
 	GLint usage;
@@ -115,7 +116,7 @@ public:
 	GLWrapper();
 	bool Init(void *get_proc_address(const char*));
 	GLTexture* CreateTexture(GLenum target, int32_t width, int32_t height, int32_t numMips, SceneTextureSample sample={});
-	GLBuffer* CreateBuffer(GLuint target, size_t size, GLuint usage);
+	GLBuffer* CreateBuffer(GLuint target, std::size_t size, GLuint usage);
 	GLFramebuffer *CreateFramebuffer(int32_t width, int32_t height, SceneTextureSample sample={});
 	GLProgram* CreateProgram(std::vector<GLShader *> shaders, 
 							 std::vector<GLProgram::AttribLoc> attribLocs);
@@ -140,9 +141,9 @@ public:
 	void DeleteProgram(GLProgram* program);
 	void DeleteFramebuffer(GLFramebuffer *framebuffer);
 
-    void BufferSubData(GLBuffer* buffer, size_t size, const float* data);
-	void TextureImage(GLTexture *texture, int level, int width, int height, TextureFormat texformat, uint8_t *data, size_t imgsize=0);
-	void TextureImagePbo(GLTexture *texture, int level, int width, int height, TextureFormat texformat, uint8_t *data, size_t imgsize);
+    void BufferSubData(GLBuffer* buffer, std::size_t size, const float* data);
+	void TextureImage(GLTexture *texture, int level, int width, int height, TextureFormat texformat, uint8_t *data, std::size_t imgsize=0);
+	void TextureImagePbo(GLTexture *texture, int level, int width, int height, TextureFormat texformat, uint8_t *data, std::size_t imgsize);
 
 	void SetBlend(BlendMode);
 

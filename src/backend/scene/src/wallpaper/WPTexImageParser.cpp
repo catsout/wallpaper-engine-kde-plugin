@@ -113,7 +113,7 @@ std::shared_ptr<Image> WPTexImageParser::Parse(const std::string& name) {
 	auto& img = *img_ptr;
 	std::ifstream file = fs::GetFstream(WallpaperGL::GetPkgfs(), path);
 	if(!file.is_open()) return nullptr;
-	size_t startpos = file.tellg();
+	auto startpos = file.tellg();
 	LoadHeader(file, img);
 
 	// image 

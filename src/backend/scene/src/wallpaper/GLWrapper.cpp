@@ -88,7 +88,7 @@ GLTexture* GLWrapper::CreateTexture(GLenum target, int32_t width, int32_t height
 	return tex;
 }
 
-GLBuffer* GLWrapper::CreateBuffer(GLenum target, size_t size, GLuint usage) {
+GLBuffer* GLWrapper::CreateBuffer(GLenum target, std::size_t size, GLuint usage) {
 	GLBuffer* buffer = new GLBuffer(target, size);
 	buffer->size = (int)size;
 	buffer->usage = usage;
@@ -302,7 +302,7 @@ void GLWrapper::DeleteFramebuffer(GLFramebuffer *glfbo) {
 }
 
 
-void GLWrapper::BufferSubData(GLBuffer* buffer, size_t size, const float* data) {
+void GLWrapper::BufferSubData(GLBuffer* buffer, std::size_t size, const float* data) {
     glBufferSubData(buffer->target, 0, size, data);
 	CHECK_GL_ERROR_IF_DEBUG();
 }
@@ -330,7 +330,7 @@ void TextureFormat2GLFormat(TextureFormat texformat, GLint& internalFormat, GLen
 	}
 }
 
-void GLWrapper::TextureImage(GLTexture* texture, int level, int width, int height, TextureFormat texformat, uint8_t *data, size_t imgsize) {
+void GLWrapper::TextureImage(GLTexture* texture, int level, int width, int height, TextureFormat texformat, uint8_t *data, std::size_t imgsize) {
 	GLTexture *tex = texture;
 	BindTexture(texture);
 
@@ -354,7 +354,7 @@ void GLWrapper::TextureImage(GLTexture* texture, int level, int width, int heigh
 }
 
 
-void GLWrapper::TextureImagePbo(GLTexture *texture, int level, int width, int height, TextureFormat texformat, uint8_t *data, size_t imgsize) {
+void GLWrapper::TextureImagePbo(GLTexture *texture, int level, int width, int height, TextureFormat texformat, uint8_t *data, std::size_t imgsize) {
 	GLTexture *tex = texture;
 	GLuint pbo;
 	glGenBuffers(1, &pbo);
@@ -520,7 +520,7 @@ void GLWrapper::LoadMesh(SceneMesh& mesh) {
 	GLuint bufId;
 	auto verCount = mesh.VertexCount();
 	// vertices
-	for(size_t i=0;i < verCount;i++) {
+	for(std::size_t i=0;i < verCount;i++) {
 		const auto& vArray = mesh.GetVertexArray(i);
 
 		glGenBuffers(1, &bufId);
@@ -535,7 +535,7 @@ void GLWrapper::LoadMesh(SceneMesh& mesh) {
 	}
 
 	auto indexCount = mesh.IndexCount();
-	for(size_t i=0;i < indexCount;i++) {
+	for(std::size_t i=0;i < indexCount;i++) {
 		const auto& iArray = mesh.GetIndexArray(i);
 		glGenBuffers(1, &bufId);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bufId);
@@ -599,7 +599,7 @@ int32_t GLProgram::GetUniformLocation(GLProgram* pro, const std::string name) {
 void GLWrapper::UpdateUniform(GLProgram* pro, const wp::ShaderValue& sv) {
 	int32_t loc = GLProgram::GetUniformLocation(pro, sv.name);
 	if(loc == -1) return;
-	size_t size = sv.value.size();
+	std::size_t size = sv.value.size();
 	const float* value = &sv.value[0];
 	if(size == 16)
 		SetUniformMat4(loc, static_cast<const float*>(value));
