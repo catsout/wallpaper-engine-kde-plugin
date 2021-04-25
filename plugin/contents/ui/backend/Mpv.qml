@@ -10,7 +10,7 @@ Item{
     
     onDisplayModeChanged: {
         let value = 0.0;
-        if(videoItem.displayMode == Common.DisplayMode.Scale)
+        if(videoItem.displayMode == Common.DisplayMode.Crop)
             value = 1.0;
         else if(videoItem.displayMode == Common.DisplayMode.Aspect)
             value = 0.0;
