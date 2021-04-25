@@ -4,8 +4,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 project("WallpaperEngineKde")
 
+find_program(QMAKE qmake)
+if(${QMAKE} STREQUAL "QMAKE-NOTFOUND")
+	message(FATAL_ERROR "qmake not found, make sure you install it")
+endif()
+
 execute_process(
-    COMMAND qmake -query QT_INSTALL_QML
+    COMMAND ${QMAKE} -query QT_INSTALL_QML
     OUTPUT_VARIABLE PROC_RESULT
     OUTPUT_STRIP_TRAILING_WHITESPACE
 )
