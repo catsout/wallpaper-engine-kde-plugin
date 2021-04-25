@@ -3,7 +3,6 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 project("WallpaperEngineKde")
-find_package(PkgConfig REQUIRED)
 
 execute_process(
     COMMAND qmake -query QT_INSTALL_QML

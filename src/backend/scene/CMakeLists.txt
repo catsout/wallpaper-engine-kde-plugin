@@ -1,6 +1,8 @@
 project(scenebackend)
 find_package(Qt5 COMPONENTS Gui Quick Qml X11Extras REQUIRED)
 include_directories(${Qt5Gui_PRIVATE_INCLUDE_DIRS})
+
+find_package(PkgConfig REQUIRED)
 include_directories(include)
 
 add_subdirectory(lib/glad)
