@@ -9,7 +9,7 @@ import org.kde.taskmanager 0.1 as TaskManager
 Item {
 
     id: wModel
-    property alias screenGeometry: tasksModel.screenGeometry
+    property alias screenGeometry: tasksModel.screenGeometry // Not sure, that this line make any sense
     property bool playVideoWallpaper: true
     property bool currentWindowMaximized: false
     property bool isActiveWindowPinned: false
@@ -24,7 +24,7 @@ Item {
 
         activity: activityInfo.currentActivity
         virtualDesktop: virtualDesktopInfo.currentDesktop
-        screenGeometry: wallpaper.screenGeometry ? wallpaper.screenGeometry : Qt.rect(0,0,0,0) // Warns "Unable to assign [undefined] to QRect" during init, but works thereafter.
+        screenGeometry: wallpaper.parent.screenGeometry ? wallpaper.parent.screenGeometry : Qt.rect(0,0,0,0) // Warns "Unable to assign [undefined] to QRect" during init, but works thereafter.
 
         filterByActivity: true
         filterByVirtualDesktop: true
