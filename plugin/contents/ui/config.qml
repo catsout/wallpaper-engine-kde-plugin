@@ -33,7 +33,7 @@ Column {
         id: warnRow
         anchors.horizontalCenter: parent.horizontalCenter
         Text {
-            text: "Scene wallpaper may crash kde earily, make sure you know how to fix."
+            text: "Scene wallpaper may crash kde, make sure you know how to fix."
             color: "darkorange"
             visible: Common.checklib_wallpaper(warnRow)
         }
