@@ -11,7 +11,7 @@
 namespace wallpaper {
 	template <typename T>
 	bool GetJsonValue(const nlohmann::json& json, T& value) {
-		if(json.contains("value") && json.contains("user")) 
+		if(json.contains("value")) 
 			value = json.at("value").get<T>();
 		else value = json.get<T>();
 		return true;
@@ -43,7 +43,7 @@ namespace wallpaper {
 		try {
 			return GetJsonValue<T>(json, value);
 		} catch(njson::type_error& e) {
-			Logger::Log(func, line, "Error read json at: ", e.what() + nameinfo);
+			Logger::Log(func, line, "Error read json at: ", e.what() + nameinfo +"\n"+ json.dump(4));
 		}
 		return false; 
 	}

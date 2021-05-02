@@ -50,6 +50,10 @@ const std::string pre_shader_code = "#version 120\n"
 									  "#define atan2 atan\n"
 									  "#define ddx dFdx\n"
 									  "#define max(x, y) max(y, x)\n"
+									  "#define float1 float\n"
+									  "#define float2 vec2\n"
+								   	  "#define float3 vec3\n"
+									  "#define float4 vec4\n"
 									  "#define ddy(x) dFdy(-(x))\n\n";
 
 std::string LoadGlslInclude(const std::string& input) {
