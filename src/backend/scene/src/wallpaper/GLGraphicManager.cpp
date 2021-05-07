@@ -344,6 +344,7 @@ void GLGraphicManager::SetDefaultFbo(uint fbo, uint32_t w, uint32_t h) {
 		height = width / screenAspect;
 		m_scene->activeCamera->SetHeight(height);
 	}
+	m_scene->UpdateLinkedCamera("global");
 }
 
 void GLGraphicManager::Destroy() {

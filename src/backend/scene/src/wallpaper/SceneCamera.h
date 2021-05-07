@@ -53,6 +53,15 @@ public:
 
 	std::shared_ptr<SceneNode> GetAttachedNode() const { return m_node; }
 
+	void Clone(const SceneCamera& cam) {
+		m_width = cam.m_width;
+		m_height = cam.m_height;
+		m_aspect = cam.m_aspect;
+		m_nearClip = cam.m_nearClip;
+		m_farClip = cam.m_farClip;
+		m_perspective = cam.m_perspective;
+	}
+	
 private:
 	float m_width;
 	float m_height;

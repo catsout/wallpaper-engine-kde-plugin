@@ -505,6 +505,9 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 					-1.0f, 1.0f
 				);
 				upScene->cameras.at(nodeAddr)->AttatchNode(upScene->activeCamera->GetAttachedNode());
+				if(upScene->linkedCameras.count("global") == 0)
+					upScene->linkedCameras["global"] = {};
+				upScene->linkedCameras.at("global").push_back(nodeAddr);
 			}
 			else {
 				// applly scale to crop
