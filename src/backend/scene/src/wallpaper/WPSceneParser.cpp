@@ -33,28 +33,32 @@ struct WPShaderInfo {
 	WPDefaultTexs defTexs;
 };
 
-const std::string pre_shader_code = "#version 120\n"
-									  "#define highp\n"
-									  "#define mediump\n"
-									  "#define lowp\n"
-									  "#define mul(x, y) (y * x)\n"
-									  "#define frac fract\n"
-									  "#define CAST2(x) (vec2(x))\n"
-									  "#define CAST3(x) (vec3(x))\n"
-									  "#define CAST4(x) (vec4(x))\n"
-									  "#define CAST3X3(x) (mat3(x))\n"
-									  "#define saturate(x) (clamp(x, 0.0, 1.0))\n"
-									  "#define texSample2D texture2D\n"
-									  "#define texSample2DLod texture2DLod\n"
-									  "#define texture2DLod texture2D\n"
-									  "#define atan2 atan\n"
-									  "#define ddx dFdx\n"
-									  "#define max(x, y) max(y, x)\n"
-									  "#define float1 float\n"
-									  "#define float2 vec2\n"
-								   	  "#define float3 vec3\n"
-									  "#define float4 vec4\n"
-									  "#define ddy(x) dFdy(-(x))\n\n";
+const std::string pre_shader_code = R"(#version 130
+#define highp
+#define mediump
+#define lowp
+#define mul(x, y) (y * x)
+#define frac fract
+#define CAST2(x) (vec2(x))
+#define CAST3(x) (vec3(x))
+#define CAST4(x) (vec4(x))
+#define CAST3X3(x) (mat3(x))
+#define saturate(x) (clamp(x, 0.0, 1.0))
+#define texSample2D texture2D
+#define texSample2DLod texture2DLod
+#define texture2DLod texture2D
+#define atan2 atan
+#define ddx dFdx
+#define max(x, y) max(y, x)
+#define float1 float
+#define float2 vec2
+#define float3 vec3
+#define float4 vec4
+#define lerp mix
+#define ddy(x) dFdy(-(x))
+
+)";
+
 
 std::string LoadGlslInclude(const std::string& input) {
 	std::string::size_type pos = 0;

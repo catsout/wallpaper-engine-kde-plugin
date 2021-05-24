@@ -69,11 +69,6 @@ void GLRenderTargetManager::ReleaseAndDeleteFrameBuffer(const std::string& name,
 	}
 }
 
-
-// graphic manager
-static Scene* curScene;
-static gl::GLWrapper* pGlw;
-
 std::string OutImageType(const Image& img) {
 	if(img.type == ImageType::UNKNOWN)
 		return ToString(img.format);	
@@ -81,8 +76,8 @@ std::string OutImageType(const Image& img) {
 		return ToString(img.type);
 }
 
-std::vector<gl::GLTexture*> LoadImage(const SceneTexture& tex, const Image& img) {
-    auto& glw = *pGlw;
+std::vector<gl::GLTexture*> LoadImage(gl::GLWrapper* pglw, const SceneTexture& tex, const Image& img) {
+    auto& glw = *pglw;
 	LOG_INFO(std::string("Load tex ") + OutImageType(img) + " " + tex.url);
 	std::vector<gl::GLTexture*> texs;
 	for(int i_img=0;i_img < img.count;i_img++) {
@@ -109,7 +104,7 @@ void TraverseNode(GLGraphicManager* pMgr, void (GLGraphicManager::*func)(SceneNo
 }
 
 void GLGraphicManager::LoadNode(SceneNode* node) {
-    auto& glw = *pGlw;
+    auto& glw = *m_glw;
 	if(node->Mesh() == nullptr) return;
 	auto* mesh = node->Mesh();
 	glw.LoadMesh(*mesh);
@@ -119,8 +114,8 @@ void GLGraphicManager::LoadNode(SceneNode* node) {
 	for(const auto& url:material->textures) {
 		if(url.empty() || url.compare(0, 4, "_rt_") == 0) continue;
 		if(m_textureMap.count(url) > 0) continue;
-		auto img = curScene->imageParser->Parse(url);;
-		m_textureMap[url] = LoadImage(*curScene->textures[url].get(), *img.get());
+		auto img = m_scene->imageParser->Parse(url);;
+		m_textureMap[url] = LoadImage(m_glw.get(), *m_scene->textures[url].get(), *img.get());
 	}
 	auto& materialShader = material->customShader;
 	auto* shader = materialShader.shader.get();
@@ -142,7 +137,7 @@ void GLGraphicManager::LoadNode(SceneNode* node) {
 }
 
 void GLGraphicManager::RenderNode(SceneNode* node) {
-    auto& glw = *pGlw;
+    auto& glw = *m_glw;
 	if(node->Mesh() == nullptr) return;
 	auto* mesh = node->Mesh();
 	if(mesh->Material() == nullptr) return;
@@ -160,7 +155,7 @@ void GLGraphicManager::RenderNode(SceneNode* node) {
 
 	auto& materialShader = material->customShader;
 	auto* shader = materialShader.shader.get();
-	curScene->shaderValueUpdater->UpdateShaderValues(node, shader);
+	m_scene->shaderValueUpdater->UpdateShaderValues(node, shader);
 
 	int32_t i_tex = -1;
 	for(const auto& name:material->textures) {
@@ -183,8 +178,8 @@ void GLGraphicManager::RenderNode(SceneNode* node) {
 		}
 		else if(m_textureMap.count(name) != 0) {
 			// deal sprite
-			if(curScene->textures.count(name) != 0) {
-				const auto& stex = curScene->textures.at(name);
+			if(m_scene->textures.count(name) != 0) {
+				const auto& stex = m_scene->textures.at(name);
 				if(stex->isSprite)
 					imageId = stex->spriteAnim.GetCurFrame().imageId;
 			}
@@ -242,8 +237,6 @@ void GLGraphicManager::RenderNode(SceneNode* node) {
 }
 
 void GLGraphicManager::InitializeScene(Scene* scene) {
-	curScene = scene;
-	pGlw = m_glw.get();
 	m_scene = scene;
 	m_aspect = -1.0f;
 	for(auto& cam:m_scene->cameras) {
@@ -286,12 +279,12 @@ void GLGraphicManager::InitializeScene(Scene* scene) {
 void GLGraphicManager::Draw() {
 	if(m_scene == nullptr) return;
 	m_rtm.GetFrameBuffer("_rt_default", m_scene->renderTargets.at("_rt_default"));
-	curScene->shaderValueUpdater->FrameBegin();
+	m_scene->shaderValueUpdater->FrameBegin();
 	const auto& cc = m_scene->clearColor;
 	m_glw->BindFramebufferViewport(m_rtm.GetFrameBuffer("_rt_default", m_scene->renderTargets.at("_rt_default")));
 	m_glw->ClearColor(cc[0], cc[1], cc[2], 1.0f);
 	TraverseNode(this, &GLGraphicManager::RenderNode, m_scene->sceneGraph.get());
-	curScene->shaderValueUpdater->FrameEnd();
+	m_scene->shaderValueUpdater->FrameEnd();
 	m_glw->BindFramebufferViewport(&m_defaultFbo);
 	m_glw->SetBlend(BlendMode::Disable);
 	m_glw->ClearColor(0.0f, 0.0f, 0.0f, 1.0f);

@@ -3,13 +3,13 @@ A wallpaper plugin integrating [wallpaper engine](https://store.steampowered.com
 It's simple and small.  
 
 ### Known issue
-- Some case scene wallpaper may crash your kde.  
+- Some scene wallpapers may crash your kde.  
   Remove `WallpaperFilePath` line in `~/.config/plasma-org.kde.plasma.desktop-appletsrc` and restart kde to fix.  
-- Long press(to enter panel edit mode) is broken on desktop  
+- Mouse long press(to enter panel edit mode) is broken on desktop  
 ### Note
 - Support **scene(2d)**,**video**,**web** types
 - Scene,mpv support require plugin lib, which need to be compiled   
-The lib will be autodetect after install
+The lib will be autodetected after install
 
 You need to choose your steam library directory(where *wallpaper engine* installed).  
 Like `~/.local/share/Steam`  
@@ -50,7 +50,7 @@ sudo make install
 
 ### How to use:
 1. Use steam+proton or wine+steam
-2. Buy and install wallpaper engine
+2. Buy and install wallpaper engine(not run)
 3. Subscribe some wallpapers  
 4. Select steam library dir(like .local/share/Steam) in plugin
 5. Enjoy
@@ -64,6 +64,8 @@ I'm not familiar with graphic programming.
 - Opengl driver will keep ram copies of textures, meaning ram is at same usage as vram.
 #### not work
 - Particle System   
+- Timeline Animations
+- Puppet Warp
 - Scene script  
 - Text layer  
 - Audio play
@@ -83,6 +85,7 @@ Some wallpaper using webgl may not work, and performance may be bad.
 #### QtMultimedia
 Default video backend of this plugin.  
 It's using GStreamer to play video.  
+To enable hwdecode:  
 - GStreamer plugin installed
 like `gstreamer1.0-vaapi` in debain
 - `GST_VAAPI_ALL_DRIVERS=1`
