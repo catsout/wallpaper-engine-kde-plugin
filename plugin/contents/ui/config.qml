@@ -54,7 +54,7 @@ Column {
                     id: pauseMode
                     model: [
                         {
-                            text: "Maximied Window",
+                            text: "Maximized Window",
                             value: Common.PauseMode.Max
                         },
                         {
