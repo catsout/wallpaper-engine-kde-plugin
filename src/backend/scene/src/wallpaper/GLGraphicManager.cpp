@@ -147,8 +147,10 @@ void GLGraphicManager::RenderNode(SceneNode* node) {
 		auto& cam = m_scene->cameras.at(node->Camera());
 		if(cam->HasImgEffect()) {
 			const auto& name = cam->GetImgEffect()->FirstTarget();
-			target = m_rtm.GetFrameBuffer(name, m_scene->renderTargets.at(name));
-			m_glw->BindFramebufferViewport(target);
+			if(m_scene->renderTargets.count(name) != 0) {
+				target = m_rtm.GetFrameBuffer(name, m_scene->renderTargets.at(name));
+				m_glw->BindFramebufferViewport(target);
+			}
 		}
 	}
 	auto* material = mesh->Material();
@@ -224,7 +226,7 @@ void GLGraphicManager::RenderNode(SceneNode* node) {
 					if(mesh->Material() == nullptr) continue;
 					const auto& mat = mesh->Material();
 					for(const auto& t:mat->textures) {
-						if(t.compare(0, 4, "_rt_") == 0) {
+						if(t.compare(0, 4, "_rt_") == 0 && m_scene->renderTargets.count(t) != 0) {
 							const auto& rt = m_scene->renderTargets.at(t);
 							if(t != "_rt_default" && rt.allowReuse) {
 								m_rtm.ReleaseFrameBuffer(t, rt);
