@@ -268,7 +268,7 @@ void LoadMaterial(const wpscene::WPMaterial& wpmat, Scene* pScene, SceneNode* pN
 		std::string name = textures.at(i);
 		if(name == "_rt_FullFrameBuffer")
 			name = "_rt_default";
-		if(name.compare(0, 6, "_rt_im") == 0 || name == "_rt_MipMappedFrameBuffer") {
+		if(name.compare(0, 6, "_rt_im") == 0) {
 			name = "";
 			LOG_ERROR("unsupported layer texture");
 		}

@@ -163,6 +163,7 @@ void GLGraphicManager::RenderNode(SceneNode* node) {
 		glw.ActiveTexture(i_tex);
 		int32_t imageId = 0;
 		if(name.compare(0, 4, "_rt_") == 0) {
+			if(m_scene->renderTargets.count(name) == 0) continue;
 			auto& rt = m_scene->renderTargets.at(name);
 			if(m_scene->renderTargetBindMap.count(name) != 0) {
 				const auto& copy = m_scene->renderTargetBindMap.at(name);
