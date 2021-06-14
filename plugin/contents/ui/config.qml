@@ -182,7 +182,7 @@ Column {
                 source: "folder-symbolic"
                 PlasmaCore.ToolTipArea {
                     anchors.fill: parent
-                    subText: cfg_SteamLibraryPath?cfg_SteamLibraryPath:"Select steam libary dir"
+                    subText: cfg_SteamLibraryPath?cfg_SteamLibraryPath:"Select steam library dir"
                 }
             }
             MouseArea {
@@ -356,8 +356,8 @@ Column {
                 visible: picViewGrid.view.count === 0
                 level: 2
                 text: cfg_SteamLibraryPath
-                    ?"There are no wallpapers in steam libary workshop"
-                    :"Select your steam libary through the folder selector above"
+                    ?"There are no wallpapers in steam library workshop"
+                    :"Select your steam library through the folder selector above"
                 opacity: 0.5
             }
 
@@ -384,7 +384,7 @@ Column {
 
     FileDialog {
         id: wpDialog
-        title: "Select steam libary dir"
+        title: "Select steam library dir"
         selectFolder: true
         selectMultiple : false
         nameFilters: [ "All files (*)" ]
