@@ -75,7 +75,9 @@ std::string LoadGlslInclude(const std::string& input) {
 		auto inE = lineStr.find_last_of('\"');
 		auto includeName = lineStr.substr(inP, inE - inP);
 		auto includeSrc = fs::GetContent(WallpaperGL::GetPkgfs(),"shaders/"+includeName);
+		output.append("\n//-----include " + includeName + "\n");
 		output.append(LoadGlslInclude(includeSrc));
+		output.append("\n//-----include end\n");
 
 		pos = lineEnd;
 	}
