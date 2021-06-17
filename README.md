@@ -38,6 +38,11 @@ Or try: `kquitapp5 plasmashell && kstart5 plasmashell`
 Debian:  
 ```sh
 sudo apt install liblz4-dev qtbase5-private-dev qtbase5-dev qtdeclarative5-dev libqt5x11extras5-dev libmpv-dev  qt5-default 
+```  
+
+Arch:
+```sh
+sudo pacman -S base-devel mpv qt5-declarative
 ```
 #### Build and install
 ```sh
@@ -69,6 +74,7 @@ I'm not familiar with graphic programming.
 - Scene script  
 - Text layer  
 - Audio play
+- PBR light
 - Camera shake,fade,~~zoom,parallax~~
 - Global bloom effect  
 - Perspective renderable  
