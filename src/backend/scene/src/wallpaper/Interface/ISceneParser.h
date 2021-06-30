@@ -9,8 +9,8 @@ namespace wallpaper
 
 class ISceneParser {
 public:
-	ISceneParser() {}
-	virtual ~ISceneParser() {}
+	ISceneParser() = default;
+	virtual ~ISceneParser() = default;
 	virtual std::unique_ptr<Scene> Parse(const std::string&) = 0;
 };
 }

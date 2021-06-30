@@ -1,20 +1,45 @@
 #include "wallpaper.h"
-#include <nlohmann/json.hpp>
+#include "Log.h"
+
+#include "FpsCounter.h"
+#include "FrameTimer.h"
+
+#include "SceneMesh.h"
+#include "Scene.h"
+#include "WPSceneParser.h"
+#include "GLGraphicManager.h"
+
 #include <iostream>
 #include <chrono>
 #include <ctime>
 #include <thread>
 
 typedef wallpaper::fs::file_node file_node;
-using json = nlohmann::json;
 using namespace wallpaper;
 
 file_node wallpaper::WallpaperGL::m_pkgfs = file_node();
-int WallpaperGL::m_objnum = -1;
-int WallpaperGL::m_effnum = -1;
+
+class WallpaperGL::impl {
+public:
+	impl() {}
+	FpsCounter fpsCounter;
+	FrameTimer frameTimer;
+	WPSceneParser parser;
+	GLGraphicManager gm;
+
+	std::chrono::time_point<std::chrono::steady_clock> timer {std::chrono::steady_clock::now()};
+	std::unique_ptr<Scene> scene;
+};
+
+WallpaperGL::WallpaperGL():m_mousePos({0,0}),m_aspect(16.0f/9.0f),pImpl(std::make_unique<impl>())
+ {};
+
+WallpaperGL::~WallpaperGL() {
+	Clear();
+}
 
 bool WallpaperGL::Init(void *get_proc_address(const char *)) {
-	m_inited = m_gm.Initialize(get_proc_address);
+	m_inited = pImpl->gm.Initialize(get_proc_address);
 	return m_inited;
 }
 
@@ -41,9 +66,9 @@ void WallpaperGL::Load(const std::string& pkg_path) {
 		LOG_ERROR("Not supported scene type");
 		return;
 	}
-	m_scene = m_parser.Parse(scene_src);	
-	if(m_scene) {
-		m_gm.InitializeScene(m_scene.get());
+	pImpl->scene = pImpl->parser.Parse(scene_src);	
+	if(pImpl->scene) {
+		pImpl->gm.InitializeScene(pImpl->scene.get());
 	}
 	m_loaded = true;
 }
@@ -51,30 +76,38 @@ void WallpaperGL::Load(const std::string& pkg_path) {
 void WallpaperGL::Render(uint fbo, int width, int height) {
 	if(!m_inited || !m_loaded) return;
 
-	if(!m_frameTimer.NoFrame()) {
+	if(!pImpl->frameTimer.NoFrame()) {
 		// fps
 		using namespace std::chrono;
 		auto enterFrame = steady_clock::now();
+		double frametime = duration<double>(enterFrame - pImpl->timer).count();
+		pImpl->timer = enterFrame;
+
 		auto time = duration_cast<milliseconds>(enterFrame.time_since_epoch());
 		uint32_t timep = (time - duration_cast<hours>(time)).count();
-		m_fpsCounter.RegisterFrame(timep);
+		pImpl->fpsCounter.RegisterFrame(timep);
+
+		auto& m_scene = (pImpl->scene);
 		if(m_scene) {	
 			m_scene->shaderValueUpdater->MouseInput(m_mousePos[0]/width, m_mousePos[1]/height);
 			m_scene->shaderValueUpdater->SetTexelSize(1.0f/width, 1.0f/height);
-			m_gm.SetDefaultFbo(fbo, width, height);
-			m_gm.Draw();
+			pImpl->gm.SetDefaultFbo(fbo, width, height);
+			pImpl->gm.Draw();
 			// time elapsing
-			double idealtime = 1.0f / (double)m_frameTimer.Fps();
+			auto nowFps = pImpl->fpsCounter.Fps();
+			double idealtime = frametime;
+			pImpl->timer = enterFrame;
 			m_scene->elapsingTime += idealtime;
+			m_scene->frameTime = idealtime;
 		}
-		m_frameTimer.RenderFrame();
+		pImpl->frameTimer.RenderFrame();
 	}
 }
 
 void WallpaperGL::Clear()
 {
 	if(!m_inited) return;
-	m_gm.Destroy();
+	pImpl->gm.Destroy();
 	LOG_INFO("Date cleared");
 }
 
@@ -83,20 +116,21 @@ void WallpaperGL::SetAssets(const std::string& path) {
 	assetsPath = path;
 }
 
-void WallpaperGL::SetObjEffNum(int obj, int eff) {
-	WallpaperGL::m_objnum = obj;
-	WallpaperGL::m_effnum = eff;
-}
-
 void WallpaperGL::SetUpdateCallback(const std::function<void()>& func) {
-	m_frameTimer.SetCallback(func);
-	m_frameTimer.Run();
+	pImpl->frameTimer.SetCallback(func);
+	pImpl->frameTimer.Run();
 }
 
 void WallpaperGL::Start() {
-	m_frameTimer.Run();
+	pImpl->frameTimer.Run();
 }
 
 void WallpaperGL::Stop() {
-	m_frameTimer.Stop();
+	pImpl->frameTimer.Stop();
 }
+
+
+uint32_t WallpaperGL::CurrentFps() const { return pImpl->fpsCounter.Fps(); }
+uint8_t WallpaperGL::Fps() const { return pImpl->frameTimer.Fps(); }
+void WallpaperGL::SetFps(uint8_t value) { return pImpl->frameTimer.SetFps(value); }
+

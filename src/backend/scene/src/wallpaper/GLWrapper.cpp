@@ -1,12 +1,26 @@
 #include "GLWrapper.h"
 #include <iostream>
-//#include "WPTextureCache.h"
+#include "Log.h"
 
 #include <functional>
 #include <glad/glad.h> 	
 #include <cstring>
 
+
 using namespace wallpaper::gl;
+
+#if defined(DEBUG_OPENGL)
+#define CHECK_GL_ERROR_IF_DEBUG() checkGlError(__FILE__, __FUNCTION__, __LINE__);
+#else
+#define CHECK_GL_ERROR_IF_DEBUG()
+#endif
+
+void checkGlError(const char* file, const char* func, int line)
+{
+    int err = glGetError();
+    if(err != 0)
+        std::cerr << "GL_ERROR: " << err << "  " << func << "  at: " << file << "  line: " << line << std::endl;
+}
 
 typedef wallpaper::TextureFormat TextureFormat;
 template <typename Getiv, typename GetLog>
@@ -156,7 +170,7 @@ GLProgram* GLWrapper::CreateProgram(std::vector<GLShader *> shaders,
 	CHECK_GL_ERROR_IF_DEBUG();
     return program;
 }
-
+/*
 GLProgram* GLWrapper::CreateProgram(std::vector<GLShader *> shaders,
 									std::vector<GLProgram::AttribLoc> attribLocs) {
 	GLProgram* program = new GLProgram();
@@ -181,6 +195,7 @@ GLProgram* GLWrapper::CreateProgram(std::vector<GLShader *> shaders,
 	CHECK_GL_ERROR_IF_DEBUG();
     return program;
 }
+*/
 
 GLShader* GLWrapper::CreateShader(GLuint stage, const std::string& source) {
 	GLShader* shader = new GLShader();
@@ -311,6 +326,14 @@ void TextureFormat2GLFormat(TextureFormat texformat, GLint& internalFormat, GLen
 	type = GL_UNSIGNED_BYTE;	
 	format = GL_RGBA;
 	switch(texformat) {
+	case TextureFormat::R8:
+		internalFormat = GL_R8;
+		format = GL_RED;
+		break;
+	case TextureFormat::RG8:
+		internalFormat = GL_RG8;
+		format = GL_RG;
+		break;
 	case TextureFormat::RGB8:
 		internalFormat = GL_RGB8;	
 		format = GL_RGB;
@@ -338,6 +361,8 @@ void GLWrapper::TextureImage(GLTexture* texture, int level, int width, int heigh
 	GLint internalFormat;
 	TextureFormat2GLFormat(texformat, internalFormat, format, type);
 	switch(texformat) {
+	case TextureFormat::R8:
+	case TextureFormat::RG8:
 	case TextureFormat::RGB8:
 	case TextureFormat::RGBA8:
 		glTexImage2D(tex->target, level, internalFormat, width, height, 0, format, type, data);
@@ -374,6 +399,8 @@ void GLWrapper::TextureImagePbo(GLTexture *texture, int level, int width, int he
 	GLint internalFormat;
 	TextureFormat2GLFormat(texformat, internalFormat, format, type);
 	switch(texformat) {
+	case TextureFormat::R8:
+	case TextureFormat::RG8:
 	case TextureFormat::RGB8:
 	case TextureFormat::RGBA8:
 		glTexImage2D(tex->target, level, internalFormat, width, height, 0, format, type, nullptr);
@@ -418,7 +445,7 @@ void GLWrapper::SetBlend(BlendMode bm) {
 		glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
 		break;
 	case BlendMode::Additive:
-		glBlendFunc(GL_ONE, GL_ONE);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 		break;
 	}
 }
@@ -514,62 +541,108 @@ void GLWrapper::SetUniform(GLProgram* program, GLUniform* uniform,const void* va
 }
 
 void GLWrapper::LoadMesh(SceneMesh& mesh) {
-    glGenVertexArrays(1, &mesh.vao);
-    glBindVertexArray(mesh.vao);
+	uint32_t vao;
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
 
 	GLuint bufId;
 	auto verCount = mesh.VertexCount();
 	// vertices
 	for(std::size_t i=0;i < verCount;i++) {
-		const auto& vArray = mesh.GetVertexArray(i);
+		auto& vArray = mesh.GetVertexArray(i);
 
 		glGenBuffers(1, &bufId);
 		glBindBuffer(GL_ARRAY_BUFFER, bufId);
-		glBufferData(GL_ARRAY_BUFFER, vArray.DataSize(), vArray.Data(), GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, vArray.CapacitySizeOf(), vArray.Data(), mesh.Dynamic()? GL_DYNAMIC_DRAW :GL_STATIC_DRAW);
 		CHECK_GL_ERROR_IF_DEBUG();
 
-		glEnableVertexAttribArray(i);
-		glVertexAttribPointer(i, vArray.TypeCount(), GL_FLOAT, GL_FALSE, 0, 0);
+		const auto& attrs = vArray.Attributes();
+		intptr_t offset = 0;
+		for(std::size_t j=0;j<attrs.size();j++) {
+			glEnableVertexAttribArray(j);
+			const auto& a = attrs.at(j);
+			uint32_t size = SceneVertexArray::TypeCount(a.type);
+			glVertexAttribPointer(j, size, GL_FLOAT, GL_FALSE, vArray.OneSizeOf(), (const void*)offset);
+			offset += SceneVertexArray::RealAttributeSize(a) * sizeof(float);
+		}
 		CHECK_GL_ERROR_IF_DEBUG();
-		m_meshBuf.push_back(bufId);
+		vArray.SetID(m_bufidgen++);
+		m_bufMap.insert({vArray.ID(), bufId});
 	}
 
 	auto indexCount = mesh.IndexCount();
 	for(std::size_t i=0;i < indexCount;i++) {
-		const auto& iArray = mesh.GetIndexArray(i);
+		auto& iArray = mesh.GetIndexArray(i);
 		glGenBuffers(1, &bufId);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bufId);
-	    glBufferData(GL_ELEMENT_ARRAY_BUFFER, iArray.DataSize(), iArray.Data(), GL_STATIC_DRAW);
+	    glBufferData(GL_ELEMENT_ARRAY_BUFFER, iArray.CapacitySizeof(), iArray.Data(), mesh.Dynamic()? GL_DYNAMIC_DRAW :GL_STATIC_DRAW);
 		CHECK_GL_ERROR_IF_DEBUG();
-		m_meshBuf.push_back(bufId);
+		iArray.SetID(m_bufidgen++);
+		m_bufMap.insert({iArray.ID(), bufId});
 		// current only use one index
 		break;
 	}
+	mesh.SetID(m_vaoidgen++);
+	m_vaoMap.insert({mesh.ID(), vao});	
     glBindVertexArray(0);
-	m_meshVao.push_back(mesh.vao);
 }
 
 void GLWrapper::RenderMesh(const SceneMesh& mesh) {
-	glBindVertexArray(mesh.vao);
-	auto count = mesh.GetIndexArray(0).DataCount();
-	glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, 0);
+	if(m_vaoMap.count(mesh.ID()) == 0) return;
+
+	if(mesh.Dynamic() && mesh.Dirty()) {
+		const auto& varray = mesh.GetVertexArray(0);
+		if(varray.CapacitySizeOf() > 0) {
+			glBindBuffer(GL_ARRAY_BUFFER, m_bufMap.at(varray.ID()));
+			void *old_data = glMapBufferRange(GL_ARRAY_BUFFER, 0, varray.CapacitySizeOf(),
+			GL_MAP_WRITE_BIT | GL_MAP_FLUSH_EXPLICIT_BIT);
+			CHECK_GL_ERROR_IF_DEBUG();
+			std::memcpy(old_data, varray.Data(), varray.DataSizeOf());
+			glFlushMappedBufferRange(GL_ARRAY_BUFFER, 0, varray.DataSizeOf());
+			glUnmapBuffer(GL_ARRAY_BUFFER);
+			CHECK_GL_ERROR_IF_DEBUG();
+			glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+			const auto& iarray = mesh.GetIndexArray(0);
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_bufMap.at(iarray.ID()));
+			old_data = glMapBufferRange(GL_ELEMENT_ARRAY_BUFFER, 0, iarray.CapacitySizeof(),
+			GL_MAP_WRITE_BIT | GL_MAP_FLUSH_EXPLICIT_BIT);
+			CHECK_GL_ERROR_IF_DEBUG();
+			std::memcpy(old_data, iarray.Data(), iarray.DataSizeOf());
+			glFlushMappedBufferRange(GL_ELEMENT_ARRAY_BUFFER, 0, iarray.DataSizeOf());
+			glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+		}
+	}
+
+	glBindVertexArray(m_vaoMap.at(mesh.ID()));
+	if(mesh.Primitive() == MeshPrimitive::POINT) {
+		auto count = mesh.GetVertexArray(0).VertexCount();
+		glPointSize(mesh.PointSize());
+		glDrawArrays(GL_POINTS, 0, count);
+	} else  {
+		auto count = mesh.GetIndexArray(0).DataCount();
+		glDrawElements(ToGLType(mesh.Primitive()), count, GL_UNSIGNED_INT, 0);
+	}
 	CHECK_GL_ERROR_IF_DEBUG();
 	glBindVertexArray(0);
 }
 
 void GLWrapper::CleanMeshBuf() {
 	glBindVertexArray(0);
-	for(auto& v:m_meshVao) {
-		if(v != 0)
-			glDeleteVertexArrays(1, &v);
+	for(auto& v:m_vaoMap) {
+		if(v.second != 0)
+			glDeleteVertexArrays(1, &v.second);
 	}
-	for(auto& v:m_meshBuf) {
-		if(v != 0)
-			glDeleteBuffers(1, &v);
+	for(auto& v:m_bufMap) {
+		if(v.second != 0)
+			glDeleteBuffers(1, &v.second);
 	}
 	CHECK_GL_ERROR_IF_DEBUG();
-	m_meshVao.clear();
-	m_meshBuf.clear();
+	m_vaoMap.clear();
+	m_vaoidgen = 0;
+	m_bufMap.clear();
+	m_bufidgen = 0;
 }
 
 
@@ -619,6 +692,8 @@ GLuint GLWrapper::ToGLType(ShaderType st) {
 	{
 	case ShaderType::VERTEX:
 		return GL_VERTEX_SHADER;
+	case ShaderType::GEOMETRY:
+		return GL_GEOMETRY_SHADER;
 	case ShaderType::FRAGMENT:
 		return GL_FRAGMENT_SHADER;
 	}
@@ -657,5 +732,16 @@ GLenum GLWrapper::ToGLType(TextureFilter filter) {
 		return GL_NEAREST;
 	default:
 		return GL_NEAREST;
+	}
+}
+GLenum GLWrapper::ToGLType(MeshPrimitive p) {
+	switch (p)
+	{
+	case MeshPrimitive::POINT:
+		return GL_POINTS;
+	case MeshPrimitive::TRIANGLE:
+		return GL_TRIANGLES;
+	default:
+		return GL_TRIANGLES;
 	}
 }

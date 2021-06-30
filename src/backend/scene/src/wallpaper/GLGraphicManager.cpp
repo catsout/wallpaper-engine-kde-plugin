@@ -1,5 +1,5 @@
 #include "GLGraphicManager.h"
-#include "common.h"
+#include "Log.h"
 #include "SpriteAnimation.h"
 
 #include <functional>
@@ -119,10 +119,14 @@ void GLGraphicManager::LoadNode(SceneNode* node) {
 	}
 	auto& materialShader = material->customShader;
 	auto* shader = materialShader.shader.get();
-	
-	auto sv = glw.CreateShader(glw.ToGLType(ShaderType::VERTEX), shader->vertexCode);
-	auto fg = glw.CreateShader(glw.ToGLType(ShaderType::FRAGMENT), shader->fragmentCode);
-	m_programMap[shader] = glw.CreateProgram({sv, fg}, shader->attrs);
+
+	std::vector<gl::GLShader*> glshaders;
+	glshaders.push_back(glw.CreateShader(glw.ToGLType(ShaderType::VERTEX), shader->vertexCode));
+	glshaders.push_back(glw.CreateShader(glw.ToGLType(ShaderType::FRAGMENT), shader->fragmentCode));
+	if(!shader->geometryCode.empty()) {
+		glshaders.push_back(glw.CreateShader(glw.ToGLType(ShaderType::GEOMETRY), shader->geometryCode));
+	}
+	m_programMap[shader] = glw.CreateProgram(glshaders, shader->attrs);
 	auto* program = m_programMap.at(shader);
 	glw.BindProgram(program);
 	glw.QueryProUniforms(program);
@@ -282,17 +286,21 @@ void GLGraphicManager::InitializeScene(Scene* scene) {
 void GLGraphicManager::Draw() {
 	if(m_scene == nullptr) return;
 	m_rtm.GetFrameBuffer("_rt_default", m_scene->renderTargets.at("_rt_default"));
+
+	m_scene->paritileSys.Emitt();
 	m_scene->shaderValueUpdater->FrameBegin();
+
 	const auto& cc = m_scene->clearColor;
 	m_glw->BindFramebufferViewport(m_rtm.GetFrameBuffer("_rt_default", m_scene->renderTargets.at("_rt_default")));
 	m_glw->ClearColor(cc[0], cc[1], cc[2], 1.0f);
 	TraverseNode(this, &GLGraphicManager::RenderNode, m_scene->sceneGraph.get());
+
 	m_scene->shaderValueUpdater->FrameEnd();
+
 	m_glw->BindFramebufferViewport(&m_defaultFbo);
 	m_glw->SetBlend(BlendMode::Disable);
 	m_glw->ClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-	if(m_fboNode)
-		RenderNode(m_fboNode.get());
+	if(m_fboNode) RenderNode(m_fboNode.get());
 }
 
 bool GLGraphicManager::Initialize(void *get_proc_addr(const char*)) {

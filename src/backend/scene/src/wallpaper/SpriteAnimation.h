@@ -34,6 +34,8 @@ public:
 	void AppendFrame(const SpriteFrame& frame) {
 		m_frames.push_back(frame);
 	}
+
+	uint32_t numFrames() const { return m_frames.size(); }
 private:
 	void SwitchToNext() {
 		if(m_curFrame >= m_frames.size() - 1)

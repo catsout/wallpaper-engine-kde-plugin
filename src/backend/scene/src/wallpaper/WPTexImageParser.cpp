@@ -1,6 +1,6 @@
 #include "WPTexImageParser.h"
 
-#include "common.h"
+#include "Util.h"
 #include "SpriteAnimation.h"
 
 #include "wallpaper.h"
@@ -59,8 +59,9 @@ TextureFormat ToTexFormate(int type) {
 		case 7:
 			return TextureFormat::BC1;
 		case 8:
+			return TextureFormat::RG8;
 		case 9:
-			LOG_ERROR("ERROR::ToTexFormate Unsupported image type: " + std::to_string(type));
+			return TextureFormat::R8;
 		default:
 			LOG_ERROR("ERROR::ToTexFormate Unkown image type: " + std::to_string(type));
 			return TextureFormat::RGBA8;

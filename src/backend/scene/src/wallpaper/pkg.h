@@ -69,6 +69,7 @@ void PrintFileTree(const file_node& node, int depth);
 bool NewFile(file_node& root, const std::string& path, const file_node& new_file);
 int ReadPkgToNode(file_node& root, const std::string&pkgPath);
 bool IsFileInNode(const file_node& root, const std::string& path);
+bool IsFileExistWithAssets(const file_node& root, const std::string& path);
 bool IsFileExist(const std::string& filePath);
 int GetFileLentgh(const file_node& root, const std::string& path);
 std::ifstream GetFstream(const file_node& root, const std::string& path);

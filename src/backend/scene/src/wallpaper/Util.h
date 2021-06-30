@@ -4,34 +4,12 @@
 #include <algorithm>
 #include <iostream>
 #include <fstream>
-
-
-#define GLCALL(x) x\
-    wallpaper::gl::checkGlError(__FILE__, __FUNCTION__, __LINE__);
-
-#define LOG_ERROR(text) wallpaper::Logger::Log(__FUNCTION__, __LINE__, "Error at ", (text));
-#define LOG_INFO(text) wallpaper::Logger::Log("", -1, "", (text));
+#include "Log.h"
 
 #define STRCONV(str,t) wallpaper::StrConv((str), (t), __FUNCTION__, __LINE__);
 
-#if defined(DEBUG_OPENGL)
-#define CHECK_GL_ERROR_IF_DEBUG() wallpaper::gl::checkGlError(__FILE__, __FUNCTION__, __LINE__);
-#else
-#define CHECK_GL_ERROR_IF_DEBUG()
-#endif
-
 namespace wallpaper
 {
-namespace gl
-{
-void checkGlError(const char* file, const char* func, int line);
-}
-class Logger {
-public:
-	static void Log(const char* func, int line, const char* prefix, const std::string& text);
-	static void Log(const char* func, int line, const char* prefix, const char* text);
-};
-
 
 std::vector<std::string> SpliteString(std::string str, std::string spliter);
 std::string ConectVecString(const std::vector<std::string>& strs,const std::string& conector, int first, int last);

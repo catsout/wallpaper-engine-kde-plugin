@@ -6,6 +6,7 @@
 #include "SceneNode.h"
 #include "Interface/IShaderValueUpdater.h"
 #include "Interface/IImageParser.h"
+#include "Particle/ParticleSystem.h"
 
 
 namespace wallpaper
@@ -13,6 +14,11 @@ namespace wallpaper
 
 class Scene {
 public:
+	Scene():paritileSys(*this) {};
+	~Scene() = default;
+	Scene(const Scene&) = delete;
+	Scene(Scene&&) = delete;
+
 	std::unordered_map<std::string, std::shared_ptr<SceneTexture>> textures;
 	std::unordered_map<std::string, SceneRenderTarget> renderTargets;
 	std::unordered_map<std::string, SceneBindRenderTarget> renderTargetBindMap;
@@ -24,9 +30,11 @@ public:
 	std::unique_ptr<IShaderValueUpdater> shaderValueUpdater;
 	std::unique_ptr<IImageParser> imageParser;
 
+	ParticleSystem paritileSys;
+
 	SceneCamera* activeCamera;
 
-	double elapsingTime {0.0f};
+	double elapsingTime {0.0f}, frameTime {0.0f};
 	std::vector<float> clearColor {1.0f, 1.0f, 1.0f};
 
 	void UpdateLinkedCamera(const std::string& name) {

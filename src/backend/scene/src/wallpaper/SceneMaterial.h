@@ -28,6 +28,8 @@ public:
 	std::vector<std::string> textures;
 	std::vector<std::string> defines;
 
+	bool hasSprite {false};
+
 	SceneMaterialCustomShader customShader;
 	BlendMode blenmode {BlendMode::Disable};
 };

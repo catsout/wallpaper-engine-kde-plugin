@@ -34,26 +34,8 @@ void updateCallback() {
 
 int main(int argc, char**argv)
 {
-	int result = 0,objnum = -1,effnum = -1;
-    while((result = getopt(argc, argv, "o:e:")) != -1 ) {
-		switch(result)
-		{
-		case 'o':
-			objnum = std::stoi(optarg);		
-			break;
-		case 'e':
-			effnum = std::stoi(optarg);
-			break;
-			break;
-		case '?':
-			break;
-		}
-    }
-	if(argc - optind != 2) {
-		std::cerr << "usage: "+ std::string(argv[0]) +" [options] <assets dir> <pkg file>\n"
-		<< "options:\n"  
-		<< "-o object amount to render\n" 
-		<< "-e effect amount to render\n";
+	if(argc != 3) {
+		std::cerr << "usage: "+ std::string(argv[0]) +" <assets dir> <pkg file>\n";
 		return 1;
 	}
 
@@ -74,11 +56,10 @@ int main(int argc, char**argv)
     pwgl = new wallpaper::WallpaperGL();
     auto& wgl = *pwgl;
 	wgl.Init((GLADloadproc)glfwGetProcAddress);
-	wgl.SetAssets(argv[optind]);
-	wgl.SetObjEffNum(objnum, effnum);
+	wgl.SetAssets(argv[1]);
 	wgl.SetFlip(true);
     //const wallpaper::fs::file_node& x = wallpaper::WallpaperGL::GetPkgfs();
-    wgl.Load(argv[optind+1]);
+    wgl.Load(argv[2]);
 
 	wgl.SetUpdateCallback(updateCallback);
 

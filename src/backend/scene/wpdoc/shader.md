@@ -10,3 +10,12 @@ The following JSON options exist:
     type (STRING): Set "type": "color" for vec3 uniforms to enable the color picker. Otherwise leave it out to use a slider or text boxes to enter values.
     default (VARYING): Set "default": "1 0 0" to define a default color (red) or "default": 1.0 to define a default float.
     range (ARRAY of FLOAT): Set "range": [-1.0, 1.0] to overwrite the slider range. It will use 0 to 1 if you omit it.
+
+### Particle
+a_TexCoordVec4.xyz ParticleRotation
+vec3(a_TexCoordC2.xy, a_TexCoordVec4.z) ParticleRotation // no geometry
+
+a_TexCoordVec4.w ParticleSize
+
+a_TexCoordVec4C1.xyz ParticleVelocity
+TexCoordVec4C1.z ParticleLifeTime

@@ -5,7 +5,8 @@
 #include "pkg.h"
 #include <iostream>
 #include <algorithm>
-#include "common.h"
+#include "Util.h"
+#include "Log.h"
 
 std::string& wallpaper::fs::GetAssetsPath() {
     static std::string assetsPath = "assets";
@@ -201,6 +202,14 @@ bool wallpaper::fs::IsFileExist(const std::string& filePath)
     std::ifstream infile(filePath);
     return infile.good();
 }
+
+bool wallpaper::fs::IsFileExistWithAssets(const file_node& root, const std::string& path) {
+    auto file_in_pkg = GetFile(root, path);
+    if(file_in_pkg != root.end()) return true;
+    else if(IsFileExist(GetAssetsPath()+"/"+path)) return true;
+    return false;
+}
+
 //use tex path to return ifstream read to tex file
 //use path to return string
 //no way to identify the path is use for pkg , assets, or abselutely path

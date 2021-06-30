@@ -4,7 +4,6 @@
 #include <cstdint>
 #include <cstddef>
 #include <unordered_map>
-#include "common.h"
 
 #include "SceneMesh.h"
 #include "SceneShader.h"
@@ -166,6 +165,7 @@ public:
 	GLenum ToGLType(TextureType);
 	GLenum ToGLType(TextureWrap);
 	GLenum ToGLType(TextureFilter);
+	GLenum ToGLType(MeshPrimitive);
 
 	GLFramebuffer* GetNowFramebuffer();
 
@@ -173,8 +173,10 @@ private:
 	std::unordered_map<int, int> uniformCount_;	
 	GLFramebuffer* m_curFbo;
 
-	std::vector<uint32_t> m_meshBuf;
-	std::vector<uint32_t> m_meshVao;
+	std::unordered_map<uint32_t, uint32_t> m_bufMap;
+	std::unordered_map<uint32_t, uint32_t> m_vaoMap;
+	uint32_t m_bufidgen {0};
+	uint32_t m_vaoidgen {0};
 };
 }
 }

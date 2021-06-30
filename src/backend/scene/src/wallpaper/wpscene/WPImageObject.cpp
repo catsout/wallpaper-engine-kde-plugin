@@ -1,7 +1,7 @@
 #include "WPImageObject.h"
 #include "pkg.h"
 #include "wallpaper.h"
-#include "common.h"
+#include "Log.h"
 
 using namespace wallpaper::wpscene;
 

@@ -50,7 +50,9 @@ enum class TextureFormat {
 	BC3,  // DXT5
 	A8,
 	RGB8,
-	RGBA8
+	RGBA8,
+	RG8,
+	R8
 };
 std::string ToString(const TextureFormat&);
 
@@ -62,11 +64,17 @@ enum class BlendMode {
 
 enum class ShaderType {
 	VERTEX,
+	GEOMETRY,
 	FRAGMENT
 };
 
 enum class TextureType {
 	IMG_2D,
+};
+
+enum class MeshPrimitive {
+	POINT,
+	TRIANGLE
 };
 
 }

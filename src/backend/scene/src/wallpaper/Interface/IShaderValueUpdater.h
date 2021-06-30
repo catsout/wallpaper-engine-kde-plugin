@@ -1,6 +1,4 @@
 #pragma once
-//#include "SceneNode.h"
-
 
 namespace wallpaper
 {
@@ -10,7 +8,7 @@ class SceneShader;
 class IShaderValueUpdater {
 public:
 	IShaderValueUpdater() = default;
-	virtual ~IShaderValueUpdater() {};
+	virtual ~IShaderValueUpdater() = default;
 
 	virtual void FrameBegin() = 0;
 	virtual void UpdateShaderValues(SceneNode*, SceneShader*) = 0;

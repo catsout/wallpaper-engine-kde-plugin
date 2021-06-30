@@ -31,6 +31,7 @@ public:
 	uint32_t id;
 
 	std::string vertexCode;
+	std::string geometryCode;
 	std::string fragmentCode;
 
 	std::vector<ShaderAttribute> attrs;

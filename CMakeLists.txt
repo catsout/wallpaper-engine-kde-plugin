@@ -6,7 +6,7 @@ project("WallpaperEngineKde")
 
 find_program(QMAKE qmake)
 if(${QMAKE} STREQUAL "QMAKE-NOTFOUND")
-	message(FATAL_ERROR "qmake not found, make sure you install it")
+	message(FATAL_ERROR "qmake not found, make sure you have it installed")
 endif()
 
 execute_process(

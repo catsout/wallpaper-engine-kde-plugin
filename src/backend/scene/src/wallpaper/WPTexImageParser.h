@@ -4,8 +4,6 @@
 namespace wallpaper
 {
 
-
-
 class WPTexImageParser : public IImageParser {
 public:
 	std::shared_ptr<Image> Parse(const std::string&) override;

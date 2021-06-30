@@ -7,14 +7,13 @@ namespace wallpaper
 {
 	class SceneIndexArray {
 	public:
-		SceneIndexArray(const uint32_t* data, const std::size_t count):m_pData(data),
-																m_count(count) {
-		};
-
+		SceneIndexArray(std::size_t indexCount);
 		SceneIndexArray(const std::vector<uint32_t>& data);
 
 		SceneIndexArray(SceneIndexArray&& other):m_pData(other.m_pData),
-												m_count(other.m_count) {
+												m_size(other.m_size),
+												m_capacity(other.m_capacity),
+												m_id(other.m_id) {
 			other.m_pData = nullptr;
 		}
 		SceneIndexArray(const SceneIndexArray&) = delete;
@@ -23,13 +22,22 @@ namespace wallpaper
 				delete[] m_pData;
 		}
 
-		// Get
-		std::size_t DataSize() const { return m_count * sizeof(uint32_t); }
-		const uint32_t* Data() const { return m_pData; }
-		std::size_t DataCount() const { return m_count; }
+		void Assign(std::size_t index, const uint32_t* data, std::size_t count);
 
+		// Get
+		std::size_t DataSizeOf() const { return m_size * sizeof(uint32_t); }
+		const uint32_t* Data() const { return m_pData; }
+		std::size_t DataCount() const { return m_size; }
+		std::size_t CapacityCount() const { return m_capacity; }
+		std::size_t CapacitySizeof() const { return m_capacity * sizeof(float); }
+
+		uint32_t ID() const { return m_id; }
+		void SetID(uint32_t id) { m_id = id; }
 	private:
-		const uint32_t* m_pData;
-		const std::size_t m_count;
+		uint32_t* m_pData;
+		std::size_t m_size;
+		std::size_t m_capacity;
+
+		uint32_t m_id;
 	};
 }

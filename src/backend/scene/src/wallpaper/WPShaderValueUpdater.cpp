@@ -1,7 +1,7 @@
 #include "WPShaderValueUpdater.h"
 #include "Scene.h"
 #include "SpriteAnimation.h"
-#include "common.h"
+
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -14,14 +14,12 @@ using namespace wallpaper;
 
 void WPShaderValueUpdater::FrameBegin() {
 	using namespace std::chrono;
-	m_timeDiff = m_scene->elapsingTime - m_lastTime;
 	auto nowTime = system_clock::to_time_t(system_clock::now());
 	auto cTime = std::localtime(&nowTime);
 	m_dayTime = (((cTime->tm_hour * 60) + cTime->tm_min) * 60 + cTime->tm_sec) / (24.0f*60.0f*60.0f);
 }
 
 void WPShaderValueUpdater::FrameEnd() {
-	m_lastTime = m_scene->elapsingTime;
 }
 
 
@@ -97,7 +95,7 @@ void WPShaderValueUpdater::UpdateShaderValues(SceneNode* pNode, SceneShader* pSh
 				auto& ptex = m_scene->textures.at(texname);
 				if(ptex->isSprite) {
 					auto& sp = ptex->spriteAnim;
-					const auto& frame = sp.GetAnimateFrame(m_timeDiff);
+					const auto& frame = sp.GetAnimateFrame(m_scene->frameTime);
 					auto grot = gtex + std::to_string(i) + "Rotation";
 					auto gtrans = gtex + std::to_string(i) + "Translation";
 					shadervs.push_back({grot, {frame.width, 0, 0, frame.height}});

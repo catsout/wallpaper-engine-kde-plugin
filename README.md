@@ -9,7 +9,7 @@ It's simple and small.
 ### Note
 - Support **scene(2d)**,**video**,**web** types
 - Scene,mpv support require plugin lib, which need to be compiled   
-The lib will be autodetected after install
+The lib will be autodetected after installed
 
 You need to choose your steam library directory(where *wallpaper engine* installed).  
 Like `~/.local/share/Steam`  
@@ -61,7 +61,7 @@ sudo make install
 5. Enjoy
 
 ### Scene support status
-Scene wallpaper is supportted by direct opengl(3.2).  
+Scene wallpaper is supported by direct opengl(3.2).  
 It's almost usable.  
 #### performance
 I'm not familiar with graphic programming.  
@@ -82,7 +82,7 @@ I'm not familiar with graphic programming.
 - ~~ColorBlendMode~~  
 
 ### Web support status
-Basic web apis are supportted, but the audio api dose not send data at now.  
+Basic web apis are supported, but the audio api dose not send data at now.  
 #### no webgl
 WebEngineView in plasmashell can't init opengl.  
 Some wallpaper using webgl may not work, and performance may be bad.   

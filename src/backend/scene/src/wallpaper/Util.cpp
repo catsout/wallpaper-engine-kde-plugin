@@ -1,28 +1,6 @@
-#include "common.h"
-#include <algorithm>
-#include <glad/glad.h>
+#include "Util.h"
 
 namespace wp = wallpaper;
-
-void wp::gl::checkGlError(const char* file, const char* func, int line)
-{
-    int err = glGetError();
-    if(err != 0)
-        std::cerr << "GL_ERROR: " << err << "  " << func << "  at: " << file << "  line: " << line << std::endl;
-}
-
-void wp::Logger::Log(const char* func, int line, const char* prefix, const char* text) {
-	Log(func, line, prefix, std::string(text));
-}
-
-void wp::Logger::Log(const char* func, int line, const char* prefix, const std::string& text) {
-	std::string linestr, prefixEnd;
-	if(line != -1)
-		linestr = '(' + std::to_string(line) + ')';
-	if(*prefix != '\0')
-		prefixEnd = ": ";
-	std::cerr << prefix << func << linestr << prefixEnd << text << std::endl;
-}
 
 wp::LineStr wp::GetLineWith(const std::string& src, const std::string& find_str, long pos)
 {
