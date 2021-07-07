@@ -1,6 +1,8 @@
 #include "ParticleSystem.h"
 #include "Log.h"
 #include "Scene.h"
+#include "ParticleModify.h"
+#include <algorithm>
 
 using namespace wallpaper;
 
@@ -21,24 +23,38 @@ void ParticleSubSystem::AddEmitter(std::unique_ptr<ParticleEmitter> em) {
 	m_emiters.emplace_back(std::move(em));
 }
 
-void ParticleSubSystem::AddInitializer(std::shared_ptr<IParticleInitializer> ini) {
+
+void ParticleSubSystem::AddInitializer(ParticleInitOp&& ini) {
 	m_initializers.emplace_back(ini);
 }
 
+void ParticleSubSystem::AddOperator(ParticleOperatorOp&& op) {
+	m_operators.emplace_back(op);
+}
+
 void ParticleSubSystem::Emitt() {
+	auto frameTime = parent.scene.frameTime;
 	for(auto& el:m_emiters) {
-		el->TimePass(parent.scene.frameTime);
+		el->TimePass(frameTime);
 		int32_t x = el->Emmit(m_particles, m_initializers);
 	}
 
+	uint32_t i = 0;
 	for(auto& p:m_particles) {
-		p.lifetime -= parent.scene.frameTime;
+		if(!ParticleModify::LifetimeOk(p)) { i++;continue; }
+		ParticleModify::Reset(p);
+		ParticleModify::ChangeLifetime(p, -frameTime);
+		auto lifetimePos = ParticleModify::LifetimePos(p);
+		std::for_each(m_operators.begin(), m_operators.end(), [&](ParticleOperatorOp& op) {
+			op(p, i, lifetimePos, frameTime);
+		});
+		i++;
 	}
 
 	m_mesh->SetDirty();
 	auto& sv = m_mesh->GetVertexArray(0);
 	auto& si = m_mesh->GetIndexArray(0);
-	uint32_t i = 0;
+	i = 0;
 	for(const auto& p:m_particles) {
 		sv.SetVertexs((i++)*4, 4, &(parent.gener->GenGLData(p, sv)[0]));
 	}

@@ -30,10 +30,11 @@ add_library(${PROJECT_NAME}
 	wpscene/WPParticleObject.cpp
 	wpscene/WPMaterial.cpp
 	wpscene/WPScene.cpp
+	Particle/ParticleModify.cpp
 	Particle/ParticleSystem.cpp
 	Particle/ParticleEmitter.cpp
-	Particle/ParticleInitializer.cpp
 	Particle/WPParticleRawGener.cpp
+	WPParticleParser.cpp
 	WPSceneParser.cpp
 	WPShaderValueUpdater.cpp
 	WPTexImageParser.cpp

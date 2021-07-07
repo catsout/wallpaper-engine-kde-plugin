@@ -1,5 +1,6 @@
 #pragma once
 #include "Interface/ISceneParser.h"
+#include <random>
 
 namespace wallpaper
 {

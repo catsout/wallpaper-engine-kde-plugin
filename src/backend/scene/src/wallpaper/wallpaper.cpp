@@ -97,8 +97,10 @@ void WallpaperGL::Render(uint fbo, int width, int height) {
 			auto nowFps = pImpl->fpsCounter.Fps();
 			double idealtime = frametime;
 			pImpl->timer = enterFrame;
-			m_scene->elapsingTime += idealtime;
-			m_scene->frameTime = idealtime;
+			if(idealtime < 0.5) {
+				m_scene->elapsingTime += idealtime;
+				m_scene->frameTime = idealtime;
+			}
 		}
 		pImpl->frameTimer.RenderFrame();
 	}

@@ -1,25 +1,24 @@
 #include "ParticleEmitter.h"
+#include "ParticleModify.h"
 #include <random>
 #include "Log.h"
 
 using namespace wallpaper;
-static std::uniform_real_distribution<float> ur(0.0f, 1.0f);
 
 static float GetRandomIn(float min, float max, float random) {
 	return min + (max - min)*random;
 }
 
-void GenBox(Particle& p, float min, float max, std::default_random_engine& rSeed) {
-	p.position[0] = GetRandomIn(min, max, ur(rSeed));
-	p.position[1] = GetRandomIn(min, max, ur(rSeed));
+void GenBox(Particle& p, float min, float max, std::function<float()>& rfunc) {
+	auto gen = [&]() { return GetRandomIn(min, max, rfunc()); };
+	ParticleModify::MoveTo(p, gen(), gen(), 0);
 }
 
-void ParticleEmitter::Spwan(Particle& p, 
-					const std::vector<std::shared_ptr<IParticleInitializer>>& initializers) {
+void ParticleEmitter::Spwan(Particle& p, std::vector<ParticleInitOp>& initializers) {
 	p = Particle();
-	GenBox(p, m_minDistance, m_maxDistance, m_rSeed);
+	GenBox(p, m_minDistance, m_maxDistance, m_randomFn);
 	for(auto& el:initializers) {
-		el->InitParticle(m_rSeed, p);
+		el(p);
 	}
 }
 
@@ -28,12 +27,14 @@ ParticleEmitter::ParticleEmitter(
 	float maxDistance,
 	float emitNumPerSecond,
 	std::size_t maxcount,
-	EmitterType type
+	EmitterType type,
+	std::function<float()> randomFn
 ):  m_minDistance(minDistance),
 	m_maxDistance(maxDistance),
 	m_emitNumPerSecond(emitNumPerSecond),
 	m_maxcount(maxcount),
-	m_type(type) {}
+	m_type(type),
+	m_randomFn(randomFn) {}
 ParticleEmitter::~ParticleEmitter() {}
 
 int32_t FindLastParticle(const std::vector<Particle>& ps, int32_t last) {
@@ -44,8 +45,7 @@ int32_t FindLastParticle(const std::vector<Particle>& ps, int32_t last) {
 	return -1;
 }
 
-uint32_t ParticleEmitter::Emmit(std::vector<Particle>& particles, 
-					const std::vector<std::shared_ptr<IParticleInitializer>>& initializers) {
+uint32_t ParticleEmitter::Emmit(std::vector<Particle>& particles, std::vector<ParticleInitOp>& initializers) {
 	int32_t lastPartcle = 0;
 	float timeEmit = 1.0f / m_emitNumPerSecond;
 	if(timeEmit > m_time) return 0;

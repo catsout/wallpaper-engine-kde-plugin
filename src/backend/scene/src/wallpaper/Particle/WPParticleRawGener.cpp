@@ -20,10 +20,12 @@ std::vector<float> WPParticleRawGener::GenGLData(const Particle& p, const SceneV
 	std::size_t oneSize = vertex.OneSize();
 	std::vector<float> result(oneSize * 4);
 
+	float size = p.size/4.0f;
+
 	float x = p.position[0];
 	float y = p.position[1];
 	float z = p.position[2];
-	float fsize = (p.size/2.0f);
+	float fsize = (size/2.0f);
 	float left = x-fsize;
 	float right = x+fsize;
 	float bottom = y-fsize;
@@ -43,10 +45,10 @@ std::vector<float> WPParticleRawGener::GenGLData(const Particle& p, const SceneV
 			AssignVertexTimes(&result[0], {p.color[0], p.color[1], p.color[2], p.alpha}, offset, oneSize, 4);
 		} else if(el.name == "a_TexCoordVec4") {
 			std::vector<float> t = {
-				0.0f, 0.0f, 0.0f, p.size,
-				1.0f, 0.0f, 0.0f, p.size,
-				1.0f, 1.0f, 0.0f, p.size, 
-				0.0f, 1.0f, 0.0f, p.size
+				0.0f, 0.0f, 0.0f, size,
+				1.0f, 0.0f, 0.0f, size,
+				1.0f, 1.0f, 0.0f, size, 
+				0.0f, 1.0f, 0.0f, size
 			};
 			AssignVertex(&result[0], t, offset, oneSize, 4);
 		} else if(el.name == "a_TexCoordVec4C1") {
@@ -54,7 +56,7 @@ std::vector<float> WPParticleRawGener::GenGLData(const Particle& p, const SceneV
 		} else if(el.name == "a_TexCoordC2") {
 			AssignVertexTimes(&result[0], {0.0f, 0.0f}, offset, oneSize, 4);
 		} else {
-			LOG_ERROR("unknown ...");
+			//LOG_ERROR("unknown ...");
 		}
 		offset+=4;
 	}

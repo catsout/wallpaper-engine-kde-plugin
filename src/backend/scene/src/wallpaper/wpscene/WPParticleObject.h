@@ -32,6 +32,7 @@ public:
     bool FromJson(const nlohmann::json&);
     std::vector<Emitter> emitters;
     std::vector<Initializer> initializers;
+    std::vector<nlohmann::json> operators;
     uint32_t maxcount;
     uint32_t starttime;
 };

@@ -33,10 +33,14 @@ bool Particle::FromJson(const nlohmann::json& json) {
         emitters.push_back(emi);
     }
     if(!json.contains("initializer")) return false;
+    if(!json.contains("operator")) return false;
     for(const auto& el:json.at("initializer")) {
         Initializer ini;
         ini.FromJson(el);
         initializers.push_back(ini);
+    }
+    for(const auto& el:json.at("operator")) {
+        operators.push_back(el);
     }
 	GET_JSON_NAME_VALUE(json, "maxcount", maxcount);
 	GET_JSON_NAME_VALUE(json, "starttime", starttime);

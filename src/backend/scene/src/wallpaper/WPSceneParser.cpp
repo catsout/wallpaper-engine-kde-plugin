@@ -13,7 +13,7 @@
 #include "wpscene/WPScene.h"
 
 #include "Particle/WPParticleRawGener.h"
-#include "Particle/ParticleInitializer.h"
+#include "WPParticleParser.h"
 
 #include <iostream>
 #include <sstream>
@@ -22,6 +22,7 @@
 #include <stack>
 #include <random>
 #include <cmath>
+#include <functional>
 
 using namespace wallpaper;
 
@@ -31,6 +32,8 @@ typedef std::unordered_map<std::string, int32_t> Combos;
 typedef std::unordered_map<std::string, std::string> WPAliasValueDict;
 
 typedef std::vector<std::pair<int32_t, std::string>> WPDefaultTexs;
+
+typedef std::function<float()> RandomFn;
 
 struct WPShaderInfo {
 	Combos combos;
@@ -125,29 +128,16 @@ void SetParticleMesh(SceneMesh& mesh, const wpscene::Particle& particle, uint32_
 	mesh.AddIndexArray(SceneIndexArray(count*2));
 }
 
-void LoadInitializer(ParticleSubSystem& pSys, const wpscene::Particle& wp) {
-	auto mapVertex = [](const std::vector<float>& v, float(*oper)(float)) {
-		std::vector<float> result; result.reserve(v.size());
-		for(const auto& x:v) result.push_back(oper(x));
-		return result;
-	};
+void LoadInitializer(ParticleSubSystem& pSys, const wpscene::Particle& wp, RandomFn& randomFn) {
 	for(const auto& ini:wp.initializers) {
-		if(ini.name == "lifetimerandom") {
-			pSys.AddInitializer(std::make_shared<ParticleInitLifeTime>(ini.min[0], ini.max[1]));
-		} else if(ini.name == "sizerandom") {
-			pSys.AddInitializer(std::make_shared<ParticleInitSize>(ini.min[0], ini.max[1]));
-		} else if(ini.name == "alpharandom") {
-			pSys.AddInitializer(std::make_shared<ParticleInitSize>(ini.min[0], ini.max[1]));
-		} else if(ini.name == "colorrandom") {
-			pSys.AddInitializer(std::make_shared<ParticleInitColor>(
-				mapVertex(ini.min, [](float x) {return x/255.0f;}), 
-				mapVertex(ini.max, [](float x) {return x/255.0f;})
-			));
-		}
-
+		pSys.AddInitializer(WPParticleParser::genParticleInitOp(ini, randomFn));
 	}
 }
-
+void LoadOperator(ParticleSubSystem& pSys, const wpscene::Particle& wp, RandomFn& randomFn) {
+	for(const auto& op:wp.operators) {
+		pSys.AddOperator(WPParticleParser::genParticleOperatorOp(op, randomFn));
+	}
+}
 
 std::string LoadGlslInclude(const std::string& input) {
 	std::string::size_type pos = 0;
@@ -481,6 +471,10 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 	wpscene::WPScene sc;
 	sc.FromJson(json);
 //	LOG_INFO(nlohmann::json(sc).dump(4));
+
+	auto ur = std::make_shared<std::uniform_real_distribution<float>>(0.0f, 1.0f);
+	auto randomSeed = std::make_shared<std::default_random_engine>();
+	RandomFn randomFn = [randomSeed, ur]() { return (*ur)(*randomSeed); };
 
 	std::vector<wpscene::WPImageObject> wpimgobjs;
 	std::vector<wpscene::WPParticleObject> wppartobjs;
@@ -862,9 +856,12 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 				wpemitter.distancemin,
 				wpemitter.distancemax,
 				wpemitter.rate,
-				maxcount
+				maxcount,
+				EmitterType::BOX,
+				randomFn
 			));
-			LoadInitializer(*particleSub, wppartobj.particleObj);
+			LoadInitializer(*particleSub, wppartobj.particleObj, randomFn);
+			LoadOperator(*particleSub, wppartobj.particleObj, randomFn);
 			upScene->paritileSys.subsystems.emplace_back(std::move(particleSub));
 			mesh.AddMaterial(std::move(material));
 			spNode->AddMesh(spMesh);
