@@ -8,40 +8,30 @@
 
 namespace wallpaper {
 
-enum class EmitterType {
-	BOX,
-	SPHERE
-};
-
 typedef std::function<void(Particle&)> ParticleInitOp;
 // particle index lifetime-percent passTime
 typedef std::function<void(Particle&, uint32_t, float, float)> ParticleOperatorOp;
 
-class ParticleEmitter {
-public:
-	ParticleEmitter(
-		float minDistance,
-		float maxDistance,
-		float emitNumPerSecond,
-		std::size_t maxcount,
-		EmitterType type,
-		std::function<float()> randomFn
-	);
-	~ParticleEmitter();
-	ParticleEmitter(ParticleEmitter&) = delete;	
-	ParticleEmitter(ParticleEmitter&&) = delete;	
+typedef std::function<void(std::vector<Particle>&, std::vector<ParticleInitOp>&, uint32_t maxcount, float timepass)> ParticleEmittOp;
 
-	uint32_t Emmit(std::vector<Particle>&, std::vector<ParticleInitOp>&);
-	void TimePass(float time);
+struct ParticleBoxEmitterArgs {
+	float directions[3];
+	float minDistance[3];
+	float maxDistance[3];
+	float emitSpeed;
+	std::function<float()> randomFn;
 
-private:
-	void Spwan(Particle& p, std::vector<ParticleInitOp>&);
-	float m_minDistance, m_maxDistance; 
-	float m_emitNumPerSecond;
-	std::size_t m_maxcount;
-	EmitterType m_type;
-	float m_time {0.0f};
-
-	std::function<float()> m_randomFn;
+	static ParticleEmittOp MakeEmittOp(ParticleBoxEmitterArgs);
 };
+
+struct ParticleSphereEmitterArgs {
+	float directions[3];
+	float minDistance;
+	float maxDistance;
+	float emitSpeed;
+	std::function<float()> randomFn;
+
+	static ParticleEmittOp MakeEmittOp(ParticleSphereEmitterArgs);
+};
+
 }

@@ -138,6 +138,11 @@ void LoadOperator(ParticleSubSystem& pSys, const wpscene::Particle& wp, RandomFn
 		pSys.AddOperator(WPParticleParser::genParticleOperatorOp(op, randomFn));
 	}
 }
+void LoadEmitter(ParticleSubSystem& pSys, const wpscene::Particle& wp, RandomFn& randomFn) {
+	for(const auto& em:wp.emitters) {
+		pSys.AddEmitter(WPParticleParser::genParticleEmittOp(em, randomFn));
+	}
+}
 
 std::string LoadGlslInclude(const std::string& input) {
 	std::string::size_type pos = 0;
@@ -541,7 +546,7 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 	upScene->cameras["global"] = std::make_shared<SceneCamera>(
 		int32_t(ortho.width / sc.general.zoom), 
 		int32_t(ortho.height / sc.general.zoom), 
-		-1.0f, 1.0f
+		-1000.0f, 1000.0f
 	);
 	upScene->activeCamera = upScene->cameras.at("global").get();
 
@@ -851,17 +856,12 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 			uint32_t maxcount = wppartobj.particleObj.maxcount % 1000;
 			SetParticleMesh(mesh, wppartobj.particleObj, maxcount, material.hasSprite);
 			const auto& wpemitter = wppartobj.particleObj.emitters[0];
-			auto particleSub = std::make_unique<ParticleSubSystem>(upScene->paritileSys, spMesh);
-			particleSub->AddEmitter(std::make_unique<ParticleEmitter>(
-				wpemitter.distancemin,
-				wpemitter.distancemax,
-				wpemitter.rate,
-				maxcount,
-				EmitterType::BOX,
-				randomFn
-			));
+			auto particleSub = std::make_unique<ParticleSubSystem>(upScene->paritileSys, spMesh, maxcount);
+
+			LoadEmitter(*particleSub, wppartobj.particleObj, randomFn);
 			LoadInitializer(*particleSub, wppartobj.particleObj, randomFn);
 			LoadOperator(*particleSub, wppartobj.particleObj, randomFn);
+
 			upScene->paritileSys.subsystems.emplace_back(std::move(particleSub));
 			mesh.AddMaterial(std::move(material));
 			spNode->AddMesh(spMesh);

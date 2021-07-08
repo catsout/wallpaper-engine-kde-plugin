@@ -18,7 +18,7 @@ struct Particle {
 	float lifetime {1.0f};
 	float lifetimeInit {1.0f};
 
-	float rotation[3] {0.0f}; // radian
+	float rotation[3] {0.0f}; // radian  z x y
 	float velocity[3] {0.0f};
 	float angularVelocity[3] {0.0f};
 };

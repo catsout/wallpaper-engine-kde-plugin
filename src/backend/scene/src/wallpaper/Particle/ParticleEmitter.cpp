@@ -9,63 +9,77 @@ static float GetRandomIn(float min, float max, float random) {
 	return min + (max - min)*random;
 }
 
-void GenBox(Particle& p, float min, float max, std::function<float()>& rfunc) {
-	auto gen = [&]() { return GetRandomIn(min, max, rfunc()); };
-	ParticleModify::MoveTo(p, gen(), gen(), 0);
-}
-
-void ParticleEmitter::Spwan(Particle& p, std::vector<ParticleInitOp>& initializers) {
-	p = Particle();
-	GenBox(p, m_minDistance, m_maxDistance, m_randomFn);
-	for(auto& el:initializers) {
-		el(p);
-	}
-}
-
-ParticleEmitter::ParticleEmitter(
-	float minDistance,
-	float maxDistance,
-	float emitNumPerSecond,
-	std::size_t maxcount,
-	EmitterType type,
-	std::function<float()> randomFn
-):  m_minDistance(minDistance),
-	m_maxDistance(maxDistance),
-	m_emitNumPerSecond(emitNumPerSecond),
-	m_maxcount(maxcount),
-	m_type(type),
-	m_randomFn(randomFn) {}
-ParticleEmitter::~ParticleEmitter() {}
+typedef std::function<Particle()> GenParticleOp;
+typedef std::function<Particle()> SpwanOp;
 
 int32_t FindLastParticle(const std::vector<Particle>& ps, int32_t last) {
 	for(int32_t i=last;i<ps.size();i++)
-		if(ps.at(i).lifetime <= 0.0f) {
+		if(!ParticleModify::LifetimeOk(ps.at(i))) {
 			return i;
 		}
 	return -1;
 }
-
-uint32_t ParticleEmitter::Emmit(std::vector<Particle>& particles, std::vector<ParticleInitOp>& initializers) {
+uint32_t GetEmitNum(double& timer, float speed) {
+	double emitDur = 1.0f / speed;	
+	if(emitDur > timer) return 0;
+	uint32_t num = timer / emitDur;
+	while(emitDur < timer) timer -= emitDur;
+	if(timer < 0) timer = 0;
+	return num;
+}
+uint32_t Emitt(std::vector<Particle>& particles, uint32_t num, uint32_t maxcount, SpwanOp Spwan) {
 	int32_t lastPartcle = 0;
-	float timeEmit = 1.0f / m_emitNumPerSecond;
-	if(timeEmit > m_time) return 0;
-	int32_t num = m_time / timeEmit;
-	while(timeEmit < m_time) m_time -= timeEmit;
-	if(m_time < 0) m_time = 0;
-	for(int32_t i=0;i<num;i++) {
+	uint32_t i = 0;
+	for(i=0;i<num;i++) {
 		lastPartcle = FindLastParticle(particles, lastPartcle);
 		if(lastPartcle == -1) {
 			lastPartcle = 0;
-			if(m_maxcount == particles.size()) return 0;
-			particles.push_back(Particle());
-			Spwan(particles.back(), initializers);
+			if(maxcount == particles.size()) break;
+			particles.push_back(Spwan());
 		} else {
-			Spwan(particles.at(lastPartcle), initializers);
+			particles[lastPartcle] = Spwan();
 		}
 	}
-	return num;
+	return i + 1;
 }
 
-void ParticleEmitter::TimePass(float time) {
-	m_time += time;
+Particle Spwan(GenParticleOp gen, std::vector<ParticleInitOp>& inis) {
+	auto particle = gen();
+	for(auto& el:inis) el(particle);
+	return particle;
+}
+
+ParticleEmittOp ParticleBoxEmitterArgs::MakeEmittOp(ParticleBoxEmitterArgs a) {
+	double timer {0.0f};
+	return [a, timer](std::vector<Particle>& ps, std::vector<ParticleInitOp>& inis, uint32_t maxcount, float timepass) mutable {
+		timer += timepass;
+		auto GenBox = [&]() {
+			std::vector<float> pos;
+			for(int32_t i=0;i<3;i++)
+				pos.push_back(GetRandomIn(a.minDistance[i], a.maxDistance[i], a.randomFn()));
+			auto p = Particle();
+			ParticleModify::MoveTo(p, pos[0], pos[1], 0);
+			return p;
+		};
+		Emitt(ps, GetEmitNum(timer, a.emitSpeed), maxcount, [&]() {
+			return Spwan(GenBox, inis);
+		});
+	};
+}
+
+ParticleEmittOp ParticleSphereEmitterArgs::MakeEmittOp(ParticleSphereEmitterArgs a) {
+	double timer {0.0f};
+	return [a, timer](std::vector<Particle>& ps, std::vector<ParticleInitOp>& inis, uint32_t maxcount, float timepass) mutable {
+		timer += timepass;
+		auto GenSphere = [&]() {
+			auto p = Particle();
+			float radius = GetRandomIn(a.minDistance, a.maxDistance, a.randomFn());
+			ParticleModify::MoveTo(p, radius, 0, 0);
+			ParticleModify::RotatePos(p, 0, 0, 360*a.randomFn());
+			return p;
+		};
+		Emitt(ps, GetEmitNum(timer, a.emitSpeed), maxcount, [&]() {
+			return Spwan(GenSphere, inis);
+		});
+	};
 }

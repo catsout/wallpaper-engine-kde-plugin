@@ -44,17 +44,18 @@ std::vector<float> WPParticleRawGener::GenGLData(const Particle& p, const SceneV
 		} else if(el.name == "a_Color") {
 			AssignVertexTimes(&result[0], {p.color[0], p.color[1], p.color[2], p.alpha}, offset, oneSize, 4);
 		} else if(el.name == "a_TexCoordVec4") {
+			float rz = p.rotation[2];
 			std::vector<float> t = {
-				0.0f, 0.0f, 0.0f, size,
-				1.0f, 0.0f, 0.0f, size,
-				1.0f, 1.0f, 0.0f, size, 
-				0.0f, 1.0f, 0.0f, size
+				0.0f, 0.0f, rz, size,
+				1.0f, 0.0f, rz, size,
+				1.0f, 1.0f, rz, size, 
+				0.0f, 1.0f, rz, size
 			};
 			AssignVertex(&result[0], t, offset, oneSize, 4);
 		} else if(el.name == "a_TexCoordVec4C1") {
 			AssignVertexTimes(&result[0], {1.0f, 0.0f, 0.0f, p.lifetime}, offset, oneSize, 4);
 		} else if(el.name == "a_TexCoordC2") {
-			AssignVertexTimes(&result[0], {0.0f, 0.0f}, offset, oneSize, 4);
+			AssignVertexTimes(&result[0], {p.rotation[0], p.rotation[1]}, offset, oneSize, 4);
 		} else {
 			//LOG_ERROR("unknown ...");
 		}

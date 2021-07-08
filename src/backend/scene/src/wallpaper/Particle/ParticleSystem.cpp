@@ -19,8 +19,8 @@ void updateIndexArray(std::size_t index, std::size_t count, SceneIndexArray& iar
 	iarray.Assign(index*6, &indexs[0], count*6);
 }
 
-void ParticleSubSystem::AddEmitter(std::unique_ptr<ParticleEmitter> em) {
-	m_emiters.emplace_back(std::move(em));
+void ParticleSubSystem::AddEmitter(ParticleEmittOp&& em) {
+	m_emiters.emplace_back(em);
 }
 
 
@@ -34,9 +34,8 @@ void ParticleSubSystem::AddOperator(ParticleOperatorOp&& op) {
 
 void ParticleSubSystem::Emitt() {
 	auto frameTime = parent.scene.frameTime;
-	for(auto& el:m_emiters) {
-		el->TimePass(frameTime);
-		int32_t x = el->Emmit(m_particles, m_initializers);
+	for(auto& emittOp:m_emiters) {
+		emittOp(m_particles, m_initializers, m_maxcount, frameTime);	
 	}
 
 	uint32_t i = 0;

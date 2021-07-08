@@ -11,23 +11,26 @@ class ParticleSystem;
 
 class ParticleSubSystem {
 public:
-	ParticleSubSystem(ParticleSystem& p, std::shared_ptr<SceneMesh> sm):parent(p),m_mesh(sm) {};
+	ParticleSubSystem(ParticleSystem& p, std::shared_ptr<SceneMesh> sm, uint32_t maxcount)
+		:parent(p),m_mesh(sm),m_maxcount(maxcount) {};
 	ParticleSubSystem(ParticleSubSystem&) = delete;
 	ParticleSubSystem(ParticleSubSystem&&) = delete;
 
 	void Emitt();
 
-	void AddEmitter(std::unique_ptr<ParticleEmitter>);
+	void AddEmitter(ParticleEmittOp&&);
 	void AddInitializer(ParticleInitOp&&);
 	void AddOperator(ParticleOperatorOp&&);
 private:
 	ParticleSystem& parent;
 	std::shared_ptr<SceneMesh> m_mesh;
-	std::vector<std::unique_ptr<ParticleEmitter>> m_emiters;
+//	std::vector<std::unique_ptr<ParticleEmitter>> m_emiters;
+	std::vector<ParticleEmittOp> m_emiters;
 
 	std::vector<Particle> m_particles;
 	std::vector<ParticleInitOp> m_initializers;
 	std::vector<ParticleOperatorOp> m_operators;
+	uint32_t m_maxcount;
 };
 
 class Scene;

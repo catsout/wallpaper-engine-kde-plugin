@@ -8,5 +8,6 @@ public:
 	typedef std::function<float()> RandomFn;
 	static ParticleInitOp genParticleInitOp(const wpscene::Initializer&, RandomFn);
 	static ParticleOperatorOp genParticleOperatorOp(const nlohmann::json&, RandomFn);
+	static ParticleEmittOp genParticleEmittOp(const wpscene::Emitter&, RandomFn);
 };
 }
