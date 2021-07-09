@@ -34,19 +34,23 @@ void ParticleSubSystem::AddOperator(ParticleOperatorOp&& op) {
 
 void ParticleSubSystem::Emitt() {
 	auto frameTime = parent.scene.frameTime;
+	double particleTime = frameTime * m_rate;
 	for(auto& emittOp:m_emiters) {
-		emittOp(m_particles, m_initializers, m_maxcount, frameTime);	
+		emittOp(m_particles, m_initializers, m_maxcount, particleTime);	
 	}
 
 	uint32_t i = 0;
 	for(auto& p:m_particles) {
 		if(!ParticleModify::LifetimeOk(p)) { i++;continue; }
 		ParticleModify::Reset(p);
-		ParticleModify::ChangeLifetime(p, -frameTime);
+		ParticleModify::ChangeLifetime(p, -particleTime);
 		auto lifetimePos = ParticleModify::LifetimePos(p);
 		std::for_each(m_operators.begin(), m_operators.end(), [&](ParticleOperatorOp& op) {
-			op(p, i, lifetimePos, frameTime);
+			op(p, i, lifetimePos, particleTime);
 		});
+		if(i == 0) {
+			//LOG_INFO(std::to_string(p.velocity[1]));
+		}
 		i++;
 	}
 

@@ -592,6 +592,7 @@ void GLWrapper::RenderMesh(const SceneMesh& mesh) {
 
 	if(mesh.Dynamic() && mesh.Dirty()) {
 		const auto& varray = mesh.GetVertexArray(0);
+		const auto& iarray = mesh.GetIndexArray(0);
 		if(varray.CapacitySizeOf() > 0) {
 			glBindBuffer(GL_ARRAY_BUFFER, m_bufMap.at(varray.ID()));
 			void *old_data = glMapBufferRange(GL_ARRAY_BUFFER, 0, varray.CapacitySizeOf(),
@@ -603,7 +604,6 @@ void GLWrapper::RenderMesh(const SceneMesh& mesh) {
 			CHECK_GL_ERROR_IF_DEBUG();
 			glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-			const auto& iarray = mesh.GetIndexArray(0);
 			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_bufMap.at(iarray.ID()));
 			old_data = glMapBufferRange(GL_ELEMENT_ARRAY_BUFFER, 0, iarray.CapacitySizeof(),
 			GL_MAP_WRITE_BIT | GL_MAP_FLUSH_EXPLICIT_BIT);
@@ -612,7 +612,7 @@ void GLWrapper::RenderMesh(const SceneMesh& mesh) {
 			glFlushMappedBufferRange(GL_ELEMENT_ARRAY_BUFFER, 0, iarray.DataSizeOf());
 			glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
 			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-		}
+		} else return;
 	}
 
 	glBindVertexArray(m_vaoMap.at(mesh.ID()));

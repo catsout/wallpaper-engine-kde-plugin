@@ -22,6 +22,7 @@ public:
     std::vector<float> directions {1.0f, 0, 0};
 	std::vector<float> distancemax {256.0f};
 	std::vector<float> distancemin {0.0f};
+    std::vector<float> origin {0, 0, 0};
 	int32_t id;
 	std::string name;
 	float rate {1.0f};
@@ -31,10 +32,22 @@ class Particle {
 public:
     bool FromJson(const nlohmann::json&);
     std::vector<Emitter> emitters;
-    std::vector<Initializer> initializers;
+    std::vector<nlohmann::json> initializers;
     std::vector<nlohmann::json> operators;
     uint32_t maxcount;
     uint32_t starttime;
+};
+
+class ParticleInstanceoverride {
+public:
+    bool FromJosn(const nlohmann::json&);
+    float alpha {1.0f};
+    float count {1.0f};
+    float lifetime {1.0f};
+    float rate {1.0f};
+    float speed {1.0f};
+    float size {1.0f};
+    std::vector<float> colorn {1.0f, 1.0f, 1.0f};
 };
 
 class WPParticleObject {
@@ -51,6 +64,7 @@ public:
     std::string render;
     WPMaterial material;
     Particle particleObj;
+    ParticleInstanceoverride instanceoverride;
 };
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Initializer, name, max, min);

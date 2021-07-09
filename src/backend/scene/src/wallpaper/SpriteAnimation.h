@@ -13,6 +13,8 @@ struct SpriteFrame {
 	float width;
 	float height;
 
+	float rate; // real h / w
+
 	float unk0;
 	float unk1;
 };

@@ -17,15 +17,17 @@ public:
 	static bool LifetimeOk(const Particle&);
 
 	static void InitColor(Particle&, float r, float g, float b);
+	static void ChangeColor(Particle&, float r, float g, float b);
 	static void InitLifetime(Particle&, float l);
 	static void InitSize(Particle&, float);
 	static void InitAlpha(Particle&, float);
-	static void InitVelocity(Particle&, float x, float y, float z);
-	static void InitRotation(Particle&, float x, float y, float z);
-	static void InitAngularVelocity(Particle&, float x, float y, float z);
+	static void InitVelocity(Particle&, float x, float y, float z, float mutiply = 1.0f);
+	static void ChangeRotation(Particle&, float x, float y, float z);
 
-	static void ChangeVelocity(Particle&, float x, float y, float z);
+	static void ChangeVelocity(Particle&, float x, float y, float z, float mutiply = 1.0f);
 	static void Accelerate(Particle&, const std::vector<float> & acc, float t);
+	static std::vector<float> GetDrag(Particle&, float s);
+	static std::vector<float> GetAngularDrag(Particle&, float s);
 
 	static void ChangeAngularVelocity(Particle&, float x, float y, float z);
 	static void AngularAccelerate(Particle&, const std::vector<float> & acc, float t);
@@ -34,6 +36,7 @@ public:
 
 	static void MutiplyAlpha(Particle&, float);
 	static void MutiplySize(Particle&, float);
+	static void MutiplyColor(Particle&, float r, float g, float b);
 	static void Reset(Particle&);
 };
 }

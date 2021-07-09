@@ -1,6 +1,9 @@
 #include "ParticleModify.h"
 #include "Log.h"
 #include <cstring>
+#include <cmath>
+#include <algorithm>
+#include <numeric>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -10,7 +13,7 @@ using namespace wallpaper;
 
 void ParticleModify::Move(Particle &p, float x, float y, float z) {
 	p.position[0] += x;
-	p.position[1] -= y;
+	p.position[1] += y;
 	p.position[2] += z;
 }
 
@@ -41,6 +44,11 @@ void ParticleModify::InitColor(Particle &p, float r, float g, float b) {
 	p.color[2] = b;
 	std::memcpy(p.colorInit, p.color, 3 * sizeof(float));
 }
+void ParticleModify::ChangeColor(Particle &p, float r, float g, float b) {
+	p.color[0] += r;
+	p.color[1] += g;
+	p.color[2] += b;
+}
 
 void ParticleModify::ChangeLifetime(Particle &p, float l) {
 	p.lifetime += l;
@@ -58,22 +66,17 @@ void ParticleModify::InitAlpha(Particle &p, float a) {
 	p.alphaInit = a;
 }
 
-void ParticleModify::InitVelocity(Particle &p, float x, float y, float z) {
-	p.velocity[0] = x;
-	p.velocity[1] = y;
-	p.velocity[2] = z;
+void ParticleModify::InitVelocity(Particle &p, float x, float y, float z, float mutiply) {
+	p.velocity[0] = x * mutiply;
+	p.velocity[1] = y * mutiply;
+	p.velocity[2] = z * mutiply;
 }
 
-void ParticleModify::InitAngularVelocity(Particle &p, float x, float y, float z) {
-	p.angularVelocity[0] = x;
-	p.angularVelocity[1] = y;
-	p.angularVelocity[2] = z;
-}
 
-void ParticleModify::InitRotation(Particle &p, float x, float y, float z) {
-	p.rotation[0] = x;
-	p.rotation[1] = y;
-	p.rotation[2] = z;
+void ParticleModify::ChangeRotation(Particle &p, float x, float y, float z) {
+	p.rotation[0] += x;
+	p.rotation[1] += y;
+	p.rotation[2] += z;
 }
 
 void ParticleModify::MutiplyAlpha(Particle &p, float x) {
@@ -81,6 +84,11 @@ void ParticleModify::MutiplyAlpha(Particle &p, float x) {
 }
 void ParticleModify::MutiplySize(Particle &p, float x) {
 	p.size *= x;
+}
+void ParticleModify::MutiplyColor(Particle &p, float r, float g, float b) {
+	p.color[0] *= r;
+	p.color[1] *= g;
+	p.color[2] *= b;
 }
 
 float ParticleModify::LifetimePos(const Particle &p) {
@@ -97,15 +105,37 @@ bool ParticleModify::LifetimeOk(const Particle &p) {
 	return p.lifetime > 0.0f;
 }
 
-void ParticleModify::ChangeVelocity(Particle &p, float x, float y, float z) {
-	p.velocity[0] += x;
-	p.velocity[1] += y;
-	p.velocity[2] += z;
+void ParticleModify::ChangeVelocity(Particle &p, float x, float y, float z, float mutiply) {
+	p.velocity[0] += x * mutiply;
+	p.velocity[1] += y * mutiply;
+	p.velocity[2] += z * mutiply;
 }
 void ParticleModify::Accelerate(Particle &p, const std::vector<float> &acc, float t) {
 	if(acc.size() != 3) return;
 	ChangeVelocity(p, acc[0]*t, acc[1]*t, acc[2]*t);
 }
+std::vector<float> ParticleModify::GetDrag(Particle& p, float s) {
+	std::vector<float> velocity(p.velocity, p.velocity + 3);
+	/*
+	double size = std::sqrt(std::accumulate(velocity.begin(), velocity.end(), 0.0f, [](double v1, float v2) {
+		return v1 + v2*v2;	
+	}));
+	if(size == 0.0f) return velocity;
+	*/
+	std::transform(velocity.begin(), velocity.end(), velocity.begin(), [=](float v) {
+		return -v*s; // size;
+	});
+	return velocity;
+}
+
+std::vector<float> ParticleModify::GetAngularDrag(Particle &p, float s) {
+	std::vector<float> result(p.rotation, p.rotation + 3);
+	std::transform(result.begin(), result.end(), result.begin(), [=](float v) {
+		return -v*s;
+	});
+	return result;
+}
+
 void ParticleModify::ChangeAngularVelocity(Particle &p, float x, float y, float z) {
 	p.angularVelocity[0] += x;
 	p.angularVelocity[1] += y;

@@ -128,9 +128,9 @@ void SetParticleMesh(SceneMesh& mesh, const wpscene::Particle& particle, uint32_
 	mesh.AddIndexArray(SceneIndexArray(count*2));
 }
 
-void LoadInitializer(ParticleSubSystem& pSys, const wpscene::Particle& wp, RandomFn& randomFn) {
+void LoadInitializer(ParticleSubSystem& pSys, const wpscene::Particle& wp, const wpscene::ParticleInstanceoverride& over, RandomFn& randomFn) {
 	for(const auto& ini:wp.initializers) {
-		pSys.AddInitializer(WPParticleParser::genParticleInitOp(ini, randomFn));
+		pSys.AddInitializer(WPParticleParser::genParticleInitOp(ini, over, randomFn));
 	}
 }
 void LoadOperator(ParticleSubSystem& pSys, const wpscene::Particle& wp, RandomFn& randomFn) {
@@ -138,9 +138,11 @@ void LoadOperator(ParticleSubSystem& pSys, const wpscene::Particle& wp, RandomFn
 		pSys.AddOperator(WPParticleParser::genParticleOperatorOp(op, randomFn));
 	}
 }
-void LoadEmitter(ParticleSubSystem& pSys, const wpscene::Particle& wp, RandomFn& randomFn) {
+void LoadEmitter(ParticleSubSystem& pSys, const wpscene::Particle& wp, float rate, RandomFn& randomFn) {
 	for(const auto& em:wp.emitters) {
-		pSys.AddEmitter(WPParticleParser::genParticleEmittOp(em, randomFn));
+		auto newEm = em;
+		newEm.rate *= rate;
+		pSys.AddEmitter(WPParticleParser::genParticleEmittOp(newEm, randomFn));
 	}
 }
 
@@ -366,8 +368,12 @@ void LoadMaterial(const wpscene::WPMaterial& wpmat, Scene* pScene, SceneNode* pN
 	
 	for(int32_t i=0;i<textures.size();i++) {
 		std::string name = textures.at(i);
-		if(name == "_rt_FullFrameBuffer")
-			name = "_rt_default";
+		if(name == "_rt_FullFrameBuffer") {
+			if(wpmat.shader == "genericparticle") {
+				name = "_rt_ParticleRefract";
+			}
+			else name = "_rt_default";
+		}
 		if(name.compare(0, 6, "_rt_im") == 0) {
 			name = "";
 			LOG_ERROR("unsupported layer texture");
@@ -375,7 +381,7 @@ void LoadMaterial(const wpscene::WPMaterial& wpmat, Scene* pScene, SceneNode* pN
 		material.textures.push_back(name);
 		material.defines.push_back("g_Texture" + std::to_string(i));
 		if(name.empty()) {
-			LOG_ERROR("empty texture name");
+			//LOG_ERROR("empty texture name");
 			continue;
 		}
 		std::vector<float> resolution;
@@ -432,7 +438,7 @@ void LoadMaterial(const wpscene::WPMaterial& wpmat, Scene* pScene, SceneNode* pN
 						f1.width,
 						f1.height,
 						(float)(texh->spriteAnim.numFrames()),
-						f1.height/f1.width	
+						f1.rate
 					}};
 				}
 			}
@@ -550,10 +556,28 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 	);
 	upScene->activeCamera = upScene->cameras.at("global").get();
 
+	ShaderValues globalBaseConstSvs;
+	globalBaseConstSvs["g_ViewUp"] = {"g_ViewUp", {0.0f, 1.0f, 0}};
+	globalBaseConstSvs["g_ViewRight"]= {"g_ViewRight", {1.0f, 0, 0}};
+	globalBaseConstSvs["g_ViewForward"]= {"g_ViewForward", {0, 0, -1.0f}};
+	globalBaseConstSvs["g_EyePosition"]= {"g_EyePosition", {0, 0, 0}};
+
 	std::vector<float> cori{ortho.width/2.0f,ortho.height/2.0f,0},cscale{1.0f,1.0f,1.0f},cangle(3);
 	auto spCamNode = std::make_shared<SceneNode>(cori, cscale, cangle);
 	upScene->activeCamera->AttatchNode(spCamNode);
 	upScene->sceneGraph->AppendChild(spCamNode);
+
+	// particle refract framebuffer
+	{
+		auto rtname = "_rt_ParticleRefract";
+		SceneRenderTarget rt;	
+		upScene->renderTargets[rtname] = rt;
+		SceneBindRenderTarget rtb;
+		rtb.name = "_rt_default";
+		rtb.copy = true;
+		upScene->renderTargetBindMap[rtname] = rtb;
+	}
+
 
     for(const auto& indexT:indexTable) {
 		if(indexT.first == "image") {	
@@ -585,7 +609,7 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 
 			bool isCompose = (wpimgobj.image == "models/util/composelayer.json");
 			// skip no effect compose layer
-			// it's no the correct behaviour, but do it for now
+			// it's not the correct behaviour, but do it for now
 			if(!hasEffect && isCompose)
 				continue;
 
@@ -597,7 +621,7 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 			if(!hasEffect)
 				svData.parallaxDepth = wpimgobj.parallaxDepth;
 
-			ShaderValues baseConstSvs;
+			ShaderValues baseConstSvs = globalBaseConstSvs;
 			baseConstSvs["g_Alpha"] = {"g_Alpha", {wpimgobj.alpha}};
 			baseConstSvs["g_Color"] = {"g_Color", wpimgobj.color};
 			baseConstSvs["g_UserAlpha"] = {"g_UserAlpha", {wpimgobj.alpha}};
@@ -847,19 +871,27 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 			SceneMaterial material;
 			WPShaderValueData svData;
 			WPShaderInfo shaderInfo;
+			shaderInfo.baseConstSvs = globalBaseConstSvs;
 			shaderInfo.baseConstSvs["g_OrientationUp"] = {"g_OrientationUp", {0.0f, -1.0f, 0}};
 			shaderInfo.baseConstSvs["g_OrientationRight"]= {"g_OrientationRight", {1.0f, 0, 0}};
 			shaderInfo.baseConstSvs["g_OrientationForward"]= {"g_OrientationForward", {0, 0, 1.0f}};
+
 			LoadMaterial(wppartobj.material, upScene.get(), spNode.get(), &material, &svData, &shaderInfo);
 			auto spMesh = std::make_shared<SceneMesh>(true);
 			auto& mesh = *spMesh;
-			uint32_t maxcount = wppartobj.particleObj.maxcount % 1000;
+			uint32_t maxcount = wppartobj.particleObj.maxcount;
+			maxcount = maxcount > 4000 ? 4000 : maxcount;
 			SetParticleMesh(mesh, wppartobj.particleObj, maxcount, material.hasSprite);
 			const auto& wpemitter = wppartobj.particleObj.emitters[0];
-			auto particleSub = std::make_unique<ParticleSubSystem>(upScene->paritileSys, spMesh, maxcount);
+			auto particleSub = std::make_unique<ParticleSubSystem>(
+				upScene->paritileSys, 
+				spMesh, 
+				maxcount,
+				wppartobj.instanceoverride.rate
+			);
 
-			LoadEmitter(*particleSub, wppartobj.particleObj, randomFn);
-			LoadInitializer(*particleSub, wppartobj.particleObj, randomFn);
+			LoadEmitter(*particleSub, wppartobj.particleObj, wppartobj.instanceoverride.count, randomFn);
+			LoadInitializer(*particleSub, wppartobj.particleObj, wppartobj.instanceoverride, randomFn);
 			LoadOperator(*particleSub, wppartobj.particleObj, randomFn);
 
 			upScene->paritileSys.subsystems.emplace_back(std::move(particleSub));

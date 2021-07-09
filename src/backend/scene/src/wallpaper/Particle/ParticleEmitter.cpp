@@ -58,7 +58,8 @@ ParticleEmittOp ParticleBoxEmitterArgs::MakeEmittOp(ParticleBoxEmitterArgs a) {
 			for(int32_t i=0;i<3;i++)
 				pos.push_back(GetRandomIn(a.minDistance[i], a.maxDistance[i], a.randomFn()));
 			auto p = Particle();
-			ParticleModify::MoveTo(p, pos[0], pos[1], 0);
+			ParticleModify::MoveTo(p, pos[0], pos[1], pos[2]);
+			ParticleModify::Move(p, a.orgin[0], a.orgin[1], a.orgin[2]);
 			return p;
 		};
 		Emitt(ps, GetEmitNum(timer, a.emitSpeed), maxcount, [&]() {
@@ -76,6 +77,9 @@ ParticleEmittOp ParticleSphereEmitterArgs::MakeEmittOp(ParticleSphereEmitterArgs
 			float radius = GetRandomIn(a.minDistance, a.maxDistance, a.randomFn());
 			ParticleModify::MoveTo(p, radius, 0, 0);
 			ParticleModify::RotatePos(p, 0, 0, 360*a.randomFn());
+			ParticleModify::RotatePos(p, 0, 360*a.randomFn(), 0);
+			ParticleModify::RotatePos(p, 360*a.randomFn(), 0, 0);
+			ParticleModify::Move(p, a.orgin[0], a.orgin[1], a.orgin[2]);
 			return p;
 		};
 		Emitt(ps, GetEmitNum(timer, a.emitSpeed), maxcount, [&]() {

@@ -7,14 +7,6 @@
 
 using namespace wallpaper::wpscene;
 
-
-bool Initializer::FromJson(const nlohmann::json& json) {
-    GET_JSON_NAME_VALUE(json, "name", name);
-    GET_JSON_NAME_VALUE_NOWARN(json, "max", max);
-    GET_JSON_NAME_VALUE_NOWARN(json, "min", min);
-    return true;
-}
-
 bool Emitter::FromJson(const nlohmann::json& json) {
     GET_JSON_NAME_VALUE(json, "name", name);
     GET_JSON_NAME_VALUE(json, "id", id);
@@ -22,8 +14,21 @@ bool Emitter::FromJson(const nlohmann::json& json) {
     GET_JSON_NAME_VALUE_NOWARN(json, "distancemin", distancemin);
     GET_JSON_NAME_VALUE_NOWARN(json, "rate", rate);
     GET_JSON_NAME_VALUE_NOWARN(json, "directions", directions);
+    GET_JSON_NAME_VALUE_NOWARN(json, "origin", origin);
     return true;
 }
+
+bool ParticleInstanceoverride::FromJosn(const nlohmann::json& json) {
+    GET_JSON_NAME_VALUE_NOWARN(json, "alpha", alpha);
+    GET_JSON_NAME_VALUE_NOWARN(json, "size", size);
+    GET_JSON_NAME_VALUE_NOWARN(json, "lifetime", lifetime);
+    GET_JSON_NAME_VALUE_NOWARN(json, "rate", rate);
+    GET_JSON_NAME_VALUE_NOWARN(json, "speed", speed);
+    GET_JSON_NAME_VALUE_NOWARN(json, "count", count);
+    GET_JSON_NAME_VALUE_NOWARN(json, "colorn", colorn);
+    if(colorn.size() == 1) colorn.resize(3, colorn[0]);
+    return true;
+};
 
 bool Particle::FromJson(const nlohmann::json& json) {
     if(!json.contains("emitter")) return false;
@@ -34,10 +39,9 @@ bool Particle::FromJson(const nlohmann::json& json) {
     }
     if(!json.contains("initializer")) return false;
     if(!json.contains("operator")) return false;
+
     for(const auto& el:json.at("initializer")) {
-        Initializer ini;
-        ini.FromJson(el);
-        initializers.push_back(ini);
+        initializers.push_back(el);
     }
     for(const auto& el:json.at("operator")) {
         operators.push_back(el);
@@ -59,12 +63,15 @@ bool WPParticleObject::FromJson(const nlohmann::json& json) {
 	GET_JSON_NAME_VALUE(json, "scale", scale);	
 	GET_JSON_NAME_VALUE_NOWARN(json, "parallaxDepth", parallaxDepth);
 
+    if(json.contains("instanceoverride") && !json.at("instanceoverride").is_null()) {
+        instanceoverride.FromJosn(json.at("instanceoverride"));
+    }
+
     nlohmann::json jParticle;
     if(!PARSE_JSON(fs::GetContent(WallpaperGL::GetPkgfs(), particle), jParticle))
         return false;
     if(!particleObj.FromJson(jParticle))
         return false;
-
     if(jParticle.contains("material")) {
         std::string matPath;
 		GET_JSON_NAME_VALUE(jParticle, "material", matPath);	

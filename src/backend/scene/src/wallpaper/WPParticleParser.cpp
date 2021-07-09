@@ -4,6 +4,11 @@
 #include <memory>
 #include <algorithm>
 #include <cmath>
+
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 #include "Log.h"
 
 using namespace wallpaper;
@@ -18,19 +23,20 @@ static float GetRandomIn(float min, float max, float random) {
 	return min + (max - min)*random;
 }
 
-void Color(Particle& p, RandomFn& rf, cFloats min, cFloats max) {
-	Floats result {0, 1, 2};
+void Color(Particle& p, RandomFn& rf, cFloats min, cFloats max, cFloats mutiply) {
 	float random = rf();
-	std::transform(result.begin(), result.end(), result.begin(), [&](float i) {
-		return GetRandomIn(min.at(i), max.at(i), random);
+	Floats result(3);
+	std::transform(min.begin(), min.end(), max.begin(), result.begin(), [&](float a, float b) {
+		return GetRandomIn(a, b, random);
 	});
+	std::transform(result.begin(), result.end(), mutiply.begin(), result.begin(), [&](float v, float m) { return v*m; });
 	PM::InitColor(p, result[0], result[1], result[2]);
 }
 
 std::vector<float> GenRandomVec3(const RandomFn& rf, cFloats min, cFloats max) {
-	Floats result {0, 1, 2};
-	std::transform(result.begin(), result.end(), result.begin(), [&](float i) {
-		return GetRandomIn(min.at(i), max.at(i), rf());
+	Floats result(3);
+	std::transform(min.begin(), min.end(), max.begin(), result.begin(), [&](float a, float b) {
+		return GetRandomIn(a, b, rf());
 	});
 	return result;
 }
@@ -40,39 +46,119 @@ std::vector<float> GetValidVec(const std::vector<float>& v, uint32_t num, float 
 	return re;
 }
 
-ParticleInitOp WPParticleParser::genParticleInitOp(const wpscene::Initializer& ini, RandomFn rf) {
-	using namespace std::placeholders;
-	auto mapVertex = [](const std::vector<float>& v, float(*oper)(float)) {
-		std::vector<float> result; result.reserve(v.size());
-		for(const auto& x:v) result.push_back(oper(x));
-		return result;
+struct SingleRandom {
+	float min {0.0f};
+	float max {0.0f};
+	float exponent {1.0f};
+	static void ReadFromJson(const nlohmann::json& j, SingleRandom& r) {
+		GET_JSON_NAME_VALUE_NOWARN(j, "min", r.min);
+		GET_JSON_NAME_VALUE_NOWARN(j, "max", r.max);
 	};
-	if(ini.name == "colorrandom") {
-		return std::bind(Color, _1, rf, 
-			mapVertex(GetValidVec(ini.min, 3, 0.0f), [](float x) {return x/255.0f;}), 
-			mapVertex(GetValidVec(ini.max,3, 0.0f), [](float x) {return x/255.0f;}));
-	} else if(ini.name == "lifetimerandom") {
-		return [ini, rf](Particle& p) { PM::InitLifetime(p, GetRandomIn(ini.min[0], ini.max[0], rf()));};
-	} else if(ini.name == "sizerandom") {
-		return [ini, rf](Particle& p) { PM::InitSize(p, GetRandomIn(ini.min[0], ini.max[0], rf())); };
-	} else if(ini.name == "alpharandom") {
-		return [ini, rf](Particle& p) { PM::InitAlpha(p, GetRandomIn(ini.min[0], ini.max[0], rf())); };
-	} else if(ini.name == "velocityrandom") {
-		return [ini, rf](Particle& p) { 
-			auto result = GenRandomVec3(rf, GetValidVec(ini.min, 3, 0.0f), GetValidVec(ini.max, 3, 0.0f));
-			PM::InitVelocity(p, result[0], result[1], result[2]);
-		};
-	} else if(ini.name == "rotationrandom") {
-		return [ini, rf](Particle& p) { 
-			auto result = GenRandomVec3(rf, GetValidVec(ini.min, 3, 0.0f), GetValidVec(ini.max, 3, 0.0f));
-			PM::InitRotation(p, result[0], result[1], result[2]);
-		};
-	} else if(ini.name == "angularvelocityrandom") {
-		return [ini, rf](Particle& p) { 
-			auto result = GenRandomVec3(rf, GetValidVec(ini.min, 3, 0.0f), GetValidVec(ini.max, 3, 0.0f));
-			PM::InitAngularVelocity(p, result[0], result[1], result[2]);
-		};
-	}
+};
+struct VecRandom {
+	Floats min {0.0f, 0.0f, 0.0f};
+	Floats max {0.0f, 0.0f, 0.0f};
+	float exponent {1.0f};
+	static void ReadFromJson(const nlohmann::json& j, VecRandom& r) {
+		GET_JSON_NAME_VALUE_NOWARN(j, "min", r.min);
+		GET_JSON_NAME_VALUE_NOWARN(j, "max", r.max);
+		r.min = GetValidVec(r.min, 3, r.min[0]);
+		r.max = GetValidVec(r.max, 3, r.max[0]);
+	};
+};
+struct TurbulentRandom{
+	float scale {1.0f};
+    float timescale {1.0f};
+    float offset {0.0f};
+    float speedmin {100.0f};
+    float speedmax {250.0f};
+    float phasemin {0.0f};
+    float phasemax {0.1f};
+    Floats forward {0.0f, 1.0f, 0.0f}; // x y z
+    Floats right {0.0f, 0.0f, 1.0f};
+    Floats up {1.0f, 0.0f, 0.0f};
+	static void ReadFromJson(const nlohmann::json& j, TurbulentRandom& r) {
+		GET_JSON_NAME_VALUE_NOWARN(j, "scale", r.scale);
+		GET_JSON_NAME_VALUE_NOWARN(j, "timescale", r.timescale);
+		GET_JSON_NAME_VALUE_NOWARN(j, "offset", r.offset);
+		GET_JSON_NAME_VALUE_NOWARN(j, "speedmin", r.speedmin);
+		GET_JSON_NAME_VALUE_NOWARN(j, "speedmax", r.speedmax);
+		GET_JSON_NAME_VALUE_NOWARN(j, "phasemin", r.phasemin);
+		GET_JSON_NAME_VALUE_NOWARN(j, "phasemax", r.phasemax);
+		GET_JSON_NAME_VALUE_NOWARN(j, "forward", r.forward);
+		GET_JSON_NAME_VALUE_NOWARN(j, "right", r.right);
+		GET_JSON_NAME_VALUE_NOWARN(j, "up", r.up);
+	};
+};
+Floats mapVertex(cFloats v, float(*oper)(float)) {
+	Floats result; result.reserve(v.size());
+	for(const auto& x:v) result.push_back(oper(x));
+	return result;
+};
+
+
+ParticleInitOp WPParticleParser::genParticleInitOp(const nlohmann::json& wpj, const wpscene::ParticleInstanceoverride& over, RandomFn rf) {
+	using namespace std::placeholders;
+	do {
+		if(!wpj.contains("name")) break;
+		std::string name;
+		GET_JSON_NAME_VALUE(wpj, "name", name);
+
+		if(name == "colorrandom") {
+			VecRandom r;
+			r.min = {0.0f, 0.0f, 0.0f};
+			r.max = {255.0f, 255.0f, 255.0f};
+			VecRandom::ReadFromJson(wpj, r);
+			return std::bind(Color, _1, rf, 
+				mapVertex(r.min, [](float x) {return x/255.0f;}), 
+				mapVertex(r.max, [](float x) {return x/255.0f;}),
+				over.colorn);
+		} else if(name == "lifetimerandom") {
+			SingleRandom r = {0.0f, 1.0f};
+			SingleRandom::ReadFromJson(wpj, r);
+			return [=](Particle& p) { PM::InitLifetime(p, over.lifetime * GetRandomIn(r.min, r.max, rf()));};
+		} else if(name == "sizerandom") {
+			SingleRandom r = {0.0f, 20.0f};
+			SingleRandom::ReadFromJson(wpj, r);
+			return [=](Particle& p) { PM::InitSize(p, over.size * GetRandomIn(r.min, r.max, rf())); };
+		} else if(name == "alpharandom") {
+			SingleRandom r = {1.0f, 1.0f};
+			SingleRandom::ReadFromJson(wpj, r);
+			return [=](Particle& p) { PM::InitAlpha(p, over.alpha * GetRandomIn(r.min, r.max, rf())); };
+		} else if(name == "velocityrandom") {
+			VecRandom r;
+			VecRandom::ReadFromJson(wpj, r);
+			return [=](Particle& p) { 
+				auto result = GenRandomVec3(rf, r.min, r.max);
+				PM::ChangeVelocity(p, result[0], result[1], result[2], over.speed);
+			};
+		} else if(name == "rotationrandom") {
+			VecRandom r;
+			VecRandom::ReadFromJson(wpj, r);
+			return [=](Particle& p) { 
+				auto result = GenRandomVec3(rf, r.min, r.max);
+				PM::ChangeRotation(p, result[0], result[1], result[2]);
+			};
+		} else if(name == "angularvelocityrandom") {
+			VecRandom r;
+			VecRandom::ReadFromJson(wpj, r);
+			return [=](Particle& p) { 
+				auto result = GenRandomVec3(rf, r.min, r.max);
+				PM::ChangeAngularVelocity(p, result[0], result[1], result[2]);
+			};
+		} else if(name  == "turbulentvelocityrandom") {
+			TurbulentRandom r;
+			TurbulentRandom::ReadFromJson(wpj, r);
+			return [=](Particle& p) {
+				float speed = GetRandomIn(r.speedmin, r.speedmax, rf());
+				glm::vec3 result = glm::make_vec3(&r.forward[0]) * speed;
+				glm::mat4 rotate(1.0f);
+				rotate = glm::rotate(rotate, r.offset, glm::make_vec3(&r.right[0]));
+				result = rotate * glm::vec4(result, 1.0f);	
+				return PM::ChangeVelocity(p, result.x, result.y, result.z, over.speed);
+			};
+		}
+	} while(false);
 	return [](Particle&) {};
 }
 
@@ -93,10 +179,10 @@ struct ValueChange {
 
 	static auto ReadFromJson(const nlohmann::json& j) {
 		ValueChange v;
-		GET_JSON_NAME_VALUE(j, "starttime", v.starttime);
-		GET_JSON_NAME_VALUE(j, "endtime", v.endtime);
-		GET_JSON_NAME_VALUE(j, "startvalue", v.startvalue);
-		GET_JSON_NAME_VALUE(j, "endvalue", v.endvalue);
+		GET_JSON_NAME_VALUE_NOWARN(j, "starttime", v.starttime);
+		GET_JSON_NAME_VALUE_NOWARN(j, "endtime", v.endtime);
+		GET_JSON_NAME_VALUE_NOWARN(j, "startvalue", v.startvalue);
+		GET_JSON_NAME_VALUE_NOWARN(j, "endvalue", v.endvalue);
 		return v;
 	}
 };
@@ -109,8 +195,25 @@ float FadeValueChange(float life, const ValueChange& v) {
 	}
 }
 
+struct VecChange {
+	float starttime {0};
+	float endtime {1.0f};
+	Floats startvalue {0.0f, 0.0f, 0.0f};
+	Floats endvalue {0.0f, 0.0f, 0.0f};
+	static auto ReadFromJson(const nlohmann::json& j) {
+		VecChange v;
+		GET_JSON_NAME_VALUE_NOWARN(j, "starttime", v.starttime);
+		GET_JSON_NAME_VALUE_NOWARN(j, "endtime", v.endtime);
+		GET_JSON_NAME_VALUE_NOWARN(j, "startvalue", v.startvalue);
+		GET_JSON_NAME_VALUE_NOWARN(j, "endvalue", v.endvalue);
+		return v;
+	}
+};
+
+
 static const double pi = std::atan(1)*4;
 struct FrequencyValue {
+	Floats mask {1.0f, 1.0f, 1.0f};
 	float frequencymin {0.0f};
 	float frequencymax {10.0f};
 	float scalemin {0.0f};
@@ -124,13 +227,14 @@ struct FrequencyValue {
 	std::vector<StorageRandom> storage;
 	static auto ReadFromJson(const nlohmann::json& j) {
 		FrequencyValue v;
-		GET_JSON_NAME_VALUE(j, "frequencymin", v.frequencymin);
-		GET_JSON_NAME_VALUE(j, "frequencymax", v.frequencymax);
+		GET_JSON_NAME_VALUE_NOWARN(j, "frequencymin", v.frequencymin);
+		GET_JSON_NAME_VALUE_NOWARN(j, "frequencymax", v.frequencymax);
 		if(v.frequencymax == 0.0f) v.frequencymax = v.frequencymin;
-		GET_JSON_NAME_VALUE(j, "scalemin", v.scalemin);
-		GET_JSON_NAME_VALUE(j, "scalemax", v.scalemax);
-		GET_JSON_NAME_VALUE(j, "phasemin", v.phasemin);
-		GET_JSON_NAME_VALUE(j, "phasemax", v.phasemax);
+		GET_JSON_NAME_VALUE_NOWARN(j, "scalemin", v.scalemin);
+		GET_JSON_NAME_VALUE_NOWARN(j, "scalemax", v.scalemax);
+		GET_JSON_NAME_VALUE_NOWARN(j, "phasemin", v.phasemin);
+		GET_JSON_NAME_VALUE_NOWARN(j, "phasemax", v.phasemax);
+		GET_JSON_NAME_VALUE_NOWARN(j, "mask", v.mask);
 		return v;
 	};
 	static void CheckAndResize(FrequencyValue& fv, uint32_t index) {
@@ -144,10 +248,10 @@ struct FrequencyValue {
 			fv.storage[index].phase = GetRandomIn(fv.phasemin, fv.phasemax, rf());
 		}
 	}
-	static double GetScale(const FrequencyValue& fv, uint32_t index, double timePass) {
-		auto t = 1.0f / fv.storage.at(index).frequency;
+	static double GetScale(const FrequencyValue& fv, uint32_t index, double timePass, double slow=5.0f) {
+		auto t = 1.0f * slow / fv.storage.at(index).frequency;
 		auto phase = fv.storage.at(index).phase;
-		auto value = std::sin(timePass * 2.0f * pi * t + phase) + 1.0f;
+		auto value = std::sin(timePass * 2.0f * pi / t + phase) + 1.0f;
 		return value*(fv.scalemax-fv.scalemin)*0.5f + fv.scalemin;
 	}
 };
@@ -160,27 +264,31 @@ ParticleOperatorOp WPParticleParser::genParticleOperatorOp(const nlohmann::json&
 		if(name == "movement") {
 			float drag {0.0f};
 			Floats gravity {0.0f};
-    		GET_JSON_NAME_VALUE(wpj, "drag", drag);
-    		GET_JSON_NAME_VALUE(wpj, "gravity", gravity);
+    		GET_JSON_NAME_VALUE_NOWARN(wpj, "drag", drag);
+    		GET_JSON_NAME_VALUE_NOWARN(wpj, "gravity", gravity);
 			if(gravity.size() < 3) gravity.resize(3, gravity.at(0));
 			return [=](Particle& p, uint32_t, float life, float t){ 
-				PM::Accelerate(p, gravity, t);
+				Floats acc = PM::GetDrag(p, drag);
+				std::transform(acc.begin(), acc.end(), gravity.begin(), acc.begin(), std::plus<float>());
+				PM::Accelerate(p, acc, t);
 				PM::MoveByTime(p, t);
 			};
 		} else if(name == "angularmovement") {
 			float drag {0.0f};
 			Floats force {0.0f};
-    		GET_JSON_NAME_VALUE(wpj, "drag", drag);
-    		GET_JSON_NAME_VALUE(wpj, "force", force);
+    		GET_JSON_NAME_VALUE_NOWARN(wpj, "drag", drag);
+    		GET_JSON_NAME_VALUE_NOWARN(wpj, "force", force);
 			if(force.size() < 3) force.resize(3, force.at(0));
 			return [=](Particle& p, uint32_t, float life, float t){ 
-				PM::AngularAccelerate(p, force, t);
+				Floats acc = PM::GetAngularDrag(p, drag);
+				std::transform(acc.begin(), acc.end(), force.begin(), acc.begin(), std::plus<float>());
+				PM::AngularAccelerate(p, acc, t);
 				PM::RotateByTime(p, t);
 			};
 		} else if(name == "alphafade") {
 			float fadeintime {0.5f}, fadeouttime {0.5f};
-    		GET_JSON_NAME_VALUE(wpj, "fadeintime", fadeintime);
-    		GET_JSON_NAME_VALUE(wpj, "fadeouttime", fadeouttime);
+    		GET_JSON_NAME_VALUE_NOWARN(wpj, "fadeintime", fadeintime);
+    		GET_JSON_NAME_VALUE_NOWARN(wpj, "fadeouttime", fadeouttime);
 			return [fadeintime,fadeouttime](Particle& p, uint32_t, float life, float t){
 				if(life <= fadeintime) PM::MutiplyAlpha(p, FadeValueChange(life, 0, fadeintime, 0, 1.0f));
 				else if(life > fadeouttime) PM::MutiplyAlpha(p, FadeValueChange(life, fadeouttime, 1.0f, 1.0f, 0));
@@ -195,7 +303,15 @@ ParticleOperatorOp WPParticleParser::genParticleOperatorOp(const nlohmann::json&
 			return [vc](Particle& p, uint32_t, float life, float t) {
 				PM::MutiplyAlpha(p, FadeValueChange(life, vc));
 			};
-		} else if(name == "oscillatealpha") {
+		} else if(name == "colorchange") {
+			auto vc = VecChange::ReadFromJson(wpj);
+			return [vc](Particle& p, uint32_t, float life, float t) {
+				std::vector<float> result(3);
+				for(int32_t i=0;i<3;i++)
+					result[i] = FadeValueChange(life, vc.starttime, vc.endtime, vc.startvalue[i], vc.endvalue[i]);
+				PM::MutiplyColor(p, result[0], result[1], result[2]);
+			};
+ 		} else if(name == "oscillatealpha") {
 			FrequencyValue fv = FrequencyValue::ReadFromJson(wpj);
 			return [fv,rf](Particle& p, uint32_t index, float life, float t) mutable {
 				FrequencyValue::CheckAndResize(fv, index);
@@ -215,12 +331,13 @@ ParticleOperatorOp WPParticleParser::genParticleOperatorOp(const nlohmann::json&
 			FrequencyValue fvx = FrequencyValue::ReadFromJson(wpj);
 			std::vector<FrequencyValue> fxp = { fvx, fvx, fvx };
 			return [=](Particle& p, uint32_t index, float life, float t) mutable {
-				std::vector<double> pos(3);
-				std::transform(fxp.begin(), fxp.end(), pos.begin(), [&](FrequencyValue& fv) {
-					FrequencyValue::CheckAndResize(fv, index);
-					FrequencyValue::GenFrequency(fv, p, index, rf);
-					return FrequencyValue::GetScale(fv, index, PM::LifetimePassed(p)) * 2.0f;
-				});
+				std::vector<double> pos {0, 0, 0};
+				for(int32_t i=0;i<3;i++) {
+					if(fxp[0].mask[i] < 0.01) continue;
+					FrequencyValue::CheckAndResize(fxp[i], index);
+					FrequencyValue::GenFrequency(fxp[i], p, index, rf);
+					pos[i] = FrequencyValue::GetScale(fxp[i], index, PM::LifetimePassed(p)) * 2.0f;
+				}
 				if(lastMove.size() <= index) lastMove.resize(2*(index+1), {0.0f});
 				double* lastP = lastMove.at(index).p;
 				PM::Move(p, pos[0] - lastP[0], pos[1] - lastP[1], 0);
@@ -240,6 +357,7 @@ ParticleEmittOp WPParticleParser::genParticleEmittOp(const wpscene::Emitter& wpe
 		std::memcpy(box.maxDistance, &GetValidVec(wpe.distancemax, 3, wpe.distancemax[0])[0], 3*sizeof(float));
 		box.randomFn = rf;
 		std::memcpy(box.directions, &wpe.directions[0], 3*sizeof(float));
+		std::memcpy(box.orgin, &wpe.origin[0], 3*sizeof(float));
 		return ParticleBoxEmitterArgs::MakeEmittOp(box);
 	} else if(wpe.name == "sphererandom") {
 		ParticleSphereEmitterArgs sphere;
@@ -247,6 +365,7 @@ ParticleEmittOp WPParticleParser::genParticleEmittOp(const wpscene::Emitter& wpe
 		sphere.minDistance = wpe.distancemin[0];
 		sphere.maxDistance = wpe.distancemax[0];
 		std::memcpy(sphere.directions, &wpe.directions[0], 3*sizeof(float));
+		std::memcpy(sphere.orgin, &wpe.origin[0], 3*sizeof(float));
 		sphere.randomFn = rf;
 		return ParticleSphereEmitterArgs::MakeEmittOp(sphere);
 	} else 

@@ -19,6 +19,7 @@ struct ParticleBoxEmitterArgs {
 	float minDistance[3];
 	float maxDistance[3];
 	float emitSpeed;
+	float orgin[3];
 	std::function<float()> randomFn;
 
 	static ParticleEmittOp MakeEmittOp(ParticleBoxEmitterArgs);
@@ -29,6 +30,7 @@ struct ParticleSphereEmitterArgs {
 	float minDistance;
 	float maxDistance;
 	float emitSpeed;
+	float orgin[3];
 	std::function<float()> randomFn;
 
 	static ParticleEmittOp MakeEmittOp(ParticleSphereEmitterArgs);

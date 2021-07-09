@@ -20,27 +20,12 @@ std::vector<float> WPParticleRawGener::GenGLData(const Particle& p, const SceneV
 	std::size_t oneSize = vertex.OneSize();
 	std::vector<float> result(oneSize * 4);
 
-	float size = p.size/4.0f;
-
-	float x = p.position[0];
-	float y = p.position[1];
-	float z = p.position[2];
-	float fsize = (size/2.0f);
-	float left = x-fsize;
-	float right = x+fsize;
-	float bottom = y-fsize;
-	float top = y+fsize;
-	std::vector<float> pos = {
-			left, bottom, z,
-			right, bottom, z,
-			right,  top, z,
-			left,  top, z,
-	};
+	float size = p.size/2.0f;
 
 	std::size_t offset = 0;
 	for(const auto& el:vertex.Attributes()) {
 		if(el.name == "a_Position") {
-			AssignVertex(&result[0], pos, offset, oneSize, 3);
+			AssignVertexTimes(&result[0], {p.position[0], -p.position[1], p.position[2]}, offset, oneSize, 4);
 		} else if(el.name == "a_Color") {
 			AssignVertexTimes(&result[0], {p.color[0], p.color[1], p.color[2], p.alpha}, offset, oneSize, 4);
 		} else if(el.name == "a_TexCoordVec4") {
@@ -53,7 +38,7 @@ std::vector<float> WPParticleRawGener::GenGLData(const Particle& p, const SceneV
 			};
 			AssignVertex(&result[0], t, offset, oneSize, 4);
 		} else if(el.name == "a_TexCoordVec4C1") {
-			AssignVertexTimes(&result[0], {1.0f, 0.0f, 0.0f, p.lifetime}, offset, oneSize, 4);
+			AssignVertexTimes(&result[0], {p.velocity[0], p.velocity[1], p.velocity[2], p.lifetime}, offset, oneSize, 4);
 		} else if(el.name == "a_TexCoordC2") {
 			AssignVertexTimes(&result[0], {p.rotation[0], p.rotation[1]}, offset, oneSize, 4);
 		} else {

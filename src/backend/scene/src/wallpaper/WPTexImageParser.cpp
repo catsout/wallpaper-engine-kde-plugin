@@ -223,22 +223,25 @@ std::shared_ptr<Image> WPTexImageParser::ParseHeader(const std::string& name) {
 			float spriteHeight = imageDatas.at(sf.imageId)[1];
 
 			sf.frametime = ReadFloat(file); 
+			float width,height;
 			if(texs == 1) {
 				sf.x = readInt32(file) / spriteWidth; 
 				sf.y = readInt32(file) / spriteHeight; 
-				sf.width = readInt32(file) / spriteWidth; 
+				width = readInt32(file);
 				sf.unk0 = readInt32(file); 
 				sf.unk1 = readInt32(file); 
-				sf.height = readInt32(file) / spriteHeight; 
-
+				height = readInt32(file);
 			} else {
 				sf.x = ReadFloat(file) / spriteWidth; 
 				sf.y = ReadFloat(file) / spriteHeight; 
-				sf.width = ReadFloat(file) / spriteWidth; 
+				width = ReadFloat(file);
 				sf.unk0 = ReadFloat(file); 
 				sf.unk1 = ReadFloat(file); 
-				sf.height = ReadFloat(file) / spriteHeight; 
+				height = ReadFloat(file);
 			}
+			sf.width = width / spriteWidth; 
+			sf.height = height / spriteHeight; 
+			sf.rate = height / width;
 			img.spriteAnim.AppendFrame(sf);
 		}
 	}
