@@ -63,21 +63,18 @@ sudo make install
 ### Scene support status
 Scene wallpaper is supported by direct opengl(3.2).  
 It's almost usable.  
-#### performance
-I'm not familiar with graphic programming.  
-- Most likely 10~20% usage higher than *wallpaper engine* on windows.  
-- Opengl driver will keep ram copies of textures, meaning ram is at same usage as vram.
 #### not work
-- Particle System   
-- Timeline Animations
-- Puppet Warp
+- 3D model
+- Timeline animations
+- Puppet warp
 - Scene script  
 - Text layer  
 - Audio play
 - PBR light
 - Camera shake,fade,~~zoom,parallax~~
 - Global bloom effect  
-- Perspective renderable  
+- ~~Perspective renderable~~  
+- ~~Particle System~~  
 - ~~Gif scene~~
 - ~~ColorBlendMode~~  
 
