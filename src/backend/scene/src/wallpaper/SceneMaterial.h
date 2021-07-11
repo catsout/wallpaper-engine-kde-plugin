@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <set>
 
 #include "SceneShader.h"
 #include "Type.h"
@@ -11,6 +12,7 @@ namespace wallpaper
 
 struct SceneMaterialCustomShader {
 	std::shared_ptr<SceneShader> shader;
+	std::set<std::string> valueSet;
 	std::vector<ShaderValue> updateValueList;
 	ShaderValues constValues;
 };

@@ -50,6 +50,7 @@ public:
     std::vector<nlohmann::json> initializers;
     std::vector<nlohmann::json> operators;
     std::vector<ParticleRender> renderers;
+    std::string animationmode;
     uint32_t maxcount;
     uint32_t starttime;
     ParticleFlag flags;

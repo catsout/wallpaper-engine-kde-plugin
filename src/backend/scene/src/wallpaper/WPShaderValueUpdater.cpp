@@ -9,6 +9,14 @@
 #include <chrono>
 #include <ctime>
 
+#define G_M "g_ModelMatrix"
+#define G_VP "g_ViewProjectionMatrix"
+#define G_MVP "g_ModelViewProjectionMatrix"
+
+#define G_MI "g_ModelMatrixInverse"
+#define G_MVPI "g_ModelViewProjectionMatrixInverse"
+
+#define CONTAINS(s, v) (s.count(v) == 1)
 
 using namespace wallpaper;
 
@@ -30,7 +38,7 @@ void WPShaderValueUpdater::MouseInput(double x, double y) {
 
 void WPShaderValueUpdater::UpdateShaderValues(SceneNode* pNode, SceneShader* pShader) {
 	if(!pNode->Mesh()) return;
-	glm::mat4 modelTrans = pNode->GetLocalTrans();
+
 	const SceneCamera* camera;
 	if(!pNode->Camera().empty()) {
 		camera = m_scene->cameras.at(pNode->Camera()).get();
@@ -44,20 +52,40 @@ void WPShaderValueUpdater::UpdateShaderValues(SceneNode* pNode, SceneShader* pSh
 
 	
 	auto* material = pNode->Mesh()->Material();
-	if(material) {
-		auto& shadervs = material->customShader.updateValueList;	
-		if(m_nodeDataMap.count(pNode) != 0) {
+	if(!material) return;
+	auto& shadervs = material->customShader.updateValueList;	
+	const auto& valueSet = material->customShader.valueSet;
+	bool hasNodeData = CONTAINS(m_nodeDataMap, pNode);
+	if(hasNodeData) {
+		const auto& nodeData = m_nodeDataMap.at(pNode);
+		for(const auto& el:nodeData.renderTargetResolution) {
+			if(m_scene->renderTargets.count(el.second) == 0) continue;
+			std::string name = gtex + std::to_string(el.first) + "Resolution";
+			if(!CONTAINS(valueSet, name)) continue;
+
+			const auto& rt = m_scene->renderTargets.at(el.second);
+			std::vector<uint32_t> resolution_uint({
+				rt.width, rt.height, 
+				rt.width, rt.height
+			});
+			std::vector<float> resolution(resolution_uint.begin(), resolution_uint.end());
+			shadervs.push_back({name, resolution});
+		}
+	}
+
+	bool reqMI = CONTAINS(valueSet, G_MI);
+	bool reqM = CONTAINS(valueSet, G_M);
+	bool reqMVP = CONTAINS(valueSet, G_MVP);
+	bool reqMVPI CONTAINS(valueSet, G_MVPI);
+	const auto& viewProTrans = camera->GetViewProjectionMatrix();
+
+	if(CONTAINS(valueSet, G_VP)) {
+		shadervs.push_back({G_VP, ShaderValue::ValueOf(viewProTrans)});
+	}
+	if(reqM || reqMVP || reqMI || reqMVPI) {
+		glm::mat4 modelTrans = pNode->GetLocalTrans();
+		if(hasNodeData) {
 			const auto& nodeData = m_nodeDataMap.at(pNode);
-			for(const auto& el:nodeData.renderTargetResolution) {
-				if(m_scene->renderTargets.count(el.second) == 0) continue;
-				const auto& rt = m_scene->renderTargets.at(el.second);
-				std::vector<uint32_t> resolution_uint({
-					rt.width, rt.height, 
-					rt.width, rt.height
-				});
-				std::vector<float> resolution(resolution_uint.begin(), resolution_uint.end());
-				shadervs.push_back({gtex + std::to_string(el.first) + "Resolution", resolution});
-			}
 			if(m_parallax.enable) {
 				glm::vec3 nodePos = glm::make_vec3(&(pNode->Translate())[0]);
 				glm::vec2 depth = glm::make_vec2(&nodeData.parallaxDepth[0]);
@@ -69,35 +97,42 @@ void WPShaderValueUpdater::UpdateShaderValues(SceneNode* pNode, SceneShader* pSh
 				modelTrans = glm::translate(glm::mat4(1.0f), glm::vec3(paraVec, 0.0f)) * modelTrans;
 			}
 		}
-		const auto& viewTrans = camera->GetViewMatrix();
-		auto mvpTrans = camera->GetViewProjectionMatrix() * modelTrans;
-
-		shadervs.push_back({"g_ModelMatrix", ShaderValue::ValueOf(modelTrans)});
-		shadervs.push_back({"g_ModelMatrixInverse", ShaderValue::ValueOf(glm::inverse(modelTrans))});
-		shadervs.push_back({"g_ViewProjectionMatrix", ShaderValue::ValueOf(viewTrans)});
-		shadervs.push_back({"g_ModelViewProjectionMatrix", ShaderValue::ValueOf(mvpTrans)});
-		shadervs.push_back({"g_ModelViewProjectionMatrixInverse", ShaderValue::ValueOf(glm::inverse(mvpTrans))});
-				//	g_EffectTextureProjectionMatrix
-
+		if(reqM) shadervs.push_back({G_M, ShaderValue::ValueOf(modelTrans)});
+		if(reqMI) shadervs.push_back({G_MI, ShaderValue::ValueOf(glm::inverse(modelTrans))});
+		if(reqMVP) {
+			auto mvpTrans = viewProTrans * modelTrans;
+			shadervs.push_back({G_MVP, ShaderValue::ValueOf(mvpTrans)});
+			if(reqMVPI) shadervs.push_back({G_MVPI, ShaderValue::ValueOf(glm::inverse(mvpTrans))});
+		}
+	}
+	//	g_EffectTextureProjectionMatrix
+	if(CONTAINS(valueSet, "g_Time"))
 		shadervs.push_back({"g_Time", {(float)m_scene->elapsingTime}});
+
+	if(CONTAINS(valueSet, "g_DayTime"))
 		shadervs.push_back({"g_DayTime", {(float)m_dayTime}});
+
+	if(CONTAINS(valueSet, "g_PointerPosition"))
 		shadervs.push_back({"g_PointerPosition", m_mousePos});
+
+	if(CONTAINS(valueSet, "g_TexelSize"))
 		shadervs.push_back({"g_TexelSize", m_texelSize});
+
+	if(CONTAINS(valueSet, "g_TexelSizeHalf"))
 		shadervs.push_back({"g_TexelSizeHalf", {m_texelSize[0]/2.0f, m_texelSize[1]/2.0f}});
 
-		if(material->hasSprite) {
-			for(int32_t i=0;i<material->textures.size();i++) {
-				const auto& texname = material->textures.at(i);
-				if(m_scene->textures.count(texname) != 0) {
-					auto& ptex = m_scene->textures.at(texname);
-					if(ptex->isSprite) {
-						auto& sp = ptex->spriteAnim;
-						const auto& frame = sp.GetAnimateFrame(m_scene->frameTime);
-						auto grot = gtex + std::to_string(i) + "Rotation";
-						auto gtrans = gtex + std::to_string(i) + "Translation";
-						shadervs.push_back({grot, {frame.width, 0, 0, frame.height}});
-						shadervs.push_back({gtrans, {frame.x, frame.y}});
-					}
+	if(material->hasSprite) {
+		for(int32_t i=0;i<material->textures.size();i++) {
+			const auto& texname = material->textures.at(i);
+			if(m_scene->textures.count(texname) != 0) {
+				auto& ptex = m_scene->textures.at(texname);
+				if(ptex->isSprite) {
+					auto& sp = ptex->spriteAnim;
+					const auto& frame = sp.GetAnimateFrame(m_scene->frameTime);
+					auto grot = gtex + std::to_string(i) + "Rotation";
+					auto gtrans = gtex + std::to_string(i) + "Translation";
+					shadervs.push_back({grot, {frame.width, 0, 0, frame.height}});
+					shadervs.push_back({gtrans, {frame.x, frame.y}});
 				}
 			}
 		}

@@ -560,8 +560,7 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 	upScene->cameras["global"] = std::make_shared<SceneCamera>(
 		int32_t(ortho.width / sc.general.zoom), 
 		int32_t(ortho.height / sc.general.zoom), 
-		// use farz for ortho
-		-sc.general.farz, sc.general.farz
+		-5000.0f, 5000.0f
 	);
 
 	upScene->activeCamera = upScene->cameras.at("global").get();

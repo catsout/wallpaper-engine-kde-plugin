@@ -145,10 +145,17 @@ void GLGraphicManager::LoadNode(SceneNode* node) {
 	if(!shader->geometryCode.empty()) {
 		glshaders.push_back(glw.CreateShader(glw.ToGLType(ShaderType::GEOMETRY), shader->geometryCode));
 	}
+
 	m_programMap[shader] = glw.CreateProgram(glshaders, shader->attrs);
 	auto* program = m_programMap.at(shader);
 	glw.BindProgram(program);
+
 	glw.QueryProUniforms(program);
+	for(const auto& el:program->uniformLocs) {
+		if(el.name.empty()) continue;
+		materialShader.valueSet.insert(el.name);
+	}
+
 	for(auto& el:shader->uniforms)
 		glw.UpdateUniform(program, el.second);
 	for(auto& el:materialShader.constValues) {
