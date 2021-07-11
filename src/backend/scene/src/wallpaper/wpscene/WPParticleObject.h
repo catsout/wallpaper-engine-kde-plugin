@@ -51,6 +51,7 @@ public:
     std::vector<nlohmann::json> operators;
     std::vector<ParticleRender> renderers;
     std::string animationmode;
+    float sequencemultiplier;
     uint32_t maxcount;
     uint32_t starttime;
     ParticleFlag flags;

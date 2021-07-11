@@ -1,6 +1,7 @@
 #include "WPParticleRawGener.h"
 #include <cstring>
 #include "Log.h"
+#include "ParticleModify.h"
 
 using namespace wallpaper;
 
@@ -16,13 +17,17 @@ void AssignVertex(float*dst, const std::vector<float>& src, uint32_t doffset, ui
 	}
 }
 
-std::vector<float> GenSingleGLData(const Particle& p, const SceneVertexArray& vertex) {
+std::vector<float> GenSingleGLData(const Particle& p, const SceneVertexArray& vertex, ParticleRawGenSpecOp& specOp) {
 	std::size_t oneSize = vertex.OneSize();
 	std::vector<float> result(oneSize * 4);
 
 	float size = p.size/2.0f;
 
 	std::size_t offset = 0;
+
+	float lifetime = p.lifetime;
+	specOp(p, {&lifetime});
+
 	for(const auto& el:vertex.Attributes()) {
 		if(el.name == "a_Position") {
 			AssignVertexTimes(&result[0], {p.position[0], -p.position[1], p.position[2]}, offset, oneSize, 4);
@@ -38,7 +43,7 @@ std::vector<float> GenSingleGLData(const Particle& p, const SceneVertexArray& ve
 			};
 			AssignVertex(&result[0], t, offset, oneSize, 4);
 		} else if(el.name == "a_TexCoordVec4C1") {
-			AssignVertexTimes(&result[0], {p.velocity[0], -p.velocity[1], p.velocity[2], p.lifetime}, offset, oneSize, 4);
+			AssignVertexTimes(&result[0], {p.velocity[0], -p.velocity[1], p.velocity[2], lifetime}, offset, oneSize, 4);
 		} else if(el.name == "a_TexCoordC2") {
 			AssignVertexTimes(&result[0], {p.rotation[0], p.rotation[1]}, offset, oneSize, 4);
 		} else {
@@ -61,13 +66,14 @@ void updateIndexArray(std::size_t index, std::size_t count, SceneIndexArray& iar
 	}
 	iarray.Assign(index*6, &indexs[0], indexs.size());
 }
-void WPParticleRawGener::GenGLData(const std::vector<Particle>& particles, SceneMesh& mesh) {
+
+void WPParticleRawGener::GenGLData(const std::vector<Particle>& particles, SceneMesh& mesh, ParticleRawGenSpecOp& specOp) {
 	auto& sv = mesh.GetVertexArray(0);
 	auto& si = mesh.GetIndexArray(0);
 
 	uint32_t i = 0;
 	for(const auto& p:particles) {
-		sv.SetVertexs((i++)*4, 4, &(GenSingleGLData(p, sv)[0]));
+		sv.SetVertexs((i++)*4, 4, &(GenSingleGLData(p, sv, specOp)[0]));
 	}
 	uint32_t indexNum = si.DataCount()/6;
 	if(particles.size() > indexNum) {

@@ -42,7 +42,7 @@ void ParticleSubSystem::Emitt() {
 	}
 
 	m_mesh->SetDirty();
-	parent.gener->GenGLData(m_particles, *m_mesh);
+	parent.gener->GenGLData(m_particles, *m_mesh, m_genSpecOp);
 }
 
 void ParticleSystem::Emitt() {

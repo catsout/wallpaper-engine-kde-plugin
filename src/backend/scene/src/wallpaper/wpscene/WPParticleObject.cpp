@@ -80,7 +80,8 @@ bool Particle::FromJson(const nlohmann::json& json) {
             operators.push_back(el);
         }
     }
-	GET_JSON_NAME_VALUE(json, "animationmode", animationmode);
+	GET_JSON_NAME_VALUE_NOWARN(json, "animationmode", animationmode);
+	GET_JSON_NAME_VALUE_NOWARN(json, "sequencemultiplier", sequencemultiplier);
 	GET_JSON_NAME_VALUE(json, "maxcount", maxcount);
 	GET_JSON_NAME_VALUE(json, "starttime", starttime);
 

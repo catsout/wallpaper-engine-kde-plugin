@@ -892,7 +892,6 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 			auto spNode = std::make_shared<SceneNode>(wppartobj.origin, wppartobj.scale, wppartobj.angles);
 			if(wppartobj.particleObj.flags.perspective) {
 				spNode->SetCamera("global_perspective");
-				LOG_INFO("-------------- Set perspective");
 			}
 
 			SceneMaterial material;
@@ -914,11 +913,17 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 					hastrail = true;
 				}
 			}
+			if(material.hasSprite && !wppartobj.particleObj.flags.spritenoframeblending) {
+				shaderInfo.combos["SPRITESHEETBLEND"] = 1;
+				shaderInfo.combos["SPRITESHEETBLENDNPOT"] = 1;
+			}
 
 			LoadMaterial(wppartobj.material, upScene.get(), spNode.get(), &material, &svData, &shaderInfo);
 			auto spMesh = std::make_shared<SceneMesh>(true);
 			auto& mesh = *spMesh;
 			uint32_t maxcount = wppartobj.particleObj.maxcount;
+			auto animationmode = wppartobj.particleObj.animationmode;
+			auto sequencemultiplier = wppartobj.particleObj.sequencemultiplier;
 			maxcount = maxcount > 4000 ? 4000 : maxcount;
 			SetParticleMesh(mesh, wppartobj.particleObj, maxcount, material.hasSprite || hastrail);
 			const auto& wpemitter = wppartobj.particleObj.emitters[0];
@@ -926,7 +931,16 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 				upScene->paritileSys, 
 				spMesh, 
 				maxcount,
-				wppartobj.instanceoverride.rate
+				wppartobj.instanceoverride.rate,
+				[=](const Particle& p, const ParticleRawGenSpec& spec) {
+					auto& lifetime = *(spec.lifetime);
+					if(lifetime <= 0.0f) return;
+					if(animationmode.empty()) {}
+					else if(animationmode == "randomframe")
+						lifetime = std::floor(p.lifetimeInit);
+					else if(animationmode == "sequence")
+						lifetime = (1.0f - (p.lifetime / p.lifetimeInit)) * sequencemultiplier;
+				}
 			);
 
 			LoadEmitter(*particleSub, wppartobj.particleObj, wppartobj.instanceoverride.count, randomFn);

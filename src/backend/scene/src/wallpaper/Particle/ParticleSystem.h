@@ -11,8 +11,12 @@ class ParticleSystem;
 
 class ParticleSubSystem {
 public:
-	ParticleSubSystem(ParticleSystem& p, std::shared_ptr<SceneMesh> sm, uint32_t maxcount, float rate)
-		:parent(p),m_mesh(sm),m_maxcount(maxcount),m_rate(rate) {};
+	ParticleSubSystem(ParticleSystem& p, 
+		std::shared_ptr<SceneMesh> sm, 
+		uint32_t maxcount, 
+		float rate, 
+		ParticleRawGenSpecOp specOp)
+		:parent(p),m_mesh(sm),m_maxcount(maxcount),m_rate(rate),m_genSpecOp(specOp) {};
 	ParticleSubSystem(ParticleSubSystem&) = delete;
 	ParticleSubSystem(ParticleSubSystem&&) = delete;
 
@@ -30,6 +34,7 @@ private:
 	std::vector<Particle> m_particles;
 	std::vector<ParticleInitOp> m_initializers;
 	std::vector<ParticleOperatorOp> m_operators;
+	ParticleRawGenSpecOp m_genSpecOp;
 	uint32_t m_maxcount;
 	float m_rate;
 };
