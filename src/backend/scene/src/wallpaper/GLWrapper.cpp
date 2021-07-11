@@ -58,10 +58,19 @@ GLShader::~GLShader() {
 		glDeleteShader(shader);
 	}
 }
+void kk() {
 
-GLFramebuffer::GLFramebuffer():width(0),height(0),color_texture(GL_TEXTURE_2D, width, height, 1) {}
+}
+GLTexture::GLTexture(GLint target, uint16_t width, uint16_t height, uint16_t numMips)
+		:target(target),
+		 w(width),
+		 h(height),
+		 numMips(numMips) {};
+
+GLFramebuffer::GLFramebuffer():width(0), height(0),color_texture(GL_TEXTURE_2D, width, height, 1) {}
 GLFramebuffer::GLFramebuffer(uint32_t _width, uint32_t _height)
 		: width(_width), height(_height),color_texture(GL_TEXTURE_2D, _width, _height, 1) {}
+
 /*
 GLFramebuffer::~GLFramebuffer() {
 	if (framebuffer)
@@ -373,18 +382,20 @@ void GLWrapper::TextureImage(GLTexture* texture, int level, int width, int heigh
 		glCompressedTexImage2D(tex->target, level, internalFormat, width, height, 0, imgsize, data);
 		break;
 	}
+	CHECK_GL_ERROR_IF_DEBUG();
 	glFlush();
 	glBindTexture(tex->target, 0);
-	CHECK_GL_ERROR_IF_DEBUG();
 }
 
 
 void GLWrapper::TextureImagePbo(GLTexture *texture, int level, int width, int height, TextureFormat texformat, uint8_t *data, std::size_t imgsize) {
 	GLTexture *tex = texture;
 	GLuint pbo;
+	std::size_t bufferSize = imgsize;
+	if(texformat == TextureFormat::R8 || texformat == TextureFormat::RG8) bufferSize *= 2;
 	glGenBuffers(1, &pbo);
 	glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbo);
-	glBufferData(GL_PIXEL_UNPACK_BUFFER, imgsize, nullptr, GL_STATIC_DRAW);
+	glBufferData(GL_PIXEL_UNPACK_BUFFER, bufferSize, nullptr, GL_STATIC_DRAW);
 	void* ptr = glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY);
 	CHECK_GL_ERROR_IF_DEBUG();
 	if(ptr == nullptr) {
@@ -393,6 +404,7 @@ void GLWrapper::TextureImagePbo(GLTexture *texture, int level, int width, int he
 	}
 	memcpy(ptr, data, imgsize);
 	glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);	
+	CHECK_GL_ERROR_IF_DEBUG();
 	BindTexture(texture);
 
 	GLenum format, type;	
@@ -403,14 +415,15 @@ void GLWrapper::TextureImagePbo(GLTexture *texture, int level, int width, int he
 	case TextureFormat::RG8:
 	case TextureFormat::RGB8:
 	case TextureFormat::RGBA8:
-		glTexImage2D(tex->target, level, internalFormat, width, height, 0, format, type, nullptr);
+		glTexImage2D(tex->target, level, internalFormat, width, height, 0, format, type, 0);
 		break;
 	case TextureFormat::BC1:
 	case TextureFormat::BC2:
 	case TextureFormat::BC3:
-		glCompressedTexImage2D(tex->target, level, internalFormat, width, height, 0, imgsize, nullptr);
+		glCompressedTexImage2D(tex->target, level, internalFormat, width, height, 0, imgsize, 0);
 		break;
 	}
+	CHECK_GL_ERROR_IF_DEBUG();
 	glBindTexture(tex->target, 0);
 	glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 	glDeleteBuffers(1, &pbo);
@@ -434,6 +447,9 @@ void GLWrapper::QueryProUniforms(GLProgram* program) {
 	}
 }
 void GLWrapper::SetBlend(BlendMode bm) {
+	//glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);	
+	CHECK_GL_ERROR_IF_DEBUG();
+	glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
 	if(bm != BlendMode::Disable)
 		glEnable(GL_BLEND);
 	switch (bm)
@@ -441,11 +457,15 @@ void GLWrapper::SetBlend(BlendMode bm) {
 	case BlendMode::Disable:
 		glDisable(GL_BLEND);
 		break;
+	case BlendMode::Normal:
+//		glBlendFuncSeparate(GL_ONE, GL_ZERO, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+//		break;
 	case BlendMode::Translucent:
 		glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
+		//glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		break;
 	case BlendMode::Additive:
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+		glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE, GL_SRC_ALPHA, GL_ONE);
 		break;
 	}
 }

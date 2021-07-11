@@ -31,6 +31,7 @@ struct ParticleSphereEmitterArgs {
 	float maxDistance;
 	float emitSpeed;
 	float orgin[3];
+	int32_t sign[3];
 	std::function<float()> randomFn;
 
 	static ParticleEmittOp MakeEmittOp(ParticleSphereEmitterArgs);

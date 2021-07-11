@@ -20,6 +20,9 @@ wallpaper::WallpaperGL* pwgl = nullptr;
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
 	SCR_WIDTH = width;
 	SCR_HEIGHT = height;
+	if(pwgl != nullptr) {
+		(*pwgl).SetDefaultFbo(0,SCR_WIDTH,SCR_HEIGHT);
+	}
 }
 
 void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
@@ -66,11 +69,13 @@ int main(int argc, char**argv)
 	// glfw callback
 	glfwSetCursorPosCallback(window, cursor_position_callback);
 
+	wgl.SetDefaultFbo(0,SCR_WIDTH,SCR_HEIGHT);
+
     while (!glfwWindowShouldClose(window)) {
 		glfwWaitEvents();
 		if(renderCall) {
 			renderCall = false;
-			wgl.Render(0,SCR_WIDTH,SCR_HEIGHT);
+			wgl.Render();
 			glfwSwapBuffers(window);
 		}
     }

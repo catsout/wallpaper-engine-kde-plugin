@@ -36,6 +36,7 @@ Item{
     }
     Component.onCompleted:{
         background.nowBackend = "QtMultimedia";
+        videoItem.displayModeChanged();
     }
 
     function play(){

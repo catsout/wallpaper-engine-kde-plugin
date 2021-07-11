@@ -1,5 +1,6 @@
 #pragma once
 #include <nlohmann/json.hpp>
+#include <cstdint>
 #include "Util.h"
 
 #define GET_JSON_VALUE(json, value) wallpaper::GetJsonValue(__FUNCTION__, __LINE__, (json), (value))
@@ -9,29 +10,37 @@
 #define PARSE_JSON(source, result) wallpaper::ParseJson(__FUNCTION__, __LINE__, (source), (result))
 
 namespace wallpaper {
-	template <typename T>
-	bool GetJsonValue(const nlohmann::json& json, T& value) {
-		if(json.contains("value")) 
-			value = json.at("value").get<T>();
-		else value = json.get<T>();
-		return true;
-	}
 
-	template<> inline
-	bool wallpaper::GetJsonValue<std::vector<float>>(const nlohmann::json& json, std::vector<float>& value) {
+	template <class T>
+	struct is_std_vector { static const bool value=false; };
+
+	template <class T>
+	struct is_std_vector<std::vector<T>> { static const bool value=true; };
+
+	template <typename T>
+	bool GetJsonValue(const nlohmann::json& json, typename std::enable_if<is_std_vector<T>::value, T>::type& value) {
+		using Tv = typename T::value_type;
 		const auto* pjson = &json;
 		if(json.contains("value")) 
 			pjson = &json.at("value");
 		const auto& njson = *pjson;
 		if(njson.is_number()) {
-			value = {njson.get<float>()};
+			value = {njson.get<Tv>()};
 			return true;
 		}
 		else {
 			std::string strvalue;
 			strvalue = njson.get<std::string>();
-			return StringToVec<float>(strvalue, value);
+			return StringToVec<Tv>(strvalue, value);
 		}
+	}
+
+	template <typename T>
+	bool GetJsonValue(const nlohmann::json& json, typename std::enable_if<!is_std_vector<T>::value, T>::type& value) {;
+		if(json.contains("value")) 
+			value = json.at("value").get<T>();
+		else value = json.get<T>();
+		return true;
 	}
 
 	template <typename T>
@@ -53,6 +62,10 @@ namespace wallpaper {
 		if(!json.contains(name)) {
 			if(warn)
 				Logger::Log(func, line, "Warning read json: ", name + " not a key");
+			return false;
+		} else if(json.at(name).is_null()) {
+			if(warn)
+				Logger::Log(func, line, "Warning read json: ", name + " is null");
 			return false;
 		}
 		return GetJsonValue<T>(func, line, json.at(name), value, name.c_str());

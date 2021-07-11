@@ -9,5 +9,3 @@ bool wallpaper::ParseJson(const char* func, int line, const std::string& source,
     }
     return true;
 }
-
-

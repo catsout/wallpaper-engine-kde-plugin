@@ -34,6 +34,7 @@ public:
 
 	SceneCamera* activeCamera;
 
+	uint32_t ortho[2] {1920, 1080}; // w, h
 	double elapsingTime {0.0f}, frameTime {0.0f};
 	std::vector<float> clearColor {1.0f, 1.0f, 1.0f};
 
@@ -43,6 +44,7 @@ public:
 			for(auto& cam:cams) {
 				if(cameras.count(cam) != 0) {
 					cameras.at(cam)->Clone(*cameras.at(name));
+					cameras.at(cam)->Update();
 				}
 			}
 		}

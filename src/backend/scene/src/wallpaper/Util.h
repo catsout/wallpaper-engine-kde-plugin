@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <iostream>
 #include <fstream>
+#include <cstdint>
 #include "Log.h"
 
 #define STRCONV(str,t) wallpaper::StrConv((str), (t), __FUNCTION__, __LINE__);
@@ -31,8 +32,11 @@ bool DeleteLine(std::string& src, LineStr& line);
 template<typename T>
 T StrConv(const std::string& str);
 
-template<> inline int StrConv<int>(const std::string& str) {
+template<> inline int32_t StrConv<int32_t>(const std::string& str) {
 	return std::stoi(str);
+}
+template<> inline uint32_t StrConv<uint32_t>(const std::string& str) {
+	return std::stoul(str);
 }
 template<> inline float StrConv<float>(const std::string& str) {
 	return std::stof(str);

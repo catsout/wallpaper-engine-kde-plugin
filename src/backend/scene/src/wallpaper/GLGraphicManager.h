@@ -37,7 +37,8 @@ public:
     void Destroy() override;
 	void Draw() override;
     void InitializeScene(Scene*) override;
-	void SetDefaultFbo(uint fbo, uint32_t w, uint32_t h);
+	void SetDefaultFbo(uint fbo, uint32_t w, uint32_t h, FillMode FillMode = FillMode::ASPECTCROP);
+	void ChangeFillMode(FillMode);
 private:
 	void LoadNode(SceneNode*);
 	void RenderNode(SceneNode*);
@@ -47,7 +48,6 @@ private:
 	gl::GLFramebuffer m_defaultFbo;
 	std::shared_ptr<SceneNode> m_fboNode;
 	GLRenderTargetManager m_rtm;
-	double m_aspect {-1.0f};
 
 	std::unordered_map<void*, gl::GLProgram*> m_programMap;
 	std::unordered_map<std::string, std::vector<gl::GLTexture*>> m_textureMap;

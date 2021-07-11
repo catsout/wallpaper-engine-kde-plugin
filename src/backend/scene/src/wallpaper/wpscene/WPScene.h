@@ -37,6 +37,9 @@ public:
     bool isOrtho {true};
     Orthogonalprojection orthogonalprojection {1920, 1080};
     float zoom {1.0f};
+    float fov {50.0f};
+    float nearz {0.01f};
+    float farz {10000.0f};
 };
 
 class WPScene {

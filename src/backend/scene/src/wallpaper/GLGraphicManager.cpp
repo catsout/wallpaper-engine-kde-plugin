@@ -1,6 +1,7 @@
 #include "GLGraphicManager.h"
 #include "Log.h"
 #include "SpriteAnimation.h"
+#include "Algorism.h"
 
 #include <functional>
 #include <iostream>
@@ -68,6 +69,24 @@ void GLRenderTargetManager::ReleaseAndDeleteFrameBuffer(const std::string& name,
 		m_inuse.erase(keystr);
 	}
 }
+
+
+void UpdateDefaultRenderTargetBind(Scene& scene, GLRenderTargetManager& rtm, uint32_t w, uint32_t h) {
+
+	if(scene.renderTargets.count("_rt_default") != 0)
+		rtm.ReleaseAndDeleteFrameBuffer("_rt_default", scene.renderTargets.at("_rt_default"));
+	scene.renderTargets["_rt_default"] = {w, h};
+
+	for(const auto& el:scene.renderTargetBindMap) {
+		if(!el.second.copy && el.second.name == "_rt_default") {
+			uint32_t sw = w * el.second.scale;
+			uint32_t sh = h * el.second.scale;
+			scene.renderTargets[el.first] = {sw, sh};
+		}
+	}
+}
+
+
 
 std::string OutImageType(const Image& img) {
 	if(img.type == ImageType::UNKNOWN)
@@ -245,7 +264,6 @@ void GLGraphicManager::RenderNode(SceneNode* node) {
 
 void GLGraphicManager::InitializeScene(Scene* scene) {
 	m_scene = scene;
-	m_aspect = -1.0f;
 	for(auto& cam:m_scene->cameras) {
 		if(cam.second->HasImgEffect()) {
 			auto& imgEffctLayer = cam.second->GetImgEffect();
@@ -281,6 +299,10 @@ void GLGraphicManager::InitializeScene(Scene* scene) {
 		m_fboNode->AddMesh(mesh);
 		LoadNode(m_fboNode.get());
 	}
+
+	if(m_defaultFbo.width != 0) {
+		UpdateDefaultRenderTargetBind(*m_scene, m_rtm, m_defaultFbo.width, m_defaultFbo.height);
+	}
 }
 
 void GLGraphicManager::Draw() {
@@ -308,47 +330,69 @@ bool GLGraphicManager::Initialize(void *get_proc_addr(const char*)) {
 	return ok;
 }
 
-void GLGraphicManager::SetDefaultFbo(uint fbo, uint32_t w, uint32_t h) {
+void UpdateCameraForFbo(Scene& scene, uint32_t fbow, uint32_t fboh, FillMode fillmode) {
+	if(fboh == 0) return;
+	double sw = scene.ortho[0],sh = scene.ortho[1];
+	double fboAspect = fbow/(double)fboh, sAspect = sw/sh;
+	double nw = 0.0f,nh = 0.0f;
+	auto& gCam = *scene.cameras.at("global");
+	auto& gPerCam = *scene.cameras.at("global_perspective");
+	// assum cam 
+	switch (fillmode)
+	{
+	case FillMode::STRETCH:
+		gCam.SetWidth(sw);
+		gCam.SetHeight(sh);
+		gPerCam.SetAspect(sAspect);
+		gPerCam.SetFov(algorism::CalculatePersperctiveFov(1000.0f, gCam.Height()));
+		break;
+	case FillMode::ASPECTFIT:
+		if(fboAspect < sAspect) {
+			// scale height
+			gCam.SetWidth(sw);
+			gCam.SetHeight(sw / fboAspect);
+		} else {
+			gCam.SetWidth(sh * fboAspect);
+			gCam.SetHeight(sh);
+		}
+		gPerCam.SetAspect(fboAspect);
+		gPerCam.SetFov(algorism::CalculatePersperctiveFov(1000.0f, gCam.Height()));
+		break;
+	case FillMode::ASPECTCROP:
+	default:
+		if(fboAspect > sAspect) {
+			// scale height
+			gCam.SetWidth(sw);
+			gCam.SetHeight(sw / fboAspect);
+		} else {
+			gCam.SetWidth(sh * fboAspect);
+			gCam.SetHeight(sh);
+		}
+		gPerCam.SetAspect(fboAspect);
+		gPerCam.SetFov(algorism::CalculatePersperctiveFov(1000.0f, gCam.Height()));
+		break;
+	}
+	gCam.Update();
+	gPerCam.Update();
+	scene.UpdateLinkedCamera("global");
+}
+
+void GLGraphicManager::SetDefaultFbo(uint fbo, uint32_t w, uint32_t h, FillMode fillMode) {
 	if(m_scene != nullptr) {
 		if(m_scene->renderTargets.count("_rt_default") == 0)
 			m_scene->renderTargets["_rt_default"] = {w, h};
 	} else return;
-	if(w == m_defaultFbo.width && h == m_defaultFbo.height && m_aspect > 0) return;
-	if(m_aspect < 0)
-		m_aspect = m_scene->activeCamera->Aspect();
 
 	m_defaultFbo = {w, h};
 	m_defaultFbo.framebuffer = fbo;
-	if(m_scene->renderTargets.count("_rt_default") != 0)
-		m_rtm.ReleaseAndDeleteFrameBuffer("_rt_default", m_scene->renderTargets.at("_rt_default"));
-	m_scene->renderTargets["_rt_default"] = {w, h};
-	for(const auto& el:m_scene->renderTargetBindMap) {
-		if(!el.second.copy && el.second.name == "_rt_default") {
-			uint32_t sw = w * el.second.scale;
-			uint32_t sh = h * el.second.scale;
-			if(sw == 0 || sh == 0) {
-				m_scene->renderTargets[el.first] = {w, h};
-			} else {
-				m_scene->renderTargets[el.first] = {sw, sh};
-			}
-		}
-	}
-	float screenAspect = w/(float)h;
-	float width,height;
-	if(m_aspect > m_scene->activeCamera->Aspect())
-		m_scene->activeCamera->SetWidth(m_scene->activeCamera->Height() * m_aspect);
-	else 
-		m_scene->activeCamera->SetHeight(m_scene->activeCamera->Width() / m_aspect);
-	if(m_aspect > screenAspect) {
-		height = m_scene->activeCamera->Height();	
-		width = height * screenAspect;
-		m_scene->activeCamera->SetWidth(width);
-	} else {
-		width = m_scene->activeCamera->Width();
-		height = width / screenAspect;
-		m_scene->activeCamera->SetHeight(height);
-	}
-	m_scene->UpdateLinkedCamera("global");
+
+	UpdateDefaultRenderTargetBind(*m_scene, m_rtm, w, h);
+	UpdateCameraForFbo(*m_scene, w, h, fillMode);
+}
+
+void GLGraphicManager::ChangeFillMode(FillMode fillMode) {
+	if(m_scene == nullptr) return;
+	UpdateCameraForFbo(*m_scene, m_defaultFbo.width, m_defaultFbo.height, fillMode);
 }
 
 void GLGraphicManager::Destroy() {

@@ -29,6 +29,8 @@ public:
 
 	std::chrono::time_point<std::chrono::steady_clock> timer {std::chrono::steady_clock::now()};
 	std::unique_ptr<Scene> scene;
+	float fboW {1920.0f};
+	float fboH {1080.0f};
 };
 
 WallpaperGL::WallpaperGL():m_mousePos({0,0}),m_aspect(16.0f/9.0f),pImpl(std::make_unique<impl>())
@@ -69,11 +71,14 @@ void WallpaperGL::Load(const std::string& pkg_path) {
 	pImpl->scene = pImpl->parser.Parse(scene_src);	
 	if(pImpl->scene) {
 		pImpl->gm.InitializeScene(pImpl->scene.get());
-	}
+	} else return;
 	m_loaded = true;
+
+	// required as camera is reloaded
+	SetFillMode(m_fillMode);
 }
 
-void WallpaperGL::Render(uint fbo, int width, int height) {
+void WallpaperGL::Render() {
 	if(!m_inited || !m_loaded) return;
 
 	if(!pImpl->frameTimer.NoFrame()) {
@@ -89,9 +94,8 @@ void WallpaperGL::Render(uint fbo, int width, int height) {
 
 		auto& m_scene = (pImpl->scene);
 		if(m_scene) {	
-			m_scene->shaderValueUpdater->MouseInput(m_mousePos[0]/width, m_mousePos[1]/height);
-			m_scene->shaderValueUpdater->SetTexelSize(1.0f/width, 1.0f/height);
-			pImpl->gm.SetDefaultFbo(fbo, width, height);
+			m_scene->shaderValueUpdater->MouseInput(m_mousePos[0]/pImpl->fboW, m_mousePos[1]/pImpl->fboH);
+			m_scene->shaderValueUpdater->SetTexelSize(1.0f/pImpl->fboW, 1.0f/pImpl->fboH);
 			pImpl->gm.Draw();
 			// time elapsing
 			auto nowFps = pImpl->fpsCounter.Fps();
@@ -131,6 +135,19 @@ void WallpaperGL::Stop() {
 	pImpl->frameTimer.Stop();
 }
 
+
+void WallpaperGL::SetDefaultFbo(uint fbo, uint32_t w, uint32_t h) {
+	pImpl->gm.SetDefaultFbo(fbo, w, h, m_fillMode);	
+	pImpl->fboW = w;
+	pImpl->fboH = h;
+}
+
+void WallpaperGL::SetFillMode(FillMode f) {
+	m_fillMode = f;
+	if(m_loaded) {
+		pImpl->gm.ChangeFillMode(m_fillMode);
+	}
+}
 
 uint32_t WallpaperGL::CurrentFps() const { return pImpl->fpsCounter.Fps(); }
 uint8_t WallpaperGL::Fps() const { return pImpl->frameTimer.Fps(); }

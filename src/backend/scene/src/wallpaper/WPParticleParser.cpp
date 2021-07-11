@@ -23,13 +23,12 @@ static float GetRandomIn(float min, float max, float random) {
 	return min + (max - min)*random;
 }
 
-void Color(Particle& p, RandomFn& rf, cFloats min, cFloats max, cFloats mutiply) {
+void Color(Particle& p, RandomFn& rf, cFloats min, cFloats max) {
 	float random = rf();
 	Floats result(3);
 	std::transform(min.begin(), min.end(), max.begin(), result.begin(), [&](float a, float b) {
 		return GetRandomIn(a, b, random);
 	});
-	std::transform(result.begin(), result.end(), mutiply.begin(), result.begin(), [&](float v, float m) { return v*m; });
 	PM::InitColor(p, result[0], result[1], result[2]);
 }
 
@@ -97,7 +96,7 @@ Floats mapVertex(cFloats v, float(*oper)(float)) {
 };
 
 
-ParticleInitOp WPParticleParser::genParticleInitOp(const nlohmann::json& wpj, const wpscene::ParticleInstanceoverride& over, RandomFn rf) {
+ParticleInitOp WPParticleParser::genParticleInitOp(const nlohmann::json& wpj, RandomFn rf) {
 	using namespace std::placeholders;
 	do {
 		if(!wpj.contains("name")) break;
@@ -111,26 +110,25 @@ ParticleInitOp WPParticleParser::genParticleInitOp(const nlohmann::json& wpj, co
 			VecRandom::ReadFromJson(wpj, r);
 			return std::bind(Color, _1, rf, 
 				mapVertex(r.min, [](float x) {return x/255.0f;}), 
-				mapVertex(r.max, [](float x) {return x/255.0f;}),
-				over.colorn);
+				mapVertex(r.max, [](float x) {return x/255.0f;}));
 		} else if(name == "lifetimerandom") {
 			SingleRandom r = {0.0f, 1.0f};
 			SingleRandom::ReadFromJson(wpj, r);
-			return [=](Particle& p) { PM::InitLifetime(p, over.lifetime * GetRandomIn(r.min, r.max, rf()));};
+			return [=](Particle& p) { PM::InitLifetime(p, GetRandomIn(r.min, r.max, rf()));};
 		} else if(name == "sizerandom") {
 			SingleRandom r = {0.0f, 20.0f};
 			SingleRandom::ReadFromJson(wpj, r);
-			return [=](Particle& p) { PM::InitSize(p, over.size * GetRandomIn(r.min, r.max, rf())); };
+			return [=](Particle& p) { PM::InitSize(p, GetRandomIn(r.min, r.max, rf())); };
 		} else if(name == "alpharandom") {
 			SingleRandom r = {1.0f, 1.0f};
 			SingleRandom::ReadFromJson(wpj, r);
-			return [=](Particle& p) { PM::InitAlpha(p, over.alpha * GetRandomIn(r.min, r.max, rf())); };
+			return [=](Particle& p) { PM::InitAlpha(p, GetRandomIn(r.min, r.max, rf())); };
 		} else if(name == "velocityrandom") {
 			VecRandom r;
 			VecRandom::ReadFromJson(wpj, r);
 			return [=](Particle& p) { 
 				auto result = GenRandomVec3(rf, r.min, r.max);
-				PM::ChangeVelocity(p, result[0], result[1], result[2], over.speed);
+				PM::ChangeVelocity(p, result[0], result[1], result[2]);
 			};
 		} else if(name == "rotationrandom") {
 			VecRandom r;
@@ -147,6 +145,7 @@ ParticleInitOp WPParticleParser::genParticleInitOp(const nlohmann::json& wpj, co
 				PM::ChangeAngularVelocity(p, result[0], result[1], result[2]);
 			};
 		} else if(name  == "turbulentvelocityrandom") {
+			// to do
 			TurbulentRandom r;
 			TurbulentRandom::ReadFromJson(wpj, r);
 			return [=](Particle& p) {
@@ -155,11 +154,25 @@ ParticleInitOp WPParticleParser::genParticleInitOp(const nlohmann::json& wpj, co
 				glm::mat4 rotate(1.0f);
 				rotate = glm::rotate(rotate, r.offset, glm::make_vec3(&r.right[0]));
 				result = rotate * glm::vec4(result, 1.0f);	
-				return PM::ChangeVelocity(p, result.x, result.y, result.z, over.speed);
+				return PM::ChangeVelocity(p, result.x, result.y, result.z);
 			};
 		}
 	} while(false);
 	return [](Particle&) {};
+}
+
+ParticleInitOp WPParticleParser::genOverrideInitOp(const wpscene::ParticleInstanceoverride& over) {
+	return [=](Particle& p) {
+		PM::MutiplyInitLifeTime(p, over.lifetime);
+		PM::MutiplyInitAlpha(p, over.alpha);
+		PM::MutiplyInitSize(p, over.size);
+		PM::MutiplyVelocity(p, over.speed);
+		if(over.overColor) {
+			PM::InitColor(p, over.color[0]/255.0f, over.color[1]/255.0f, over.color[2]/255.0f);
+		} else if(over.overColorn) {
+			PM::MutiplyInitColor(p, over.colorn[0], over.colorn[1], over.colorn[2]);
+		}
+	};
 }
 
 float FadeValueChange(float life, float start, float end, float startValue, float endValue) {
@@ -366,6 +379,7 @@ ParticleEmittOp WPParticleParser::genParticleEmittOp(const wpscene::Emitter& wpe
 		sphere.maxDistance = wpe.distancemax[0];
 		std::memcpy(sphere.directions, &wpe.directions[0], 3*sizeof(float));
 		std::memcpy(sphere.orgin, &wpe.origin[0], 3*sizeof(float));
+		std::memcpy(sphere.sign, &wpe.sign[0], 3*sizeof(int32_t));
 		sphere.randomFn = rf;
 		return ParticleSphereEmitterArgs::MakeEmittOp(sphere);
 	} else 

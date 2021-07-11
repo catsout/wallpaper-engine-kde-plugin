@@ -13,7 +13,7 @@ public:
     bool FromJson(const nlohmann::json&);
     std::string name;
     std::string format;
-    int32_t scale {1};
+    uint32_t scale {1};
 };
 
 class WPImageEffect {

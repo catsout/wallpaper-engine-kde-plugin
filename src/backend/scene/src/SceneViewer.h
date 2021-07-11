@@ -2,8 +2,8 @@
 #include <QtQuick/QQuickFramebufferObject>
 #include <QTimer>
 
-class SceneRenderer;
 
+class SceneRenderer;
 class SceneViewer : public QQuickFramebufferObject
 {
     Q_OBJECT
@@ -11,8 +11,16 @@ class SceneViewer : public QQuickFramebufferObject
 	Q_PROPERTY(QUrl assets READ assets WRITE setAssets)
 	Q_PROPERTY(int curFps READ curFps)
 	Q_PROPERTY(int fps READ fps WRITE setFps NOTIFY fpsChanged)
+	Q_PROPERTY(int fillMode READ fillMode WRITE setFillMode NOTIFY fillModeChanged)
 
     friend class SceneRenderer;
+public:
+	enum FillMode {
+		STRETCH,
+		ASPECTFIT,	
+		ASPECTCROP
+	};
+    Q_ENUM(FillMode)
 
 public:
     SceneViewer(QQuickItem * parent = 0);
@@ -23,10 +31,12 @@ public:
 	QUrl assets() const;
 	int curFps() const;
 	int fps() const;
+	int fillMode() const;
 
 	void setSource(const QUrl& source);
 	void setAssets(const QUrl& assets);
 	void setFps(int);
+	void setFillMode(int);
 
 	Q_INVOKABLE void setAcceptMouse(bool);
 	Q_INVOKABLE void setAcceptHover(bool);
@@ -44,6 +54,7 @@ signals:
 	void onUpdate();
 	void sourceChanged();
 	void fpsChanged();
+	void fillModeChanged();
 
 private:
 	QUrl m_source;
@@ -53,5 +64,6 @@ private:
 	bool m_paused;
 	int m_fps;
 	int m_curFps;
+	int m_fillMode;
 	void* m_wgl;
 };

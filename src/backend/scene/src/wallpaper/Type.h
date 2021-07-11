@@ -59,7 +59,8 @@ std::string ToString(const TextureFormat&);
 enum class BlendMode {
 	Disable,
 	Translucent,
-	Additive
+	Additive,
+	Normal
 };
 
 enum class ShaderType {
@@ -75,6 +76,12 @@ enum class TextureType {
 enum class MeshPrimitive {
 	POINT,
 	TRIANGLE
+};
+
+enum class FillMode {
+	STRETCH,
+	ASPECTFIT,	
+	ASPECTCROP
 };
 
 }

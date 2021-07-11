@@ -56,7 +56,7 @@ ParticleEmittOp ParticleBoxEmitterArgs::MakeEmittOp(ParticleBoxEmitterArgs a) {
 		auto GenBox = [&]() {
 			std::vector<float> pos;
 			for(int32_t i=0;i<3;i++)
-				pos.push_back(GetRandomIn(a.minDistance[i], a.maxDistance[i], a.randomFn()));
+				pos.push_back(GetRandomIn(a.minDistance[i], a.maxDistance[i], (a.randomFn()-0.5f)*2.0f));
 			auto p = Particle();
 			ParticleModify::MoveTo(p, pos[0], pos[1], pos[2]);
 			ParticleModify::Move(p, a.orgin[0], a.orgin[1], a.orgin[2]);
@@ -76,10 +76,9 @@ ParticleEmittOp ParticleSphereEmitterArgs::MakeEmittOp(ParticleSphereEmitterArgs
 			auto p = Particle();
 			float radius = GetRandomIn(a.minDistance, a.maxDistance, a.randomFn());
 			ParticleModify::MoveTo(p, radius, 0, 0);
-			ParticleModify::RotatePos(p, 0, 0, 360*a.randomFn());
-			ParticleModify::RotatePos(p, 0, 360*a.randomFn(), 0);
-			ParticleModify::RotatePos(p, 360*a.randomFn(), 0, 0);
+			ParticleModify::RotatePos(p, 360*a.randomFn(), 360*a.randomFn(), 360*a.randomFn());
 			ParticleModify::Move(p, a.orgin[0], a.orgin[1], a.orgin[2]);
+			ParticleModify::MoveApplySign(p, a.sign[0], a.sign[1], a.sign[2]);
 			return p;
 		};
 		Emitt(ps, GetEmitNum(timer, a.emitSpeed), maxcount, [&]() {

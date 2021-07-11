@@ -6,18 +6,7 @@
 
 using namespace wallpaper;
 
-void updateIndexArray(std::size_t index, std::size_t count, SceneIndexArray& iarray) {
-	std::vector<uint32_t> indexs;
-	for(uint32_t i=0;i<count;i++) {
-		uint32_t x = index*4 + i*4;
-		std::vector<uint32_t> t {
-			x, x+1, x+3,
-			x+1, x+2, x+3
-		};
-		indexs.insert(indexs.end(), t.begin(), t.end());
-	}
-	iarray.Assign(index*6, &indexs[0], count*6);
-}
+
 
 void ParticleSubSystem::AddEmitter(ParticleEmittOp&& em) {
 	m_emiters.emplace_back(em);
@@ -48,22 +37,12 @@ void ParticleSubSystem::Emitt() {
 		std::for_each(m_operators.begin(), m_operators.end(), [&](ParticleOperatorOp& op) {
 			op(p, i, lifetimePos, particleTime);
 		});
-		if(i == 0) {
-			//LOG_INFO(std::to_string(p.velocity[1]));
-		}
+		//if(i == 0) {}
 		i++;
 	}
 
 	m_mesh->SetDirty();
-	auto& sv = m_mesh->GetVertexArray(0);
-	auto& si = m_mesh->GetIndexArray(0);
-	i = 0;
-	for(const auto& p:m_particles) {
-		sv.SetVertexs((i++)*4, 4, &(parent.gener->GenGLData(p, sv)[0]));
-	}
-	if(m_particles.size() > si.DataCount()/6) {
-		updateIndexArray(0, m_particles.size(), si);
-	}
+	parent.gener->GenGLData(m_particles, *m_mesh);
 }
 
 void ParticleSystem::Emitt() {

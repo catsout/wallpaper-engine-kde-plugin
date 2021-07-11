@@ -164,14 +164,13 @@ std::shared_ptr<Image> WPTexImageParser::Parse(const std::string& name) {
 				auto* data = stbi_load_from_memory((const unsigned char*)result, src_size, &w, &h, &n, 4);
 				mipmap.data = ImageDataPtr((uint8_t*)data,
 					[](uint8_t* data) { stbi_image_free((unsigned char*)data); });
-				src_size = w*h*4*sizeof(uint8_t);
-			}
-			else {
+				src_size = w*h*4;
+			} else {
 				mipmap.data = ImageDataPtr(new uint8_t[src_size], 
 					[](uint8_t* data) { delete [] data; });
-				memcpy(mipmap.data.get(), result, src_size);
+				memcpy(mipmap.data.get(), result, src_size*sizeof(uint8_t));
 			}
-			mipmap.size = src_size;
+			mipmap.size = src_size * sizeof(uint8_t);
 			delete [] result;
 		}
 	}

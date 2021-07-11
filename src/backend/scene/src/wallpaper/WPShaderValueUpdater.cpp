@@ -51,30 +51,26 @@ void WPShaderValueUpdater::UpdateShaderValues(SceneNode* pNode, SceneShader* pSh
 			for(const auto& el:nodeData.renderTargetResolution) {
 				if(m_scene->renderTargets.count(el.second) == 0) continue;
 				const auto& rt = m_scene->renderTargets.at(el.second);
-				std::vector<float> resolution({
-					(float)rt.width, 
-					(float)rt.height, 
-					(float)rt.width, 
-					(float)rt.height
+				std::vector<uint32_t> resolution_uint({
+					rt.width, rt.height, 
+					rt.width, rt.height
 				});
+				std::vector<float> resolution(resolution_uint.begin(), resolution_uint.end());
 				shadervs.push_back({gtex + std::to_string(el.first) + "Resolution", resolution});
 			}
 			if(m_parallax.enable) {
-				const auto& translate = pNode->Translate();
-				glm::vec3 nodePos = glm::make_vec3(&translate[0]);
+				glm::vec3 nodePos = glm::make_vec3(&(pNode->Translate())[0]);
 				glm::vec2 depth = glm::make_vec2(&nodeData.parallaxDepth[0]);
 				glm::vec2 ortho = glm::vec2{m_ortho[0], m_ortho[1]};
 				glm::vec2 mouseVec = (glm::vec2{0.5f, 0.5f} - glm::make_vec2(&m_mousePos[0])) * ortho;
 				mouseVec *= m_parallax.mouseinfluence;
-				if(camera) {
-					const auto& camPos = camera->GetPosition();
-					glm::vec2 paraVec = (nodePos.xy() - camPos.xy() + mouseVec) * depth * m_parallax.amount;
-					modelTrans = glm::translate(glm::mat4(1.0f), glm::vec3(paraVec, 0.0f)) * modelTrans;
-				}
+				const auto& camPos = camera->GetPosition();
+				glm::vec2 paraVec = (nodePos.xy() - camPos.xy() + mouseVec) * depth * m_parallax.amount;
+				modelTrans = glm::translate(glm::mat4(1.0f), glm::vec3(paraVec, 0.0f)) * modelTrans;
 			}
 		}
 		const auto& viewTrans = camera->GetViewMatrix();
-		auto mvpTrans = camera->GetProjectionMatrix() * viewTrans * modelTrans;
+		auto mvpTrans = camera->GetViewProjectionMatrix() * modelTrans;
 
 		shadervs.push_back({"g_ModelMatrix", ShaderValue::ValueOf(modelTrans)});
 		shadervs.push_back({"g_ModelMatrixInverse", ShaderValue::ValueOf(glm::inverse(modelTrans))});
@@ -89,17 +85,19 @@ void WPShaderValueUpdater::UpdateShaderValues(SceneNode* pNode, SceneShader* pSh
 		shadervs.push_back({"g_TexelSize", m_texelSize});
 		shadervs.push_back({"g_TexelSizeHalf", {m_texelSize[0]/2.0f, m_texelSize[1]/2.0f}});
 
-		for(int32_t i=0;i<material->textures.size();i++) {
-			const auto& texname = material->textures.at(i);
-			if(m_scene->textures.count(texname) != 0) {
-				auto& ptex = m_scene->textures.at(texname);
-				if(ptex->isSprite) {
-					auto& sp = ptex->spriteAnim;
-					const auto& frame = sp.GetAnimateFrame(m_scene->frameTime);
-					auto grot = gtex + std::to_string(i) + "Rotation";
-					auto gtrans = gtex + std::to_string(i) + "Translation";
-					shadervs.push_back({grot, {frame.width, 0, 0, frame.height}});
-					shadervs.push_back({gtrans, {frame.x, frame.y}});
+		if(material->hasSprite) {
+			for(int32_t i=0;i<material->textures.size();i++) {
+				const auto& texname = material->textures.at(i);
+				if(m_scene->textures.count(texname) != 0) {
+					auto& ptex = m_scene->textures.at(texname);
+					if(ptex->isSprite) {
+						auto& sp = ptex->spriteAnim;
+						const auto& frame = sp.GetAnimateFrame(m_scene->frameTime);
+						auto grot = gtex + std::to_string(i) + "Rotation";
+						auto gtrans = gtex + std::to_string(i) + "Translation";
+						shadervs.push_back({grot, {frame.width, 0, 0, frame.height}});
+						shadervs.push_back({gtrans, {frame.x, frame.y}});
+					}
 				}
 			}
 		}

@@ -26,6 +26,7 @@ add_library(${PROJECT_NAME}
 	SceneNode.cpp
 	SceneShader.cpp
 	Type.cpp
+	Algorism.cpp
 	wpscene/WPImageObject.cpp
 	wpscene/WPParticleObject.cpp
 	wpscene/WPMaterial.cpp

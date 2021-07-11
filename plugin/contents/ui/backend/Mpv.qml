@@ -35,6 +35,7 @@ Item{
     }
     Component.onCompleted:{
         background.nowBackend = "mpv";
+        videoItem.displayModeChanged();
     }   
 
     function play(){

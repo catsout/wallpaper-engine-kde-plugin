@@ -8,7 +8,12 @@ using namespace wallpaper::wpscene;
 bool WPEffectFbo::FromJson(const nlohmann::json& json) {
     GET_JSON_NAME_VALUE(json, "name", name);
     GET_JSON_NAME_VALUE(json, "format", format);
+
     GET_JSON_NAME_VALUE(json, "scale", scale);
+    if(scale == 0) { 
+        LOG_ERROR("fbo scale can't be 0");
+        scale = 1;
+    }
     return true;
 }
 
@@ -94,8 +99,10 @@ bool WPImageObject::FromJson(const nlohmann::json& json) {
     GET_JSON_NAME_VALUE(json, "image", image);
     GET_JSON_NAME_VALUE_NOWARN(json, "visible", visible);
     nlohmann::json jImage;
-    if(!PARSE_JSON(fs::GetContent(WallpaperGL::GetPkgfs(), image), jImage))
+    if(!PARSE_JSON(fs::GetContent(WallpaperGL::GetPkgfs(), image), jImage)) {
+        LOG_ERROR("Can't load image json: " + image);
         return false;
+    }
     GET_JSON_NAME_VALUE_NOWARN(jImage, "fullscreen", fullscreen);
 	GET_JSON_NAME_VALUE_NOWARN(json, "name", name);
 	GET_JSON_NAME_VALUE_NOWARN(json, "id", id);
@@ -125,8 +132,10 @@ bool WPImageObject::FromJson(const nlohmann::json& json) {
         std::string matPath;
 		GET_JSON_NAME_VALUE(jImage, "material", matPath);	
         nlohmann::json jMat;
-        if(!PARSE_JSON(fs::GetContent(WallpaperGL::GetPkgfs(), matPath), jMat))
+        if(!PARSE_JSON(fs::GetContent(WallpaperGL::GetPkgfs(), matPath), jMat)) {
+            LOG_ERROR("Can't load material json: " + matPath);
             return false;
+        }
         material.FromJson(jMat);
     } else {
         LOG_INFO("image object no material");

@@ -16,7 +16,7 @@ void AssignVertex(float*dst, const std::vector<float>& src, uint32_t doffset, ui
 	}
 }
 
-std::vector<float> WPParticleRawGener::GenGLData(const Particle& p, const SceneVertexArray& vertex) {
+std::vector<float> GenSingleGLData(const Particle& p, const SceneVertexArray& vertex) {
 	std::size_t oneSize = vertex.OneSize();
 	std::vector<float> result(oneSize * 4);
 
@@ -38,7 +38,7 @@ std::vector<float> WPParticleRawGener::GenGLData(const Particle& p, const SceneV
 			};
 			AssignVertex(&result[0], t, offset, oneSize, 4);
 		} else if(el.name == "a_TexCoordVec4C1") {
-			AssignVertexTimes(&result[0], {p.velocity[0], p.velocity[1], p.velocity[2], p.lifetime}, offset, oneSize, 4);
+			AssignVertexTimes(&result[0], {p.velocity[0], -p.velocity[1], p.velocity[2], p.lifetime}, offset, oneSize, 4);
 		} else if(el.name == "a_TexCoordC2") {
 			AssignVertexTimes(&result[0], {p.rotation[0], p.rotation[1]}, offset, oneSize, 4);
 		} else {
@@ -47,4 +47,31 @@ std::vector<float> WPParticleRawGener::GenGLData(const Particle& p, const SceneV
 		offset+=4;
 	}
 	return result;
+}
+
+void updateIndexArray(std::size_t index, std::size_t count, SceneIndexArray& iarray) {
+	std::vector<uint32_t> indexs;
+	for(uint32_t i=index;i<count;i++) {
+		uint32_t x = i*4;
+		std::vector<uint32_t> t {
+			x, x+1, x+3,
+			x+1, x+2, x+3
+		};
+		indexs.insert(indexs.end(), t.begin(), t.end());
+	}
+	iarray.Assign(index*6, &indexs[0], indexs.size());
+}
+void WPParticleRawGener::GenGLData(const std::vector<Particle>& particles, SceneMesh& mesh) {
+	auto& sv = mesh.GetVertexArray(0);
+	auto& si = mesh.GetIndexArray(0);
+
+	uint32_t i = 0;
+	for(const auto& p:particles) {
+		sv.SetVertexs((i++)*4, 4, &(GenSingleGLData(p, sv)[0]));
+	}
+	uint32_t indexNum = si.DataCount()/6;
+	if(particles.size() > indexNum) {
+		updateIndexArray(indexNum, particles.size(), si);
+	}
+
 }

@@ -18,6 +18,7 @@ public:
 		  m_scale(scale),
 		  m_rotation(rotation),
 		  m_name(name) {};
+
 	const auto& Camera() const { return m_cameraName; }
 	void SetCamera(const std::string& name) { m_cameraName = name; }
 	void AddMesh(std::shared_ptr<SceneMesh> mesh) { m_mesh = mesh; }
@@ -47,7 +48,9 @@ private:
 	std::vector<float> m_translate;
 	std::vector<float> m_scale;
 	std::vector<float> m_rotation;
+
 	std::shared_ptr<SceneMesh> m_mesh;
+
 	// specific a camera not active, used for image effect
 	std::string m_cameraName; 
 

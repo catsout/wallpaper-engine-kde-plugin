@@ -1,13 +1,13 @@
 #pragma once
 #include <vector>
 #include "Particle/Particle.h"
-#include "SceneVertexArray.h"
+#include "SceneMesh.h"
 
 namespace wallpaper {
 class IParticleRawGener {
 public:
 	IParticleRawGener() = default;
 	virtual ~IParticleRawGener() = default;
-	virtual std::vector<float> GenGLData(const Particle&, const SceneVertexArray&) = 0;
+	virtual void GenGLData(const std::vector<Particle>&, SceneMesh&) = 0; 
 };
 }

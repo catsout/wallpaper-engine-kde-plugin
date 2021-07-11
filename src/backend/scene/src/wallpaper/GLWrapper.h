@@ -33,11 +33,7 @@ typedef char GLcharARB;
 
 
 struct GLTexture{
-	GLTexture(GLint target, uint16_t width, uint16_t height, uint16_t numMips)
-		:target(target),
-		 w(width),
-		 h(height),
-		 numMips(numMips) {};
+	GLTexture(GLint target, uint16_t width, uint16_t height, uint16_t numMips);
 	GLuint texture = 0;
 	uint16_t w;
 	uint16_t h;

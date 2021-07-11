@@ -7,6 +7,16 @@ Item{
     anchors.fill: parent
     property string source: background.source
     property string assets: "assets"
+    property int displayMode: background.displayMode
+
+    onDisplayModeChanged: {
+        if(displayMode == Common.DisplayMode.Scale)
+            player.fillMode = SceneViewer.STRETCH;
+        else if(displayMode == Common.DisplayMode.Aspect)
+            player.fillMode = SceneViewer.ASPECTFIT;
+        else if(displayMode == Common.DisplayMode.Crop)
+            player.fillMode = SceneViewer.ASPECTCROP;
+    }
 
     SceneViewer {
         id: player
@@ -22,6 +32,7 @@ Item{
 
     Component.onCompleted: {
         background.nowBackend = "scene";
+        sceneItem.displayModeChanged();
     }
     onSourceChanged: {
         var source_ = sceneItem.source;

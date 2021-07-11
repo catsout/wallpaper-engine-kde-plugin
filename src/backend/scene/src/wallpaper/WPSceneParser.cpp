@@ -14,6 +14,7 @@
 
 #include "Particle/WPParticleRawGener.h"
 #include "WPParticleParser.h"
+#include "Algorism.h"
 
 #include <iostream>
 #include <sstream>
@@ -130,18 +131,21 @@ void SetParticleMesh(SceneMesh& mesh, const wpscene::Particle& particle, uint32_
 
 void LoadInitializer(ParticleSubSystem& pSys, const wpscene::Particle& wp, const wpscene::ParticleInstanceoverride& over, RandomFn& randomFn) {
 	for(const auto& ini:wp.initializers) {
-		pSys.AddInitializer(WPParticleParser::genParticleInitOp(ini, over, randomFn));
+		pSys.AddInitializer(WPParticleParser::genParticleInitOp(ini, randomFn));
 	}
+	if(over.enabled)
+		pSys.AddInitializer(WPParticleParser::genOverrideInitOp(over));
 }
 void LoadOperator(ParticleSubSystem& pSys, const wpscene::Particle& wp, RandomFn& randomFn) {
 	for(const auto& op:wp.operators) {
 		pSys.AddOperator(WPParticleParser::genParticleOperatorOp(op, randomFn));
 	}
 }
-void LoadEmitter(ParticleSubSystem& pSys, const wpscene::Particle& wp, float rate, RandomFn& randomFn) {
+void LoadEmitter(ParticleSubSystem& pSys, const wpscene::Particle& wp, float count, RandomFn& randomFn) {
 	for(const auto& em:wp.emitters) {
 		auto newEm = em;
-		newEm.rate *= rate;
+		newEm.rate *= count;
+		//newEm.origin[2] -= perspectiveZ;
 		pSys.AddEmitter(WPParticleParser::genParticleEmittOp(newEm, randomFn));
 	}
 }
@@ -460,10 +464,12 @@ void LoadMaterial(const wpscene::WPMaterial& wpmat, Scene* pScene, SceneNode* pN
 	shader->attrs.push_back({"a_Color", 2});
 
 
-	if(wpmat.blending == "translucent" || wpmat.blending == "normal") {
+	if(wpmat.blending == "translucent") {
 		material.blenmode = BlendMode::Translucent;
 	} else if(wpmat.blending == "additive") {
 		material.blenmode = BlendMode::Additive;
+	} else if(wpmat.blending == "normal") {
+		material.blenmode = BlendMode::Normal;
 	} else if(wpmat.blending == "disabled") {
 		material.blenmode = BlendMode::Disable;
 	} else {
@@ -494,18 +500,18 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
     for(auto& obj:json.at("objects")) {
 		if(obj.contains("image") && !obj.at("image").is_null()) {
 			wpscene::WPImageObject wpimgobj;
-			wpimgobj.FromJson(obj);
+			if(!wpimgobj.FromJson(obj)) continue;
 			if(!wpimgobj.visible) continue;
 			wpimgobjs.push_back(wpimgobj);
 			indexTable.push_back({"image", wpimgobjs.size() - 1});
 			//LOG_INFO(nlohmann::json(wpimgobj).dump(4));
 		} else if(obj.contains("particle") && !obj.at("particle").is_null()) {
 			wpscene::WPParticleObject wppartobj;
-			wppartobj.FromJson(obj);
+			if(!wppartobj.FromJson(obj)) continue;
 			if(!wppartobj.visible) continue;
 			wppartobjs.push_back(wppartobj);
 			indexTable.push_back({"particle", wppartobjs.size() - 1});
-			LOG_INFO(nlohmann::json(wppartobj).dump(4));
+			//LOG_INFO(nlohmann::json(wppartobj).dump(4));
 		}
 	}
 	if(sc.general.orthogonalprojection.auto_) {
@@ -540,6 +546,8 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 	shaderValueUpdater->SetCameraParallax(cameraParallax);
 
 	const auto& ortho = sc.general.orthogonalprojection; 
+	upScene->ortho[0] = (uint32_t)ortho.width;
+	upScene->ortho[1] = (uint32_t)ortho.height;
 	upScene->renderTargets["_rt_default"] = {(uint32_t)ortho.width, (uint32_t)ortho.height};
 
 	// effect camera 
@@ -552,8 +560,10 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 	upScene->cameras["global"] = std::make_shared<SceneCamera>(
 		int32_t(ortho.width / sc.general.zoom), 
 		int32_t(ortho.height / sc.general.zoom), 
-		-1000.0f, 1000.0f
+		// use farz for ortho
+		-sc.general.farz, sc.general.farz
 	);
+
 	upScene->activeCamera = upScene->cameras.at("global").get();
 
 	ShaderValues globalBaseConstSvs;
@@ -566,6 +576,20 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 	auto spCamNode = std::make_shared<SceneNode>(cori, cscale, cangle);
 	upScene->activeCamera->AttatchNode(spCamNode);
 	upScene->sceneGraph->AppendChild(spCamNode);
+
+	// perspective cam
+	upScene->cameras["global_perspective"] = std::make_shared<SceneCamera>(
+		ortho.width/(float)ortho.height,
+		sc.general.nearz,
+		sc.general.farz,
+		algorism::CalculatePersperctiveFov(1000.0f, ortho.height)
+	);
+	{
+		std::vector<float> cperori = cori; cperori[2] = 1000.0f;
+		auto spPerCamNode = std::make_shared<SceneNode>(cperori, cscale, cangle);
+		upScene->cameras["global_perspective"]->AttatchNode(spPerCamNode);
+		upScene->sceneGraph->AppendChild(spPerCamNode);
+	}
 
 	// particle refract framebuffer
 	{
@@ -867,6 +891,10 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 			wppartobj.origin[1] = ortho.height - wppartobj.origin[1];
 
 			auto spNode = std::make_shared<SceneNode>(wppartobj.origin, wppartobj.scale, wppartobj.angles);
+			if(wppartobj.particleObj.flags.perspective) {
+				spNode->SetCamera("global_perspective");
+				LOG_INFO("-------------- Set perspective");
+			}
 
 			SceneMaterial material;
 			WPShaderValueData svData;
@@ -875,13 +903,25 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 			shaderInfo.baseConstSvs["g_OrientationUp"] = {"g_OrientationUp", {0.0f, -1.0f, 0}};
 			shaderInfo.baseConstSvs["g_OrientationRight"]= {"g_OrientationRight", {1.0f, 0, 0}};
 			shaderInfo.baseConstSvs["g_OrientationForward"]= {"g_OrientationForward", {0, 0, 1.0f}};
+			bool hastrail {false};
+			if(wppartobj.particleObj.renderers.size() > 0) {
+				auto wppartRenderer = wppartobj.particleObj.renderers.at(0);
+				if(wppartRenderer.name == "spritetrail") {
+					shaderInfo.baseConstSvs["g_RenderVar0"]= {"g_RenderVar0", {
+						wppartRenderer.length, wppartRenderer.maxlength, 0, 0
+					}};
+					shaderInfo.combos["THICKFORMAT"] = 1;
+					shaderInfo.combos["TRAILRENDERER"] = 1;
+					hastrail = true;
+				}
+			}
 
 			LoadMaterial(wppartobj.material, upScene.get(), spNode.get(), &material, &svData, &shaderInfo);
 			auto spMesh = std::make_shared<SceneMesh>(true);
 			auto& mesh = *spMesh;
 			uint32_t maxcount = wppartobj.particleObj.maxcount;
 			maxcount = maxcount > 4000 ? 4000 : maxcount;
-			SetParticleMesh(mesh, wppartobj.particleObj, maxcount, material.hasSprite);
+			SetParticleMesh(mesh, wppartobj.particleObj, maxcount, material.hasSprite || hastrail);
 			const auto& wpemitter = wppartobj.particleObj.emitters[0];
 			auto particleSub = std::make_unique<ParticleSubSystem>(
 				upScene->paritileSys, 

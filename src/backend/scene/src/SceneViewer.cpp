@@ -17,6 +17,7 @@
 
 #include <QLoggingCategory>
 #include "wallpaper.h"
+#include "Type.h"
 
 
 namespace
@@ -28,11 +29,23 @@ static void *get_proc_address(const char *name)
     return reinterpret_cast<void *>(glctx->getProcAddress(QByteArray(name)));
 }
 
+wallpaper::FillMode ToWPFillMode(int fillMode) {
+	switch ((SceneViewer::FillMode)fillMode)
+	{
+	case SceneViewer::FillMode::STRETCH:
+		return wallpaper::FillMode::STRETCH;
+	case SceneViewer::FillMode::ASPECTFIT:
+		return wallpaper::FillMode::ASPECTFIT;
+	case SceneViewer::FillMode::ASPECTCROP:
+	default:
+		return wallpaper::FillMode::ASPECTCROP;
+	}
+}
+
 }
 
 class SceneRenderer : public QQuickFramebufferObject::Renderer
 {
-   
 public:
     SceneRenderer(SceneViewer* sv)
         : m_viewer{sv} {
@@ -43,17 +56,37 @@ public:
     // This function is called when a new FBO is needed.
     // This happens on the initial frame.
     QOpenGLFramebufferObject * createFramebufferObject(const QSize &size) {
-        return QQuickFramebufferObject::Renderer::createFramebufferObject(size);
+        auto* fbo = QQuickFramebufferObject::Renderer::createFramebufferObject(size);
+		if(m_wgl.Loaded()) {
+			m_wgl.SetDefaultFbo(fbo->handle(), fbo->width(), fbo->height());
+			fboNotSet = false;
+		}
+		else fboNotSet = true;
+		return fbo;
     }
 
 	void synchronize(QQuickFramebufferObject *item) {
-
 		if(!framebufferObject()) {
 			m_wgl.Init(get_proc_address);
 			m_wgl.SetUpdateCallback(std::bind(&SceneRenderer::updateViewer, this));
+			m_wgl.SetFillMode(ToWPFillMode(m_fillMode));
 			// Set m_wgl visible to viewer, only for stop when destroy
 			m_viewer->m_wgl = &m_wgl;
 		}
+
+		// operator requre loaded
+		if(m_wgl.Loaded()) {
+			if(m_fillMode != (SceneViewer::FillMode)m_viewer->m_fillMode) {
+				m_fillMode = (SceneViewer::FillMode)m_viewer->m_fillMode;
+				m_wgl.SetFillMode(ToWPFillMode(m_fillMode));
+			}
+			if(fboNotSet) {
+				QOpenGLFramebufferObject *fbo = framebufferObject();
+				m_wgl.SetDefaultFbo(fbo->handle(), fbo->width(), fbo->height());
+				fboNotSet = false;
+			}
+		}
+
 		if(m_mousePos != m_viewer->m_mousePos) {
 			m_mousePos = m_viewer->m_mousePos;
 			m_wgl.SetMousePos(m_mousePos.x(), m_mousePos.y());
@@ -82,8 +115,7 @@ public:
     }
 
     void render() {
-        QOpenGLFramebufferObject *fbo = framebufferObject();
-		m_wgl.Render(fbo->handle(), fbo->width(), fbo->height());
+		m_wgl.Render();
 		if(m_viewer->window() != nullptr) {
 			m_viewer->window()->resetOpenGLState();
 		}
@@ -96,15 +128,18 @@ private:
 	SceneViewer* m_viewer;
 	QUrl m_source;
 	wallpaper::WallpaperGL m_wgl;
+	bool fboNotSet {true};
 	QPointF m_mousePos;
 	bool m_paused;
+	SceneViewer::FillMode m_fillMode {SceneViewer::FillMode::ASPECTCROP};
 };
 
 SceneViewer::SceneViewer(QQuickItem * parent):QQuickFramebufferObject(parent),
 		m_mousePos(0,0),
 		m_fps(15),
 		m_paused(false),
-		m_wgl(nullptr) {
+		m_wgl(nullptr),
+		m_fillMode(FillMode::ASPECTCROP) {
     connect(this, &SceneViewer::onUpdate, this, &SceneViewer::update, Qt::QueuedConnection);
 }
 
@@ -150,6 +185,7 @@ QUrl SceneViewer::assets() const { return m_assets; }
 int SceneViewer::curFps() const { return m_curFps; }
 
 int SceneViewer::fps() const { return m_fps; }
+int SceneViewer::fillMode() const { return m_fillMode; }
 
 void SceneViewer::setSource(const QUrl& source) {
 	if(source == m_source) return;
@@ -168,7 +204,11 @@ void SceneViewer::setFps(int value) {
 	m_fps = value;
 	Q_EMIT fpsChanged();
 };
-
+void SceneViewer::setFillMode(int value) {
+	if(m_fillMode == value) return;
+	m_fillMode = value;
+	Q_EMIT fillModeChanged();
+};
 
 void SceneViewer::play() {
 	m_paused = false;

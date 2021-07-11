@@ -8,7 +8,7 @@ public:
 	WPParticleRawGener() {};
 	virtual ~WPParticleRawGener() {};
 
-	virtual std::vector<float> GenGLData(const Particle&, const SceneVertexArray&);
+	virtual void GenGLData(const std::vector<Particle>&, SceneMesh&);
 };
 
 }
