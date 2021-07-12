@@ -458,16 +458,29 @@ void GLWrapper::SetBlend(BlendMode bm) {
 		glDisable(GL_BLEND);
 		break;
 	case BlendMode::Normal:
-//		glBlendFuncSeparate(GL_ONE, GL_ZERO, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-//		break;
+		glBlendFuncSeparate(GL_ONE, GL_ZERO, GL_ONE, GL_ZERO);
+		break;
 	case BlendMode::Translucent:
-		glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
-		//glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		//glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
+		glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		break;
 	case BlendMode::Additive:
 		glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE, GL_SRC_ALPHA, GL_ONE);
 		break;
 	}
+}
+
+void GLWrapper::SetDepthTest(bool enable) {
+	if(enable) {
+		glEnable(GL_DEPTH_TEST);
+		return;
+	}
+	glDisable(GL_DEPTH_TEST);
+}
+
+
+void GLWrapper::SetColorMask(bool r, bool g, bool b, bool a) {
+	glColorMask(r, g, b, a);	
 }
 
 int GLWrapper::GetUniforms(GLProgram* program, std::vector<GLUniform>& uniforms) {

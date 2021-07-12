@@ -24,6 +24,7 @@
 #include <random>
 #include <cmath>
 #include <functional>
+#include <regex>
 
 using namespace wallpaper;
 
@@ -288,6 +289,18 @@ bool checkClose(const std::string& src, std::string::size_type start, std::strin
 		start++;	
 	}
 	return close.empty();
+}
+
+std::size_t FindIncludeInsertPos(const std::string& src, std::size_t startPos) {
+	//to do
+	/* rule:
+	  after attribute/varying/uniform/struct
+	  befor any func
+	  not in {}
+	  not in #if #endif
+	*/
+	auto mainPos = src.find("void main");
+	return 0;
 }
 
 std::string PreShaderSrc(const std::string& src, int32_t texcount, WPShaderInfo* pWPShaderInfo) {
@@ -637,7 +650,7 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 				continue;
 
 			wpimgobj.origin[1] = ortho.height - wpimgobj.origin[1];
-			auto spNode = std::make_shared<SceneNode>(wpimgobj.origin, wpimgobj.scale, wpimgobj.angles);
+			auto spImgNode = std::make_shared<SceneNode>(wpimgobj.origin, wpimgobj.scale, wpimgobj.angles);
 
 			SceneMaterial material;
 			WPShaderValueData svData;
@@ -652,7 +665,8 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 
 			WPShaderInfo shaderInfo;
 			shaderInfo.baseConstSvs = baseConstSvs;
-			LoadMaterial(wpimgobj.material, upScene.get(), spNode.get(), &material, &svData, &shaderInfo);
+			LoadMaterial(wpimgobj.material, upScene.get(), spImgNode.get(), &material, &svData, &shaderInfo);
+			
 			for(const auto& cs:wpimgobj.material.constantshadervalues) {
 				const auto& name = cs.first;
 				const std::vector<float>& value = cs.second;
@@ -686,16 +700,20 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 			}
 
 			GenCardMesh(mesh, std::vector<int32_t>(wpimgobj.size.begin(), wpimgobj.size.end()), pow2Split);
-			// disable img material blend, as it's the first effect node now
-			if(hasEffect)
-				material.blenmode = BlendMode::Disable;
-			mesh.AddMaterial(std::move(material));
-			spNode->AddMesh(spMesh);
 
-			shaderValueUpdater->SetNodeData(spNode.get(), svData);
+			// material blendmode for last step to use
+			auto imgBlendMode = material.blenmode;
+			// disable img material blend, as it's the first effect node now
+			if(hasEffect) {
+				material.blenmode = BlendMode::Normal;
+			}
+			mesh.AddMaterial(std::move(material));
+			spImgNode->AddMesh(spMesh);
+
+			shaderValueUpdater->SetNodeData(spImgNode.get(), svData);
 			if(hasEffect) {
 				// currently use addr for unique
-				std::string nodeAddr = getAddr(spNode.get());
+				std::string nodeAddr = getAddr(spImgNode.get());
 				// set camera to attatch effect
 				if(isCompose) {
 					upScene->cameras[nodeAddr] = std::make_shared<SceneCamera>(
@@ -713,11 +731,11 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 					int32_t w = wpimgobj.size[0] * wpimgobj.scale[0];
 					int32_t h = wpimgobj.size[1] * wpimgobj.scale[1];
 					upScene->cameras[nodeAddr] = std::make_shared<SceneCamera>(w, h, -1.0f, 1.0f);
-					upScene->cameras.at(nodeAddr)->AttatchNode(spNode);
+					upScene->cameras.at(nodeAddr)->AttatchNode(spImgNode);
 				}
-				spNode->SetCamera(nodeAddr);
+				spImgNode->SetCamera(nodeAddr);
 				// set image effect
-				auto imgEffectLayer = std::make_shared<SceneImageEffectLayer>(spNode.get(), wpimgobj.size[0], wpimgobj.size[1]);
+				auto imgEffectLayer = std::make_shared<SceneImageEffectLayer>(spImgNode.get(), wpimgobj.size[0], wpimgobj.size[1]);
 				upScene->cameras.at(nodeAddr)->AttatchImgEffect(imgEffectLayer);
 				// set renderTarget for ping-pong operate
 				std::string effectRTs[2];
@@ -868,12 +886,13 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 						// the last effect and last material
 						if((i_eff + 1 == count_eff && i_mat + 1 == wpeffobj.materials.size()) && !wpimgobj.fullscreen) {
 							GenCardMesh(mesh, {(int32_t)wpimgobj.size[0], (int32_t)wpimgobj.size[1]}, false);
-							spEffNode->CopyTrans(*spNode);
+							spEffNode->CopyTrans(*spImgNode);
 							svData.parallaxDepth = wpimgobj.parallaxDepth;
+							material.blenmode = imgBlendMode;
 						} else {
 							GenCardMesh(mesh, {2, 2}, false);
 							// disable blend for effect node, as it seems blend manually
-							material.blenmode = BlendMode::Disable;
+							material.blenmode = BlendMode::Normal;
 							spEffNode->SetCamera("effect");
 						}
 						mesh.AddMaterial(std::move(material));
@@ -884,7 +903,7 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 					}
 				}
 			}
-			upScene->sceneGraph->AppendChild(spNode);
+			upScene->sceneGraph->AppendChild(spImgNode);
 		} else if(indexT.first == "particle") {
 			auto& wppartobj = wppartobjs.at(indexT.second);
 			wppartobj.origin[1] = ortho.height - wppartobj.origin[1];
@@ -924,6 +943,7 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 			uint32_t maxcount = wppartobj.particleObj.maxcount;
 			auto animationmode = wppartobj.particleObj.animationmode;
 			auto sequencemultiplier = wppartobj.particleObj.sequencemultiplier;
+			bool hasSprite = material.hasSprite;
 			maxcount = maxcount > 4000 ? 4000 : maxcount;
 			SetParticleMesh(mesh, wppartobj.particleObj, maxcount, material.hasSprite || hastrail);
 			const auto& wpemitter = wppartobj.particleObj.emitters[0];
@@ -934,11 +954,10 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 				wppartobj.instanceoverride.rate,
 				[=](const Particle& p, const ParticleRawGenSpec& spec) {
 					auto& lifetime = *(spec.lifetime);
-					if(lifetime <= 0.0f) return;
-					if(animationmode.empty()) {}
-					else if(animationmode == "randomframe")
+					if(lifetime < 0.0f) return;
+					if(animationmode == "randomframe")
 						lifetime = std::floor(p.lifetimeInit);
-					else if(animationmode == "sequence")
+					else if((animationmode.empty() && hasSprite) || animationmode == "sequence")
 						lifetime = (1.0f - (p.lifetime / p.lifetimeInit)) * sequencemultiplier;
 				}
 			);

@@ -172,6 +172,11 @@ void GLGraphicManager::RenderNode(SceneNode* node) {
 	auto* mesh = node->Mesh();
 	if(mesh->Material() == nullptr) return;
 	gl::GLFramebuffer* target(nullptr);
+	
+	// set color mask
+	bool alphaMask = !(node->Camera().empty() || node->Camera().compare(0, 6, "global") == 0);
+	glw.SetColorMask(true, true, true, alphaMask);
+
 	// Bind target first, this make first frame show correct
 	if(!node->Camera().empty()) {
 		auto& cam = m_scene->cameras.at(node->Camera());
@@ -321,6 +326,8 @@ void GLGraphicManager::Draw() {
 
 	const auto& cc = m_scene->clearColor;
 	m_glw->BindFramebufferViewport(m_rtm.GetFrameBuffer("_rt_default", m_scene->renderTargets.at("_rt_default")));
+	m_glw->SetDepthTest(false);
+	m_glw->SetColorMask(true, true, true, true);
 	m_glw->ClearColor(cc[0], cc[1], cc[2], 1.0f);
 	TraverseNode(this, &GLGraphicManager::RenderNode, m_scene->sceneGraph.get());
 
@@ -328,7 +335,8 @@ void GLGraphicManager::Draw() {
 
 	m_glw->BindFramebufferViewport(&m_defaultFbo);
 	m_glw->SetBlend(BlendMode::Disable);
-	m_glw->ClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	m_glw->SetColorMask(true, true, true, true);
+	m_glw->ClearColor(cc[0], cc[1], cc[2], 1.0f);
 	if(m_fboNode) RenderNode(m_fboNode.get());
 }
 

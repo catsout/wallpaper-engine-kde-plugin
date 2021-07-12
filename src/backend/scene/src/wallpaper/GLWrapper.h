@@ -141,6 +141,8 @@ public:
 	void TextureImagePbo(GLTexture *texture, int level, int width, int height, TextureFormat texformat, uint8_t *data, std::size_t imgsize);
 
 	void SetBlend(BlendMode);
+	void SetDepthTest(bool);
+	void SetColorMask(bool, bool, bool, bool);
 
 	int GetUniforms(GLProgram* program, std::vector<GLUniform>& uniforms);
 	void SetUniformF(GLint loc, int count, const float *udata);

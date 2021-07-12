@@ -70,4 +70,5 @@ bool SceneVertexArray::SetVertexs(std::size_t index, std::size_t count, const fl
 	if(size > m_capacity) return false;
 	if(size > m_size) m_size = size;
 	std::memcpy(m_pData + index*m_oneSize, data, count*m_oneSize*sizeof(float));
+	return true;
 }
