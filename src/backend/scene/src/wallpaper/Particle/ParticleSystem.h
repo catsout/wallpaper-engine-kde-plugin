@@ -7,6 +7,11 @@
 
 namespace wallpaper {
 
+enum class ParticleAnimationMode {
+	SEQUENCE,
+	RANDOMONE
+};
+
 class ParticleSystem;
 
 class ParticleSubSystem {

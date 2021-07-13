@@ -1,5 +1,6 @@
 #pragma once
 #include "Particle.h"
+#include <Eigen/Dense>
 #include <cstdint>
 
 namespace wallpaper {
@@ -15,9 +16,15 @@ public:
 	static void RotatePos(Particle&, float x, float y, float z);
 
 	static void ChangeLifetime(Particle&, float l);
-	static float LifetimePos(const Particle&);
+	static float inline LifetimePos(const Particle& p) {
+		if (p.lifetime < 0)
+			return 1.0f;
+		return 1.0f - (p.lifetime / p.lifetimeInit);
+	}
 	static double LifetimePassed(const Particle&);
-	static bool LifetimeOk(const Particle&);
+	static bool inline LifetimeOk(const Particle& p) {
+		return p.lifetime > 0.0f;
+	}
 
 	static void ChangeColor(Particle&, float r, float g, float b);
 
@@ -29,13 +36,20 @@ public:
 	static void InitVelocity(Particle&, float x, float y, float z);
 	static void ChangeRotation(Particle&, float x, float y, float z);
 
-	static void ChangeVelocity(Particle&, float x, float y, float z);
-	static void Accelerate(Particle&, const std::vector<float> & acc, float t);
-	static std::vector<float> GetDrag(Particle&, float s);
-	static std::vector<float> GetAngularDrag(Particle&, float s);
+	static void inline ChangeVelocity(Particle& p, float x, float y, float z) {
+		p.velocity[0] += x;
+		p.velocity[1] += y;
+		p.velocity[2] += z;
+	}
+	static void inline Accelerate(Particle& p, const Eigen::Vector3f& acc, float t) {
+		ChangeVelocity(p, acc[0]*t, acc[1]*t, acc[2]*t);
+	}
+
+	static Eigen::Vector3f GetDrag(Particle&, float s);
+	static Eigen::Vector3f GetAngularDrag(Particle&, float s);
 
 	static void ChangeAngularVelocity(Particle&, float x, float y, float z);
-	static void AngularAccelerate(Particle&, const std::vector<float> & acc, float t);
+	static void AngularAccelerate(Particle&, const Eigen::Vector3f& acc, float t);
 	static void Rotate(Particle&, float x, float y, float z);
 	static void RotateByTime(Particle&, float t);
 

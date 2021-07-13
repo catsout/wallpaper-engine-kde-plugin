@@ -10,6 +10,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 using namespace wallpaper;
+using namespace Eigen;
 
 void ParticleModify::Move(Particle &p, float x, float y, float z) {
 	p.position[0] += x;
@@ -113,42 +114,23 @@ void ParticleModify::MutiplyVelocity(Particle& p, float m) {
 	p.velocity[2] *= m;	
 }
 
-float ParticleModify::LifetimePos(const Particle &p) {
-	if (p.lifetime < 0)
-		return 1.0f;
-	return 1.0f - (p.lifetime / p.lifetimeInit);
-}
-
 double ParticleModify::LifetimePassed(const Particle &p) {
 	return p.lifetimeInit - p.lifetime;
 }
 
-bool ParticleModify::LifetimeOk(const Particle &p) {
-	return p.lifetime > 0.0f;
+Eigen::Vector3f ParticleModify::GetDrag(Particle& p, float s) {
+	Eigen::Vector3f result;
+	if(s == 0) {
+		result = Eigen::Vector3f(p.velocity) * (-s);
+	}
+	return result;
 }
 
-void ParticleModify::ChangeVelocity(Particle &p, float x, float y, float z) {
-	p.velocity[0] += x;
-	p.velocity[1] += y;
-	p.velocity[2] += z;
-}
-void ParticleModify::Accelerate(Particle &p, const std::vector<float> &acc, float t) {
-	if(acc.size() != 3) return;
-	ChangeVelocity(p, acc[0]*t, acc[1]*t, acc[2]*t);
-}
-std::vector<float> ParticleModify::GetDrag(Particle& p, float s) {
-	std::vector<float> velocity(p.velocity, p.velocity + 3);
-	std::transform(velocity.begin(), velocity.end(), velocity.begin(), [=](float v) {
-		return -v*s;
-	});
-	return velocity;
-}
-
-std::vector<float> ParticleModify::GetAngularDrag(Particle &p, float s) {
-	std::vector<float> result(p.rotation, p.rotation + 3);
-	std::transform(result.begin(), result.end(), result.begin(), [=](float v) {
-		return -v*s;
-	});
+Eigen::Vector3f ParticleModify::GetAngularDrag(Particle &p, float s) {
+	Eigen::Vector3f result;
+	if(s == 0) {
+		result = Eigen::Vector3f(p.velocity) * (-s);
+	}
 	return result;
 }
 
@@ -157,8 +139,7 @@ void ParticleModify::ChangeAngularVelocity(Particle &p, float x, float y, float 
 	p.angularVelocity[1] += y;
 	p.angularVelocity[2] += z;
 }
-void ParticleModify::AngularAccelerate(Particle &p, const std::vector<float> &acc, float t) {
-	if(acc.size() != 3) return;
+void ParticleModify::AngularAccelerate(Particle &p, const Vector3f&acc, float t) {
 	ChangeAngularVelocity(p, acc[0]*t, acc[1]*t, acc[2]*t);
 }
 

@@ -3,6 +3,7 @@
 #include <vector>
 #include <memory>
 #include <glm/glm.hpp>
+#include <Eigen/Dense>
 #include "SceneImageEffectLayer.h"
 
 namespace wallpaper

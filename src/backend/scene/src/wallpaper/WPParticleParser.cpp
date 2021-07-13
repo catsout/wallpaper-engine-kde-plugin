@@ -5,13 +5,13 @@
 #include <algorithm>
 #include <cmath>
 
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
+#include <Eigen/Dense>
+#include <Eigen/Geometry>
 
 #include "Log.h"
 
 using namespace wallpaper;
+using namespace Eigen;
 using PM = ParticleModify;
 
 static std::uniform_real_distribution<float> ur(0.0f, 1.0f);
@@ -25,18 +25,18 @@ static float GetRandomIn(float min, float max, float random) {
 
 void Color(Particle& p, RandomFn& rf, cFloats min, cFloats max) {
 	float random = rf();
-	Floats result(3);
-	std::transform(min.begin(), min.end(), max.begin(), result.begin(), [&](float a, float b) {
-		return GetRandomIn(a, b, random);
-	});
+	Vector3f result(3);
+	for(int32_t i=0;i<3;i++) {
+		result[i] = GetRandomIn(min[i], max[i], random);
+	}
 	PM::InitColor(p, result[0], result[1], result[2]);
 }
 
-std::vector<float> GenRandomVec3(const RandomFn& rf, cFloats min, cFloats max) {
-	Floats result(3);
-	std::transform(min.begin(), min.end(), max.begin(), result.begin(), [&](float a, float b) {
-		return GetRandomIn(a, b, rf());
-	});
+Vector3f GenRandomVec3(const RandomFn& rf, cFloats min, cFloats max) {
+	Vector3f result(3);
+	for(int32_t i=0;i<3;i++) {
+		result[i] = GetRandomIn(min[i], max[i], rf());
+	}
 	return result;
 }
 std::vector<float> GetValidVec(const std::vector<float>& v, uint32_t num, float value) {
@@ -150,11 +150,9 @@ ParticleInitOp WPParticleParser::genParticleInitOp(const nlohmann::json& wpj, Ra
 			TurbulentRandom::ReadFromJson(wpj, r);
 			return [=](Particle& p) {
 				float speed = GetRandomIn(r.speedmin, r.speedmax, rf());
-				glm::vec3 result = glm::make_vec3(&r.forward[0]) * speed;
-				glm::mat4 rotate(1.0f);
-				rotate = glm::rotate(rotate, r.offset, glm::make_vec3(&r.right[0]));
-				result = rotate * glm::vec4(result, 1.0f);	
-				return PM::ChangeVelocity(p, result.x, result.y, result.z);
+				Vector3f result = Vector3f(&r.forward[0]) * speed;
+				result = AngleAxisf(r.offset, Vector3f(&r.right[0])).matrix() * result;
+				return PM::ChangeVelocity(p, result.x(), result.y(), result.z());
 			};
 		}
 	} while(false);
@@ -280,9 +278,9 @@ ParticleOperatorOp WPParticleParser::genParticleOperatorOp(const nlohmann::json&
     		GET_JSON_NAME_VALUE_NOWARN(wpj, "drag", drag);
     		GET_JSON_NAME_VALUE_NOWARN(wpj, "gravity", gravity);
 			if(gravity.size() < 3) gravity.resize(3, gravity.at(0));
+			Vector3f vecG(&gravity[0]);
 			return [=](Particle& p, uint32_t, float life, float t){ 
-				Floats acc = PM::GetDrag(p, drag);
-				std::transform(acc.begin(), acc.end(), gravity.begin(), acc.begin(), std::plus<float>());
+				Vector3f acc = PM::GetDrag(p, drag) + vecG;
 				PM::Accelerate(p, acc, t);
 				PM::MoveByTime(p, t);
 			};
@@ -292,9 +290,9 @@ ParticleOperatorOp WPParticleParser::genParticleOperatorOp(const nlohmann::json&
     		GET_JSON_NAME_VALUE_NOWARN(wpj, "drag", drag);
     		GET_JSON_NAME_VALUE_NOWARN(wpj, "force", force);
 			if(force.size() < 3) force.resize(3, force.at(0));
+			Vector3f vecF(&force[0]);
 			return [=](Particle& p, uint32_t, float life, float t){ 
-				Floats acc = PM::GetAngularDrag(p, drag);
-				std::transform(acc.begin(), acc.end(), force.begin(), acc.begin(), std::plus<float>());
+				Vector3f acc = PM::GetAngularDrag(p, drag) + vecF;
 				PM::AngularAccelerate(p, acc, t);
 				PM::RotateByTime(p, t);
 			};
@@ -319,7 +317,7 @@ ParticleOperatorOp WPParticleParser::genParticleOperatorOp(const nlohmann::json&
 		} else if(name == "colorchange") {
 			auto vc = VecChange::ReadFromJson(wpj);
 			return [vc](Particle& p, uint32_t, float life, float t) {
-				std::vector<float> result(3);
+				Vector3f result;
 				for(int32_t i=0;i<3;i++)
 					result[i] = FadeValueChange(life, vc.starttime, vc.endtime, vc.startvalue[i], vc.endvalue[i]);
 				PM::MutiplyColor(p, result[0], result[1], result[2]);
@@ -339,22 +337,21 @@ ParticleOperatorOp WPParticleParser::genParticleOperatorOp(const nlohmann::json&
 				PM::MutiplySize(p, FrequencyValue::GetScale(fv, index, PM::LifetimePassed(p)));
 			};
 		} else if(name == "oscillateposition") {
-			struct LastMove { double p[3]; };
-			std::vector<LastMove> lastMove;
+			std::vector<Vector3f> lastMove;
 			FrequencyValue fvx = FrequencyValue::ReadFromJson(wpj);
 			std::vector<FrequencyValue> fxp = { fvx, fvx, fvx };
 			return [=](Particle& p, uint32_t index, float life, float t) mutable {
-				std::vector<double> pos {0, 0, 0};
+				Vector3f pos;
 				for(int32_t i=0;i<3;i++) {
 					if(fxp[0].mask[i] < 0.01) continue;
 					FrequencyValue::CheckAndResize(fxp[i], index);
 					FrequencyValue::GenFrequency(fxp[i], p, index, rf);
 					pos[i] = FrequencyValue::GetScale(fxp[i], index, PM::LifetimePassed(p)) * 2.0f;
 				}
-				if(lastMove.size() <= index) lastMove.resize(2*(index+1), {0.0f});
-				double* lastP = lastMove.at(index).p;
+				if(lastMove.size() <= index) lastMove.resize(2*(index+1));
+				Vector3f& lastP = lastMove.at(index);
 				PM::Move(p, pos[0] - lastP[0], pos[1] - lastP[1], 0);
-				std::memcpy(lastP, &pos[0], 3*sizeof(double));
+				lastP = pos;
 			};
 		}
 	} while(false);

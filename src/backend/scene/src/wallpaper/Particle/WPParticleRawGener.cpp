@@ -1,25 +1,38 @@
 #include "WPParticleRawGener.h"
 #include <cstring>
+#include <Eigen/Dense>
+#include <array>
 #include "Log.h"
 #include "ParticleModify.h"
 
 using namespace wallpaper;
+using namespace Eigen;
 
-void AssignVertexTimes(float*dst, const std::vector<float>& src, uint32_t doffset, uint32_t dsize, uint32_t num) {
+void AssignVertexTimes(float*dst, const std::array<float,2>& src, uint32_t doffset, uint32_t dsize, uint32_t num) {
 	for(uint32_t i=0;i<num;i++) {
-		std::memcpy(dst+doffset+i*dsize, &src[0], src.size()*sizeof(float));
+		std::memcpy(dst+doffset+i*dsize, src.data(), 2*sizeof(float));
 	}
 }
-void AssignVertex(float*dst, const std::vector<float>& src, uint32_t doffset, uint32_t dsize, uint32_t ssize) {
-	uint32_t num = src.size() / ssize;
+void AssignVertexTimes(float*dst, const std::array<float,3>& src, uint32_t doffset, uint32_t dsize, uint32_t num) {
 	for(uint32_t i=0;i<num;i++) {
-		std::memcpy(dst+doffset+i*dsize, &src[i*ssize], ssize*sizeof(float));
+		std::memcpy(dst+doffset+i*dsize, src.data(), 3*sizeof(float));
+	}
+}
+void AssignVertexTimes(float*dst, const std::array<float,4>& src, uint32_t doffset, uint32_t dsize, uint32_t num) {
+	for(uint32_t i=0;i<num;i++) {
+		std::memcpy(dst+doffset+i*dsize, src.data(), 4*sizeof(float));
 	}
 }
 
-std::vector<float> GenSingleGLData(const Particle& p, const SceneVertexArray& vertex, ParticleRawGenSpecOp& specOp) {
+void AssignVertex(float*dst, float* data, std::size_t dataSize, uint32_t doffset, uint32_t dsize, uint32_t ssize) {
+	uint32_t num = dataSize / ssize;
+	for(uint32_t i=0;i<num;i++) {
+		std::memcpy(dst+doffset+i*dsize, &data[i*ssize], ssize*sizeof(float));
+	}
+}
+
+void GenSingleGLData(const Particle& p, const SceneVertexArray& vertex, ParticleRawGenSpecOp& specOp, float* data, bool hasTexCoordVec4C1) {
 	std::size_t oneSize = vertex.OneSize();
-	std::vector<float> result(oneSize * 4);
 
 	float size = p.size/2.0f;
 
@@ -27,38 +40,40 @@ std::vector<float> GenSingleGLData(const Particle& p, const SceneVertexArray& ve
 
 	float lifetime = p.lifetime;
 	specOp(p, {&lifetime});
+	
+	// pos
+	AssignVertexTimes(data, std::array<float,3>{p.position[0], -p.position[1], p.position[2]}, offset, oneSize, 4);
+	offset+=4;
+	// TexCoordVec4
+	float rz = p.rotation[2];
+	float t[16] {
+		0.0f, 0.0f, rz, size,
+		1.0f, 0.0f, rz, size,
+		1.0f, 1.0f, rz, size, 
+		0.0f, 1.0f, rz, size
+	};
+	AssignVertex(data, t, 16, offset, oneSize, 4);
+	offset+=4;
 
-	for(const auto& el:vertex.Attributes()) {
-		if(el.name == "a_Position") {
-			AssignVertexTimes(&result[0], {p.position[0], -p.position[1], p.position[2]}, offset, oneSize, 4);
-		} else if(el.name == "a_Color") {
-			AssignVertexTimes(&result[0], {p.color[0], p.color[1], p.color[2], p.alpha}, offset, oneSize, 4);
-		} else if(el.name == "a_TexCoordVec4") {
-			float rz = p.rotation[2];
-			std::vector<float> t = {
-				0.0f, 0.0f, rz, size,
-				1.0f, 0.0f, rz, size,
-				1.0f, 1.0f, rz, size, 
-				0.0f, 1.0f, rz, size
-			};
-			AssignVertex(&result[0], t, offset, oneSize, 4);
-		} else if(el.name == "a_TexCoordVec4C1") {
-			AssignVertexTimes(&result[0], {p.velocity[0], -p.velocity[1], p.velocity[2], lifetime}, offset, oneSize, 4);
-		} else if(el.name == "a_TexCoordC2") {
-			AssignVertexTimes(&result[0], {p.rotation[0], p.rotation[1]}, offset, oneSize, 4);
-		} else {
-			//LOG_ERROR("unknown ...");
-		}
+	// color
+	AssignVertexTimes(data, std::array<float,4>{p.color[0], p.color[1], p.color[2], p.alpha}, offset, oneSize, 4);
+	offset+=4;
+
+
+	if(hasTexCoordVec4C1) {
+		AssignVertexTimes(data, std::array<float,4>{p.velocity[0], -p.velocity[1], p.velocity[2], lifetime}, offset, oneSize, 4);
 		offset+=4;
 	}
-	return result;
+	// TexCoordC2
+	AssignVertexTimes(data, std::array<float,2>{p.rotation[0], p.rotation[1]}, offset, oneSize, 4);
 }
 
 void updateIndexArray(std::size_t index, std::size_t count, SceneIndexArray& iarray) {
 	std::vector<uint32_t> indexs;
+	indexs.reserve(16);
 	for(uint32_t i=index;i<count;i++) {
 		uint32_t x = i*4;
-		std::vector<uint32_t> t {
+		std::array<uint32_t, 6> t {
 			x, x+1, x+3,
 			x+1, x+2, x+3
 		};
@@ -72,8 +87,16 @@ void WPParticleRawGener::GenGLData(const std::vector<Particle>& particles, Scene
 	auto& si = mesh.GetIndexArray(0);
 
 	uint32_t i = 0;
+
+	bool hasTexCoordVec4C1 {false};
+	for(const auto& el:sv.Attributes()) {
+		if(el.name == "a_TexCoordVec4C1") hasTexCoordVec4C1 = true;
+	}	
+	std::vector<float> storage(sv.OneSize()*4);
+	float* pStorage = &storage[0];
 	for(const auto& p:particles) {
-		sv.SetVertexs((i++)*4, 4, &(GenSingleGLData(p, sv, specOp)[0]));
+		GenSingleGLData(p, sv, specOp, pStorage, hasTexCoordVec4C1);
+		sv.SetVertexs((i++)*4, 4, pStorage);
 	}
 	uint32_t indexNum = si.DataCount()/6;
 	if(particles.size() > indexNum) {

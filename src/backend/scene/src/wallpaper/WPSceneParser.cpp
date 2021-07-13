@@ -130,6 +130,16 @@ void SetParticleMesh(SceneMesh& mesh, const wpscene::Particle& particle, uint32_
 	mesh.AddIndexArray(SceneIndexArray(count*2));
 }
 
+ParticleAnimationMode ToAnimMode(const std::string& str) {
+	if(str == "randomframe")
+		return ParticleAnimationMode::RANDOMONE;
+	else if(str == "sequence")
+		return ParticleAnimationMode::SEQUENCE;
+	else {
+		return ParticleAnimationMode::SEQUENCE;
+	}
+}
+
 void LoadInitializer(ParticleSubSystem& pSys, const wpscene::Particle& wp, const wpscene::ParticleInstanceoverride& over, RandomFn& randomFn) {
 	for(const auto& ini:wp.initializers) {
 		pSys.AddInitializer(WPParticleParser::genParticleInitOp(ini, randomFn));
@@ -519,6 +529,7 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 			indexTable.push_back({"image", wpimgobjs.size() - 1});
 			//LOG_INFO(nlohmann::json(wpimgobj).dump(4));
 		} else if(obj.contains("particle") && !obj.at("particle").is_null()) {
+			//continue;
 			wpscene::WPParticleObject wppartobj;
 			if(!wppartobj.FromJson(obj)) continue;
 			if(!wppartobj.visible) continue;
@@ -941,7 +952,7 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 			auto spMesh = std::make_shared<SceneMesh>(true);
 			auto& mesh = *spMesh;
 			uint32_t maxcount = wppartobj.particleObj.maxcount;
-			auto animationmode = wppartobj.particleObj.animationmode;
+			auto animationmode = ToAnimMode(wppartobj.particleObj.animationmode);
 			auto sequencemultiplier = wppartobj.particleObj.sequencemultiplier;
 			bool hasSprite = material.hasSprite;
 			maxcount = maxcount > 4000 ? 4000 : maxcount;
@@ -955,10 +966,14 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 				[=](const Particle& p, const ParticleRawGenSpec& spec) {
 					auto& lifetime = *(spec.lifetime);
 					if(lifetime < 0.0f) return;
-					if(animationmode == "randomframe")
+					switch(animationmode) {
+					case ParticleAnimationMode::RANDOMONE:
 						lifetime = std::floor(p.lifetimeInit);
-					else if((animationmode.empty() && hasSprite) || animationmode == "sequence")
+						break;
+					case ParticleAnimationMode::SEQUENCE:
 						lifetime = (1.0f - (p.lifetime / p.lifetimeInit)) * sequencemultiplier;
+						break;
+					}
 				}
 			);
 

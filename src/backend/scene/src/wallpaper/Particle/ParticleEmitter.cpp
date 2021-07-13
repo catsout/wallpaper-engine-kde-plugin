@@ -13,10 +13,10 @@ typedef std::function<Particle()> GenParticleOp;
 typedef std::function<Particle()> SpwanOp;
 
 int32_t FindLastParticle(const std::vector<Particle>& ps, int32_t last) {
-	for(int32_t i=last;i<ps.size();i++)
-		if(!ParticleModify::LifetimeOk(ps.at(i))) {
+	for(int32_t i=last;i<ps.size();i++) {
+		if(!ParticleModify::LifetimeOk(ps[i]))
 			return i;
-		}
+	}
 	return -1;
 }
 uint32_t GetEmitNum(double& timer, float speed) {
