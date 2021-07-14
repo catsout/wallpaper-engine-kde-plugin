@@ -247,9 +247,9 @@ Column {
             width: refreshButton.width * 1.5
             ListModel {
                 id: filterModel
-                ListElement { text: "scene"; type:"type"; key:"scene"; value:0 }
-                ListElement { text: "web"; type:"type"; key:"web"; value:0 }
-                ListElement { text: "video"; type:"type"; key:"video"; value:0 }
+                ListElement { text: "scene"; type:"type"; key:"scene"; value:1 }
+                ListElement { text: "web"; type:"type"; key:"web"; value:1 }
+                ListElement { text: "video"; type:"type"; key:"video"; value:1 }
                 function map(func) {
                     let arr = [];
                     for(let i=0;i<this.count;i++) arr.push(func(this.get(i), i));
