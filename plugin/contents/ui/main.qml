@@ -17,6 +17,7 @@ Rectangle {
     property bool useMpv: wallpaper.configuration.UseMpv
 
     property int fps: wallpaper.configuration.Fps
+    property int volume: wallpaper.configuration.Volume
     
     // auto pause
     property bool ok: windowModel.playVideoWallpaper

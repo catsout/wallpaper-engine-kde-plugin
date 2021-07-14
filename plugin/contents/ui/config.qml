@@ -21,8 +21,10 @@ Column {
     property string cfg_WallpaperFilePath
     property string cfg_WallpaperType
     property string cfg_BackgroundColor: "black"
+    property string cfg_FilterStr
     property int  cfg_DisplayMode
     property int  cfg_PauseMode
+    property alias cfg_Volume: sliderVol.value
     property alias cfg_FilterMode: comboxFilter.currentIndex
 
     property alias cfg_MuteAudio: muteAudio.checked
@@ -38,123 +40,149 @@ Column {
             visible: Common.checklib_wallpaper(warnRow)
         }
     }
-    Row {
+    GridLayout {
         id: configRow
+        columns: 2
         anchors.horizontalCenter: parent.horizontalCenter
-        spacing: 30
-        Column {
+        GridLayout {
             id: configCol
-            anchors.verticalCenter: parent.verticalCenter
-            Row {
-                Label {
-                    anchors.verticalCenter: parent.verticalCenter
-                    text: "Pause:"
-                }
-                ComboBox {
-                    id: pauseMode
-                    model: [
-                        {
-                            text: "Maximized Window",
-                            value: Common.PauseMode.Max
-                        },
-                        {
-                            text: "Any Window",
-                            value: Common.PauseMode.Any
-                        },
-                        {
-                            text: "Never Pause",
-                            value: Common.PauseMode.Never
-                        }
-                    ]
-                    textRole: "text"
-                    onActivated: cfg_PauseMode = Common.cbCurrentValue(pauseMode)
-                    Component.onCompleted: currentIndex = Common.cbIndexOfValue(pauseMode, cfg_PauseMode)
-                }
+            columns: 2
+            Layout.maximumWidth: 300
+            Label {
+                text: "Pause"
             }
-            Row {
-                Label {
-                    anchors.verticalCenter: parent.verticalCenter
-                    text: "Display:"
-                }
-                ComboBox {
-                    id: displayMode
-                    model: [
-                        {
-                            text: "Keep aspect radio",
-                            value: Common.DisplayMode.Aspect
-                        },
-                        {
-                            text: "Scaling and crop",
-                            value: Common.DisplayMode.Crop
-                        },
-                        {
-                            text: "Scale to fill",
-                            value: Common.DisplayMode.Scale
-                        },
-                    ]
-                    textRole: "text"
-                    onActivated: cfg_DisplayMode = Common.cbCurrentValue(displayMode)
-                    Component.onCompleted: currentIndex = Common.cbIndexOfValue(displayMode, cfg_DisplayMode)
-                }
+            ComboBox {
+                id: pauseMode
+                model: [
+                    {
+                        text: "Maximized Window",
+                        value: Common.PauseMode.Max
+                    },
+                    {
+                        text: "Any Window",
+                        value: Common.PauseMode.Any
+                    },
+                    {
+                        text: "Never Pause",
+                        value: Common.PauseMode.Never
+                    }
+                ]
+                textRole: "text"
+                onActivated: cfg_PauseMode = Common.cbCurrentValue(pauseMode)
+                Component.onCompleted: currentIndex = Common.cbIndexOfValue(pauseMode, cfg_PauseMode)
             }
+            Label {
+                text: "Display"
+            }
+            ComboBox {
+                id: displayMode
+                model: [
+                    {
+                        text: "Keep Aspect Radio",
+                        value: Common.DisplayMode.Aspect
+                    },
+                    {
+                        text: "Scale and Crop",
+                        value: Common.DisplayMode.Crop
+                    },
+                    {
+                        text: "Scale to Fill",
+                        value: Common.DisplayMode.Scale
+                    },
+                ]
+                textRole: "text"
+                onActivated: cfg_DisplayMode = Common.cbCurrentValue(displayMode)
+                Component.onCompleted: currentIndex = Common.cbIndexOfValue(displayMode, cfg_DisplayMode)
+            }
+
             CheckBox {
                 id: muteAudio
+                Layout.columnSpan: 2
                 text: "Mute Audio"
             }          
-            Row {
+
+            CheckBox{
+                Layout.columnSpan: 2
                 visible: Common.checklib_wallpaper(configCol)
-                CheckBox{
-                    id: useMpv
-                    text: "Use mpv"
+                id: useMpv
+                text: "Use mpv"
+            }
+            
+            Label{
+                id: fpsLabel
+                text: "Fps" 
+                ToolTip.visible: fpsMouse.containsMouse
+                ToolTip.text: qsTr("Control fps on scene wallpaper")
+                MouseArea {
+                    id: fpsMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
                 }
             }
-            Row {
-                spacing: fpsLabel.width * 0.2
+            RowLayout {
                 Label{
-                    id: fpsLabel
-                    anchors.verticalCenter: parent.verticalCenter
-                    text: "Fps: " + (sliderFps.value<10?"0":"") + sliderFps.value.toString()
-                    ToolTip.visible: fpsMouse.containsMouse
-                    ToolTip.text: qsTr("Control fps on scene wallpaper")
-                    MouseArea {
-                        id: fpsMouse
-                        anchors.fill: parent
-                        hoverEnabled: true
-                    }
+                    text: sliderFps.value.toString()
                 }
+
                 Slider {
                     id: sliderFps
-                    anchors.verticalCenter: parent.verticalCenter
-                    width: configCol.width - fpsLabel.width * 1.4
+                    Layout.fillWidth: true
                     from: 5
                     to: 60
                     stepSize: 1.0
                     snapMode: Slider.SnapOnRelease
                 }
             }
+            Label{
+                visible: !cfg_MuteAudio
+                id: volumLabel
+                text: "Volum"
+                MouseArea {
+                    id: volumMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                }
+            }
+            RowLayout {
+                visible: !cfg_MuteAudio
+                Label {
+                    text: sliderVol.value.toString()
+                }
+                Slider {
+                    id: sliderVol
+                    Layout.fillWidth: true
+                    from: 0
+                    to: 100
+                    stepSize: 5.0
+                    snapMode: Slider.SnapOnRelease
+                }
+            }
+
         }
+        Item {
+            Layout.column: 1
+            height: 200
+            width: height * (16.0/9.0)
         AnimatedImage {
             id: previewAnim
-            anchors.verticalCenter: parent.verticalCenter
-
+            anchors.fill: parent
             property var nullItem: QtObject {
                 property string source: ""
             }
             property var picItem: (picViewLoader.status == Loader.Ready && picViewLoader.item.view.currentItem)
                                 ? picViewLoader.item.view.currentItem
                                 : nullItem
-            height: configCol.height
-            width: height*(16.0/9.0)
             source: ""
             cache: false
             asynchronous: true
             onStatusChanged: playing = (status == AnimatedImage.Ready) 
             onPicItemChanged: {
                 if(picItem != nullItem) {
-                    height = picItem.thumbnail[1].height * 1.5;
+                    parent.height = picItem.thumbnail[1].height * 1.5;
                     source = picItem.thumbnail[1].source;
                 }
             }
+        }
         }
     }
 
@@ -215,27 +243,58 @@ Column {
         ComboBox {
             id: comboxFilter
             anchors.verticalCenter: parent.verticalCenter
-            model: [
-                {
-                    text: "Show All",
-                    value: "All"
-                },
-                {
-                    text: "Show Scene",
-                    value: "scene"
-                },
-                {
-                    text: "Show Web",
-                    value: "web"
-                },
-                {
-                    text: "Show Video",
-                    value: "video"
+            width: refreshButton.width * 1.5
+            ListModel {
+                id: filterModel
+                ListElement { text: "scene"; type:"type"; key:"scene"; value:0 }
+                ListElement { text: "web"; type:"type"; key:"web"; value:0 }
+                ListElement { text: "video"; type:"type"; key:"video"; value:0 }
+                function map(func) {
+                    let arr = [];
+                    for(let i=0;i<this.count;i++) arr.push(func(this.get(i), i));
+                    return arr;
                 }
-            ]
-            textRole: "text"
+            }
+            model: filterModel
+            displayText: ""
+            indicator: PlasmaCore.IconItem {
+                x: comboxFilter.leftPadding
+                y: comboxFilter.topPadding + (comboxFilter.availableHeight - height) / 2
+                source: "view-filter"
+                PlasmaCore.ToolTipArea {
+                    anchors.fill: parent
+                    subText: ""
+                }
+            }
+            delegate: ItemDelegate {
+                RowLayout {
+                    CheckBox {
+                        text: model.text
+                        checked: model.value
+                        onToggled: {
+                            filterModel.get(index).value = Number(this.checked);
+                            cfg_FilterStr = comboxFilter.intArrayToStr(comboxFilter.getModelValueArray());
+                            folderWorker.filter();
+                        }
+                    }
+                }
+            }
             onActivated: {
-                folderWorker.filter();
+            }
+            function getModelValueArray() {
+                return comboxFilter.model.map((e) => e.value);
+            }
+            function updateModelValue(arr) {
+                arr.map((el, index) => comboxFilter.model.get(index).value = el);
+            }
+            function strToIntArray(str) {
+                return [...str].map((e) => e.charCodeAt(0) - '0'.charCodeAt(0));
+            }
+            function intArrayToStr(arr) {
+                return arr.reduce((acc, e) => acc + e.toString(), "");
+            }
+            Component.onCompleted: {
+                this.updateModelValue(this.strToIntArray(cfg_FilterStr));
             }
         }
     }
@@ -257,10 +316,16 @@ Column {
         }
         function filter() {
             let msg = {
-                "action": "filter", 
-                "data": folderWorker.proxyModel,
-                "model": projectModel,
-                "type": Common.cbCurrentValue(comboxFilter)
+                action: "filter", 
+                data: folderWorker.proxyModel,
+                model: projectModel,
+                filters: comboxFilter.model.map((el) => {
+                    return {
+                        type: el.type,
+                        key: el.key,
+                        value: el.value
+                    };
+                })
             };
             folderWorker.sendMessage(msg);
         }
@@ -356,8 +421,8 @@ Column {
                 visible: picViewGrid.view.count === 0
                 level: 2
                 text: cfg_SteamLibraryPath
-                    ?"There are no wallpapers in steam library workshop"
-                    :"Select your steam library through the folder selector above"
+                    ?"There are no wallpapers in steam library's workshop directory"
+                    :"Select your steam library through the folder selecting button above"
                 opacity: 0.5
             }
 

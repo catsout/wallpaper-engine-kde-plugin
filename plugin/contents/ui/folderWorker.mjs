@@ -66,12 +66,18 @@ WorkerScript.onMessage = function(msg) {
         });
     }
     else if(msg.action == "filter") {
-        let type = msg.type;
+        let typeFilter = (() => {
+            let obj = {};
+            msg.filters.map((el) => {
+                if(el.type == "type") obj[el.key] = el.value;
+            });
+            return (str) => obj[str];
+        })();
         let data = msg.data;
         let model = msg.model;
         model.clear();
         data.forEach(function(el) {
-            if(type == el.type || type == "All")
+            if(typeFilter(el.type))
                 model.append(el);
         });
         model.sync();

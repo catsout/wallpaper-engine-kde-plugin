@@ -5,8 +5,12 @@ import ".."
 Item{
     id: videoItem
     anchors.fill: parent
-    property real volume: 0.0
     property int displayMode: background.displayMode
+    property var volumeFade: Common.createVolumeFade(
+        videoItem, 
+        Qt.binding(function() { return background.mute ? 0 : background.volume; }),
+        (volume) => { player.volume = volume / 100.0; }
+    )
 
     onDisplayModeChanged: {
         if(displayMode == Common.DisplayMode.Scale)
@@ -31,8 +35,7 @@ Item{
         loops: MediaPlayer.Infinite
         muted: background.mute
         source: background.source
-        // can't set player.volume direct, use a var
-        volume: videoItem.volume
+        volume: 0.0
     }
     Component.onCompleted:{
         background.nowBackend = "QtMultimedia";
@@ -40,44 +43,19 @@ Item{
     }
 
     function play(){
-        // stop pause time to avoid quick switch which cause keep pause 
         pauseTimer.stop();
-        if(!background.mute)
-            volumeTimer.start();
-        else videoItem.volume = 1;
         player.play();
+        volumeFade.start();
     }
     function pause(){
-        // need stop volumeTimer to increase volume
-        volumeTimer.stop();
-        if(!background.mute){
-            // set volume and wait before pause, It's to solve the problem that real volume keep high 
-            videoItem.volume = 0;
-            pauseTimer.start();
-        }
-        else player.pause();
-    }
-    Timer{
-        id: volumeTimer
-        running: false
-        repeat: true
-        interval: 300
-        onTriggered: {
-            // increase volume by time
-            if(videoItem.volume >= 0.8)
-            {
-                videoItem.volume = 1.0;
-                volumeTimer.stop();
-            }
-            else
-                videoItem.volume += 0.05;
-        }
+        volumeFade.stop();
+        pauseTimer.start();
     }
     Timer{
         id: pauseTimer
         running: false
         repeat: false
-        interval: 200
+        interval: 300
         onTriggered: {
             player.pause();
         }

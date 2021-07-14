@@ -102,4 +102,35 @@ QtObject {
         }
         return null;
     }
+    function createVolumeFade(qobj, volume, changePlayerVolum) {
+        let timer = Qt.createQmlObject(`import QtQuick 2.0; Timer {
+            property real volume
+            property real volumeFade: 0.0
+        }`, qobj);
+        timer.interval = 300;
+        timer.repeat = true;
+        timer.volume = volume;
+        timer.triggered.connect(function() {
+            if(this.volumeFade >= this.volume) {
+                this.volumeFade = this.volume;
+                timer.stop();
+            } else
+                this.volumeFade += 5;
+        }.bind(timer));
+        timer.onVolumeChanged.connect(function() {
+            if(!this.running) this.volumeFade = this.volume;
+        }.bind(timer));
+        timer.onVolumeFadeChanged.connect(function() {
+            changePlayerVolum(this.volumeFade);
+        }.bind(timer));
+        return {
+            start: () => {
+                timer.start();
+            },
+            stop: () => {
+                timer.volumeFade = 0.0;
+                timer.stop();
+            }
+        };
+    }
 }

@@ -50,5 +50,13 @@
       <label>Fps</label>
       <default>15</default>
     </entry>
+    <entry name="Volume" type="Int">
+      <label>Volume</label>
+      <default>100</default>
+    </entry>
+    <entry name="FilterStr" type="String">
+      <label>FilterStr</label>
+      <default></default>
+    </entry>
   </group>
 </kcfg>
