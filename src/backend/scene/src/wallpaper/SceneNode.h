@@ -11,8 +11,8 @@ namespace wallpaper
 
 class SceneNode {
 public:
-	SceneNode():m_translate(3),m_scale{1.0f,1.0f,1.0f},m_rotation(3),m_name() {}
-	SceneNode(const std::vector<float>& translate, const std::vector<float>& scale, const std::vector<float>& rotation, const std::string& name="")
+	SceneNode():m_translate(Eigen::Vector3f::Zero()),m_scale{1.0f,1.0f,1.0f},m_rotation(Eigen::Vector3f::Zero()),m_name() {}
+	SceneNode(const Eigen::Vector3f& translate, const Eigen::Vector3f& scale, const Eigen::Vector3f& rotation, const std::string& name="")
 		: m_translate(translate),
 		  m_scale(scale),
 		  m_rotation(rotation),
@@ -29,7 +29,7 @@ public:
 
 	const auto& Translate() const { return m_translate; }
 	const auto& Rotation() const { return m_rotation; }
-	void SetTranslate(const std::vector<float>& value) { m_translate = value; }
+	void SetTranslate(const Eigen::Vector3f& value) { m_translate = value; }
 
 	void CopyTrans(const SceneNode& node) {
 		m_translate = node.m_translate;
@@ -44,9 +44,9 @@ public:
 private:
 	std::string m_name;
 	Eigen::Matrix4d m_trans;
-	std::vector<float> m_translate;
-	std::vector<float> m_scale;
-	std::vector<float> m_rotation;
+	Eigen::Vector3f m_translate;
+	Eigen::Vector3f m_scale;
+	Eigen::Vector3f m_rotation;
 
 	std::shared_ptr<SceneMesh> m_mesh;
 

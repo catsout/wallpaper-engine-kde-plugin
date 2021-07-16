@@ -2,35 +2,23 @@
 #include "SceneNode.h"
 #include "Log.h"
 #include <iostream>
-#include <glm/glm.hpp>
 #include "EigenUtil.h"
 
 using namespace wallpaper;
 using namespace Eigen;
 
-Matrix4f GetRotationMat(const std::vector<float>& angle) {
-	Affine3d trans = Affine3d::Identity();
-	trans.prerotate(AngleAxis<double>(angle[1], Vector3d(0.0f, 1.0f, 0.0f))); // y
-	trans.prerotate(AngleAxis<double>(angle[0], Vector3d(1.0f, 0.0f, 0.0f))); // x
-	trans.prerotate(AngleAxis<double>(-angle[2], Vector3d(0.0f, 0.0f, 1.0f))); // z
-	return trans.matrix().cast<float>();
+Vector3d SceneCamera::GetPosition() const {
+	if(m_node) {
+		return Affine3d(m_node->GetLocalTrans()) * Vector3d::Zero();
+	}
+	return Vector3d::Zero();
 }
 
-Vector3f SceneCamera::GetPosition() const {
+Vector3d SceneCamera::GetDirection() const {
 	if(m_node) {
-		const float * value = &(m_node->Translate())[0];
-		return Vector3f(value);
+		return (m_node->GetLocalTrans() * Vector4d(0.0f, 0.0f, -1.0f, 0.0f)).head<3>();
 	}
-	return Vector3f::Zero();
-}
-
-Vector3f SceneCamera::GetDirection() const {
-	if(m_node) {
-		const auto& angle = m_node->Rotation();
-		Matrix4f mat4 = GetRotationMat(angle);
-		return (mat4 * Vector4f(0.0f, 0.0f, -1.0f, 0.0f)).head(3);
-	}
-	return Vector3f(0.0f, 0.0f,-1.0f);
+	return -Vector3d::UnitZ();
 }
 
 Matrix4d SceneCamera::GetViewMatrix() const {
@@ -45,11 +33,11 @@ void SceneCamera::CalculateViewProjectionMatrix() {
 	// CalculateViewMatrix
 	{
 		if(m_node) {
-			const auto& pos = GetPosition().cast<double>();
-			const auto& rmat4 = GetRotationMat(m_node->Rotation());
-			Vector3d dir = (rmat4 * Vector4f(0.0f, 0.0f, -1.0f, 0.0f)).head<3>().cast<double>();
-			Vector3d up = (rmat4 * Vector4f(0.0f, 1.0f, 0.0f, 0.0f)).head<3>().cast<double>();
-			m_viewMat = LookAt(pos, pos+dir, up);
+			Affine3d nodeTrans(m_node->GetLocalTrans());
+			Vector3d eye = nodeTrans * Vector3d::Zero();
+			Vector3d center = nodeTrans * (-Vector3d::UnitZ());
+			Vector3d up = Vector3d::UnitY();
+			m_viewMat = LookAt(eye, center, up);
 		} else 
 			m_viewMat = Matrix4d::Identity();
 	};

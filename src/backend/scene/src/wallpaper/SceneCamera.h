@@ -50,8 +50,8 @@ public:
 	bool HasImgEffect() const { return (bool)m_imgEffect; }
 	auto& GetImgEffect() { return m_imgEffect; }
 
-	Eigen::Vector3f GetPosition() const;	
-	Eigen::Vector3f GetDirection() const;
+	Eigen::Vector3d GetPosition() const;	
+	Eigen::Vector3d GetDirection() const;
 
 	Eigen::Matrix4d GetViewMatrix() const;
 	Eigen::Matrix4d GetViewProjectionMatrix() const;

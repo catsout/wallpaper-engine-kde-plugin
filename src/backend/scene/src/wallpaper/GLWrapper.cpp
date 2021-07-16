@@ -67,7 +67,7 @@ GLTexture::GLTexture(GLint target, uint16_t width, uint16_t height, uint16_t num
 		 h(height),
 		 numMips(numMips) {};
 
-GLFramebuffer::GLFramebuffer():width(0), height(0),color_texture(GL_TEXTURE_2D, width, height, 1) {}
+GLFramebuffer::GLFramebuffer():width(0), height(0),color_texture(GL_TEXTURE_2D, 0, 0, 1) {}
 GLFramebuffer::GLFramebuffer(uint32_t _width, uint32_t _height)
 		: width(_width), height(_height),color_texture(GL_TEXTURE_2D, _width, _height, 1) {}
 

@@ -88,12 +88,12 @@ void WPShaderValueUpdater::UpdateShaderValues(SceneNode* pNode, SceneShader* pSh
 		if(hasNodeData) {
 			const auto& nodeData = m_nodeDataMap.at(pNode);
 			if(m_parallax.enable) {
-				Vector3f nodePos(&(pNode->Translate())[0]);
+				Vector3f nodePos = pNode->Translate();
 				Vector2f depth(&nodeData.parallaxDepth[0]);
 				Vector2f ortho{m_ortho[0], m_ortho[1]};
 				Vector2f mouseVec = (Vector2f{0.5f, 0.5f} - Vector2f(&m_mousePos[0])).cwiseProduct(ortho);
 				mouseVec *= m_parallax.mouseinfluence;
-				const auto& camPos = camera->GetPosition();
+				Vector3f camPos = camera->GetPosition().cast<float>();
 				Vector2f paraVec = (nodePos.head<2>() - camPos.head<2>() + mouseVec).cwiseProduct(depth) * m_parallax.amount;
 				modelTrans = Affine3d(Translation3d(Vector3d(paraVec.x(), paraVec.y(), 0.0f))).matrix() * modelTrans;
 			}
@@ -101,7 +101,7 @@ void WPShaderValueUpdater::UpdateShaderValues(SceneNode* pNode, SceneShader* pSh
 		if(reqM) shadervs.push_back({G_M, ShaderValue::ValueOf(modelTrans)});
 		if(reqMI) shadervs.push_back({G_MI, ShaderValue::ValueOf(modelTrans.inverse())});
 		if(reqMVP) {
-			auto mvpTrans = viewProTrans * modelTrans;
+			Matrix4d mvpTrans = viewProTrans * modelTrans;
 			shadervs.push_back({G_MVP, ShaderValue::ValueOf(mvpTrans)});
 			if(reqMVPI) shadervs.push_back({G_MVPI, ShaderValue::ValueOf(mvpTrans.inverse())});
 		}

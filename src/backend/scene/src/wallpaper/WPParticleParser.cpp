@@ -230,7 +230,7 @@ struct FrequencyValue {
 	float scalemin {0.0f};
 	float scalemax {1.0f};
 	float phasemin {0.0f};
-	float phasemax {2*pi};
+	float phasemax {static_cast<float>(2*pi)};
 	struct StorageRandom {
 		float frequency {0.0f};
 		float phase {0.0f};

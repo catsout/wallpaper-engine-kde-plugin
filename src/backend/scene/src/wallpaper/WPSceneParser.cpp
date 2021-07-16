@@ -28,6 +28,7 @@
 #include <Eigen/Dense>
 
 using namespace wallpaper;
+using namespace Eigen;
 
 typedef std::unordered_map<std::string, int32_t> Combos;
 
@@ -595,8 +596,11 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 	globalBaseConstSvs["g_ViewRight"]= {"g_ViewRight", {1.0f, 0, 0}};
 	globalBaseConstSvs["g_ViewForward"]= {"g_ViewForward", {0, 0, -1.0f}};
 	globalBaseConstSvs["g_EyePosition"]= {"g_EyePosition", {0, 0, 0}};
+	globalBaseConstSvs["g_TexelSize"]= {"g_TexelSize", {1.0f/1920.0f, 1.0f/1080.0f}};
+	globalBaseConstSvs["g_TexelSizeHalf"]= {"g_TexelSizeHalf", {1.0f/1920.0f/2.0f, 1.0f/1080.0f/2.0f}};
 
-	std::vector<float> cori{ortho.width/2.0f,ortho.height/2.0f,0},cscale{1.0f,1.0f,1.0f},cangle(3);
+
+	Vector3f cori{ortho.width/2.0f,ortho.height/2.0f,0},cscale{1.0f,1.0f,1.0f},cangle(Vector3f::Zero());
 	auto spCamNode = std::make_shared<SceneNode>(cori, cscale, cangle);
 	upScene->activeCamera->AttatchNode(spCamNode);
 	upScene->sceneGraph->AppendChild(spCamNode);
@@ -609,7 +613,7 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 		algorism::CalculatePersperctiveFov(1000.0f, ortho.height)
 	);
 	{
-		std::vector<float> cperori = cori; cperori[2] = 1000.0f;
+		Vector3f cperori = cori; cperori[2] = 1000.0f;
 		auto spPerCamNode = std::make_shared<SceneNode>(cperori, cscale, cangle);
 		upScene->cameras["global_perspective"]->AttatchNode(spPerCamNode);
 		upScene->sceneGraph->AppendChild(spPerCamNode);
@@ -662,7 +666,11 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 				continue;
 
 			wpimgobj.origin[1] = ortho.height - wpimgobj.origin[1];
-			auto spImgNode = std::make_shared<SceneNode>(wpimgobj.origin, wpimgobj.scale, wpimgobj.angles);
+			auto spImgNode = std::make_shared<SceneNode>(
+				Vector3f(&wpimgobj.origin[0]), 
+				Vector3f(&wpimgobj.scale[0]), 
+				Vector3f(&wpimgobj.angles[0]) 
+			);
 
 			SceneMaterial material;
 			WPShaderValueData svData;
@@ -920,7 +928,11 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 			auto& wppartobj = wppartobjs.at(indexT.second);
 			wppartobj.origin[1] = ortho.height - wppartobj.origin[1];
 
-			auto spNode = std::make_shared<SceneNode>(wppartobj.origin, wppartobj.scale, wppartobj.angles);
+			auto spNode = std::make_shared<SceneNode>(
+				Vector3f(&wppartobj.origin[0]), 
+				Vector3f(&wppartobj.scale[0]), 
+				Vector3f(&wppartobj.angles[0]) 
+			);
 			if(wppartobj.particleObj.flags.perspective) {
 				spNode->SetCamera("global_perspective");
 			}
