@@ -44,7 +44,7 @@ Matrix4d Ortho(double left, double right, double bottom, double top, double near
 
 Matrix4d Perspective(double fov, double aspect, double nearz, double farz) {
 	Projective3d trans = Projective3d::Identity();
-	// as z is negtive, keep w is positive
+	// z is negtive, but keep w positive
 	trans.prescale(Vector3d(nearz, nearz, (nearz + farz)));
 	trans(3,2) = -1.0f;
 	trans(3,3) = 0.0f;
