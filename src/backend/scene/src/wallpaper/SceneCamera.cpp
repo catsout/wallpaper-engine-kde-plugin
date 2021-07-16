@@ -2,42 +2,42 @@
 #include "SceneNode.h"
 #include "Log.h"
 #include <iostream>
-
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
+#include <glm/glm.hpp>
+#include "EigenUtil.h"
 
 using namespace wallpaper;
+using namespace Eigen;
 
-glm::mat4 GetRotationMat(const std::vector<float>& angle) {
-	glm::mat4 mat4(1.0f);
-	mat4 = glm::rotate(glm::mat4(1.0f), -angle[2], glm::vec3(0,0,1)); // z
-	mat4 = glm::rotate(mat4, angle[0], glm::vec3(1,0,0)); // x
-	mat4 = glm::rotate(mat4, angle[1], glm::vec3(0,1,0)); // y
-	return mat4;
+Matrix4f GetRotationMat(const std::vector<float>& angle) {
+	Affine3d trans = Affine3d::Identity();
+	trans.prerotate(AngleAxis<double>(angle[1], Vector3d(0.0f, 1.0f, 0.0f))); // y
+	trans.prerotate(AngleAxis<double>(angle[0], Vector3d(1.0f, 0.0f, 0.0f))); // x
+	trans.prerotate(AngleAxis<double>(-angle[2], Vector3d(0.0f, 0.0f, 1.0f))); // z
+	return trans.matrix().cast<float>();
 }
 
-glm::vec3 SceneCamera::GetPosition() const {
+Vector3f SceneCamera::GetPosition() const {
 	if(m_node) {
 		const float * value = &(m_node->Translate())[0];
-		return glm::make_vec3(value);
+		return Vector3f(value);
 	}
-	return glm::vec3(0,0,0);
+	return Vector3f::Zero();
 }
 
-glm::vec3 SceneCamera::GetDirection() const {
+Vector3f SceneCamera::GetDirection() const {
 	if(m_node) {
 		const auto& angle = m_node->Rotation();
-		auto mat4 = GetRotationMat(angle);
-		return mat4 * glm::vec4(0, 0, -1.0f, 0);
+		Matrix4f mat4 = GetRotationMat(angle);
+		return (mat4 * Vector4f(0.0f, 0.0f, -1.0f, 0.0f)).head(3);
 	}
-	return glm::vec3(0, -1.0f, 0);
+	return Vector3f(0.0f, 0.0f,-1.0f);
 }
 
-glm::mat4 SceneCamera::GetViewMatrix() const {
+Matrix4d SceneCamera::GetViewMatrix() const {
 	return m_viewMat;
 }
 
-glm::mat4 SceneCamera::GetViewProjectionMatrix() const {
+Matrix4d SceneCamera::GetViewProjectionMatrix() const {
 	return m_viewProjectionMat;
 }
 
@@ -45,23 +45,23 @@ void SceneCamera::CalculateViewProjectionMatrix() {
 	// CalculateViewMatrix
 	{
 		if(m_node) {
-			const auto& pos = GetPosition();
+			const auto& pos = GetPosition().cast<double>();
 			const auto& rmat4 = GetRotationMat(m_node->Rotation());
-			glm::vec3 dir = rmat4 * glm::vec4(0, 0, -1.0f, 0);
-			glm::vec3 up = rmat4 * glm::vec4(0, 1.0f, 0, 0);
-			m_viewMat = glm::lookAt(pos, pos+dir, up);
+			Vector3d dir = (rmat4 * Vector4f(0.0f, 0.0f, -1.0f, 0.0f)).head<3>().cast<double>();
+			Vector3d up = (rmat4 * Vector4f(0.0f, 1.0f, 0.0f, 0.0f)).head<3>().cast<double>();
+			m_viewMat = LookAt(pos, pos+dir, up);
 		} else 
-			m_viewMat = glm::mat4(1.0f);
+			m_viewMat = Matrix4d::Identity();
 	};
 
 	if(m_perspective) {
-		m_viewProjectionMat = glm::perspective(glm::radians(m_fov), m_aspect, m_nearClip, m_farClip) * m_viewMat;
+		m_viewProjectionMat = Perspective(Radians(m_fov), m_aspect, m_nearClip, m_farClip) * m_viewMat;
 	} else {
-		float left = -m_width/2.0f;
-		float right = m_width/2.0f;
-		float bottom = -m_height/2.0f;
-		float up = m_height/2.0f;
-		m_viewProjectionMat = glm::ortho(left, right, bottom, up, m_nearClip, m_farClip) * m_viewMat;
+		double left = -m_width/2.0f;
+		double right = m_width/2.0f;
+		double bottom = -m_height/2.0f;
+		double up = m_height/2.0f;
+		m_viewProjectionMat = Ortho(left, right, bottom, up, m_nearClip, m_farClip) * m_viewMat;
 	}
 }
 

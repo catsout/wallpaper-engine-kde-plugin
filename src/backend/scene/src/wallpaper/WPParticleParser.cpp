@@ -151,7 +151,7 @@ ParticleInitOp WPParticleParser::genParticleInitOp(const nlohmann::json& wpj, Ra
 			return [=](Particle& p) {
 				float speed = GetRandomIn(r.speedmin, r.speedmax, rf());
 				Vector3f result = Vector3f(&r.forward[0]) * speed;
-				result = AngleAxisf(r.offset, Vector3f(&r.right[0])).matrix() * result;
+				result = AngleAxisf(r.offset, Vector3f(&r.right[0]).normalized()) * result;
 				return PM::ChangeVelocity(p, result.x(), result.y(), result.z());
 			};
 		}
@@ -341,14 +341,14 @@ ParticleOperatorOp WPParticleParser::genParticleOperatorOp(const nlohmann::json&
 			FrequencyValue fvx = FrequencyValue::ReadFromJson(wpj);
 			std::vector<FrequencyValue> fxp = { fvx, fvx, fvx };
 			return [=](Particle& p, uint32_t index, float life, float t) mutable {
-				Vector3f pos;
+				Vector3f pos {Vector3f::Zero()};
 				for(int32_t i=0;i<3;i++) {
 					if(fxp[0].mask[i] < 0.01) continue;
 					FrequencyValue::CheckAndResize(fxp[i], index);
 					FrequencyValue::GenFrequency(fxp[i], p, index, rf);
 					pos[i] = FrequencyValue::GetScale(fxp[i], index, PM::LifetimePassed(p)) * 2.0f;
 				}
-				if(lastMove.size() <= index) lastMove.resize(2*(index+1));
+				if(lastMove.size() <= index) lastMove.resize(2*(index+1), Vector3f::Zero());
 				Vector3f& lastP = lastMove.at(index);
 				PM::Move(p, pos[0] - lastP[0], pos[1] - lastP[1], 0);
 				lastP = pos;

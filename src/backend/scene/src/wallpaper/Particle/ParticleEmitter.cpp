@@ -1,6 +1,7 @@
 #include "ParticleEmitter.h"
 #include "ParticleModify.h"
 #include <random>
+#include <array>
 #include "Log.h"
 
 using namespace wallpaper;
@@ -54,9 +55,9 @@ ParticleEmittOp ParticleBoxEmitterArgs::MakeEmittOp(ParticleBoxEmitterArgs a) {
 	return [a, timer](std::vector<Particle>& ps, std::vector<ParticleInitOp>& inis, uint32_t maxcount, float timepass) mutable {
 		timer += timepass;
 		auto GenBox = [&]() {
-			std::vector<float> pos;
+			std::array<float, 3> pos;
 			for(int32_t i=0;i<3;i++)
-				pos.push_back(GetRandomIn(a.minDistance[i], a.maxDistance[i], (a.randomFn()-0.5f)*2.0f));
+				pos[i] = GetRandomIn(a.minDistance[i], a.maxDistance[i], (a.randomFn()-0.5f)*2.0f);
 			auto p = Particle();
 			ParticleModify::MoveTo(p, pos[0], pos[1], pos[2]);
 			ParticleModify::Move(p, a.orgin[0], a.orgin[1], a.orgin[2]);

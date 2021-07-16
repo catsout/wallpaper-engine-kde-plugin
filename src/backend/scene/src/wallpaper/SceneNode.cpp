@@ -1,19 +1,20 @@
 #include "SceneNode.h"
 
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
-
+#include <Eigen/Geometry>
 
 using namespace wallpaper;
+using namespace Eigen;
 
-glm::mat4 SceneNode::GetLocalTrans() const {
-	glm::mat4 mat4(1.0f);
-	mat4 = glm::translate(glm::mat4(1.0f), glm::make_vec3(&m_translate[0])); 
-	//2. rotation
-	mat4 = glm::rotate(mat4, -m_rotation[2], glm::vec3(0,0,1)); // z, need negative
-	mat4 = glm::rotate(mat4, m_rotation[0], glm::vec3(1,0,0)); // x
-	mat4 = glm::rotate(mat4, m_rotation[1], glm::vec3(0,1,0)); // y
-	//1. scale
-	mat4 = glm::scale(mat4, glm::make_vec3(&m_scale[0]));
-	return mat4;
+Matrix4d SceneNode::GetLocalTrans() const {
+	Affine3d trans = Affine3d::Identity();
+	trans.prescale(Vector3f(&m_scale[0]).cast<double>());
+
+	trans.prerotate(AngleAxis<double>(m_rotation[1], Vector3d::UnitY())); // y
+	trans.prerotate(AngleAxis<double>(m_rotation[0], Vector3d::UnitX())); // x
+	trans.prerotate(AngleAxis<double>(-m_rotation[2], Vector3d::UnitZ())); // z
+
+	trans.pretranslate(Vector3f(&m_translate[0]).cast<double>());
+
+
+	return trans.matrix();
 }

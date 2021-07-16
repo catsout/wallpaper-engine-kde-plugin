@@ -2,8 +2,7 @@
 #include <list>
 #include <vector>
 #include <memory>
-#define GLM_FORCE_SWIZZLE
-#include <glm/glm.hpp>
+#include <Eigen/Dense>
 #include "SceneMesh.h"
 #include "SceneCamera.h"
 
@@ -26,7 +25,7 @@ public:
 		sub->m_parent = this;
 		m_children.push_back(sub);
 	}
-	glm::mat4 GetLocalTrans() const;
+	Eigen::Matrix4d GetLocalTrans() const;
 
 	const auto& Translate() const { return m_translate; }
 	const auto& Rotation() const { return m_rotation; }
@@ -44,7 +43,7 @@ public:
 	auto& GetChildren() { return m_children; }
 private:
 	std::string m_name;
-	glm::mat4 m_trans;
+	Eigen::Matrix4d m_trans;
 	std::vector<float> m_translate;
 	std::vector<float> m_scale;
 	std::vector<float> m_rotation;

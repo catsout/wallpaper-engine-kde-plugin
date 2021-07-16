@@ -5,10 +5,6 @@
 #include <algorithm>
 #include <numeric>
 
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
-
 using namespace wallpaper;
 using namespace Eigen;
 
@@ -46,13 +42,14 @@ void ParticleModify::MoveApplySign(Particle& p, int32_t x, int32_t y, int32_t z)
 
 
 void ParticleModify::RotatePos(Particle &p, float x, float y, float z) {
-	glm::mat4 rotate(1.0f);
-	rotate = glm::rotate(rotate, glm::radians(x), glm::vec3(1.0, 0.0, 0.0));
-	rotate = glm::rotate(rotate, glm::radians(y), glm::vec3(0.0, 1.0, 0.0));
-	rotate = glm::rotate(rotate, glm::radians(z), glm::vec3(0.0, 0.0, 1.0));
-	glm::vec3 pos = glm::make_vec3(p.position);
-	pos = rotate * glm::vec4(pos, 1.0f);
-	std::memcpy(p.position, glm::value_ptr(pos), 3*sizeof(float));
+	Affine3f trans = Affine3f::Identity();
+
+	trans.prerotate(AngleAxis<float>(y, Vector3f::UnitY())); // y
+	trans.prerotate(AngleAxis<float>(x, Vector3f::UnitX())); // x
+	trans.prerotate(AngleAxis<float>(-z, Vector3f::UnitZ())); // z
+	Vector3f pos(p.position);
+	pos = trans * pos;
+	std::memcpy(p.position, pos.data(), 3*sizeof(float));
 }
 
 void ParticleModify::InitColor(Particle &p, float r, float g, float b) {
@@ -119,16 +116,16 @@ double ParticleModify::LifetimePassed(const Particle &p) {
 }
 
 Eigen::Vector3f ParticleModify::GetDrag(Particle& p, float s) {
-	Eigen::Vector3f result;
-	if(s == 0) {
+	Eigen::Vector3f result {Eigen::Vector3f::Zero()};
+	if(s != 0) {
 		result = Eigen::Vector3f(p.velocity) * (-s);
 	}
 	return result;
 }
 
 Eigen::Vector3f ParticleModify::GetAngularDrag(Particle &p, float s) {
-	Eigen::Vector3f result;
-	if(s == 0) {
+	Eigen::Vector3f result {Eigen::Vector3f::Zero()};
+	if(s != 0) {
 		result = Eigen::Vector3f(p.velocity) * (-s);
 	}
 	return result;

@@ -2,9 +2,8 @@
 #include "Scene.h"
 #include "SpriteAnimation.h"
 
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
+#include <Eigen/Dense>
+#include <Eigen/Geometry>
 #include <iostream>
 #include <chrono>
 #include <ctime>
@@ -19,6 +18,7 @@
 #define CONTAINS(s, v) (s.count(v) == 1)
 
 using namespace wallpaper;
+using namespace Eigen;
 
 void WPShaderValueUpdater::FrameBegin() {
 	using namespace std::chrono;
@@ -77,32 +77,33 @@ void WPShaderValueUpdater::UpdateShaderValues(SceneNode* pNode, SceneShader* pSh
 	bool reqM = CONTAINS(valueSet, G_M);
 	bool reqMVP = CONTAINS(valueSet, G_MVP);
 	bool reqMVPI CONTAINS(valueSet, G_MVPI);
-	const auto& viewProTrans = camera->GetViewProjectionMatrix();
+
+	Matrix4d viewProTrans = camera->GetViewProjectionMatrix();
 
 	if(CONTAINS(valueSet, G_VP)) {
 		shadervs.push_back({G_VP, ShaderValue::ValueOf(viewProTrans)});
 	}
 	if(reqM || reqMVP || reqMI || reqMVPI) {
-		glm::mat4 modelTrans = pNode->GetLocalTrans();
+		Matrix4d modelTrans = pNode->GetLocalTrans().cast<double>();
 		if(hasNodeData) {
 			const auto& nodeData = m_nodeDataMap.at(pNode);
 			if(m_parallax.enable) {
-				glm::vec3 nodePos = glm::make_vec3(&(pNode->Translate())[0]);
-				glm::vec2 depth = glm::make_vec2(&nodeData.parallaxDepth[0]);
-				glm::vec2 ortho = glm::vec2{m_ortho[0], m_ortho[1]};
-				glm::vec2 mouseVec = (glm::vec2{0.5f, 0.5f} - glm::make_vec2(&m_mousePos[0])) * ortho;
+				Vector3f nodePos(&(pNode->Translate())[0]);
+				Vector2f depth(&nodeData.parallaxDepth[0]);
+				Vector2f ortho{m_ortho[0], m_ortho[1]};
+				Vector2f mouseVec = (Vector2f{0.5f, 0.5f} - Vector2f(&m_mousePos[0])).cwiseProduct(ortho);
 				mouseVec *= m_parallax.mouseinfluence;
 				const auto& camPos = camera->GetPosition();
-				glm::vec2 paraVec = (nodePos.xy() - camPos.xy() + mouseVec) * depth * m_parallax.amount;
-				modelTrans = glm::translate(glm::mat4(1.0f), glm::vec3(paraVec, 0.0f)) * modelTrans;
+				Vector2f paraVec = (nodePos.head<2>() - camPos.head<2>() + mouseVec).cwiseProduct(depth) * m_parallax.amount;
+				modelTrans = Affine3d(Translation3d(Vector3d(paraVec.x(), paraVec.y(), 0.0f))).matrix() * modelTrans;
 			}
 		}
 		if(reqM) shadervs.push_back({G_M, ShaderValue::ValueOf(modelTrans)});
-		if(reqMI) shadervs.push_back({G_MI, ShaderValue::ValueOf(glm::inverse(modelTrans))});
+		if(reqMI) shadervs.push_back({G_MI, ShaderValue::ValueOf(modelTrans.inverse())});
 		if(reqMVP) {
 			auto mvpTrans = viewProTrans * modelTrans;
 			shadervs.push_back({G_MVP, ShaderValue::ValueOf(mvpTrans)});
-			if(reqMVPI) shadervs.push_back({G_MVPI, ShaderValue::ValueOf(glm::inverse(mvpTrans))});
+			if(reqMVPI) shadervs.push_back({G_MVPI, ShaderValue::ValueOf(mvpTrans.inverse())});
 		}
 	}
 	//	g_EffectTextureProjectionMatrix

@@ -25,6 +25,7 @@
 #include <cmath>
 #include <functional>
 #include <regex>
+#include <Eigen/Dense>
 
 using namespace wallpaper;
 
@@ -846,11 +847,11 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 						shaderInfo.baseConstSvs = baseConstSvs;
 						shaderInfo.baseConstSvs["g_EffectTextureProjectionMatrix"] = {
 							"g_EffectTextureProjectionMatrix", 
-							ShaderValue::ValueOf(glm::mat4(1.0f))
+							ShaderValue::ValueOf(Eigen::Matrix4f::Identity())
 						};
 						shaderInfo.baseConstSvs["g_EffectTextureProjectionMatrixInverse"] = {
 							"g_EffectTextureProjectionMatrixInverse", 
-							ShaderValue::ValueOf(glm::mat4(1.0f))
+							ShaderValue::ValueOf(Eigen::Matrix4f::Identity())
 						};
 						SceneMaterial material;
 						WPShaderValueData svData;

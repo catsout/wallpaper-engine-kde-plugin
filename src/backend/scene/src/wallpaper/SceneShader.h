@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <string>
 #include <unordered_map>
-#include <glm/glm.hpp>
+#include <Eigen/Dense>
 
 namespace wallpaper
 {
@@ -12,9 +12,13 @@ struct ShaderValue {
 	std::string name;
 	std::vector<float> value;
 
-	static std::vector<float> ValueOf(const glm::mat4&);
-	static std::vector<float> ValueOf(const glm::vec2&);
-	static std::vector<float> ValueOf(const glm::vec4&);
+	static inline std::vector<float> ValueOf(const Eigen::Ref<const Eigen::MatrixXf>& eig) {
+		return std::vector<float>(eig.data(), eig.data() + eig.size());
+	}
+	static inline std::vector<float> ValueOf(const Eigen::Ref<const Eigen::MatrixXd>& eigd) {
+		const Eigen::Ref<const Eigen::MatrixXf>& eig = eigd.cast<float>();
+		return std::vector<float>(eig.data(), eig.data() + eig.size());
+	}
 };
 
 typedef std::unordered_map<std::string, ShaderValue> ShaderValues;

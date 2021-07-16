@@ -2,7 +2,6 @@
 #include <cstdint>
 #include <vector>
 #include <memory>
-#include <glm/glm.hpp>
 #include <Eigen/Dense>
 #include "SceneImageEffectLayer.h"
 
@@ -51,11 +50,11 @@ public:
 	bool HasImgEffect() const { return (bool)m_imgEffect; }
 	auto& GetImgEffect() { return m_imgEffect; }
 
-	glm::vec3 GetPosition() const;	
-	glm::vec3 GetDirection() const;
+	Eigen::Vector3f GetPosition() const;	
+	Eigen::Vector3f GetDirection() const;
 
-	glm::mat4 GetViewMatrix() const;
-	glm::mat4 GetViewProjectionMatrix() const;
+	Eigen::Matrix4d GetViewMatrix() const;
+	Eigen::Matrix4d GetViewProjectionMatrix() const;
 
 	std::shared_ptr<SceneNode> GetAttachedNode() const { return m_node; }
 
@@ -79,8 +78,8 @@ private:
 	float m_fov {45.0f};
 	bool m_perspective;
 
-	glm::mat4 m_viewMat {1.0f};
-	glm::mat4 m_viewProjectionMat {1.0f};
+	Eigen::Matrix4d m_viewMat {Eigen::Matrix4d::Identity()};
+	Eigen::Matrix4d m_viewProjectionMat {Eigen::Matrix4d::Identity()};
 	
 	std::shared_ptr<SceneNode> m_node;
 	std::shared_ptr<SceneImageEffectLayer> m_imgEffect {nullptr};
