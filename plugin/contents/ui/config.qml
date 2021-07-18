@@ -29,9 +29,12 @@ Column {
 
     property alias cfg_MuteAudio: muteAudio.checked
     property alias cfg_UseMpv: useMpv.checked
+    property alias cfg_RandomizeWallpaper: randomizeWallpaper.checked
 
     property alias cfg_Fps: sliderFps.value
-    Column { 
+    property alias cfg_RandomizeTimer: sliderTimer.value
+
+    Column {
         id: warnRow
         anchors.horizontalCenter: parent.horizontalCenter
         Text {
@@ -102,6 +105,12 @@ Column {
             }          
 
             CheckBox{
+                id: randomizeWallpaper
+                Layout.columnSpan: 2
+                text: "Randomize every X minutes"
+            }
+
+            CheckBox{
                 Layout.columnSpan: 2
                 visible: Common.checklib_wallpaper(configCol)
                 id: useMpv
@@ -153,6 +162,30 @@ Column {
                     Layout.fillWidth: true
                     from: 0
                     to: 100
+                    stepSize: 5.0
+                    snapMode: Slider.SnapOnRelease
+                }
+            }
+            Label{
+                visible: cfg_RandomizeWallpaper
+                id: switchTimer
+                text: "Timer"
+                MouseArea {
+                    id: timerMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                }
+            }
+            RowLayout {
+                visible: cfg_RandomizeWallpaper
+                Label {
+                    text: sliderTimer.value.toString()
+                }
+                Slider {
+                    id: sliderTimer
+                    Layout.fillWidth: true
+                    from: 1
+                    to: 200
                     stepSize: 5.0
                     snapMode: Slider.SnapOnRelease
                 }

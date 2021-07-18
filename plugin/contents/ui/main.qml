@@ -15,10 +15,12 @@ Rectangle {
     property int displayMode: wallpaper.configuration.DisplayMode
     property bool mute: wallpaper.configuration.MuteAudio
     property bool useMpv: wallpaper.configuration.UseMpv
+    property bool randomizeWallpaper: wallpaper.configuration.RandomizeWallpaper
 
     property int fps: wallpaper.configuration.Fps
     property int volume: wallpaper.configuration.Volume
-    
+    property int switchTimer: wallpaper.configuration.SwitchTimer
+
     // auto pause
     property bool ok: windowModel.playVideoWallpaper
 
@@ -88,6 +90,20 @@ Rectangle {
     WindowModel {
         id: windowModel
     }
+
+    Timer {
+        id: randomizeTimer
+        running: background.randomizeWallpaper
+        interval: background.switchTimer
+        repat: true
+        onTriggered: {
+            console.log("TIMER TRIGGERED");
+            background.source = getWorkshopPath() + "1150612688/Konosuba_Megumin@1080p60fpsfix3.mp4";
+            console.log(background.source);
+            background.type = 'video';
+        }
+    }
+
 
     // lauch pause time to avoid freezing
     Timer {
@@ -197,5 +213,6 @@ Rectangle {
         background.okChanged.connect(autoPause);
 
         lauchPauseTimer.start();
+        randomizeTimer.start();
     }
 }
