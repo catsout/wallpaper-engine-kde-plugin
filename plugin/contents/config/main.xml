@@ -42,6 +42,10 @@
       <label>Mute audio</label>
       <default>true</default>
     </entry>
+    <entry name="RandomizeWallpaper" type="Bool">
+      <label>Randomize every X minutes</label>
+      <default>0</default>
+    </entry>
     <entry name="UseMpv" type="Bool">
       <label>Use Mpv</label>
       <default>false</default>
@@ -49,6 +53,10 @@
     <entry name="Fps" type="Int">
       <label>Fps</label>
       <default>15</default>
+    </entry>
+    <entry name="SwitchTimer" type="Int">
+      <label>Change timer (in minutes)</label>
+      <default>5</default>
     </entry>
     <entry name="Volume" type="Int">
       <label>Volume</label>

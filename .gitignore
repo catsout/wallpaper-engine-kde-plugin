@@ -13,3 +13,5 @@ _deps
 build
 *.swp
 .vscode
+.idea
+cmake-build-debug
