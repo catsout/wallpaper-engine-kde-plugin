@@ -32,7 +32,7 @@ Column {
     property alias cfg_RandomizeWallpaper: randomizeWallpaper.checked
 
     property alias cfg_Fps: sliderFps.value
-    property alias cfg_RandomizeTimer: sliderTimer.value
+    property alias cfg_SwitchTimer: sliderTimer.value
 
     Column {
         id: warnRow

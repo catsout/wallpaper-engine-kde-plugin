@@ -94,13 +94,13 @@ Rectangle {
     Timer {
         id: randomizeTimer
         running: background.randomizeWallpaper
-        interval: background.switchTimer
-        repat: true
+        interval: background.switchTimer * 1000 * 60
+        repeat: true
         onTriggered: {
-            console.log("TIMER TRIGGERED");
-            background.source = getWorkshopPath() + "1150612688/Konosuba_Megumin@1080p60fpsfix3.mp4";
-            console.log(background.source);
-            background.type = 'video';
+            console.log("timer");
+            wallpaper.configuration.WallpaperWorkShopId = 1150612688;
+            wallpaper.configuration.WallpaperFilePath = getWorkshopPath() + "/Konosuba_Megumin@1080p60fpsfix3.mp4";
+            wallpaper.configuration.WallpaperType = 'video';
         }
     }
 
