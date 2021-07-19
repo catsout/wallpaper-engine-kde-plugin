@@ -186,7 +186,7 @@ Column {
                     Layout.fillWidth: true
                     from: 1
                     to: 200
-                    stepSize: 5.0
+                    stepSize: 1.0
                     snapMode: Slider.SnapOnRelease
                 }
             }
