@@ -10,16 +10,16 @@
 using namespace wallpaper::gl;
 
 #if defined(DEBUG_OPENGL)
-#define CHECK_GL_ERROR_IF_DEBUG() checkGlError(__FILE__, __FUNCTION__, __LINE__);
+#define CHECK_GL_ERROR_IF_DEBUG() checkGlError(__FILE__, __FUNCTION__, __LINE__)
 #else
 #define CHECK_GL_ERROR_IF_DEBUG()
 #endif
 
 void checkGlError(const char* file, const char* func, int line)
 {
-    int err = glGetError();
-    if(err != 0)
-        std::cerr << "GL_ERROR: " << err << "  " << func << "  at: " << file << "  line: " << line << std::endl;
+	int err = glGetError();
+	if(err != 0)
+		std::cerr << "GL_ERROR: " << err << "  " << func << "  at: " << file << "  line: " << line << std::endl;
 }
 
 typedef wallpaper::TextureFormat TextureFormat;
@@ -58,14 +58,12 @@ GLShader::~GLShader() {
 		glDeleteShader(shader);
 	}
 }
-void kk() {
 
-}
 GLTexture::GLTexture(GLint target, uint16_t width, uint16_t height, uint16_t numMips)
 		:target(target),
 		 w(width),
 		 h(height),
-		 numMips(numMips) {};
+		 numMips(numMips) {}
 
 GLFramebuffer::GLFramebuffer():width(0), height(0),color_texture(GL_TEXTURE_2D, 0, 0, 1) {}
 GLFramebuffer::GLFramebuffer(uint32_t _width, uint32_t _height)
@@ -80,11 +78,11 @@ GLFramebuffer::~GLFramebuffer() {
 }
 */
 
-bool GLWrapper::Init(void *get_proc_address(const char *name)) {
-    if (!gladLoadGLLoader((GLADloadproc)get_proc_address))
-    {
-        LOG_ERROR("Failed to initialize GLAD");
-    }
+bool GLWrapper::Init(void *get_proc_address(const char *)) {
+	if (!gladLoadGLLoader((GLADloadproc)get_proc_address))
+	{
+		LOG_ERROR("Failed to initialize GLAD");
+	}
 	return true;
 }
 
@@ -126,7 +124,7 @@ GLFramebuffer* GLWrapper::CreateFramebuffer(int32_t width, int32_t height, Scene
 	GLFramebuffer* fbo = new GLFramebuffer(width, height);
 	glGenFramebuffers(1, &fbo->framebuffer);
 	GLTexture* tex = CreateTexture(GL_TEXTURE_2D , width, height, 0, sample);
-	TextureImage(tex, 0, width, height, TextureFormat::RGBA8, NULL, 0);
+	TextureImage(tex, 0, width, height, TextureFormat::RGBA8, nullptr, 0);
 	fbo->color_texture.texture = tex->texture;
 	delete tex;
 	glBindFramebuffer(GL_FRAMEBUFFER, fbo->framebuffer);
@@ -152,8 +150,8 @@ GLFramebuffer* GLWrapper::CreateFramebuffer(int32_t width, int32_t height, Scene
 	return fbo;
 }
 
-GLProgram* GLWrapper::CreateProgram(std::vector<GLShader *> shaders, 
-						 std::vector<ShaderAttribute> attribLocs) {
+GLProgram* GLWrapper::CreateProgram(const std::vector<GLShader *>& shaders,
+						 const std::vector<ShaderAttribute>& attribLocs) {
 	GLProgram* program = new GLProgram();
 	program->program = glCreateProgram();
 	for(auto& shader:shaders) {
@@ -168,16 +166,16 @@ GLProgram* GLWrapper::CreateProgram(std::vector<GLShader *> shaders,
 	glLinkProgram(program->program);
 	glUseProgram(program->program);
 	int success;
-    glGetProgramiv(program->program, GL_LINK_STATUS, &success);
-    if(!success) {
-        std::string infoLog = GetInfoLog(program->program, glGetProgramiv, glGetProgramInfoLog);
-        LOG_ERROR("LINKING_FAILED\n" + infoLog);
-    }
+	glGetProgramiv(program->program, GL_LINK_STATUS, &success);
+	if(!success) {
+		std::string infoLog = GetInfoLog(program->program, glGetProgramiv, glGetProgramInfoLog);
+		LOG_ERROR("LINKING_FAILED\n" + infoLog);
+	}
 	for(auto& shader:shaders) {
 		DeleteShader(shader);
 	}
 	CHECK_GL_ERROR_IF_DEBUG();
-    return program;
+	return program;
 }
 /*
 GLProgram* GLWrapper::CreateProgram(std::vector<GLShader *> shaders,
@@ -196,38 +194,37 @@ GLProgram* GLWrapper::CreateProgram(std::vector<GLShader *> shaders,
 	glLinkProgram(program->program);
 	glUseProgram(program->program);
 	int success;
-    glGetProgramiv(program->program, GL_LINK_STATUS, &success);
-    if(!success) {
-        std::string infoLog = GetInfoLog(program->program, glGetProgramiv, glGetProgramInfoLog);
-        LOG_ERROR("LINKING_FAILED\n" + infoLog);
-    }
+	glGetProgramiv(program->program, GL_LINK_STATUS, &success);
+	if(!success) {
+		std::string infoLog = GetInfoLog(program->program, glGetProgramiv, glGetProgramInfoLog);
+		LOG_ERROR("LINKING_FAILED\n" + infoLog);
+	}
 	CHECK_GL_ERROR_IF_DEBUG();
-    return program;
+	return program;
 }
 */
 
 GLShader* GLWrapper::CreateShader(GLuint stage, const std::string& source) {
 	GLShader* shader = new GLShader();
 	shader->shader = glCreateShader(stage);
-	const char* source_char = source.c_str();	
+	const char* source_char = source.c_str();
 	glShaderSource(shader->shader, 1, &source_char, nullptr);
-    glCompileShader(shader->shader);
+	glCompileShader(shader->shader);
 	CHECK_GL_ERROR_IF_DEBUG();
 	GLint success = 0;
 	glGetShaderiv(shader->shader, GL_COMPILE_STATUS, &success);
-    if(!success)
-    {
-        std::string infolog = GetInfoLog(shader->shader, glGetShaderiv, glGetShaderInfoLog);
-        LOG_ERROR("COMPILATION_FAILED\n" + infolog);
+	if(!success)
+	{
+		std::string infolog = GetInfoLog(shader->shader, glGetShaderiv, glGetShaderInfoLog);
+		LOG_ERROR("COMPILATION_FAILED\n" + infolog);
 		LOG_INFO(source);
-    }
+	}
 	CHECK_GL_ERROR_IF_DEBUG();
 	return shader;
 }
 
 
 void GLWrapper::CopyTexture(GLFramebuffer* src, GLTexture* dst) {
-	GLFramebuffer* backfbo = m_curFbo;
 	BindFramebuffer(src);
 	glReadBuffer(GL_COLOR_ATTACHMENT0);
 	BindTexture(dst);
@@ -236,13 +233,12 @@ void GLWrapper::CopyTexture(GLFramebuffer* src, GLTexture* dst) {
 }
 
 GLTexture* GLWrapper::CopyTexture(GLFramebuffer* fbo) {
-	GLFramebuffer* backfbo = m_curFbo;
 	BindFramebuffer(fbo);
 	glReadBuffer(GL_COLOR_ATTACHMENT0);
 
 	int width = fbo->width,height = fbo->height;
 	GLTexture* tex = CreateTexture(GL_TEXTURE_2D , width, height, 0);
-	TextureImage(tex, 0, width, height, TextureFormat::RGBA8, NULL, 0);
+	TextureImage(tex, 0, width, height, TextureFormat::RGBA8, nullptr, 0);
 	BindTexture(tex);
 	glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, width, height);
 //	BindFramebuffer(backfbo);
@@ -302,6 +298,7 @@ void GLWrapper::DeleteBuffer(GLBuffer* buffer) {
 
 void GLWrapper::DeleteTexture(GLTexture* texture) {
 	glDeleteTextures(1, &texture->texture);
+	delete texture;
 	CHECK_GL_ERROR_IF_DEBUG();
 }
 
@@ -322,12 +319,13 @@ void GLWrapper::DeleteFramebuffer(GLFramebuffer *glfbo) {
 		glDeleteFramebuffers(1, &glfbo->framebuffer);
 	if (glfbo->color_texture.texture)
 		glDeleteTextures(1, &glfbo->color_texture.texture);
+	delete glfbo;
 	CHECK_GL_ERROR_IF_DEBUG();
 }
 
 
 void GLWrapper::BufferSubData(GLBuffer* buffer, std::size_t size, const float* data) {
-    glBufferSubData(buffer->target, 0, size, data);
+	glBufferSubData(buffer->target, 0, size, data);
 	CHECK_GL_ERROR_IF_DEBUG();
 }
 
@@ -403,11 +401,11 @@ void GLWrapper::TextureImagePbo(GLTexture *texture, int level, int width, int he
 		return;
 	}
 	memcpy(ptr, data, imgsize);
-	glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);	
+	glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
 	CHECK_GL_ERROR_IF_DEBUG();
 	BindTexture(texture);
 
-	GLenum format, type;	
+	GLenum format, type;
 	GLint internalFormat;
 	TextureFormat2GLFormat(texformat, internalFormat, format, type);
 	switch(texformat) {
@@ -415,12 +413,12 @@ void GLWrapper::TextureImagePbo(GLTexture *texture, int level, int width, int he
 	case TextureFormat::RG8:
 	case TextureFormat::RGB8:
 	case TextureFormat::RGBA8:
-		glTexImage2D(tex->target, level, internalFormat, width, height, 0, format, type, 0);
+		glTexImage2D(tex->target, level, internalFormat, width, height, 0, format, type, nullptr);
 		break;
 	case TextureFormat::BC1:
 	case TextureFormat::BC2:
 	case TextureFormat::BC3:
-		glCompressedTexImage2D(tex->target, level, internalFormat, width, height, 0, imgsize, 0);
+		glCompressedTexImage2D(tex->target, level, internalFormat, width, height, 0, imgsize, nullptr);
 		break;
 	}
 	CHECK_GL_ERROR_IF_DEBUG();
@@ -480,7 +478,7 @@ void GLWrapper::SetDepthTest(bool enable) {
 
 
 void GLWrapper::SetColorMask(bool r, bool g, bool b, bool a) {
-	glColorMask(r, g, b, a);	
+	glColorMask(r, g, b, a);
 }
 
 int GLWrapper::GetUniforms(GLProgram* program, std::vector<GLUniform>& uniforms) {
@@ -555,28 +553,28 @@ void GLWrapper::SetUniform(GLProgram* program, GLUniform* uniform,const void* va
 
 	int count = uniformCount_[uniform->type];
 
-    switch(uniform->type)
-    {   
+	switch(uniform->type)
+	{
 	case GL_FLOAT:
 	case GL_FLOAT_VEC2:
 	case GL_FLOAT_VEC3:
 	case GL_FLOAT_VEC4:
-        SetUniformF(loc, count, static_cast<const float*>(value));
-        break;
-    case GL_INT:
+		SetUniformF(loc, count, static_cast<const float*>(value));
+		break;
+	case GL_INT:
 	case GL_SAMPLER_2D:
-        SetUniformI(loc, count, static_cast<const int*>(value));
+		SetUniformI(loc, count, static_cast<const int*>(value));
 		break;
 	case GL_FLOAT_MAT4:
 		SetUniformMat4(loc, static_cast<const float*>(value));
-        break;
-    }   
+		break;
+	}   
 }
 
 void GLWrapper::LoadMesh(SceneMesh& mesh) {
 	uint32_t vao;
-    glGenVertexArrays(1, &vao);
-    glBindVertexArray(vao);
+	glGenVertexArrays(1, &vao);
+	glBindVertexArray(vao);
 
 	GLuint bufId;
 	auto verCount = mesh.VertexCount();
@@ -608,7 +606,7 @@ void GLWrapper::LoadMesh(SceneMesh& mesh) {
 		auto& iArray = mesh.GetIndexArray(i);
 		glGenBuffers(1, &bufId);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bufId);
-	    glBufferData(GL_ELEMENT_ARRAY_BUFFER, iArray.CapacitySizeof(), iArray.Data(), mesh.Dynamic()? GL_DYNAMIC_DRAW :GL_STATIC_DRAW);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, iArray.CapacitySizeof(), iArray.Data(), mesh.Dynamic()? GL_DYNAMIC_DRAW :GL_STATIC_DRAW);
 		CHECK_GL_ERROR_IF_DEBUG();
 		iArray.SetID(m_bufidgen++);
 		m_bufMap.insert({iArray.ID(), bufId});
@@ -617,7 +615,7 @@ void GLWrapper::LoadMesh(SceneMesh& mesh) {
 	}
 	mesh.SetID(m_vaoidgen++);
 	m_vaoMap.insert({mesh.ID(), vao});	
-    glBindVertexArray(0);
+	glBindVertexArray(0);
 }
 
 void GLWrapper::RenderMesh(const SceneMesh& mesh) {
@@ -655,7 +653,7 @@ void GLWrapper::RenderMesh(const SceneMesh& mesh) {
 		glDrawArrays(GL_POINTS, 0, count);
 	} else  {
 		auto count = mesh.GetIndexArray(0).DataCount();
-		glDrawElements(ToGLType(mesh.Primitive()), count, GL_UNSIGNED_INT, 0);
+		glDrawElements(ToGLType(mesh.Primitive()), count, GL_UNSIGNED_INT, nullptr);
 	}
 	CHECK_GL_ERROR_IF_DEBUG();
 	glBindVertexArray(0);
@@ -683,7 +681,9 @@ GLFramebuffer* GLWrapper::GetNowFramebuffer() {
 	return m_curFbo;
 }
 
-GLWrapper::GLWrapper() {
+GLWrapper::GLWrapper()
+	: m_curFbo(nullptr)
+{
 	uniformCount_[GL_FLOAT] = 1;
 	uniformCount_[GL_FLOAT_VEC2] = 2;
 	uniformCount_[GL_FLOAT_VEC3] = 3;
@@ -694,7 +694,7 @@ GLWrapper::GLWrapper() {
 
 namespace wp = wallpaper;
 
-int32_t GLProgram::GetUniformLocation(GLProgram* pro, const std::string name) {
+int32_t GLProgram::GetUniformLocation(GLProgram* pro, const std::string& name) {
 	for(const auto& u:pro->uniformLocs) {
 		if(name == u.name)
 			return u.location;

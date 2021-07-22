@@ -1,5 +1,4 @@
 #include "FrameTimer.h"
-#include <ctime>
 #include <iostream>
 
 using namespace wallpaper;
@@ -10,6 +9,7 @@ FrameTimer::FrameTimer():m_running(false),
 						m_condition(),
 						m_cvmutex(),
 						m_thread(),
+						m_frames(0),
 						m_clock() {}
 
 FrameTimer::~FrameTimer() {

@@ -4,14 +4,11 @@
 #include "FpsCounter.h"
 #include "FrameTimer.h"
 
-#include "SceneMesh.h"
 #include "Scene.h"
 #include "WPSceneParser.h"
 #include "GLGraphicManager.h"
 
-#include <iostream>
 #include <chrono>
-#include <ctime>
 #include <thread>
 
 typedef wallpaper::fs::file_node file_node;
@@ -21,7 +18,7 @@ file_node wallpaper::WallpaperGL::m_pkgfs = file_node();
 
 class WallpaperGL::impl {
 public:
-	impl() {}
+	impl() = default;
 	FpsCounter fpsCounter;
 	FrameTimer frameTimer;
 	WPSceneParser parser;
@@ -34,7 +31,7 @@ public:
 };
 
 WallpaperGL::WallpaperGL():m_mousePos({0,0}),m_aspect(16.0f/9.0f),pImpl(std::make_unique<impl>())
- {};
+ {}
 
 WallpaperGL::~WallpaperGL() {
 	Clear();
@@ -51,9 +48,9 @@ void WallpaperGL::Load(const std::string& pkg_path) {
 	if(!m_pkgPath.empty()) {
 		Clear();
 	}
-    //load pkgfile
-    m_pkgfs = file_node();
-    if(fs::ReadPkgToNode(m_pkgfs,pkg_path) == -1) {
+	//load pkgfile
+	m_pkgfs = file_node();
+	if(fs::ReadPkgToNode(m_pkgfs,pkg_path) == -1) {
 		LOG_ERROR("Can't load " + pkg_path);
 		return;
 	}
@@ -93,7 +90,7 @@ void WallpaperGL::Render() {
 		pImpl->fpsCounter.RegisterFrame(timep);
 
 		auto& m_scene = (pImpl->scene);
-		if(m_scene) {	
+		if(m_scene) {
 			m_scene->shaderValueUpdater->MouseInput(m_mousePos[0]/pImpl->fboW, m_mousePos[1]/pImpl->fboH);
 			m_scene->shaderValueUpdater->SetTexelSize(1.0f/pImpl->fboW, 1.0f/pImpl->fboH);
 			pImpl->gm.Draw();
