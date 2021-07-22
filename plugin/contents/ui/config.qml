@@ -129,10 +129,10 @@ Column {
                 }
             }
             RowLayout {
-                Label{
+                Text {
+                    Layout.preferredWidth: font.pixelSize * 2
                     text: sliderFps.value.toString()
                 }
-
                 Slider {
                     id: sliderFps
                     Layout.fillWidth: true
@@ -145,16 +145,12 @@ Column {
             Label{
                 visible: !cfg_MuteAudio
                 id: volumLabel
-                text: "Volum"
-                MouseArea {
-                    id: volumMouse
-                    anchors.fill: parent
-                    hoverEnabled: true
-                }
+                text: "Volume"
             }
             RowLayout {
                 visible: !cfg_MuteAudio
-                Label {
+                Text {
+                    Layout.preferredWidth: font.pixelSize * 2
                     text: sliderVol.value.toString()
                 }
                 Slider {
@@ -170,15 +166,11 @@ Column {
                 visible: cfg_RandomizeWallpaper
                 id: switchTimer
                 text: "Timer"
-                MouseArea {
-                    id: timerMouse
-                    anchors.fill: parent
-                    hoverEnabled: true
-                }
             }
             RowLayout {
                 visible: cfg_RandomizeWallpaper
-                Label {
+                Text {
+                    Layout.preferredWidth: font.pixelSize * 2
                     text: sliderTimer.value.toString()
                 }
                 Slider {
