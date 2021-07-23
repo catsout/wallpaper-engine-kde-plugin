@@ -6,11 +6,8 @@
 #include <QOpenGLContext>
 #include <QtGlobal>
 #include <QtGui/QOpenGLFramebufferObject>
-#include <QtQuick/QQuickView>
 #include <QtQuick/QQuickWindow>
 #include <clocale>
-#include <fstream>
-#include <stdexcept>
 
 #if defined(__linux__) || defined(__FreeBSD__)
 //#ifdef ENABLE_X11
@@ -35,7 +32,7 @@ namespace {
         MpvObject::on_update(ctx);
     }
 
-    static void *get_proc_address_mpv(void *ctx, const char *name) {
+    void *get_proc_address_mpv(void *ctx, const char *name) {
         Q_UNUSED(ctx)
 
         QOpenGLContext *glctx = QOpenGLContext::currentContext();
@@ -61,7 +58,7 @@ namespace {
         if (QGuiApplication::platformName().contains("wayland")) {
             params[2].type = MPV_RENDER_PARAM_WL_DISPLAY;
             auto *native = QGuiApplication::platformNativeInterface();
-            params[2].data = native->nativeResourceForWindow("display", NULL);
+            params[2].data = native->nativeResourceForWindow("display", nullptr);
         }
 #endif
         int code = mpv_render_context_create(mpv_gl, mpv, params);
@@ -72,12 +69,12 @@ namespace {
 
 class MpvRenderer : public QQuickFramebufferObject::Renderer {
 public:
-    MpvRenderer(MpvObject *new_obj)
+    explicit MpvRenderer(MpvObject *new_obj)
         : m_obj{new_obj}, m_mpv_handle{m_obj->mpv}, m_mpv_context{nullptr} {
         mpv_set_wakeup_callback(m_mpv_handle, on_mpv_events, nullptr);
     }
 
-    virtual ~MpvRenderer() {
+    ~MpvRenderer() override {
         if (m_mpv_context)  // only initialized if something got drawn
         {
             mpv_render_context_free(m_mpv_context);
@@ -89,7 +86,7 @@ public:
 	 * This function is called when a new FBO is needed.
      * This happens on the initial frame.
 	 */
-    QOpenGLFramebufferObject *createFramebufferObject(const QSize &size) {
+    QOpenGLFramebufferObject *createFramebufferObject(const QSize &size) override {
         QMetaObject::invokeMethod(m_obj, "initCallback");
         return QQuickFramebufferObject::Renderer::createFramebufferObject(size);
     }
@@ -99,7 +96,7 @@ public:
 	 * called once before the FBO is created
 	 * only place when it is safe for the renderer and the item to read and write each others members
 	 */
-    void synchronize(QQuickFramebufferObject *item) {
+    void synchronize(QQuickFramebufferObject *item) override {
         if (!m_mpv_context && !m_inited) {
             if (CreateMpvContex(m_mpv_handle, &m_mpv_context) >= 0) {
                 m_inited = true;
@@ -109,7 +106,7 @@ public:
         item->window()->resetOpenGLState();
     }
 
-    void render() {
+    void render() override {
         if (m_inited && m_mpv_context) {
             QOpenGLFramebufferObject *fbo = framebufferObject();
             mpv_opengl_fbo mpfbo{.fbo = static_cast<int>(fbo->handle()), .w = fbo->width(), .h = fbo->height(), .internal_format = 0};
@@ -167,8 +164,7 @@ MpvObject::MpvObject(QQuickItem *parent)
     connect(this, &MpvObject::onUpdate, this, &MpvObject::update, Qt::QueuedConnection);
 }
 
-MpvObject::~MpvObject() {
-}
+MpvObject::~MpvObject() = default;
 
 /*
  * called on the rendering thread while the GUI thread is blocked
@@ -185,15 +181,13 @@ void MpvObject::on_update(void *ctx) {
 }
 
 bool MpvObject::command(const QVariant &params) {
-    int errorCode = 0;
-    errorCode = mpv::qt::get_error(mpv::qt::command(mpv, params));
+    int errorCode = mpv::qt::get_error(mpv::qt::command(mpv, params));
     return (errorCode >= 0);
 }
 
 bool MpvObject::setProperty(const QString &name, const QVariant &value) {
-    int errorCode = 0;
+    int errorCode = mpv::qt::get_error(mpv::qt::set_property(mpv, name, value));
     qDebug() << "Setting property" << name << "to" << value;
-    errorCode = mpv::qt::get_error(mpv::qt::set_property(mpv, name, value));
     return (errorCode >= 0);
 }
 
@@ -204,7 +198,7 @@ QVariant MpvObject::getProperty(const QString &name, bool *ok) const {
     if (name.isEmpty()) {
         return QVariant();
     }
-    const QVariant result = mpv::qt::get_property(mpv, name);
+    QVariant result = mpv::qt::get_property(mpv, name);
     const int errorCode = mpv::qt::get_error(result);
     if (errorCode >= 0) {
         if (ok) {
@@ -227,13 +221,13 @@ void MpvObject::initCallback() {
 void MpvObject::play() {
     if (status() != Paused)
         return;
-    bool result = this->setProperty("pause", false);
+    this->setProperty("pause", false);
 }
 
 void MpvObject::pause() {
     if (status() != Playing)
         return;
-    bool result = this->setProperty("pause", true);
+    this->setProperty("pause", true);
 }
 
 void MpvObject::stop() {
