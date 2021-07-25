@@ -1,5 +1,6 @@
 #include "FrameTimer.h"
 #include <iostream>
+#include <cassert>
 
 using namespace wallpaper;
 
@@ -52,7 +53,7 @@ void FrameTimer::Run() {
 void FrameTimer::Stop() {
 	if (!m_running)
 		return;
-
+	assert(std::this_thread::get_id() != m_thread.get_id());
 	{
 		std::unique_lock<std::mutex> lock(m_cvmutex);
 		m_running = false;
