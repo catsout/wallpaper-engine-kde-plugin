@@ -5,29 +5,10 @@
 #include <functional>
 #include "Type.h"
 #include "pkg.h"
-#include "FpsCounter.h"
-#include "FrameTimer.h"
-#include "WPSceneParser.h"
-#include "GLGraphicManager.h"
 
 namespace wallpaper
 {
-class impl {
-public:
-	impl() = default;
-	FpsCounter fpsCounter;
-	FrameTimer frameTimer;
-	WPSceneParser parser;
-	GLGraphicManager gm;
-
-	std::chrono::time_point<std::chrono::steady_clock> timer {std::chrono::steady_clock::now()};
-	std::unique_ptr<Scene> scene;
-	float fboW {1920.0f};
-	float fboH {1080.0f};
-};
-
-
-	class WallpaperGL
+class WallpaperGL
 {
 public:
     static const fs::file_node& GetPkgfs(){
@@ -58,7 +39,8 @@ public:
 	void Stop();
 
 private:
-	impl pImpl;
+	class impl;
+    std::unique_ptr<impl> pImpl;
 
     static fs::file_node m_pkgfs;
 	std::string m_pkgPath;
