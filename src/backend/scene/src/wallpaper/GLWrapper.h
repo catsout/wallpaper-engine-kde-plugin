@@ -95,7 +95,7 @@ public:
 
 	std::vector<AttribLoc> attribLocs_;
 	std::vector<UniformLoc> uniformLocs;
-	static int32_t GetUniformLocation(GLProgram*, const std::string name);
+	static int32_t GetUniformLocation(GLProgram*, const std::string& name);
 };
 
 class GLShader
@@ -115,8 +115,8 @@ public:
 	GLFramebuffer *CreateFramebuffer(int32_t width, int32_t height, SceneTextureSample sample={});
 	GLProgram* CreateProgram(std::vector<GLShader *> shaders, 
 							 std::vector<GLProgram::AttribLoc> attribLocs);
-	GLProgram* CreateProgram(std::vector<GLShader *> shaders, 
-							 std::vector<ShaderAttribute> attribLocs);
+	GLProgram* CreateProgram(const std::vector<GLShader *>& shaders,
+							 const std::vector<ShaderAttribute>& attribLocs);
 
 	GLShader* CreateShader(GLuint stage, const std::string& source);
 	void CopyTexture(GLFramebuffer* src, GLTexture* dst);

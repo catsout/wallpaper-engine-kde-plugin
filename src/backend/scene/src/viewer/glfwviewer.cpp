@@ -1,14 +1,11 @@
 #include <iostream>
 #include <set>
 #include <fstream>
-#include <map>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <atomic>
 #include "pkg.h"
 #include "wallpaper.h"
-
-#include <unistd.h>
 
 using namespace std;
 
@@ -17,7 +14,7 @@ unsigned int SCR_HEIGHT = 720;
 atomic<bool> renderCall(false);
 wallpaper::WallpaperGL* pwgl = nullptr;
 
-void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
+void framebuffer_size_callback(GLFWwindow*, int width, int height) {
 	SCR_WIDTH = width;
 	SCR_HEIGHT = height;
 	if(pwgl != nullptr) {
@@ -25,7 +22,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
 	}
 }
 
-void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
+void cursor_position_callback(GLFWwindow*, double xpos, double ypos) {
 	if(pwgl)
 		pwgl->SetMousePos(xpos, ypos);
 }
@@ -47,8 +44,8 @@ int main(int argc, char**argv)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "WP", NULL, NULL);
-    if (window == NULL) {
+    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "WP", nullptr, nullptr);
+    if (window == nullptr) {
         std::cout << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
         return -1;

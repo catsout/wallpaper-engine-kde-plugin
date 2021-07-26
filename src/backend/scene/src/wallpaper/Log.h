@@ -1,8 +1,8 @@
 #pragma once
 #include <string>
 
-#define LOG_ERROR(text) wallpaper::Logger::Log(__FUNCTION__, __LINE__, "Error at ", (text));
-#define LOG_INFO(text) wallpaper::Logger::Log("", -1, "", (text));
+#define LOG_ERROR(text) wallpaper::Logger::Log(__FUNCTION__, __LINE__, "Error at ", (text))
+#define LOG_INFO(text) wallpaper::Logger::Log("", -1, "", (text))
 
 namespace wallpaper
 {

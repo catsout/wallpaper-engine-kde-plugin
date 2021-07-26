@@ -4,7 +4,6 @@
 #include "Algorism.h"
 
 #include <functional>
-#include <iostream>
 
 using namespace wallpaper;
 
@@ -56,7 +55,7 @@ void GLRenderTargetManager::ReleaseFrameBuffer(const std::string& name, const Sc
 	auto id = GetID(rt);
 	std::string keystr = name + std::to_string(id);
 	if(m_inuse.count(keystr) != 0) {
-		m_unuse.push_back({id, m_inuse.at(keystr)});
+		m_unuse.emplace_back(id, m_inuse.at(keystr));
 		m_inuse.erase(keystr);
 	}
 }
@@ -90,18 +89,18 @@ void UpdateDefaultRenderTargetBind(Scene& scene, GLRenderTargetManager& rtm, uin
 
 std::string OutImageType(const Image& img) {
 	if(img.type == ImageType::UNKNOWN)
-		return ToString(img.format);	
+		return ToString(img.format);
 	else 
 		return ToString(img.type);
 }
 
 std::vector<gl::GLTexture*> LoadImage(gl::GLWrapper* pglw, const SceneTexture& tex, const Image& img) {
-    auto& glw = *pglw;
+	auto& glw = *pglw;
 	LOG_INFO(std::string("Load tex ") + OutImageType(img) + " " + tex.url);
 	std::vector<gl::GLTexture*> texs;
 	for(int i_img=0;i_img < img.count;i_img++) {
 		auto& mipmaps = img.imageDatas.at(i_img);
-		if(mipmaps.size() == 0) {
+		if(mipmaps.empty()) {
 			LOG_ERROR("no tex data");
 			continue;
 		}
@@ -123,7 +122,7 @@ void TraverseNode(GLGraphicManager* pMgr, void (GLGraphicManager::*func)(SceneNo
 }
 
 void GLGraphicManager::LoadNode(SceneNode* node) {
-    auto& glw = *m_glw;
+	auto& glw = *m_glw;
 	if(node->Mesh() == nullptr) return;
 	auto* mesh = node->Mesh();
 	glw.LoadMesh(*mesh);
@@ -133,8 +132,8 @@ void GLGraphicManager::LoadNode(SceneNode* node) {
 	for(const auto& url:material->textures) {
 		if(url.empty() || url.compare(0, 4, "_rt_") == 0) continue;
 		if(m_textureMap.count(url) > 0) continue;
-		auto img = m_scene->imageParser->Parse(url);;
-		m_textureMap[url] = LoadImage(m_glw.get(), *m_scene->textures[url].get(), *img.get());
+		auto img = m_scene->imageParser->Parse(url);
+		m_textureMap[url] = LoadImage(m_glw.get(), *m_scene->textures[url].get(), *img);
 	}
 	auto& materialShader = material->customShader;
 	auto* shader = materialShader.shader.get();
@@ -167,7 +166,7 @@ void GLGraphicManager::LoadNode(SceneNode* node) {
 }
 
 void GLGraphicManager::RenderNode(SceneNode* node) {
-    auto& glw = *m_glw;
+	auto& glw = *m_glw;
 	if(node->Mesh() == nullptr) return;
 	auto* mesh = node->Mesh();
 	if(mesh->Material() == nullptr) return;
@@ -204,7 +203,7 @@ void GLGraphicManager::RenderNode(SceneNode* node) {
 			auto& rt = m_scene->renderTargets.at(name);
 			if(m_scene->renderTargetBindMap.count(name) != 0) {
 				const auto& copy = m_scene->renderTargetBindMap.at(name);
-				if(copy.copy == true) {
+				if(copy.copy) {
 					const auto& rtcopy = m_scene->renderTargets.at(copy.name);
 					rt = rtcopy;
 					auto* gltex = &m_rtm.GetFrameBuffer(name, rt)->color_texture;
@@ -222,10 +221,10 @@ void GLGraphicManager::RenderNode(SceneNode* node) {
 					imageId = stex->spriteAnim.GetCurFrame().imageId;
 			}
 			auto& texs = m_textureMap.at(name);
-			if(texs.size() > 0)
+			if(!texs.empty())
 				glw.BindTexture(texs[imageId]);
 		}
-    }
+	}
 	auto program = m_programMap.at(shader);
 	glw.BindProgram(program);
 	for(auto& el:materialShader.updateValueList)
@@ -257,9 +256,9 @@ void GLGraphicManager::RenderNode(SceneNode* node) {
 				auto& eff = effs->GetEffect(i);
 				for(auto& n:eff->nodes) {
 					if(n.sceneNode->Mesh() == nullptr) continue;
-					const auto& mesh = n.sceneNode->Mesh();
-					if(mesh->Material() == nullptr) continue;
-					const auto& mat = mesh->Material();
+					const auto& nodeMesh = n.sceneNode->Mesh();
+					if(nodeMesh->Material() == nullptr) continue;
+					const auto& mat = nodeMesh->Material();
 					for(const auto& t:mat->textures) {
 						if(t.compare(0, 4, "_rt_") == 0 && m_scene->renderTargets.count(t) != 0) {
 							const auto& rt = m_scene->renderTargets.at(t);
@@ -302,8 +301,8 @@ void GLGraphicManager::InitializeScene(Scene* scene) {
 		auto mesh = std::make_shared<SceneMesh>();
 		SceneMesh::GenCardMesh(*mesh, {2, 2}, false);
 		SceneMaterial material;
-		material.textures.push_back("_rt_default");
-		material.defines.push_back("g_Texture0");
+		material.textures.emplace_back("_rt_default");
+		material.defines.emplace_back("g_Texture0");
 		material.customShader.shader = std::make_shared<SceneShader>();
 		material.customShader.shader->vertexCode = vsCode;
 		material.customShader.shader->fragmentCode = fgCode;
@@ -349,7 +348,6 @@ void UpdateCameraForFbo(Scene& scene, uint32_t fbow, uint32_t fboh, FillMode fil
 	if(fboh == 0) return;
 	double sw = scene.ortho[0],sh = scene.ortho[1];
 	double fboAspect = fbow/(double)fboh, sAspect = sw/sh;
-	double nw = 0.0f,nh = 0.0f;
 	auto& gCam = *scene.cameras.at("global");
 	auto& gPerCam = *scene.cameras.at("global_perspective");
 	// assum cam 
