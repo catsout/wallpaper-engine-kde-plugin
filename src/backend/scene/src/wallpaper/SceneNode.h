@@ -29,6 +29,7 @@ public:
 
 	const auto& Translate() const { return m_translate; }
 	const auto& Rotation() const { return m_rotation; }
+	void SetRotation(Eigen::Vector3f v) { m_rotation = v; }
 	void SetTranslate(const Eigen::Vector3f& value) { m_translate = value; }
 
 	void CopyTrans(const SceneNode& node) {

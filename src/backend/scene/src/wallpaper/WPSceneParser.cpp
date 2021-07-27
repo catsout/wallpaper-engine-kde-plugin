@@ -772,10 +772,10 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 				}
 				else {
 					// applly scale to crop
-					int32_t w = wpimgobj.size[0] * wpimgobj.scale[0];
-					int32_t h = wpimgobj.size[1] * wpimgobj.scale[1];
+					int32_t w = wpimgobj.size[0];
+					int32_t h = wpimgobj.size[1];
 					upScene->cameras[nodeAddr] = std::make_shared<SceneCamera>(w, h, -1.0f, 1.0f);
-					upScene->cameras.at(nodeAddr)->AttatchNode(spImgNode);
+					upScene->cameras.at(nodeAddr)->AttatchNode(spEffCamNode);
 				}
 				spImgNode->SetCamera(nodeAddr);
 				// set image effect
@@ -931,6 +931,8 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 						if((i_eff + 1 == count_eff && i_mat + 1 == wpeffobj.materials.size()) && !wpimgobj.fullscreen) {
 							GenCardMesh(mesh, {(int32_t)wpimgobj.size[0], (int32_t)wpimgobj.size[1]}, false);
 							spEffNode->CopyTrans(*spImgNode);
+							if(!isCompose)
+								spImgNode->CopyTrans(SceneNode());
 							svData.parallaxDepth = wpimgobj.parallaxDepth;
 							material.blenmode = imgBlendMode;
 						} else {
