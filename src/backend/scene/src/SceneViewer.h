@@ -4,6 +4,13 @@
 
 
 class SceneRenderer;
+
+class SceneUpdater : public QObject {
+    Q_OBJECT
+signals:
+	void update();
+};
+
 class SceneViewer : public QQuickFramebufferObject
 {
     Q_OBJECT
@@ -65,5 +72,4 @@ private:
 	int m_fps;
 	int m_curFps;
 	int m_fillMode;
-	void* m_wgl;
 };

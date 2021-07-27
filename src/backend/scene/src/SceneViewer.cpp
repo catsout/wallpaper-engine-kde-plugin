@@ -42,9 +42,7 @@ wallpaper::FillMode ToWPFillMode(int fillMode) {
 class SceneRenderer : public QQuickFramebufferObject::Renderer
 {
 public:
-	explicit SceneRenderer(SceneViewer* sv)
-		: m_viewer{sv}, m_paused(false) {
-	}
+	explicit SceneRenderer(QQuickWindow* window):m_window(window) {};
 
 	~SceneRenderer() override = default;
 
@@ -61,18 +59,19 @@ public:
 	}
 
 	void synchronize(QQuickFramebufferObject *item) override {
+		SceneViewer* viewer = static_cast<SceneViewer*>(item);
 		if(!framebufferObject()) {
 			m_wgl.Init(get_proc_address);
-			m_wgl.SetUpdateCallback([this] { updateViewer(); });
+			m_wgl.SetUpdateCallback([this]() {
+				emit m_updater.update();
+			});
 			m_wgl.SetFillMode(ToWPFillMode(m_fillMode));
-			// Set m_wgl visible to viewer, only for stop when destroy
-			m_viewer->m_wgl = &m_wgl;
 		}
 
 		// operator requre loaded
 		if(m_wgl.Loaded()) {
-			if(m_fillMode != (SceneViewer::FillMode)m_viewer->m_fillMode) {
-				m_fillMode = (SceneViewer::FillMode)m_viewer->m_fillMode;
+			if(m_fillMode != (SceneViewer::FillMode)viewer->m_fillMode) {
+				m_fillMode = (SceneViewer::FillMode)viewer->m_fillMode;
 				m_wgl.SetFillMode(ToWPFillMode(m_fillMode));
 			}
 			if(fboNotSet) {
@@ -82,50 +81,47 @@ public:
 			}
 		}
 
-		if(m_mousePos != m_viewer->m_mousePos) {
-			m_mousePos = m_viewer->m_mousePos;
+		if(m_mousePos != viewer->m_mousePos) {
+			m_mousePos = viewer->m_mousePos;
 			m_wgl.SetMousePos(m_mousePos.x(), m_mousePos.y());
 		}
-		if(m_source != m_viewer->source() && !m_viewer->assets().isEmpty()) {
-			auto assets = QDir::toNativeSeparators(m_viewer->assets().toLocalFile()).toStdString();
+		if(m_source != viewer->source() && !viewer->assets().isEmpty()) {
+			auto assets = QDir::toNativeSeparators(viewer->assets().toLocalFile()).toStdString();
 			m_wgl.SetAssets(assets);
 
-			m_source = m_viewer->source();
+			m_source = viewer->source();
 			auto source = QDir::toNativeSeparators(m_source.toLocalFile()).toStdString();
 			m_wgl.Load(source);
-			m_viewer->window()->resetOpenGLState();
+			m_window->resetOpenGLState();
 		}
-		if(m_paused != m_viewer->m_paused) {
-			m_paused = m_viewer->m_paused;
+		if(m_paused != viewer->m_paused) {
+			m_paused = viewer->m_paused;
 			if(m_paused)
 				m_wgl.Stop();
 			else
 				m_wgl.Start();
 		}
-		if(m_viewer->fps() != m_wgl.Fps()) {
-			m_wgl.SetFps(m_viewer->fps());
+		if(viewer->fps() != m_wgl.Fps()) {
+			m_wgl.SetFps(viewer->fps());
 		}
 
-		m_viewer->m_curFps = m_wgl.CurrentFps();
+		viewer->m_curFps = m_wgl.CurrentFps();
 	}
 
 	void render() override {
 		m_wgl.Render();
-		if(m_viewer->window() != nullptr) {
-			m_viewer->window()->resetOpenGLState();
-		}
+		m_window->resetOpenGLState();
 	}
 
-	void updateViewer() {
-		emit m_viewer->onUpdate();
-	}
+	SceneUpdater* Updater() { return &m_updater; }
 private:
-	SceneViewer* m_viewer;
+	QQuickWindow* m_window;
+	SceneUpdater m_updater;
 	QUrl m_source;
 	wallpaper::WallpaperGL m_wgl;
 	bool fboNotSet {true};
 	QPointF m_mousePos;
-	bool m_paused;
+	bool m_paused {false};
 	SceneViewer::FillMode m_fillMode {SceneViewer::FillMode::ASPECTCROP};
 };
 
@@ -134,21 +130,18 @@ SceneViewer::SceneViewer(QQuickItem * parent):QQuickFramebufferObject(parent),
 		m_fps(15),
 		m_paused(false),
 		m_curFps(0),
-		m_wgl(nullptr),
 		m_fillMode(FillMode::ASPECTCROP) {
-	connect(this, &SceneViewer::onUpdate, this, &SceneViewer::update, Qt::QueuedConnection);
 }
 
 SceneViewer::~SceneViewer() {
-	// make sure stop m_wgl before destroy
-	if(m_wgl != nullptr)
-		static_cast<wallpaper::WallpaperGL*>(m_wgl)->Stop();
 }
 
 QQuickFramebufferObject::Renderer * SceneViewer::createRenderer() const {
 	window()->setPersistentOpenGLContext(true);
 	window()->setPersistentSceneGraph(true);
-	return new SceneRenderer(const_cast<SceneViewer *>(this));
+	auto* render =  new SceneRenderer(window());
+	connect(render->Updater(), &SceneUpdater::update, this, &SceneViewer::update, Qt::QueuedConnection);
+	return render;
 }
 
 void SceneViewer::setAcceptMouse(bool value) {

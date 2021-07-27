@@ -10,6 +10,13 @@
 
 class MpvRenderer;
 
+
+class MpvObjectUpdate : public QObject {
+    Q_OBJECT
+signals:
+    void inited();
+    void update();
+};
 class MpvObject : public QQuickFramebufferObject {
     Q_OBJECT
     Q_PROPERTY(QUrl source READ source WRITE setSource NOTIFY sourceChanged)
