@@ -1,24 +1,32 @@
-## Wallpaper Engine for Kde
+# Wallpaper Engine for Kde
 A wallpaper plugin integrating [wallpaper engine](https://store.steampowered.com/app/431960/Wallpaper_Engine) into kde wallpaper setting.  
 It's simple and small.  
 
-### Known issue
-- Some scene wallpapers may crash your kde.  
-  Remove `WallpaperFilePath` line in `~/.config/plasma-org.kde.plasma.desktop-appletsrc` and restart kde to fix.  
-- Mouse long press(to enter panel edit mode) is broken on desktop  
-### Note
+## Note
+- Known issue
+  - Some scene wallpapers may **crash** your kde.  
+    Remove `WallpaperFilePath` line in `~/.config/plasma-org.kde.plasma.desktop-appletsrc` and restart kde to fix.  
+  - Mouse long press(to enter panel edit mode) is broken on desktop  
 - Support **scene(2d)**,**video**,**web** types
-- Scene,mpv support require plugin lib, which need to be compiled   
-The lib will be autodetected after installed
+- Require *wallpapaer engine* installed by steam
+- This plugin has(not required) a [lib](#plugin-lib) to be compiled, if you want any feature below  
+  - scene wallpaper  
+  - mpv video backend  
+  - mouse input  
 
-You need to choose your steam library directory(where *wallpaper engine* installed).  
-Like `~/.local/share/Steam`  
+## Contents
+- [Install](#install)
+- [Usage](#usage)
+- [Support Status](#support-status)
+- [Acknowledgments](#acknowledgments)
+- [Preview](#preview)
 
+## Install
 ### Kde plugin
 #### Dependencies
 qt-labs-folderlistmodel  
 qml-module-qtwebchannel
-#### Install
+#### Install kde plugin
 ```sh
 # Install
 git clone https://github.com/catsout/wallpaper-engine-kde-plugin.git
@@ -30,8 +38,6 @@ plasmapkg2 -u wallpaper-engine-kde-plugin/plugin
 # Uninstall
 plasmapkg2 -r wallpaper-engine-kde-plugin/plugin
 ```
-Need restart plasma(re-login) after update  
-Or try: `kquitapp5 plasmashell && kstart5 plasmashell`  
 
 ### Plugin lib
 #### Dependencies
@@ -44,7 +50,7 @@ Arch:
 ```sh
 sudo pacman -S base-devel mpv qt5-declarative
 ```
-#### Build and install
+#### Install plugin lib
 ```sh
 cd wallpaper-engine-kde-plugin
 mkdir build && cd build
@@ -53,14 +59,21 @@ make
 sudo make install
 ```
 
-### How to use:
+## Usage
 1. Use steam+proton or wine+steam
 2. Buy and install wallpaper engine(not run)
-3. Subscribe some wallpapers  
-4. Select steam library dir(like .local/share/Steam) in plugin
-5. Enjoy
+3. Subscribe some wallpapers on [workshop](https://steamcommunity.com/app/431960/workshop/)(or the we app, if you can run it)  
+4. Let steam download wallpapers, and install this plugin  
+5. Select steam library dir(where *wallpaper engine* installed) in plugin  
+e.g `.local/share/Steam`
+6. Enjoy  
 
-### Scene support status
+### Restart Kde
+Need to restart kde(re-login) after **updating plugin** or **reinstalling plugin lib**  
+Or try: `kquitapp5 plasmashell && kstart5 plasmashell`  
+
+## Support Status
+### Scene
 Scene wallpaper is supported by direct opengl(3.2).  
 It's almost usable.  
 #### not work
@@ -78,13 +91,13 @@ It's almost usable.
 - ~~Gif scene~~
 - ~~ColorBlendMode~~  
 
-### Web support status
+### Web
 Basic web apis are supported, but the audio api dose not send data at now.  
 #### no webgl
 WebEngineView in plasmashell can't init opengl.  
 Some wallpaper using webgl may not work, and performance may be bad.   
 
-### HWdecode for video
+### Video HWdecode  
 #### QtMultimedia
 Default video backend of this plugin.  
 It's using GStreamer to play video.  
@@ -99,11 +112,10 @@ put it to where the xserver read.
 Need to compile plugin lib.  
 The config is set to `hwdec=auto`, and not configurable at now.  
 
-### Credits
-
-- [Smart Video Wallpaper](https://store.kde.org/p/1316299/)     
-- [RePKG](https://github.com/notscuffed/repkg)                  
-- [linux-wallpaperengine](https://github.com/Almamu/linux-wallpaperengine)                                                                                                                                                                                                                                             
+### Acknowledgments
+- Pause support based on [Smart Video Wallpaper](https://store.kde.org/p/1316299/)  
+- [RePKG](https://github.com/notscuffed/repkg)
+- [linux-wallpaperengine](https://github.com/Almamu/linux-wallpaperengine)
 
 ### Preview
 ![](https://cdn.pling.com/img/f/b/9/f/63f1672d628422f92fd189fe55f60ee8c9f911a691d0745eeaf51d2c6fae6763b8f8.jpg)
