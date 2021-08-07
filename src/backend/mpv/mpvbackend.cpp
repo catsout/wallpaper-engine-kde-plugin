@@ -161,7 +161,7 @@ MpvObject::MpvObject(QQuickItem *parent)
     mpv_set_option_string(mpv, "hwdec", "auto");
     mpv_set_option_string(mpv, "vo", "libmpv");
     mpv_set_option_string(mpv, "config", "no");
-    mpv_set_option_string(mpv, "loop", "yes");
+    mpv_set_option_string(mpv, "loop", "inf");
 }
 
 MpvObject::~MpvObject() {}

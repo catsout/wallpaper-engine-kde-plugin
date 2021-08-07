@@ -23,6 +23,8 @@ Rectangle {
     property int volume: wallpaper.configuration.Volume
     property int switchTimer: wallpaper.configuration.SwitchTimer
 
+    property string filterStr: wallpaper.configuration.FilterStr
+
     // auto pause
     property bool ok: windowModel.playVideoWallpaper
 
@@ -92,43 +94,82 @@ Rectangle {
     WindowModel {
         id: windowModel
     }
-
     WorkerScript {
         id: folderBackgroundWorker
         source: "folderWorker.mjs"
-        // use var not list as doc
+
         property var proxyModel
         onMessage: {
             if(messageObject.reply == "loadFolder") {
                 proxyModel = messageObject.data;
-                wallpaper.configuration.WallpaperWorkShopId = proxyModel[0].workshopid;
-                wallpaper.configuration.WallpaperFilePath = proxyModel[0].path + "/" + proxyModel[0].file;
-                wallpaper.configuration.WallpaperType = proxyModel[0].type;
+            } else if(messageObject.reply == "filter") {
+                const i = Math.round(Math.random() * wpFilterList.count);
+                wpFilterList.changeWallpaper(i);
             }
+        }
+        function filter() {
+            const values = Common.filterModel.getValueArray(filterStr);
+            const model = Common.filterModel;
+            let msg = {
+                action: "filter", 
+                data: folderBackgroundWorker.proxyModel,
+                model: wpFilterList,
+                filters: model.map((el, index) => {
+                    return {
+                        type: el.type,
+                        key: el.key,
+                        value: values[index]
+                    };
+                })
+            };
+            folderBackgroundWorker.sendMessage(msg);
         }
     }
     FolderListModel {
        id: wpRawList
-       folder: steamlibrary + Common.wpenginePath
+       folder: background.randomizeWallpaper ? steamlibrary + Common.wpenginePath : ""
+
+       onStatusChanged: {
+            if(steamlibrary === "" || !background.randomizeWallpaper)
+                return;
+            if (wpRawList.status == FolderListModel.Ready) {
+                new Promise((resolve, reject) => {
+                    folderBackgroundWorker.proxyModel = [];
+                    for(let i=0;i < wpRawList.count;i++) {
+                        let v = {
+                            "workshopid": wpRawList.get(i,"fileName"),
+                            "path": wpRawList.get(i,"filePath"),
+                            "loaded": false,
+                            "title": "unknown",
+                            "preview": "unknown",
+                            "type": "unknown",
+                        };
+                        folderBackgroundWorker.proxyModel.push(v);
+                    }
+                    resolve();
+                }).then(function(value) {    
+                    let msg = {"action": "loadFolder", "data": folderBackgroundWorker.proxyModel};
+                    folderBackgroundWorker.sendMessage(msg);
+                });
+            }
+        }
+    }
+    ListModel {
+        id: wpFilterList
+        function changeWallpaper(index) {
+            if(wpFilterList.count === 0) return;
+            const model = wpFilterList.get(index);
+            wallpaper.configuration.WallpaperWorkShopId = model.workshopid;
+            wallpaper.configuration.WallpaperFilePath = model.path + "/" + model.file;
+            wallpaper.configuration.WallpaperType = model.type;
+        }
     }
     Timer {
         id: randomizeTimer
         running: background.randomizeWallpaper
         interval: background.switchTimer * 1000 * 60
         repeat: true
-        onTriggered: {
-            let i = Math.round(Math.random() * wpRawList.count);
-            folderBackgroundWorker.proxyModel = [{
-                workshopid: wpRawList.get(i,"fileName"),
-                path: wpRawList.get(i,"filePath"),
-                loaded: false,
-                title: "unknown",
-                preview: "unknown",
-                type: "unknown",
-            }]
-            let msg = {"action": "loadFolder", "data": folderBackgroundWorker.proxyModel};
-            folderBackgroundWorker.sendMessage(msg);
-        }
+        onTriggered: { folderBackgroundWorker.filter(); }
     }
 
 

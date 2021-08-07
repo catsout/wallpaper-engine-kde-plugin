@@ -32,7 +32,7 @@ Column {
     property alias cfg_RandomizeWallpaper: randomizeWallpaper.checked
 
     property alias cfg_Fps: sliderFps.value
-    property alias cfg_SwitchTimer: sliderTimer.value
+    property alias cfg_SwitchTimer: randomSpin.value
 
     Column {
         id: warnRow
@@ -103,11 +103,24 @@ Column {
                 Layout.columnSpan: 2
                 text: "Mute Audio"
             }          
-
-            CheckBox{
-                id: randomizeWallpaper
+            RowLayout {
                 Layout.columnSpan: 2
-                text: "Randomize every X minutes"
+                spacing: 0
+                CheckBox{
+                    id: randomizeWallpaper
+                    text: "Randomize"
+                }
+                RowLayout {
+                    visible: cfg_RandomizeWallpaper
+                    Text { id:heightpicker; text: " every " }
+                    SpinBox {
+                        id: randomSpin
+                        from: 1
+                        to: 120
+                        stepSize: 1
+                    }
+                    Text { text: " min" }
+                }
             }
 
             CheckBox{
@@ -162,27 +175,6 @@ Column {
                     snapMode: Slider.SnapOnRelease
                 }
             }
-            Label{
-                visible: cfg_RandomizeWallpaper
-                id: switchTimer
-                text: "Timer"
-            }
-            RowLayout {
-                visible: cfg_RandomizeWallpaper
-                Text {
-                    Layout.preferredWidth: font.pixelSize * 2
-                    text: sliderTimer.value.toString()
-                }
-                Slider {
-                    id: sliderTimer
-                    Layout.fillWidth: true
-                    from: 1
-                    to: 200
-                    stepSize: 1.0
-                    snapMode: Slider.SnapOnRelease
-                }
-            }
-
         }
         Item {
             Layout.column: 1
@@ -270,18 +262,10 @@ Column {
             id: comboxFilter
             anchors.verticalCenter: parent.verticalCenter
             width: refreshButton.width * 1.5
-            ListModel {
-                id: filterModel
-                ListElement { text: "scene"; type:"type"; key:"scene"; value:1 }
-                ListElement { text: "web"; type:"type"; key:"web"; value:1 }
-                ListElement { text: "video"; type:"type"; key:"video"; value:1 }
-                function map(func) {
-                    let arr = [];
-                    for(let i=0;i<this.count;i++) arr.push(func(this.get(i), i));
-                    return arr;
-                }
-            }
-            model: filterModel
+
+            property var modelValues: Common.filterModel.getValueArray(cfg_FilterStr)
+            model: Common.filterModel
+
             displayText: ""
             indicator: PlasmaCore.IconItem {
                 x: comboxFilter.leftPadding
@@ -296,10 +280,11 @@ Column {
                 RowLayout {
                     CheckBox {
                         text: model.text
-                        checked: model.value
+                        checked: comboxFilter.modelValues[index]
                         onToggled: {
-                            filterModel.get(index).value = Number(this.checked);
-                            cfg_FilterStr = comboxFilter.intArrayToStr(comboxFilter.getModelValueArray());
+                            const modelValues = comboxFilter.modelValues;
+                            modelValues[index] = Number(this.checked);
+                            cfg_FilterStr = Common.intArrayToStr(modelValues);
                             folderWorker.filter();
                         }
                     }
@@ -307,20 +292,11 @@ Column {
             }
             onActivated: {
             }
-            function getModelValueArray() {
-                return comboxFilter.model.map((e) => e.value);
-            }
             function updateModelValue(arr) {
                 arr.map((el, index) => comboxFilter.model.get(index).value = el);
             }
-            function strToIntArray(str) {
-                return [...str].map((e) => e.charCodeAt(0) - '0'.charCodeAt(0));
-            }
-            function intArrayToStr(arr) {
-                return arr.reduce((acc, e) => acc + e.toString(), "");
-            }
             Component.onCompleted: {
-                this.updateModelValue(this.strToIntArray(cfg_FilterStr));
+                this.updateModelValue(Common.strToIntArray(cfg_FilterStr));
             }
         }
     }
@@ -341,15 +317,16 @@ Column {
             }
         }
         function filter() {
+            const values = Common.filterModel.getValueArray(cfg_FilterStr);
             let msg = {
                 action: "filter", 
                 data: folderWorker.proxyModel,
                 model: projectModel,
-                filters: comboxFilter.model.map((el) => {
+                filters: comboxFilter.model.map((el, index) => {
                     return {
                         type: el.type,
                         key: el.key,
-                        value: el.value
+                        value: comboxFilter.modelValues[index]
                     };
                 })
             };
@@ -364,7 +341,7 @@ Column {
             if(cfg_SteamLibraryPath === "")
                 return;
             if (wplist.status == FolderListModel.Ready) {
-                new Promise(function (resolve, reject) {
+                new Promise((resolve, reject) => {
                     folderWorker.proxyModel = [];
                     for(let i=0;i < wplist.count;i++) {
                         let v = {

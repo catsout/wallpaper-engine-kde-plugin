@@ -13,6 +13,41 @@ QtObject {
         Scale
     }
     property string wpenginePath: "/steamapps/workshop/content/431960"
+
+    property var filterModel: ListModel {
+        ListElement { text: "scene"; type:"type"; key:"scene"; }
+        ListElement { text: "web"; type:"type"; key:"web"; }
+        ListElement { text: "video"; type:"type"; key:"video"; }
+        function map(func) {
+            let arr = [];
+            for(let i=0;i<this.count;i++) arr.push(func(this.get(i), i));
+            return arr;
+        }
+
+        function getValueArray(filterStr) {
+            // not empty
+            if(filterStr) {
+                return strToIntArray(filterStr);
+            } else {
+                return this.map((el) => 1);
+            }
+        }
+    }
+
+    // const
+    property var filterModelComp: Component { 
+        ListModel {
+            ListElement { text: "scene"; type:"type"; key:"scene"; value:1 }
+            ListElement { text: "web"; type:"type"; key:"web"; value:1 }
+            ListElement { text: "video"; type:"type"; key:"video"; value:1 }
+            function map(func) {
+                let arr = [];
+                for(let i=0;i<this.count;i++) arr.push(func(this.get(i), i));
+                return arr;
+            }
+        }
+    }
+
     function checklib(libName, parentItem) {
         let ok = false;
         let create = null;
@@ -132,5 +167,12 @@ QtObject {
                 timer.stop();
             }
         };
+    }
+
+    function strToIntArray(str) {
+        return [...str].map((e) => e.charCodeAt(0) - '0'.charCodeAt(0));
+    }
+    function intArrayToStr(arr) {
+        return arr.reduce((acc, e) => acc + e.toString(), "");
     }
 }

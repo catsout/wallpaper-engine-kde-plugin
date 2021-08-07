@@ -44,7 +44,7 @@
     </entry>
     <entry name="RandomizeWallpaper" type="Bool">
       <label>Randomize every X minutes</label>
-      <default>0</default>
+      <default>false</default>
     </entry>
     <entry name="UseMpv" type="Bool">
       <label>Use Mpv</label>
