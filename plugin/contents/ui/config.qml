@@ -178,28 +178,29 @@ Column {
         }
         Item {
             Layout.column: 1
-            height: 200
+            height: 180
             width: height * (16.0/9.0)
-        AnimatedImage {
-            id: previewAnim
-            anchors.fill: parent
-            property var nullItem: QtObject {
-                property string source: ""
-            }
-            property var picItem: (picViewLoader.status == Loader.Ready && picViewLoader.item.view.currentItem)
-                                ? picViewLoader.item.view.currentItem
-                                : nullItem
-            source: ""
-            cache: false
-            asynchronous: true
-            onStatusChanged: playing = (status == AnimatedImage.Ready) 
-            onPicItemChanged: {
-                if(picItem != nullItem) {
-                    parent.height = picItem.thumbnail[1].height * 1.5;
-                    source = picItem.thumbnail[1].source;
+            AnimatedImage {
+                id: previewAnim
+                anchors.fill: parent
+                property var nullItem: QtObject {
+                    property string source: ""
+                }
+                property var picItem: (picViewLoader.status == Loader.Ready && picViewLoader.item.view.currentItem)
+                                    ? picViewLoader.item.view.currentItem
+                                    : nullItem
+                source: ""
+                cache: false
+                asynchronous: true
+                onStatusChanged: playing = (status == AnimatedImage.Ready) 
+                onPicItemChanged: {
+                    if(picItem != nullItem) {
+                        try {
+                            source = picItem.thumbnail[1].source;
+                        } catch(e) {}
+                    }
                 }
             }
-        }
         }
     }
 
@@ -298,6 +299,7 @@ Column {
         id: wpListModel
         workshopDir: cfg_SteamLibraryPath + Common.wpenginePath
         filterStr: cfg_FilterStr
+        enabled: Boolean(cfg_SteamLibraryPath)
     }
 
     Loader {

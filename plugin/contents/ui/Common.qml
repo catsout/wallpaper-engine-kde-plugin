@@ -26,10 +26,11 @@ QtObject {
 
         function getValueArray(filterStr) {
             // not empty
-            if(filterStr) {
-                return strToIntArray(filterStr);
-            } else {
+            const result = strToIntArray(filterStr);
+            if(result.length < this.count) {
                 return this.map((el) => 1);
+            } else {
+                return result;
             }
         }
     }
