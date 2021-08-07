@@ -73,8 +73,8 @@ WorkerScript.onMessage = function(msg) {
             });
             return (str) => obj[str];
         })();
-        let data = msg.data;
-        let model = msg.model;
+        const data = msg.data;
+        const model = msg.model;
         model.clear();
         data.forEach(function(el) {
             if(typeFilter(el.type))

@@ -175,4 +175,7 @@ QtObject {
     function intArrayToStr(arr) {
         return arr.reduce((acc, e) => acc + e.toString(), "");
     }
+    function clearArray(arr) {
+        arr.length = 0; 
+    }
 }

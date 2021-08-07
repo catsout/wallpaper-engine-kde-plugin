@@ -94,71 +94,16 @@ Rectangle {
     WindowModel {
         id: windowModel
     }
-    WorkerScript {
-        id: folderBackgroundWorker
-        source: "folderWorker.mjs"
 
-        property var proxyModel
-        onMessage: {
-            if(messageObject.reply == "loadFolder") {
-                proxyModel = messageObject.data;
-            } else if(messageObject.reply == "filter") {
-                const i = Math.round(Math.random() * wpFilterList.count);
-                wpFilterList.changeWallpaper(i);
-            }
-        }
-        function filter() {
-            const values = Common.filterModel.getValueArray(filterStr);
-            const model = Common.filterModel;
-            let msg = {
-                action: "filter", 
-                data: folderBackgroundWorker.proxyModel,
-                model: wpFilterList,
-                filters: model.map((el, index) => {
-                    return {
-                        type: el.type,
-                        key: el.key,
-                        value: values[index]
-                    };
-                })
-            };
-            folderBackgroundWorker.sendMessage(msg);
-        }
-    }
-    FolderListModel {
-       id: wpRawList
-       folder: background.randomizeWallpaper ? steamlibrary + Common.wpenginePath : ""
+    WallpaperListModel {
+        id: wpListModel
+        enabled: background.randomizeWallpaper
+        workshopDir: background.steamlibrary + Common.wpenginePath
+        filterStr: background.filterStr
 
-       onStatusChanged: {
-            if(steamlibrary === "" || !background.randomizeWallpaper)
-                return;
-            if (wpRawList.status == FolderListModel.Ready) {
-                new Promise((resolve, reject) => {
-                    folderBackgroundWorker.proxyModel = [];
-                    for(let i=0;i < wpRawList.count;i++) {
-                        let v = {
-                            "workshopid": wpRawList.get(i,"fileName"),
-                            "path": wpRawList.get(i,"filePath"),
-                            "loaded": false,
-                            "title": "unknown",
-                            "preview": "unknown",
-                            "type": "unknown",
-                        };
-                        folderBackgroundWorker.proxyModel.push(v);
-                    }
-                    resolve();
-                }).then(function(value) {    
-                    let msg = {"action": "loadFolder", "data": folderBackgroundWorker.proxyModel};
-                    folderBackgroundWorker.sendMessage(msg);
-                });
-            }
-        }
-    }
-    ListModel {
-        id: wpFilterList
         function changeWallpaper(index) {
-            if(wpFilterList.count === 0) return;
-            const model = wpFilterList.get(index);
+            if(this.model.count === 0) return;
+            const model = this.model.get(index);
             wallpaper.configuration.WallpaperWorkShopId = model.workshopid;
             wallpaper.configuration.WallpaperFilePath = model.path + "/" + model.file;
             wallpaper.configuration.WallpaperType = model.type;
@@ -169,7 +114,10 @@ Rectangle {
         running: background.randomizeWallpaper
         interval: background.switchTimer * 1000 * 60
         repeat: true
-        onTriggered: { folderBackgroundWorker.filter(); }
+        onTriggered: {
+            const i = Math.round(Math.random() * wpListModel.model.count);
+            wpListModel.changeWallpaper(i);
+        }
     }
 
 
@@ -227,12 +175,15 @@ Rectangle {
     
     function loadBackend() {
         let qmlsource = "";
-        let properties = {};
+        let properties = {
+            wid: background.workshopid,
+            type: background.type
+        };
 
         // check source
         if(!background.source || background.source == "") {
             qmlsource = "backend/InfoShow.qml";
-            properties = {"info":"Error: source is empty.\n The config may be broken."};
+            properties["info"] = "Source is empty. The config may be broken.";
             backendLoader.setSource(qmlsource, properties);
             return;
         }
@@ -242,9 +193,11 @@ Rectangle {
                 if(background.useMpv && background.hasLib)
                     qmlsource = "backend/Mpv.qml";
                 else qmlsource = "backend/QtMultimedia.qml";
+                properties = {};
                 break;
             case 'web':
                 qmlsource = "backend/QtWebView.qml";
+                properties = {};
                 break;
             case 'scene':
                 if(background.hasLib) {
@@ -252,12 +205,12 @@ Rectangle {
                     properties = {"assets": background.steamlibrary + "/steamapps/common/wallpaper_engine/assets"};
                 } else {
                     qmlsource = "backend/InfoShow.qml";
-                    properties = {"info": "Error: plugin lib not found,\n to support scene, please compile and install it."};
+                    properties["info"] = "Plugin lib not found. To support scene, please compile and install it.";
                 }
                 break;
             default:
                 qmlsource = "backend/InfoShow.qml";
-                properties = {"info":"Not supported wallpaper type: "+background.type};
+                properties["info"] = "Not supported wallpaper type";
                 break
         }
         console.log("load backend: "+qmlsource);

@@ -285,86 +285,19 @@ Column {
                             const modelValues = comboxFilter.modelValues;
                             modelValues[index] = Number(this.checked);
                             cfg_FilterStr = Common.intArrayToStr(modelValues);
-                            folderWorker.filter();
                         }
                     }
                 }
             }
             onActivated: {
             }
-            function updateModelValue(arr) {
-                arr.map((el, index) => comboxFilter.model.get(index).value = el);
-            }
-            Component.onCompleted: {
-                this.updateModelValue(Common.strToIntArray(cfg_FilterStr));
-            }
         }
     }
 
-    WorkerScript {
-        id: folderWorker
-        source: "folderWorker.mjs"
-        // use var not list as doc
-        property var proxyModel
-        onMessage: {
-            if(messageObject.reply == "loadFolder") {
-                proxyModel = messageObject.data;
-                filter();
-            } else if(messageObject.reply == "filter") {
-                if(picViewLoader.status == Loader.Ready) {
-                    picViewLoader.item.setCurIndex(); 
-                }
-            }
-        }
-        function filter() {
-            const values = Common.filterModel.getValueArray(cfg_FilterStr);
-            let msg = {
-                action: "filter", 
-                data: folderWorker.proxyModel,
-                model: projectModel,
-                filters: comboxFilter.model.map((el, index) => {
-                    return {
-                        type: el.type,
-                        key: el.key,
-                        value: comboxFilter.modelValues[index]
-                    };
-                })
-            };
-            folderWorker.sendMessage(msg);
-        }
-    }
-
-    FolderListModel {
-        id: wplist
-        folder: cfg_SteamLibraryPath + Common.wpenginePath
-        onStatusChanged: {
-            if(cfg_SteamLibraryPath === "")
-                return;
-            if (wplist.status == FolderListModel.Ready) {
-                new Promise((resolve, reject) => {
-                    folderWorker.proxyModel = [];
-                    for(let i=0;i < wplist.count;i++) {
-                        let v = {
-                            "workshopid": wplist.get(i,"fileName"),
-                            "path": wplist.get(i,"filePath"),
-                            "loaded": false,
-                            "title": "unknown",
-                            "preview": "unknown",
-                            "type": "unknown",
-                        };
-                        folderWorker.proxyModel.push(v);
-                    }
-                    resolve();
-                }).then(function(value) {    
-                    let msg = {"action": "loadFolder", "data": folderWorker.proxyModel};
-                    folderWorker.sendMessage(msg);
-                });
-            }
-        }
-    }
-
-    ListModel {
-        id: projectModel
+    WallpaperListModel {
+        id: wpListModel
+        workshopDir: cfg_SteamLibraryPath + Common.wpenginePath
+        filterStr: cfg_FilterStr
     }
 
     Loader {
@@ -376,9 +309,14 @@ Column {
         height: root.height - configRow.height - infoRow.height - warnRow.height - root.spacing*3
         anchors.left: parent.left
         anchors.right: parent.right
-        onStatusChanged: {
-            if(status == Loader.Ready)
-                picViewLoader.item.setCurIndex();
+
+        Component.onCompleted: {
+            const refreshIndex = () => {
+                if(picViewLoader.status == Loader.Ready)
+                    picViewLoader.item.setCurIndex(wpListModel.model);
+            }
+            wpListModel.modelRefreshed.connect(refreshIndex);
+            picViewLoader.statusChanged.connect(refreshIndex);
         }
     }
     Component { 
@@ -387,7 +325,7 @@ Column {
             id: picViewGrid
             anchors.fill: parent
 
-            view.model: projectModel
+            view.model: wpListModel.model
             view.delegate: KCM.GridDelegate {
                 text: title
                 actions: [
@@ -429,15 +367,16 @@ Column {
                 opacity: 0.5
             }
 
-            function setCurIndex() {
-                new Promise(function(reoslve, reject) {
-                    for(let i=0;i < projectModel.count;i++) {
-                        if(projectModel.get(i).workshopid === cfg_WallpaperWorkShopId) {
+            function setCurIndex(model) {
+                // model, ListModel
+                new Promise((reoslve, reject) => {
+                    for(let i=0;i < model.count;i++) {
+                        if(model.get(i).workshopid === cfg_WallpaperWorkShopId) {
                             view.currentIndex = i;
                             break;
                         }
                     }
-                    if(view.currentIndex == -1 && projectModel.count != 0)
+                    if(view.currentIndex == -1 && model.count != 0)
                         view.currentIndex = 0;
 
                     if(!cfg_WallpaperFilePath || cfg_WallpaperFilePath == "")
