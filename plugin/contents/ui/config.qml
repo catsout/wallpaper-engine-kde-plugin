@@ -237,32 +237,10 @@ Column {
                 onClicked: { wpDialog.open() }
             }
         }
-        Button {
-            id: refreshButton
-            anchors.verticalCenter: parent.verticalCenter
-            implicitWidth: height
-            PlasmaCore.IconItem {
-                anchors.fill: parent
-                source: "view-refresh"
-                PlasmaCore.ToolTipArea {
-                    anchors.fill: parent
-                    subText: ""
-                }
-            }
-            MouseArea {
-                anchors.fill: parent
-                onClicked: { 
-                    projectModel.clear();
-                    var url = wplist.folder;
-                    wplist.folder = "";
-                    wplist.folder = url;
-                }
-            }
-        }
         ComboBox {
             id: comboxFilter
             anchors.verticalCenter: parent.verticalCenter
-            width: refreshButton.width * 1.5
+            width: wpFolderButton.width * 1.5
 
             property var modelValues: Common.filterModel.getValueArray(cfg_FilterStr)
             model: Common.filterModel
