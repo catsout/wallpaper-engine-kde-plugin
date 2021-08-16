@@ -57,7 +57,10 @@ QtObject {
             'import '+ libName +';import QtQml 2.2; QtObject{}',
             parentItem);
 
-        } catch (error) {}
+        } catch (error) {
+            console.log("---check lib '"+libName+"' failed---");
+            console.log(error);
+        }
         if(create != null){
             ok = true;
             create.destroy(1000);
