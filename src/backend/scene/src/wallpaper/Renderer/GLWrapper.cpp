@@ -25,14 +25,12 @@ GLShader::~GLShader() {
 		glDeleteShader(shader);
 	}
 }
-void kk() {
 
-}
 GLTexture::GLTexture(GLint target, uint16_t width, uint16_t height, uint16_t numMips)
 		:target(target),
 		 w(width),
 		 h(height),
-		 numMips(numMips) {};
+		 numMips(numMips) {}
 
 GLFramebuffer::GLFramebuffer():width(0), height(0),color_texture(GL_TEXTURE_2D, 0, 0, 1) {}
 GLFramebuffer::GLFramebuffer(uint32_t _width, uint32_t _height)
@@ -47,11 +45,11 @@ GLFramebuffer::~GLFramebuffer() {
 }
 */
 
-bool GLWrapper::Init(void *get_proc_address(const char *name)) {
-    if (!gladLoadGLLoader((GLADloadproc)get_proc_address))
-    {
-        LOG_ERROR("Failed to initialize GLAD");
-    }
+bool GLWrapper::Init(void *get_proc_address(const char *)) {
+	if (!gladLoadGLLoader((GLADloadproc)get_proc_address))
+	{
+		LOG_ERROR("Failed to initialize GLAD");
+	}
 	return true;
 }
 
@@ -93,7 +91,7 @@ GLFramebuffer* GLWrapper::CreateFramebuffer(uint32_t width, uint32_t height, Tex
 	GLFramebuffer* fbo = new GLFramebuffer(width, height);
 	glGenFramebuffers(1, &fbo->framebuffer);
 	GLTexture* tex = CreateTexture(GL_TEXTURE_2D , width, height, 0, sample);
-	TextureImage(tex, 0, width, height, TextureFormat::RGBA8, NULL, 0);
+	TextureImage(tex, 0, width, height, TextureFormat::RGBA8, nullptr, 0);
 	fbo->color_texture.texture = tex->texture;
 	delete tex;
 	glBindFramebuffer(GL_FRAMEBUFFER, fbo->framebuffer);
@@ -136,18 +134,17 @@ GLProgram* GLWrapper::CreateProgram(std::vector<GLShader *> shaders,
 	glLinkProgram(program->program);
 	glUseProgram(program->program);
 	int success;
-    glGetProgramiv(program->program, GL_LINK_STATUS, &success);
-    if(!success) {
-        std::string infoLog = GetInfoLog(program->program, glGetProgramiv, glGetProgramInfoLog);
-        LOG_ERROR("LINKING_FAILED\n" + infoLog);
-    }
+	glGetProgramiv(program->program, GL_LINK_STATUS, &success);
+	if(!success) {
+		std::string infoLog = GetInfoLog(program->program, glGetProgramiv, glGetProgramInfoLog);
+		LOG_ERROR("LINKING_FAILED\n" + infoLog);
+	}
 	CHECK_GL_ERROR_IF_DEBUG();
-    return program;
+	return program;
 }
 */
 
 void GLWrapper::CopyTexture(GLFramebuffer* src, GLTexture* dst) {
-	GLFramebuffer* backfbo = m_curFbo;
 	BindFramebuffer(src);
 	glReadBuffer(GL_COLOR_ATTACHMENT0);
 	BindTexture(dst);
@@ -156,13 +153,12 @@ void GLWrapper::CopyTexture(GLFramebuffer* src, GLTexture* dst) {
 }
 
 GLTexture* GLWrapper::CopyTexture(GLFramebuffer* fbo) {
-	GLFramebuffer* backfbo = m_curFbo;
 	BindFramebuffer(fbo);
 	glReadBuffer(GL_COLOR_ATTACHMENT0);
 
 	int width = fbo->width,height = fbo->height;
 	GLTexture* tex = CreateTexture(GL_TEXTURE_2D , width, height, 0);
-	TextureImage(tex, 0, width, height, TextureFormat::RGBA8, NULL, 0);
+	TextureImage(tex, 0, width, height, TextureFormat::RGBA8, nullptr, 0);
 	BindTexture(tex);
 	glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, width, height);
 //	BindFramebuffer(backfbo);
@@ -218,12 +214,13 @@ void GLWrapper::DeleteFramebuffer(GLFramebuffer *glfbo) {
 		glDeleteFramebuffers(1, &glfbo->framebuffer);
 	if (glfbo->color_texture.texture)
 		glDeleteTextures(1, &glfbo->color_texture.texture);
+	delete glfbo;
 	CHECK_GL_ERROR_IF_DEBUG();
 }
 
 
 void GLWrapper::BufferSubData(GLBuffer* buffer, std::size_t size, const float* data) {
-    glBufferSubData(buffer->target, 0, size, data);
+	glBufferSubData(buffer->target, 0, size, data);
 	CHECK_GL_ERROR_IF_DEBUG();
 }
 
@@ -270,11 +267,11 @@ void GLWrapper::TextureImagePbo(GLTexture *texture, int level, int width, int he
 		return;
 	}
 	memcpy(ptr, data, imgsize);
-	glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);	
+	glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
 	CHECK_GL_ERROR_IF_DEBUG();
 	BindTexture(texture);
 
-	GLenum format, type;	
+	GLenum format, type;
 	GLint internalFormat;
 	TextureFormat2GLFormat(texformat, internalFormat, format, type);
 	switch(texformat) {
@@ -282,12 +279,12 @@ void GLWrapper::TextureImagePbo(GLTexture *texture, int level, int width, int he
 	case TextureFormat::RG8:
 	case TextureFormat::RGB8:
 	case TextureFormat::RGBA8:
-		glTexImage2D(tex->target, level, internalFormat, width, height, 0, format, type, 0);
+		glTexImage2D(tex->target, level, internalFormat, width, height, 0, format, type, nullptr);
 		break;
 	case TextureFormat::BC1:
 	case TextureFormat::BC2:
 	case TextureFormat::BC3:
-		glCompressedTexImage2D(tex->target, level, internalFormat, width, height, 0, imgsize, 0);
+		glCompressedTexImage2D(tex->target, level, internalFormat, width, height, 0, imgsize, nullptr);
 		break;
 	}
 	CHECK_GL_ERROR_IF_DEBUG();
@@ -323,8 +320,8 @@ void GLWrapper::SetBlend(BlendMode bm) {
 
 void GLWrapper::LoadMesh(SceneMesh& mesh) {
 	uint32_t vao;
-    glGenVertexArrays(1, &vao);
-    glBindVertexArray(vao);
+	glGenVertexArrays(1, &vao);
+	glBindVertexArray(vao);
 
 	GLuint bufId;
 	auto verCount = mesh.VertexCount();
@@ -356,7 +353,7 @@ void GLWrapper::LoadMesh(SceneMesh& mesh) {
 		auto& iArray = mesh.GetIndexArray(i);
 		glGenBuffers(1, &bufId);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bufId);
-	    glBufferData(GL_ELEMENT_ARRAY_BUFFER, iArray.CapacitySizeof(), iArray.Data(), mesh.Dynamic()? GL_DYNAMIC_DRAW :GL_STATIC_DRAW);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, iArray.CapacitySizeof(), iArray.Data(), mesh.Dynamic()? GL_DYNAMIC_DRAW :GL_STATIC_DRAW);
 		CHECK_GL_ERROR_IF_DEBUG();
 		iArray.SetID(m_bufidgen++);
 		m_bufMap.insert({iArray.ID(), bufId});
@@ -408,7 +405,7 @@ void GLWrapper::RenderMesh(const SceneMesh& mesh) {
 		glDrawArrays(GL_POINTS, 0, count);
 	} else  {
 		auto count = mesh.GetIndexArray(0).DataCount();
-		glDrawElements(ToGLType(mesh.Primitive()), count, GL_UNSIGNED_INT, 0);
+		glDrawElements(ToGLType(mesh.Primitive()), count, GL_UNSIGNED_INT, nullptr);
 	}
 	CHECK_GL_ERROR_IF_DEBUG();
 	glBindVertexArray(0);
@@ -436,7 +433,9 @@ GLFramebuffer* GLWrapper::GetNowFramebuffer() {
 	return m_curFbo;
 }
 
-GLWrapper::GLWrapper() {
+GLWrapper::GLWrapper()
+	: m_curFbo(nullptr)
+{
 	uniformCount_[GL_FLOAT] = 1;
 	uniformCount_[GL_FLOAT_VEC2] = 2;
 	uniformCount_[GL_FLOAT_VEC3] = 3;
@@ -447,7 +446,7 @@ GLWrapper::GLWrapper() {
 
 namespace wp = wallpaper;
 
-int32_t GLProgram::GetUniformLocation(GLProgram* pro, const std::string name) {
+int32_t GLProgram::GetUniformLocation(GLProgram* pro, const std::string& name) {
 	for(const auto& u:pro->uniformLocs) {
 		if(name == u.name)
 			return u.location;

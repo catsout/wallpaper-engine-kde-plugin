@@ -31,7 +31,7 @@ Column {
     property alias cfg_RandomizeWallpaper: randomizeWallpaper.checked
 
     property alias cfg_Fps: sliderFps.value
-    property alias cfg_SwitchTimer: sliderTimer.value
+    property alias cfg_SwitchTimer: randomSpin.value
 
     Column {
         id: warnRow
@@ -102,11 +102,24 @@ Column {
                 Layout.columnSpan: 2
                 text: "Mute Audio"
             }          
-
-            CheckBox{
-                id: randomizeWallpaper
+            RowLayout {
                 Layout.columnSpan: 2
-                text: "Randomize every X minutes"
+                spacing: 0
+                CheckBox{
+                    id: randomizeWallpaper
+                    text: "Randomize"
+                }
+                RowLayout {
+                    visible: cfg_RandomizeWallpaper
+                    Text { id:heightpicker; text: " every " }
+                    SpinBox {
+                        id: randomSpin
+                        from: 1
+                        to: 120
+                        stepSize: 1
+                    }
+                    Text { text: " min" }
+                }
             }
 
             CheckBox{
@@ -161,52 +174,32 @@ Column {
                     snapMode: Slider.SnapOnRelease
                 }
             }
-            Label{
-                visible: cfg_RandomizeWallpaper
-                id: switchTimer
-                text: "Timer"
-            }
-            RowLayout {
-                visible: cfg_RandomizeWallpaper
-                Text {
-                    Layout.preferredWidth: font.pixelSize * 2
-                    text: sliderTimer.value.toString()
-                }
-                Slider {
-                    id: sliderTimer
-                    Layout.fillWidth: true
-                    from: 1
-                    to: 200
-                    stepSize: 1.0
-                    snapMode: Slider.SnapOnRelease
-                }
-            }
-
         }
         Item {
             Layout.column: 1
-            height: 200
+            height: 180
             width: height * (16.0/9.0)
-        AnimatedImage {
-            id: previewAnim
-            anchors.fill: parent
-            property var nullItem: QtObject {
-                property string source: ""
-            }
-            property var picItem: (picViewLoader.status == Loader.Ready && picViewLoader.item.view.currentItem)
-                                ? picViewLoader.item.view.currentItem
-                                : nullItem
-            source: ""
-            cache: false
-            asynchronous: true
-            onStatusChanged: playing = (status == AnimatedImage.Ready) 
-            onPicItemChanged: {
-                if(picItem != nullItem) {
-                    parent.height = picItem.thumbnail[1].height * 1.5;
-                    source = picItem.thumbnail[1].source;
+            AnimatedImage {
+                id: previewAnim
+                anchors.fill: parent
+                property var nullItem: QtObject {
+                    property string source: ""
+                }
+                property var picItem: (picViewLoader.status == Loader.Ready && picViewLoader.item.view.currentItem)
+                                    ? picViewLoader.item.view.currentItem
+                                    : nullItem
+                source: ""
+                cache: false
+                asynchronous: true
+                onStatusChanged: playing = (status == AnimatedImage.Ready) 
+                onPicItemChanged: {
+                    if(picItem != nullItem) {
+                        try {
+                            source = picItem.thumbnail[1].source;
+                        } catch(e) {}
+                    }
                 }
             }
-        }
         }
     }
 
@@ -243,44 +236,14 @@ Column {
                 onClicked: { wpDialog.open() }
             }
         }
-        Button {
-            id: refreshButton
-            anchors.verticalCenter: parent.verticalCenter
-            implicitWidth: height
-            PlasmaCore.IconItem {
-                anchors.fill: parent
-                source: "view-refresh"
-                PlasmaCore.ToolTipArea {
-                    anchors.fill: parent
-                    subText: ""
-                }
-            }
-            MouseArea {
-                anchors.fill: parent
-                onClicked: { 
-                    projectModel.clear();
-                    var url = wplist.folder;
-                    wplist.folder = "";
-                    wplist.folder = url;
-                }
-            }
-        }
         ComboBox {
             id: comboxFilter
             anchors.verticalCenter: parent.verticalCenter
-            width: refreshButton.width * 1.5
-            ListModel {
-                id: filterModel
-                ListElement { text: "scene"; type:"type"; key:"scene"; value:1 }
-                ListElement { text: "web"; type:"type"; key:"web"; value:1 }
-                ListElement { text: "video"; type:"type"; key:"video"; value:1 }
-                function map(func) {
-                    let arr = [];
-                    for(let i=0;i<this.count;i++) arr.push(func(this.get(i), i));
-                    return arr;
-                }
-            }
-            model: filterModel
+            width: wpFolderButton.width * 1.5
+
+            property var modelValues: Common.filterModel.getValueArray(cfg_FilterStr)
+            model: Common.filterModel
+
             displayText: ""
             indicator: PlasmaCore.IconItem {
                 x: comboxFilter.leftPadding
@@ -295,98 +258,25 @@ Column {
                 RowLayout {
                     CheckBox {
                         text: model.text
-                        checked: model.value
+                        checked: comboxFilter.modelValues[index]
                         onToggled: {
-                            filterModel.get(index).value = Number(this.checked);
-                            cfg_FilterStr = comboxFilter.intArrayToStr(comboxFilter.getModelValueArray());
-                            folderWorker.filter();
+                            const modelValues = comboxFilter.modelValues;
+                            modelValues[index] = Number(this.checked);
+                            cfg_FilterStr = Common.intArrayToStr(modelValues);
                         }
                     }
                 }
             }
             onActivated: {
             }
-            function getModelValueArray() {
-                return comboxFilter.model.map((e) => e.value);
-            }
-            function updateModelValue(arr) {
-                arr.map((el, index) => comboxFilter.model.get(index).value = el);
-            }
-            function strToIntArray(str) {
-                return [...str].map((e) => e.charCodeAt(0) - '0'.charCodeAt(0));
-            }
-            function intArrayToStr(arr) {
-                return arr.reduce((acc, e) => acc + e.toString(), "");
-            }
-            Component.onCompleted: {
-                this.updateModelValue(this.strToIntArray(cfg_FilterStr));
-            }
         }
     }
 
-    WorkerScript {
-        id: folderWorker
-        source: "folderWorker.mjs"
-        // use var not list as doc
-        property var proxyModel
-        onMessage: {
-            if(messageObject.reply == "loadFolder") {
-                proxyModel = messageObject.data;
-                filter();
-            } else if(messageObject.reply == "filter") {
-                if(picViewLoader.status == Loader.Ready) {
-                    picViewLoader.item.setCurIndex(); 
-                }
-            }
-        }
-        function filter() {
-            let msg = {
-                action: "filter", 
-                data: folderWorker.proxyModel,
-                model: projectModel,
-                filters: comboxFilter.model.map((el) => {
-                    return {
-                        type: el.type,
-                        key: el.key,
-                        value: el.value
-                    };
-                })
-            };
-            folderWorker.sendMessage(msg);
-        }
-    }
-
-    FolderListModel {
-        id: wplist
-        folder: cfg_SteamLibraryPath + Common.wpenginePath
-        onStatusChanged: {
-            if(cfg_SteamLibraryPath === "")
-                return;
-            if (wplist.status == FolderListModel.Ready) {
-                new Promise(function (resolve, reject) {
-                    folderWorker.proxyModel = [];
-                    for(let i=0;i < wplist.count;i++) {
-                        let v = {
-                            "workshopid": wplist.get(i,"fileName"),
-                            "path": wplist.get(i,"filePath"),
-                            "loaded": false,
-                            "title": "unknown",
-                            "preview": "unknown",
-                            "type": "unknown",
-                        };
-                        folderWorker.proxyModel.push(v);
-                    }
-                    resolve();
-                }).then(function(value) {    
-                    let msg = {"action": "loadFolder", "data": folderWorker.proxyModel};
-                    folderWorker.sendMessage(msg);
-                });
-            }
-        }
-    }
-
-    ListModel {
-        id: projectModel
+    WallpaperListModel {
+        id: wpListModel
+        workshopDir: cfg_SteamLibraryPath + Common.wpenginePath
+        filterStr: cfg_FilterStr
+        enabled: Boolean(cfg_SteamLibraryPath)
     }
 
     Loader {
@@ -398,9 +288,14 @@ Column {
         height: root.height - configRow.height - infoRow.height - warnRow.height - root.spacing*3
         anchors.left: parent.left
         anchors.right: parent.right
-        onStatusChanged: {
-            if(status == Loader.Ready)
-                picViewLoader.item.setCurIndex();
+
+        Component.onCompleted: {
+            const refreshIndex = () => {
+                if(picViewLoader.status == Loader.Ready)
+                    picViewLoader.item.setCurIndex(wpListModel.model);
+            }
+            wpListModel.modelRefreshed.connect(refreshIndex);
+            picViewLoader.statusChanged.connect(refreshIndex);
         }
     }
     Component { 
@@ -409,7 +304,7 @@ Column {
             id: picViewGrid
             anchors.fill: parent
 
-            view.model: projectModel
+            view.model: wpListModel.model
             view.delegate: KCM.GridDelegate {
                 text: title
                 actions: [
@@ -451,15 +346,16 @@ Column {
                 opacity: 0.5
             }
 
-            function setCurIndex() {
-                new Promise(function(reoslve, reject) {
-                    for(let i=0;i < projectModel.count;i++) {
-                        if(projectModel.get(i).workshopid === cfg_WallpaperWorkShopId) {
+            function setCurIndex(model) {
+                // model, ListModel
+                new Promise((reoslve, reject) => {
+                    for(let i=0;i < model.count;i++) {
+                        if(model.get(i).workshopid === cfg_WallpaperWorkShopId) {
                             view.currentIndex = i;
                             break;
                         }
                     }
-                    if(view.currentIndex == -1 && projectModel.count != 0)
+                    if(view.currentIndex == -1 && model.count != 0)
                         view.currentIndex = 0;
 
                     if(!cfg_WallpaperFilePath || cfg_WallpaperFilePath == "")

@@ -10,6 +10,13 @@
 
 class MpvRenderer;
 
+
+class MpvObjectUpdate : public QObject {
+    Q_OBJECT
+signals:
+    void inited();
+    void update();
+};
 class MpvObject : public QQuickFramebufferObject {
     Q_OBJECT
     Q_PROPERTY(QUrl source READ source WRITE setSource NOTIFY sourceChanged)
@@ -25,9 +32,9 @@ class MpvObject : public QQuickFramebufferObject {
 public:
     static void on_update(void* ctx);
 
-    MpvObject(QQuickItem* parent = 0);
-    virtual ~MpvObject();
-    virtual Renderer* createRenderer() const;
+    explicit MpvObject(QQuickItem* parent = nullptr);
+    ~MpvObject() override;
+    Renderer* createRenderer() const override;
 
     enum Status {
         Stopped,

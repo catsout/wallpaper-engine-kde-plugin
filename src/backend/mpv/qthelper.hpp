@@ -19,7 +19,7 @@ namespace qt {
 class Handle
 {
     struct container {
-        container(mpv_handle *h) : mpv(h) {}
+        explicit container(mpv_handle *h) : mpv(h) {}
         ~container() { mpv_terminate_destroy(mpv); }
         mpv_handle *mpv;
     };
@@ -40,7 +40,7 @@ public:
     }
 
     // Return the raw handle; for use with the libmpv C API.
-    operator mpv_handle*() const { return sptr ? (*sptr).mpv : 0; }
+    operator mpv_handle*() const { return sptr ? (*sptr).mpv : nullptr; }
 };
 
 static inline QVariant node_to_variant(const mpv_node *node)
@@ -76,7 +76,8 @@ static inline QVariant node_to_variant(const mpv_node *node)
 }
 
 struct node_builder {
-    node_builder(const QVariant& v) {
+    explicit node_builder(const QVariant& v)
+        : node_() {
         set(&node_, v);
     }
     ~node_builder() {
@@ -86,30 +87,26 @@ struct node_builder {
 private:
     Q_DISABLE_COPY(node_builder)
     mpv_node node_;
+
     mpv_node_list *create_list(mpv_node *dst, bool is_map, int num) {
         dst->format = is_map ? MPV_FORMAT_NODE_MAP : MPV_FORMAT_NODE_ARRAY;
-        mpv_node_list *list = new mpv_node_list();
-        dst->u.list = list;
-        if (!list)
-            goto err;
-        list->values = new mpv_node[num]();
-        if (!list->values)
-            goto err;
-        if (is_map) {
-            list->keys = new char*[num]();
-            if (!list->keys)
-                goto err;
+        try {
+            mpv_node_list *list = new mpv_node_list();
+            dst->u.list = list;
+            list->values = new mpv_node[num]();
+            if (is_map)
+                list->keys = new char *[num]();
+            return list;
         }
-        return list;
-    err:
-        free_node(dst);
-        return NULL;
+        catch (const std::bad_alloc &) {
+            free_node(dst);
+            return nullptr;
+        }
     }
     char *dup_qstring(const QString &s) {
         QByteArray b = s.toUtf8();
         char *r = new char[b.size() + 1];
-        if (r)
-            std::memcpy(r, b.data(), b.size() + 1);
+        std::memcpy(r, b.data(), b.size() + 1);
         return r;
     }
     bool test_type(const QVariant &v, QMetaType::Type t) {
@@ -199,7 +196,7 @@ private:
  */
 struct node_autofree {
     mpv_node *ptr;
-    node_autofree(mpv_node *a_ptr) : ptr(a_ptr) {}
+    explicit node_autofree(mpv_node *a_ptr) : ptr(a_ptr) {}
     ~node_autofree() { mpv_free_node_contents(ptr); }
 };
 

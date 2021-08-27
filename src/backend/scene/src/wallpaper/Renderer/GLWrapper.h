@@ -370,7 +370,7 @@ public:
 
 	std::vector<AttribLoc> attribLocs_;
 	std::vector<UniformLoc> uniformLocs;
-	static int32_t GetUniformLocation(GLProgram*, const std::string name);
+	static int32_t GetUniformLocation(GLProgram*, const std::string& name);
 };
 
 class GLShader

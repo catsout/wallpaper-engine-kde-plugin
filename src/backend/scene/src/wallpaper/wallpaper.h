@@ -16,6 +16,11 @@ public:
     }
     WallpaperGL();
     ~WallpaperGL();
+	WallpaperGL(const WallpaperGL&) = delete;
+	WallpaperGL(WallpaperGL&&) = delete;
+	WallpaperGL& operator=(WallpaperGL&) = delete;
+	WallpaperGL& operator=(WallpaperGL&&) = delete;
+
 	bool Init(void *get_proc_address(const char *));
     void Load(const std::string& pkg_path);
     void Render();//uint fbo, int width, int height);

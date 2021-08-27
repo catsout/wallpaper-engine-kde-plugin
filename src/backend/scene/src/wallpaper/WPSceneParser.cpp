@@ -21,6 +21,7 @@
 #include <string>
 #include <unordered_map>
 #include <stack>
+#include <array>
 #include <random>
 #include <cmath>
 #include <functional>
@@ -188,7 +189,7 @@ std::string LoadGlslInclude(const std::string& input) {
 	return output;
 }
 
-void ParseWPShader(const std::string& src, int32_t texcount, WPShaderInfo* pWPShaderInfo, std::string::size_type& includeInsertPos) {
+void ParseWPShader(const std::string& src, int32_t texcount, WPShaderInfo* pWPShaderInfo) {
 	auto& combos = pWPShaderInfo->combos;
 	auto& wpAliasDict = pWPShaderInfo->alias;
 	auto& shadervalues = pWPShaderInfo->svs;
@@ -199,15 +200,15 @@ void ParseWPShader(const std::string& src, int32_t texcount, WPShaderInfo* pWPSh
 		const auto clineEnd = lineEnd;
 		const auto line = src.substr(pos, lineEnd - pos);
 
-		// no continue
-		bool update_pos = false;
+		/*
         if(line.find("attribute ") != std::string::npos || line.find("in ") != std::string::npos) {
 			update_pos = true;
 		}
 		else if(line.find("varying ") != std::string::npos || line.find("out ") != std::string::npos) {
 			update_pos = true;
 		}
-		else if(line.find("// [COMBO]") != std::string::npos) {
+		*/
+		if(line.find("// [COMBO]") != std::string::npos) {
 			nlohmann::json combo_json;
 			if(PARSE_JSON(line.substr(line.find_first_of('{')), combo_json)) {
 				if(combo_json.contains("combo")) {
@@ -220,7 +221,6 @@ void ParseWPShader(const std::string& src, int32_t texcount, WPShaderInfo* pWPSh
 			}
 		}
 		else if(line.find("uniform ") != std::string::npos) {
-			update_pos = true;
 			if(line.find("// {") != std::string::npos) {
 				nlohmann::json sv_json;
 				if(PARSE_JSON(line.substr(line.find_first_of('{')), sv_json)) {
@@ -272,8 +272,6 @@ void ParseWPShader(const std::string& src, int32_t texcount, WPShaderInfo* pWPSh
 				}
 			}
 		}
-		if(update_pos)
-			includeInsertPos = clineEnd;
 
 		// end
 		if(clineEnd == std::string::npos) {
@@ -284,35 +282,71 @@ void ParseWPShader(const std::string& src, int32_t texcount, WPShaderInfo* pWPSh
 		}
 		pos = lineEnd + 1;	
 	} 
-	if(includeInsertPos == std::string::npos) 
-		includeInsertPos = 0; 
-	else includeInsertPos++;
 }
 
-bool checkClose(const std::string& src, std::string::size_type start, std::string::size_type end) {
-	if(start > end) return false;
-	std::stack<char> close;
-	while(start != end) {
-		if(src.at(start) == '{') close.push('}');
-		else if (src.at(start) == '}') {
-			if(close.empty()) return false;
-			close.pop();
-		}
-		start++;	
-	}
-	return close.empty();
-}
 
 std::size_t FindIncludeInsertPos(const std::string& src, std::size_t startPos) {
-	//to do
 	/* rule:
 	  after attribute/varying/uniform/struct
 	  befor any func
 	  not in {}
 	  not in #if #endif
 	*/
-	auto mainPos = src.find("void main");
-	return 0;
+	auto NposToZero = [](std::size_t p) { return p == std::string::npos ? 0 : p; };
+	auto search = [](const std::string& p, std::size_t pos, const auto& re) {
+		std::smatch match;
+		if(std::regex_search(p.begin() + pos, p.end(), match, re)) {
+			return pos + match.position();
+		}
+		return std::string::npos;
+	};		
+	auto searchLast = [](const std::string& p, const auto& re) { 
+		auto startPos = p.begin();
+		std::smatch match;
+		while(std::regex_search(startPos+1, p.end(), match, re)) {
+			startPos++;
+			startPos += match.position();
+		}
+		return startPos == p.end() ? std::string::npos : startPos - p.begin();
+	};
+	auto nextLinePos = [](const std::string& p, std::size_t pos) {
+		return p.find_first_of('\n', pos) + 1;
+	};
+
+	std::size_t mainPos = src.find("void main(");
+	std::size_t pos;
+	{
+		const std::regex reAfters(R"(\n(attribute|varying|uniform|struct) )");
+		std::size_t afterPos = searchLast(src, reAfters);
+		if(afterPos != std::string::npos) {
+			afterPos = nextLinePos(src, afterPos+1);
+		}
+		pos = std::min({NposToZero(afterPos), mainPos});
+	}
+	{
+		std::stack<std::size_t> ifStack;
+		std::size_t nowPos {0};
+		const std::regex reIfs(R"((#if|#endif))");
+		while(true) {
+			auto p = search(src, nowPos + 1, reIfs);
+			if(p > mainPos || p == std::string::npos) break;
+			if(src.substr(p, 3) == "#if") {
+				ifStack.push(p);
+			} else {
+				if(ifStack.empty()) break;
+				std::size_t ifp = ifStack.top();
+				ifStack.pop();
+				std::size_t endp = p;
+				if(pos > ifp && pos <= endp) {
+					pos = nextLinePos(src, endp + 1); 
+				}
+			}
+			nowPos = p;
+		}
+		pos = std::min({pos, mainPos});
+	}
+
+	return NposToZero(pos);
 }
 
 std::string PreShaderSrc(const std::string& src, int32_t texcount, WPShaderInfo* pWPShaderInfo) {
@@ -326,22 +360,11 @@ std::string PreShaderSrc(const std::string& src, int32_t texcount, WPShaderInfo*
 		include.append(src.substr(begin, pos - begin) + "\n");
 	}
 	include = LoadGlslInclude(include);
-	ParseWPShader(include, texcount, pWPShaderInfo, pos);
-	pos = 0;
-	ParseWPShader(newsrc, texcount, pWPShaderInfo, pos);
-	std::string::size_type mainPos = newsrc.find("void main", pos), newpos = pos;
-	while((newpos = newsrc.find("#endif", pos), newpos != std::string::npos) && newpos < mainPos) {
-		pos = newpos + 6;
-	}
-	while(!checkClose(newsrc, pos, mainPos)) {
-		newpos = newsrc.find_first_of('}', pos);
-		if(newpos != std::string::npos && newpos < mainPos) 
-			pos = newpos + 1;
-		else break;
-	}
-	pos = newsrc.find_first_of('\n', pos);	
 
-	newsrc.insert(pos, include); 
+	ParseWPShader(include, texcount, pWPShaderInfo);
+	ParseWPShader(newsrc, texcount, pWPShaderInfo);
+
+	newsrc.insert(FindIncludeInsertPos(newsrc, 0), include); 
 	return newsrc;
 }
 
@@ -394,7 +417,6 @@ void LoadMaterial(const wpscene::WPMaterial& wpmat, Scene* pScene, SceneNode* pN
 		}
 	}
 //		svData.resolutions.resize(content.at("textures").size());
-	
 	for(int32_t i=0;i<textures.size();i++) {
 		std::string name = textures.at(i);
 		if(name == "_rt_FullFrameBuffer") {
@@ -430,10 +452,12 @@ void LoadMaterial(const wpscene::WPMaterial& wpmat, Scene* pScene, SceneNode* pN
 			}
 		} else {
 			auto texh = pScene->imageParser->ParseHeader(name);
-			if(texh->format == TextureFormat::R8)
-				fgCode = "#define TEX0FORMAT FORMAT_R8\n" + fgCode;
-			else if (texh->format == TextureFormat::RG8)
-				fgCode = "#define TEX0FORMAT FORMAT_RG88\n" + fgCode;
+			if(i == 0) {
+				if(texh->format == TextureFormat::R8)
+					fgCode = "#define TEX0FORMAT FORMAT_R8\n" + fgCode;
+				else if (texh->format == TextureFormat::RG8)
+					fgCode = "#define TEX0FORMAT FORMAT_RG88\n" + fgCode;
+			}
 			if(texh->type == ImageType::UNKNOWN)
 				resolution = {
 					(float)texh->width, 
@@ -597,6 +621,8 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 	globalBaseConstSvs["g_ViewRight"]= {"g_ViewRight", {1.0f, 0, 0}};
 	globalBaseConstSvs["g_ViewForward"]= {"g_ViewForward", {0, 0, -1.0f}};
 	globalBaseConstSvs["g_EyePosition"]= {"g_EyePosition", {0, 0, 0}};
+	globalBaseConstSvs["g_TexelSize"]= {"g_TexelSize", {1.0f/1920.0f, 1.0f/1080.0f}};
+	globalBaseConstSvs["g_TexelSizeHalf"]= {"g_TexelSizeHalf", {1.0f/1920.0f/2.0f, 1.0f/1080.0f/2.0f}};
 
 	Vector3f cori{ortho.width/2.0f,ortho.height/2.0f,0},cscale{1.0f,1.0f,1.0f},cangle(Vector3f::Zero());
 	auto spCamNode = std::make_shared<SceneNode>(cori, cscale, cangle);

@@ -1,8 +1,6 @@
 #include "SceneViewer.h"
-#include <stdexcept>
 #include <QGuiApplication>
 #include <QtQml>
-#include <QtQuick/QQuickWindow>
 #include <QtQuick/QQuickView>
 #include <iostream>
 #include <string>
@@ -28,5 +26,5 @@ int main(int argc, char **argv)
 	sv->setProperty("source", QUrl::fromLocalFile(argv[2]));
 	sv->setAcceptMouse(true);
 	sv->setAcceptHover(true);
-    return app.exec();
+    return QGuiApplication::exec();
 }

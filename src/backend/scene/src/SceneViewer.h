@@ -4,6 +4,13 @@
 
 
 class SceneRenderer;
+
+class SceneUpdater : public QObject {
+    Q_OBJECT
+signals:
+	void update();
+};
+
 class SceneViewer : public QQuickFramebufferObject
 {
     Q_OBJECT
@@ -23,9 +30,9 @@ public:
     Q_ENUM(FillMode)
 
 public:
-    SceneViewer(QQuickItem * parent = 0);
-    virtual ~SceneViewer();
-    virtual Renderer *createRenderer() const;
+    explicit SceneViewer(QQuickItem * parent = nullptr);
+    ~SceneViewer() override;
+    Renderer *createRenderer() const override;
 
 	QUrl source() const;
 	QUrl assets() const;
@@ -42,9 +49,9 @@ public:
 	Q_INVOKABLE void setAcceptHover(bool);
 
 protected:
-	void mousePressEvent(QMouseEvent *event);
-	void mouseMoveEvent(QMouseEvent *event);
-	void hoverMoveEvent(QHoverEvent *event);
+	void mousePressEvent(QMouseEvent *event) override;
+	void mouseMoveEvent(QMouseEvent *event) override;
+	void hoverMoveEvent(QHoverEvent *event) override;
 
 public slots:
 	void play();
@@ -65,5 +72,4 @@ private:
 	int m_fps;
 	int m_curFps;
 	int m_fillMode;
-	void* m_wgl;
 };

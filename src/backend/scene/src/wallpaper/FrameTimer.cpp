@@ -1,6 +1,6 @@
 #include "FrameTimer.h"
-#include <ctime>
 #include <iostream>
+#include <cassert>
 
 using namespace wallpaper;
 
@@ -10,6 +10,7 @@ FrameTimer::FrameTimer():m_running(false),
 						m_condition(),
 						m_cvmutex(),
 						m_thread(),
+						m_frames(0),
 						m_clock() {}
 
 FrameTimer::~FrameTimer() {
@@ -35,23 +36,29 @@ void FrameTimer::Run() {
 			m_callback();
 			auto idealTime = milliseconds(1000/m_fps);
 			auto callTime = steady_clock::now() - m_clock;
-			{   
+			{
 				std::unique_lock<std::mutex> lock(m_cvmutex);
 				m_condition.wait_for(lock, idealTime - callTime, [this]() {
 					return !m_running;
-				}); 
-			}   
+				});
+			}
 			if (!m_running) {
 				return;
-			}   
+			}
 			m_clock = steady_clock::now();
 		}
 	});
 }
 
 void FrameTimer::Stop() {
-	m_running = false;
-	m_condition.notify_one();
+	if (!m_running)
+		return;
+	assert(std::this_thread::get_id() != m_thread.get_id());
+	{
+		std::unique_lock<std::mutex> lock(m_cvmutex);
+		m_running = false;
+		m_condition.notify_one();
+	}
 	if(m_thread.joinable()) {
 		m_thread.join();
 	}
