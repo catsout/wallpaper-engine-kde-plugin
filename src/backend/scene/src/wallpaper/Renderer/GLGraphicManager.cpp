@@ -2,12 +2,22 @@
 #include "Log.h"
 #include "SpriteAnimation.h"
 #include "Algorism.h"
+#include "SpecTexs.h"
+#include "GLWrapper.h"
 
 #include <functional>
 #include <iostream>
 
 using namespace wallpaper;
 
+
+class GLGraphicManager::impl {
+public:
+	impl():glw(std::make_shared<gl::GLWrapper>()) {}
+	std::shared_ptr<gl::GLWrapper> glw;
+};
+
+/*
 // render target
 
 void GLRenderTargetManager::Clear() {
@@ -71,6 +81,7 @@ void GLRenderTargetManager::ReleaseAndDeleteFrameBuffer(const std::string& name,
 }
 
 
+
 void UpdateDefaultRenderTargetBind(Scene& scene, GLRenderTargetManager& rtm, uint32_t w, uint32_t h) {
 
 	if(scene.renderTargets.count("_rt_default") != 0)
@@ -85,8 +96,11 @@ void UpdateDefaultRenderTargetBind(Scene& scene, GLRenderTargetManager& rtm, uin
 		}
 	}
 }
+*/
 
 
+
+GLGraphicManager::GLGraphicManager():pImpl(std::make_unique<impl>()) {}
 
 std::string OutImageType(const Image& img) {
 	if(img.type == ImageType::UNKNOWN)
@@ -105,7 +119,7 @@ std::vector<gl::GLTexture*> LoadImage(gl::GLWrapper* pglw, const SceneTexture& t
 			LOG_ERROR("no tex data");
 			continue;
 		}
-		auto texture = glw.CreateTexture(glw.ToGLType(TextureType::IMG_2D), img.width, img.height, mipmaps.size()-1, tex.sample);
+		auto texture = glw.CreateTexture(gl::ToGLType(TextureType::IMG_2D), img.width, img.height, mipmaps.size()-1, tex.sample);
 		// mipmaps
 		for(int i_mip=0;i_mip < mipmaps.size();i_mip++){
 			auto& imgData = mipmaps.at(i_mip);
@@ -116,12 +130,12 @@ std::vector<gl::GLTexture*> LoadImage(gl::GLWrapper* pglw, const SceneTexture& t
 	return texs;
 }
 
-void TraverseNode(GLGraphicManager* pMgr, void (GLGraphicManager::*func)(SceneNode*), SceneNode* node) {
-	(pMgr->*func)(node);
+void TraverseNode(const std::function<void(SceneNode*)>& func, SceneNode* node) {
+	func(node);
 	for(auto& child:node->GetChildren())
-		TraverseNode(pMgr, func, child.get());
+		TraverseNode(func, child.get());
 }
-
+/*
 void GLGraphicManager::LoadNode(SceneNode* node) {
     auto& glw = *m_glw;
 	if(node->Mesh() == nullptr) return;
@@ -272,76 +286,353 @@ void GLGraphicManager::RenderNode(SceneNode* node) {
 			}
 		}
 	}
+}*/
+
+HwShaderHandle InitShader(gl::GLWrapper* pglw, SceneMaterial* material) {
+	auto& glw = *pglw;
+	auto& materialShader = material->customShader;
+	auto* shader = materialShader.shader.get();
+
+	gl::GShader::Desc desc;
+	desc.vs = shader->vertexCode;
+	desc.fg = shader->fragmentCode;
+	for(auto& el:shader->attrs) {
+		desc.attrs.push_back({el.location, el.name});
+	}
+	for(const auto& def:material->defines)
+		desc.texnames.push_back(def);
+	auto handle = pglw->CreateShader(desc);
+	materialShader.valueSet = pglw->GetUniforms(handle);
+
+	glw.UseShader(handle, [=, &materialShader, &glw]() {
+		for(auto& el:shader->uniforms)
+			glw.UpdateUniform(handle, el.second);
+		for(auto& el:materialShader.constValues) {
+			glw.UpdateUniform(handle, el.second);
+		}
+	});
+	return handle;
+}
+
+fg::FrameGraphResource AddCopyPass(fg::FrameGraph& fg, gl::GLWrapper& glw, fg::FrameGraphResource src) {
+	struct PassData {
+		fg::FrameGraphResource src;
+		fg::FrameGraphMutableResource output;
+	};
+	auto& pass = fg.AddPass<PassData>("copy",
+		[&](fg::FrameGraphBuilder& builder, PassData& data) {
+			data.src = builder.Read(src);
+			data.output = builder.CreateTexture(data.src);
+			data.output = builder.Write(data.output);
+		},
+		[=,&glw](fg::FrameGraphResourceManager& rsm, const PassData& data) mutable {
+			glw.CopyTexture(rsm.GetTexture(data.output)->handle, rsm.GetTexture(data.src)->handle);
+		}
+	);
+	return pass->output;
+}
+
+void AddEndPass(fg::FrameGraph& fg, gl::GLWrapper& glw, fg::FrameGraphResource input,const std::array<bool, 2>& flips) {
+	struct PassData {
+		fg::FrameGraphResource input;
+		std::shared_ptr<SceneMesh> mesh;
+	};
+	HwShaderHandle shader;
+	float xflip = 1.0f;	
+	float yflip = 1.0f;	
+	fg.AddPass<PassData>("end",
+		[&](fg::FrameGraphBuilder& builder, PassData& data) {
+			data.input = builder.Read(input);
+			std::string vs = R"(
+#version 120
+attribute vec3 a_position;
+attribute vec2 a_texCoord;
+uniform vec2 g_flips;
+varying vec2 TexCoord;
+void main()
+{
+	vec4 pos = vec4(a_position, 1.0f);
+	pos.xy = pos.xy * g_flips;
+	gl_Position = pos;
+	TexCoord = a_texCoord;
+}
+)";
+			std::string fg = R"(
+#version 120
+varying vec2 TexCoord;
+uniform sampler2D g_Texture0;
+void main() {
+	gl_FragColor = texture2D(g_Texture0, TexCoord);
+}
+)";
+			data.mesh = std::make_shared<SceneMesh>();
+			SceneMesh::GenCardMesh(*data.mesh, {2, 2}, false);
+
+			SceneMaterial material;
+			material.textures.push_back("_rt_default");
+			material.defines.push_back("g_Texture0");
+			material.customShader.shader = std::make_shared<SceneShader>();
+			material.customShader.shader->vertexCode = vs;
+			material.customShader.shader->fragmentCode = fg;
+			data.mesh->AddMaterial(std::move(material));
+		},
+		[=,&glw,&flips](fg::FrameGraphResourceManager& rsm, const PassData& data) mutable {
+			gl::GPass gpass;
+			gl::GBindings gbindings;
+			{
+				xflip = flips[0] ? -1.0f : 1.0f;
+				yflip = flips[1] ? -1.0f : 1.0f;
+			}
+			if(shader.idx == 0) {
+				shader = InitShader(&glw, data.mesh->Material());
+			}
+			gpass.shader = shader;
+			gpass.blend = BlendMode::Disable;
+			gpass.colorMask[3] = false;
+			if(!glw.MeshLoaded(*data.mesh)) {
+				glw.LoadMesh(*data.mesh);
+				//LOG_INFO("e----" + std::to_string(data.mesh->ID()));
+			}
+			gbindings.texs[0] = rsm.GetTexture(data.input)->handle;
+
+			glw.BeginPass(gpass);
+			glw.ApplyBindings(gbindings);
+			glw.UpdateUniform(shader, {.name = "g_flips", .value={xflip, yflip}});
+			glw.ClearColor(0, 0, 0, 1.0f);
+			glw.RenderMesh(*data.mesh);
+			glw.EndPass(gpass);
+		}
+	);
+};
+
+void GLGraphicManager::ToFrameGraphPass(SceneNode* node, std::string output) {
+	auto glw = pImpl->glw.get();
+	struct PassData {
+		std::vector<fg::FrameGraphResource> inputs;
+		fg::FrameGraphMutableResource output;
+		std::shared_ptr<fg::RenderPassData> renderpassData;
+		std::array<bool, 4> colorMask;
+	};
+	auto loadImage = [this, glw](const std::string& url) {
+		return m_scene->imageParser->Parse(url);
+		//tex.desc.width = img->width;
+		//tex.desc.height = img->height;
+	};
+
+	auto loadEffect = [this](SceneImageEffectLayer* effs) {
+		for(int32_t i=0;i<effs->EffectCount();i++) {
+			auto& eff = effs->GetEffect(i);
+			for(auto& n:eff->nodes) {
+				auto& name = n.output;
+				ToFrameGraphPass(n.sceneNode.get(), name);
+			}
+		}
+	};
+
+	if(node->Mesh() == nullptr) return;
+	auto* mesh = node->Mesh();
+	if(mesh->Material() == nullptr) return;
+	auto* material = mesh->Material();
+	auto* mshaderPtr = material->customShader.shader.get();
+
+	SceneImageEffectLayer* imgeff = nullptr;
+	if(!node->Camera().empty()) {
+		auto& cam = m_scene->cameras.at(node->Camera());
+		if(cam->HasImgEffect()) {
+			imgeff = cam->GetImgEffect().get();
+			output = imgeff->FirstTarget();
+		}
+	}
+
+	m_fg.AddPass<PassData>("test", 
+	[&,loadImage, glw](fg::FrameGraphBuilder& builder, PassData& data) {
+		LOG_INFO("-----------" + output)
+		data.inputs.resize(material->textures.size());
+		int32_t i=-1;
+		for(const auto& url:material->textures) {
+			i++;
+			if(url.empty()) {}
+			else if(IsSpecTex(url)) {
+				if(m_fgrscMap.count(url) > 0) {
+					if(url == output) {
+						data.inputs[i] = AddCopyPass(m_fg, *glw, m_fgrscMap[url]);
+						LOG_INFO("++++bind: " + url);
+					} else {
+						data.inputs[i] = m_fgrscMap[url];
+						LOG_INFO("bind: " + url);
+					}
+				} else {
+					LOG_ERROR(url + " not found");
+				}
+			}
+			else {
+				fg::TextureResource::Desc desc;
+				desc.path = url;
+				desc.name = url;
+				desc.getImgOp = [=]() {
+					return loadImage(url);
+				};
+				data.inputs[i] = builder.CreateTexture(desc);
+			}
+			data.inputs[i] = builder.Read(data.inputs[i]);
+		}
+		if(m_fgrscMap.count(output) > 0) {
+			data.output = m_fg.AddMovePass(m_fgrscMap.at(output));
+		} else {
+			data.output = builder.CreateTexture({
+				.width = 1920,
+				.height = 1080,
+				.name = output
+			});
+		}
+		data.output = builder.Write(data.output);
+		m_fgrscMap[output] = data.output;
+		data.colorMask = {
+			true,true,true,
+			!(node->Camera().empty() || node->Camera().compare(0, 6, "global") == 0)
+		};
+		data.renderpassData = builder.UseRenderPass({
+			.attachments = {data.output},
+			.viewport = {0, 0, 1920, 1080},
+		});
+	}, 
+	[this, material, mshaderPtr, mesh, node, output, glw](fg::FrameGraphResourceManager& rsm, const PassData& data) {
+		gl::GPass gpass;
+		gl::GBindings gbindings;
+
+		gpass.target = data.renderpassData->target;
+		gpass.viewport = {0,0, 1920, 1080};
+		gpass.colorMask = data.colorMask;
+		gpass.blend = material->blenmode;
+
+		if(m_shaderMap.count(mshaderPtr) == 0) {
+			m_shaderMap[mshaderPtr] = InitShader(glw, material);
+		}
+		gpass.shader = m_shaderMap[mshaderPtr];
+
+		if(!glw->MeshLoaded(*mesh)) {
+			glw->LoadMesh(*mesh);
+		}
+
+		m_scene->shaderValueUpdater->UpdateShaderValues(node, mshaderPtr);
+
+		for(uint16_t i=0;i<data.inputs.size();i++) {
+			//std::cout << rsm.GetTexture(el).desc.path << std::endl; 
+			auto tex = rsm.GetTexture(data.inputs[i]);
+			if(tex != nullptr) {
+				uint16_t imageId = 0;
+				if(!(IsSpecTex(tex->desc.name) || tex->desc.name.empty())) {
+					const auto& stex = m_scene->textures.at(tex->desc.name);
+					if(stex->isSprite) {
+						imageId = stex->spriteAnim.GetCurFrame().imageId;
+						glw->UpdateTextureSlot(tex->handle, imageId);
+					}
+				}
+				gbindings.texs[i] = tex->handle;
+			}
+		}
+		{
+			glw->BeginPass(gpass);
+			for(auto& el:material->customShader.updateValueList)
+				glw->UpdateUniform(gpass.shader, el);
+
+			glw->ApplyBindings(gbindings);
+			material->customShader.updateValueList.clear();
+			glw->RenderMesh(*mesh);
+
+			glw->EndPass(gpass);
+		}
+
+	});
+
+	// load effect
+	if(imgeff != nullptr) loadEffect(imgeff);
+}
+
+
+HwTexHandle GLGraphicManager::CreateTexture(TextureDesc desc) {
+	gl::GTexture::Desc gdesc; 
+	gdesc.w = desc.width;
+	gdesc.h = desc.height;
+	gdesc.numMips = desc.numMips;
+	gdesc.target = gl::ToGLType(desc.type);
+	gdesc.format = desc.format;
+	return pImpl->glw->CreateTexture(gdesc);
+}
+
+HwTexHandle GLGraphicManager::CreateTexture(const Image& img) {
+	gl::GTexture::Desc desc; 
+	desc.w = img.width;
+	desc.h = img.height;
+	desc.numMips = img.imageDatas[0].size();
+	desc.numMips = desc.numMips>0?desc.numMips-1:0;
+	desc.numSlots = img.count;
+	desc.target = gl::ToGLType(TextureType::IMG_2D);
+	desc.format = img.format;
+	desc.sample = img.sample;
+	return pImpl->glw->CreateTexture(desc, &img);
+}
+
+
+HwRenderTargetHandle GLGraphicManager::CreateRenderTarget(RenderTargetDesc desc) {
+	gl::GFrameBuffer::Desc gdesc;
+	gdesc.width = desc.width;
+	gdesc.height = desc.height;
+	gdesc.attachs = desc.attachs;
+	return pImpl->glw->CreateRenderTarget(gdesc);
+}
+
+void GLGraphicManager::DestroyTexture(HwTexHandle h) {
+	pImpl->glw->DestroyTexture(h);
 }
 
 void GLGraphicManager::InitializeScene(Scene* scene) {
+	using namespace std::placeholders;
 	m_scene = scene;
-	for(auto& cam:m_scene->cameras) {
-		if(cam.second->HasImgEffect()) {
-			auto& imgEffctLayer = cam.second->GetImgEffect();
-			for(int32_t i=0;i < imgEffctLayer->EffectCount();i++) {
-				for(auto& node:imgEffctLayer->GetEffect(i)->nodes) {
-					LoadNode(node.sceneNode.get());
-				}
-			}
-		}
-	}
-	TraverseNode(this, &GLGraphicManager::LoadNode, scene->sceneGraph.get());
-	if(!m_fboNode) {
-		std::string vsCode = "#version 120\n"
-			"attribute vec3 a_position;\n"
-			"attribute vec2 a_texCoord;\n"
-			"varying vec2 TexCoord;\n"
-			"void main()\n"
-			"{gl_Position = vec4(a_position, 1.0f);TexCoord = a_texCoord;}";
-		std::string fgCode = "#version 120\n"
-			"varying vec2 TexCoord;\n"
-			"uniform sampler2D g_Texture0;\n"
-			"void main() {gl_FragColor = texture2D(g_Texture0, TexCoord);}";
-		m_fboNode = std::make_shared<SceneNode>();
-		auto mesh = std::make_shared<SceneMesh>();
-		SceneMesh::GenCardMesh(*mesh, {2, 2}, false);
-		SceneMaterial material;
-		material.textures.push_back("_rt_default");
-		material.defines.push_back("g_Texture0");
-		material.customShader.shader = std::make_shared<SceneShader>();
-		material.customShader.shader->vertexCode = vsCode;
-		material.customShader.shader->fragmentCode = fgCode;
-		mesh->AddMaterial(std::move(material));
-		m_fboNode->AddMesh(mesh);
-		LoadNode(m_fboNode.get());
-	}
 
+	/*
 	if(m_defaultFbo.width != 0) {
-		UpdateDefaultRenderTargetBind(*m_scene, m_rtm, m_defaultFbo.width, m_defaultFbo.height);
+		//UpdateDefaultRenderTargetBind(*m_scene, m_rtm, m_defaultFbo.width, m_defaultFbo.height);
 	}
+	*/
+	TraverseNode(std::bind(&GLGraphicManager::ToFrameGraphPass, this, _1, std::string(Tex_Default)), scene->sceneGraph.get());
+	LOG_INFO("--------------------end");
+	AddEndPass(m_fg, *(pImpl->glw), m_fgrscMap.at(std::string(Tex_Default)), m_xyflip);
+	m_fg.Compile();
+	m_fg.ToGraphviz();
 }
 
 void GLGraphicManager::Draw() {
 	if(m_scene == nullptr) return;
-	m_rtm.GetFrameBuffer("_rt_default", m_scene->renderTargets.at("_rt_default"));
+	//m_rtm.GetFrameBuffer("_rt_default", m_scene->renderTargets.at("_rt_default"));
 
 	m_scene->paritileSys.Emitt();
 	m_scene->shaderValueUpdater->FrameBegin();
 
 	const auto& cc = m_scene->clearColor;
+	/*
 	m_glw->BindFramebufferViewport(m_rtm.GetFrameBuffer("_rt_default", m_scene->renderTargets.at("_rt_default")));
 	m_glw->SetDepthTest(false);
 	m_glw->SetColorMask(true, true, true, true);
 	m_glw->ClearColor(cc[0], cc[1], cc[2], 1.0f);
 	TraverseNode(this, &GLGraphicManager::RenderNode, m_scene->sceneGraph.get());
+	*/
+	auto glw = pImpl->glw.get();
+
+
+	//glw->BindFramebufferViewport(&m_defaultFbo);
+	/*
+	glw->SetDepthTest(false);
+	*/
+	glw->ClearColor(cc[0], cc[1], cc[2], 1.0f);
+	//if(m_fboNode) RenderNode(m_fboNode.get());
+	m_fg.Execute(*this);
 
 	m_scene->shaderValueUpdater->FrameEnd();
-
-	m_glw->BindFramebufferViewport(&m_defaultFbo);
-	m_glw->SetBlend(BlendMode::Disable);
-	m_glw->SetColorMask(true, true, true, true);
-	m_glw->ClearColor(cc[0], cc[1], cc[2], 1.0f);
-	if(m_fboNode) RenderNode(m_fboNode.get());
 }
 
 bool GLGraphicManager::Initialize(void *get_proc_addr(const char*)) {
-	bool ok = m_glw->Init(get_proc_addr);
+	bool ok = pImpl->glw->Init(get_proc_addr);
 	return ok;
 }
 
@@ -398,32 +689,36 @@ void GLGraphicManager::SetDefaultFbo(uint fbo, uint32_t w, uint32_t h, FillMode 
 			m_scene->renderTargets["_rt_default"] = {w, h};
 	} else return;
 
-	m_defaultFbo = {w, h};
-	m_defaultFbo.framebuffer = fbo;
+	//m_defaultFbo = {w, h};
+	//m_defaultFbo.framebuffer = fbo;
+	pImpl->glw->SetDefaultFrameBuffer(fbo, w, h);
 
-	UpdateDefaultRenderTargetBind(*m_scene, m_rtm, w, h);
+	//UpdateDefaultRenderTargetBind(*m_scene, m_rtm, w, h);
 	UpdateCameraForFbo(*m_scene, w, h, fillMode);
 }
 
 void GLGraphicManager::ChangeFillMode(FillMode fillMode) {
 	if(m_scene == nullptr) return;
-	UpdateCameraForFbo(*m_scene, m_defaultFbo.width, m_defaultFbo.height, fillMode);
+	//UpdateCameraForFbo(*m_scene, m_defaultFbo.width, m_defaultFbo.height, fillMode);
 }
 
 void GLGraphicManager::Destroy() {
+	auto glw = pImpl->glw.get();
 	m_scene = nullptr;
-	for(const auto& el:m_programMap) {
-		m_glw->DeleteProgram(el.second);
+	for(const auto& el:m_shaderMap) {
+		glw->DestroyShader(el.second);
 	}
-	m_programMap.clear();
+	m_shaderMap.clear();
+	/*
 	for(const auto& el:m_textureMap) {
-		for(const auto& t:el.second) {
-			m_glw->DeleteTexture(t);
+		for(const auto& t:el) {
+			glw->DeleteTexture(t);
 		}
 	}
 	m_textureMap.clear();
-	m_glw->CleanMeshBuf();
-	m_rtm.Clear();
+	*/
+	glw->CleanMeshBuf();
+	//m_rtm.Clear();
 	m_fboNode = nullptr;
 }
 

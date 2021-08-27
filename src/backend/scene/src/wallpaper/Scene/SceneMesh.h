@@ -2,6 +2,7 @@
 #include <vector>
 #include <memory>
 #include <cstddef>
+#include <climits>
 
 #include "SceneVertexArray.h"
 #include "SceneIndexArray.h"
@@ -93,7 +94,7 @@ public:
 
 
 private:
-	uint32_t m_id;
+	uint32_t m_id { std::numeric_limits<uint32_t>::max() };
 	MeshPrimitive m_primitive {MeshPrimitive::TRIANGLE};
 	uint32_t m_pointSize {1};
 	bool m_dynamic;

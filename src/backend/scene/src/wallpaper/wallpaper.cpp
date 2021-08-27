@@ -4,10 +4,10 @@
 #include "FpsCounter.h"
 #include "FrameTimer.h"
 
-#include "SceneMesh.h"
-#include "Scene.h"
+#include "Scene/SceneMesh.h"
+#include "Scene/Scene.h"
 #include "WPSceneParser.h"
-#include "GLGraphicManager.h"
+#include "Renderer/GLGraphicManager.h"
 
 #include <iostream>
 #include <chrono>
@@ -152,4 +152,8 @@ void WallpaperGL::SetFillMode(FillMode f) {
 uint32_t WallpaperGL::CurrentFps() const { return pImpl->fpsCounter.Fps(); }
 uint8_t WallpaperGL::Fps() const { return pImpl->frameTimer.Fps(); }
 void WallpaperGL::SetFps(uint8_t value) { return pImpl->frameTimer.SetFps(value); }
+
+void WallpaperGL::SetFlip(bool value) {
+	pImpl->gm.SetFlip(false, value);
+}
 

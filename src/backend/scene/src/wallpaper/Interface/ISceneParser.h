@@ -2,7 +2,7 @@
 #include <string>
 #include <memory>
 
-#include "Scene.h"
+#include "Scene/Scene.h"
 
 namespace wallpaper
 {

@@ -7,7 +7,7 @@
 
 #include "Type.h"
 #include "SpriteAnimation.h"
-#include "SceneTexture.h"
+#include "Scene/SceneTexture.h"
 
 namespace wallpaper
 {
@@ -40,7 +40,7 @@ struct Image {
 	TextureFormat format;
 	uint32_t count;
 	bool isSprite;
-	SceneTextureSample sample;
+	TextureSample sample;
 	
 	SpriteAnimation spriteAnim;
 

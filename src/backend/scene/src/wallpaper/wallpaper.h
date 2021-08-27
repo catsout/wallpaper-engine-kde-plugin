@@ -21,7 +21,7 @@ public:
     void Render();//uint fbo, int width, int height);
     void Clear();
 	void SetAssets(const std::string& path);
-	void SetFlip(bool value) {m_flip = value;};
+	void SetFlip(bool value);
 	void SetMousePos(float x, float y) {m_mousePos = std::vector<float>({x,y});};
 
 	// call this after loaded
@@ -48,7 +48,6 @@ private:
 	bool m_inited {false};
 	bool m_loaded {false};
 	int m_framecount {0};
-	bool m_flip {false};
 	std::vector<float> m_mousePos;
 
 	float m_aspect;

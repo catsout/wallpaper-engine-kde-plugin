@@ -2,6 +2,8 @@ import QtQuick 2.12
 import QtQuick.Window 2.2
 import org.kde.plasma.core 2.0 as PlasmaCore
 
+import Qt.labs.folderlistmodel 2.11
+
 
 Rectangle {
     id: background
@@ -15,10 +17,12 @@ Rectangle {
     property int displayMode: wallpaper.configuration.DisplayMode
     property bool mute: wallpaper.configuration.MuteAudio
     property bool useMpv: wallpaper.configuration.UseMpv
+    property bool randomizeWallpaper: wallpaper.configuration.RandomizeWallpaper
 
     property int fps: wallpaper.configuration.Fps
     property int volume: wallpaper.configuration.Volume
-    
+    property int switchTimer: wallpaper.configuration.SwitchTimer
+
     // auto pause
     property bool ok: windowModel.playVideoWallpaper
 
@@ -88,6 +92,45 @@ Rectangle {
     WindowModel {
         id: windowModel
     }
+
+    WorkerScript {
+        id: folderBackgroundWorker
+        source: "folderWorker.mjs"
+        // use var not list as doc
+        property var proxyModel
+        onMessage: {
+            if(messageObject.reply == "loadFolder") {
+                proxyModel = messageObject.data;
+                wallpaper.configuration.WallpaperWorkShopId = proxyModel[0].workshopid;
+                wallpaper.configuration.WallpaperFilePath = proxyModel[0].path + "/" + proxyModel[0].file;
+                wallpaper.configuration.WallpaperType = proxyModel[0].type;
+            }
+        }
+    }
+    FolderListModel {
+       id: wpRawList
+       folder: steamlibrary + Common.wpenginePath
+    }
+    Timer {
+        id: randomizeTimer
+        running: background.randomizeWallpaper
+        interval: background.switchTimer * 1000 * 60
+        repeat: true
+        onTriggered: {
+            let i = Math.round(Math.random() * wpRawList.count);
+            folderBackgroundWorker.proxyModel = [{
+                workshopid: wpRawList.get(i,"fileName"),
+                path: wpRawList.get(i,"filePath"),
+                loaded: false,
+                title: "unknown",
+                preview: "unknown",
+                type: "unknown",
+            }]
+            let msg = {"action": "loadFolder", "data": folderBackgroundWorker.proxyModel};
+            folderBackgroundWorker.sendMessage(msg);
+        }
+    }
+
 
     // lauch pause time to avoid freezing
     Timer {
@@ -197,5 +240,6 @@ Rectangle {
         background.okChanged.connect(autoPause);
 
         lauchPauseTimer.start();
+        randomizeTimer.start();
     }
 }

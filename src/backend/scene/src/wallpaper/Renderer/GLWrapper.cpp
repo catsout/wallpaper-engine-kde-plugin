@@ -3,43 +3,10 @@
 #include "Log.h"
 
 #include <functional>
-#include <glad/glad.h> 	
 #include <cstring>
 
 
 using namespace wallpaper::gl;
-
-#if defined(DEBUG_OPENGL)
-#define CHECK_GL_ERROR_IF_DEBUG() checkGlError(__FILE__, __FUNCTION__, __LINE__);
-#else
-#define CHECK_GL_ERROR_IF_DEBUG()
-#endif
-
-void checkGlError(const char* file, const char* func, int line)
-{
-    int err = glGetError();
-    if(err != 0)
-        std::cerr << "GL_ERROR: " << err << "  " << func << "  at: " << file << "  line: " << line << std::endl;
-}
-
-typedef wallpaper::TextureFormat TextureFormat;
-template <typename Getiv, typename GetLog>
-static std::string GetInfoLog(GLuint name, Getiv getiv, GetLog getLog) {
-	GLint bufLength = 0;
-	getiv(name, GL_INFO_LOG_LENGTH, &bufLength);
-	if (bufLength <= 0)
-		bufLength = 2048;
-
-	std::string infoLog;
-	infoLog.resize(bufLength);
-	GLsizei len = 0;
-	getLog(name, (GLsizei)infoLog.size(), &len, &infoLog[0]);
-	if (len <= 0)
-		return "(unknown reason)";
-
-	infoLog.resize(len);
-	return infoLog;
-}
 
 GLBuffer::~GLBuffer() {
 	if (buffer) {
@@ -67,7 +34,7 @@ GLTexture::GLTexture(GLint target, uint16_t width, uint16_t height, uint16_t num
 		 h(height),
 		 numMips(numMips) {};
 
-GLFramebuffer::GLFramebuffer():width(0), height(0),color_texture(GL_TEXTURE_2D, width, height, 1) {}
+GLFramebuffer::GLFramebuffer():width(0), height(0),color_texture(GL_TEXTURE_2D, 0, 0, 1) {}
 GLFramebuffer::GLFramebuffer(uint32_t _width, uint32_t _height)
 		: width(_width), height(_height),color_texture(GL_TEXTURE_2D, _width, _height, 1) {}
 
@@ -89,7 +56,7 @@ bool GLWrapper::Init(void *get_proc_address(const char *name)) {
 }
 
 
-GLTexture* GLWrapper::CreateTexture(GLenum target, int32_t width, int32_t height, int32_t numMips, SceneTextureSample sample) {
+GLTexture* GLWrapper::CreateTexture(GLenum target, uint32_t width, uint32_t height, uint32_t numMips, TextureSample sample) {
 	GLTexture* tex = new GLTexture(target, width, height, numMips);
 	glGenTextures(1, &tex->texture);
 	glBindTexture(tex->target, tex->texture);
@@ -122,7 +89,7 @@ GLBuffer* GLWrapper::CreateBuffer(GLenum target, std::size_t size, GLuint usage)
 }
 
 
-GLFramebuffer* GLWrapper::CreateFramebuffer(int32_t width, int32_t height, SceneTextureSample sample) {
+GLFramebuffer* GLWrapper::CreateFramebuffer(uint32_t width, uint32_t height, TextureSample sample) {
 	GLFramebuffer* fbo = new GLFramebuffer(width, height);
 	glGenFramebuffers(1, &fbo->framebuffer);
 	GLTexture* tex = CreateTexture(GL_TEXTURE_2D , width, height, 0, sample);
@@ -152,33 +119,6 @@ GLFramebuffer* GLWrapper::CreateFramebuffer(int32_t width, int32_t height, Scene
 	return fbo;
 }
 
-GLProgram* GLWrapper::CreateProgram(std::vector<GLShader *> shaders, 
-						 std::vector<ShaderAttribute> attribLocs) {
-	GLProgram* program = new GLProgram();
-	program->program = glCreateProgram();
-	for(auto& shader:shaders) {
-		glAttachShader(program->program, shader->shader);
-		CHECK_GL_ERROR_IF_DEBUG();
-	}
-	for(auto& attrib:attribLocs) {
-		glBindAttribLocation(program->program, attrib.location, attrib.name.c_str());
-		CHECK_GL_ERROR_IF_DEBUG();
-	}
-
-	glLinkProgram(program->program);
-	glUseProgram(program->program);
-	int success;
-    glGetProgramiv(program->program, GL_LINK_STATUS, &success);
-    if(!success) {
-        std::string infoLog = GetInfoLog(program->program, glGetProgramiv, glGetProgramInfoLog);
-        LOG_ERROR("LINKING_FAILED\n" + infoLog);
-    }
-	for(auto& shader:shaders) {
-		DeleteShader(shader);
-	}
-	CHECK_GL_ERROR_IF_DEBUG();
-    return program;
-}
 /*
 GLProgram* GLWrapper::CreateProgram(std::vector<GLShader *> shaders,
 									std::vector<GLProgram::AttribLoc> attribLocs) {
@@ -205,26 +145,6 @@ GLProgram* GLWrapper::CreateProgram(std::vector<GLShader *> shaders,
     return program;
 }
 */
-
-GLShader* GLWrapper::CreateShader(GLuint stage, const std::string& source) {
-	GLShader* shader = new GLShader();
-	shader->shader = glCreateShader(stage);
-	const char* source_char = source.c_str();	
-	glShaderSource(shader->shader, 1, &source_char, nullptr);
-    glCompileShader(shader->shader);
-	CHECK_GL_ERROR_IF_DEBUG();
-	GLint success = 0;
-	glGetShaderiv(shader->shader, GL_COMPILE_STATUS, &success);
-    if(!success)
-    {
-        std::string infolog = GetInfoLog(shader->shader, glGetShaderiv, glGetShaderInfoLog);
-        LOG_ERROR("COMPILATION_FAILED\n" + infolog);
-		LOG_INFO(source);
-    }
-	CHECK_GL_ERROR_IF_DEBUG();
-	return shader;
-}
-
 
 void GLWrapper::CopyTexture(GLFramebuffer* src, GLTexture* dst) {
 	GLFramebuffer* backfbo = m_curFbo;
@@ -260,18 +180,9 @@ void GLWrapper::Viewport(int x,int y,int w,int h) {
 	glViewport(x, y, w, h);
 	CHECK_GL_ERROR_IF_DEBUG();
 }
-void GLWrapper::ActiveTexture(int index) {
-	glActiveTexture(GL_TEXTURE0 + index);
-	CHECK_GL_ERROR_IF_DEBUG();
-}
 
 void GLWrapper::BindTexture(GLTexture *tex) {
 	glBindTexture(tex->target, tex->texture);
-	CHECK_GL_ERROR_IF_DEBUG();
-}
-
-void GLWrapper::BindProgram(GLProgram *program) {
-	glUseProgram(program->program);
 	CHECK_GL_ERROR_IF_DEBUG();
 }
 
@@ -300,21 +211,6 @@ void GLWrapper::DeleteBuffer(GLBuffer* buffer) {
 	CHECK_GL_ERROR_IF_DEBUG();
 }
 
-void GLWrapper::DeleteTexture(GLTexture* texture) {
-	glDeleteTextures(1, &texture->texture);
-	CHECK_GL_ERROR_IF_DEBUG();
-}
-
-void GLWrapper::DeleteShader(GLShader* shader) {
-	delete shader;
-	CHECK_GL_ERROR_IF_DEBUG();
-}
-
-void GLWrapper::DeleteProgram(GLProgram* program) {
-	delete program;
-	CHECK_GL_ERROR_IF_DEBUG();
-}
-
 void GLWrapper::DeleteFramebuffer(GLFramebuffer *glfbo) {
 	if(glfbo == nullptr)
 		return;
@@ -331,36 +227,7 @@ void GLWrapper::BufferSubData(GLBuffer* buffer, std::size_t size, const float* d
 	CHECK_GL_ERROR_IF_DEBUG();
 }
 
-void TextureFormat2GLFormat(TextureFormat texformat, GLint& internalFormat, GLenum& format, GLenum& type) {
-	type = GL_UNSIGNED_BYTE;	
-	format = GL_RGBA;
-	switch(texformat) {
-	case TextureFormat::R8:
-		internalFormat = GL_R8;
-		format = GL_RED;
-		break;
-	case TextureFormat::RG8:
-		internalFormat = GL_RG8;
-		format = GL_RG;
-		break;
-	case TextureFormat::RGB8:
-		internalFormat = GL_RGB8;	
-		format = GL_RGB;
-		break;
-	case TextureFormat::RGBA8:
-		internalFormat = GL_RGBA8;
-		break;
-	case TextureFormat::BC1:
-		internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
-		break;
-	case TextureFormat::BC2:
-		internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
-		break;
-	case TextureFormat::BC3:
-		internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
-		break;
-	}
-}
+
 
 void GLWrapper::TextureImage(GLTexture* texture, int level, int width, int height, TextureFormat texformat, uint8_t *data, std::size_t imgsize) {
 	GLTexture *tex = texture;
@@ -430,22 +297,6 @@ void GLWrapper::TextureImagePbo(GLTexture *texture, int level, int width, int he
 	CHECK_GL_ERROR_IF_DEBUG();
 }
 
-void GLWrapper::QueryProUniforms(GLProgram* program) {
-	int n_uniform = 0;
-	glUseProgram(program->program);
-	glGetProgramiv(program->program, GL_ACTIVE_UNIFORMS, &n_uniform);
-	CHECK_GL_ERROR_IF_DEBUG();
-	auto& uniforms = program->uniformLocs;
-	uniforms.resize(n_uniform);
-	for(int i=0; i<n_uniform ;i++) {
-		char* name = new char[256];
-		glGetActiveUniform(program->program, i, 256, nullptr, &uniforms[i].count, &uniforms[i].type, name);
-		uniforms[i].name = std::string(name);
-		delete [] name;
-		uniforms[i].location = glGetUniformLocation(program->program, uniforms[i].name.c_str());
-		CHECK_GL_ERROR_IF_DEBUG();
-	}
-}
 void GLWrapper::SetBlend(BlendMode bm) {
 	//glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);	
 	CHECK_GL_ERROR_IF_DEBUG();
@@ -468,109 +319,6 @@ void GLWrapper::SetBlend(BlendMode bm) {
 		glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE, GL_SRC_ALPHA, GL_ONE);
 		break;
 	}
-}
-
-void GLWrapper::SetDepthTest(bool enable) {
-	if(enable) {
-		glEnable(GL_DEPTH_TEST);
-		return;
-	}
-	glDisable(GL_DEPTH_TEST);
-}
-
-
-void GLWrapper::SetColorMask(bool r, bool g, bool b, bool a) {
-	glColorMask(r, g, b, a);	
-}
-
-int GLWrapper::GetUniforms(GLProgram* program, std::vector<GLUniform>& uniforms) {
-	int n_uniform = 0;
-	glUseProgram(program->program);
-	glGetProgramiv(program->program, GL_ACTIVE_UNIFORMS, &n_uniform);
-	CHECK_GL_ERROR_IF_DEBUG();
-	uniforms.resize(n_uniform);
-	for(int i=0; i<n_uniform ;i++) {
-		uniforms[i] = GLUniform();
-		glGetActiveUniform(program->program, i, 256, nullptr, &uniforms[i].count, &uniforms[i].type, uniforms[i].name);
-		uniforms[i].location = glGetUniformLocation(program->program, uniforms[i].name);
-		CHECK_GL_ERROR_IF_DEBUG();
-	}
-	return n_uniform;
-}
-
-void GLWrapper::SetUniformF(GLint loc, int count, const float *udata) {
-	if (loc >= 0) {
-		switch (count) {
-		case 1:
-			glUniform1f(loc, udata[0]);
-			break;
-		case 2:
-			glUniform2fv(loc, 1, udata);
-			break;
-		case 3:
-			glUniform3fv(loc, 1, udata);
-			break;
-		case 4:
-			glUniform4fv(loc, 1, udata);
-			break;
-		}
-		CHECK_GL_ERROR_IF_DEBUG();
-	}
-}
-
-void GLWrapper::SetUniformI(GLint loc, int count, const int *udata) {
-	if (loc >= 0) {
-		switch (count) {
-		case 1:
-			glUniform1iv(loc, 1, (GLint *)udata);
-			break;
-		case 2:
-			glUniform2iv(loc, 1, (GLint *)udata);
-			break;
-		case 3:
-			glUniform3iv(loc, 1, (GLint *)udata);
-			break;
-		case 4:
-			glUniform4iv(loc, 1, (GLint *)udata);
-			break;
-		}
-		CHECK_GL_ERROR_IF_DEBUG();
-	}
-}
-
-void GLWrapper::SetUniformMat4(GLint loc, const float *udata) {
-	if (loc >= 0) {
-		glUniformMatrix4fv(loc, 1, false, udata);
-		CHECK_GL_ERROR_IF_DEBUG();
-	}
-}
-
-
-void GLWrapper::SetUniform(GLProgram* program, GLUniform* uniform,const void* value) {
-	GLint loc = uniform->location;
-	if(loc == -1){
-		loc = glGetUniformLocation(program->program, uniform->name);
-		uniform->location = loc;
-	}
-
-	int count = uniformCount_[uniform->type];
-
-    switch(uniform->type)
-    {   
-	case GL_FLOAT:
-	case GL_FLOAT_VEC2:
-	case GL_FLOAT_VEC3:
-	case GL_FLOAT_VEC4:
-        SetUniformF(loc, count, static_cast<const float*>(value));
-        break;
-    case GL_INT:
-	case GL_SAMPLER_2D:
-        SetUniformI(loc, count, static_cast<const int*>(value));
-		break;
-	case GL_FLOAT_MAT4:
-		SetUniformMat4(loc, static_cast<const float*>(value));
-        break;
-    }   
 }
 
 void GLWrapper::LoadMesh(SceneMesh& mesh) {
@@ -617,11 +365,15 @@ void GLWrapper::LoadMesh(SceneMesh& mesh) {
 	}
 	mesh.SetID(m_vaoidgen++);
 	m_vaoMap.insert({mesh.ID(), vao});	
+	//LOG_INFO("load mesh:" + std::to_string(mesh.ID()) + ":" + std::to_string(vao));
     glBindVertexArray(0);
 }
 
 void GLWrapper::RenderMesh(const SceneMesh& mesh) {
-	if(m_vaoMap.count(mesh.ID()) == 0) return;
+	if(m_vaoMap.count(mesh.ID()) == 0) {
+		assert(false);
+		return;
+	}
 
 	if(mesh.Dynamic() && mesh.Dirty()) {
 		const auto& varray = mesh.GetVertexArray(0);
@@ -649,6 +401,7 @@ void GLWrapper::RenderMesh(const SceneMesh& mesh) {
 	}
 
 	glBindVertexArray(m_vaoMap.at(mesh.ID()));
+	//LOG_INFO(std::to_string(mesh.ID()) + ":" + std::to_string(m_vaoMap.at(mesh.ID())));
 	if(mesh.Primitive() == MeshPrimitive::POINT) {
 		auto count = mesh.GetVertexArray(0).VertexCount();
 		glPointSize(mesh.PointSize());
@@ -702,25 +455,8 @@ int32_t GLProgram::GetUniformLocation(GLProgram* pro, const std::string name) {
 	return -1;
 }
 
-void GLWrapper::UpdateUniform(GLProgram* pro, const wp::ShaderValue& sv) {
-	int32_t loc = GLProgram::GetUniformLocation(pro, sv.name);
-	if(loc == -1) return;
-	std::size_t size = sv.value.size();
-	const float* value = &sv.value[0];
-	if(size == 16)
-		SetUniformMat4(loc, static_cast<const float*>(value));
-	else
-		SetUniformF(loc, size, static_cast<const float*>(value));
-}
 
-void GLWrapper::SetTexSlot(GLProgram* pro, const std::string& name, int32_t slot) {
-	int32_t loc = GLProgram::GetUniformLocation(pro, name);
-	if(loc == -1) return;
-	SetUniformI(loc, 1, &slot);
-}
-
-
-GLuint GLWrapper::ToGLType(ShaderType st) {
+GLuint wallpaper::gl::ToGLType(ShaderType st) {
 	switch (st)
 	{
 	case ShaderType::VERTEX:
@@ -734,7 +470,7 @@ GLuint GLWrapper::ToGLType(ShaderType st) {
 	return 0;
 }
 
-GLenum GLWrapper::ToGLType(TextureType tt) {
+GLenum wallpaper::gl::ToGLType(TextureType tt) {
 	switch (tt)
 	{
 	case TextureType::IMG_2D:
@@ -745,7 +481,7 @@ GLenum GLWrapper::ToGLType(TextureType tt) {
 	
 }
 
-GLenum GLWrapper::ToGLType(TextureWrap wrap) {
+GLenum wallpaper::gl::ToGLType(TextureWrap wrap) {
 	switch (wrap)
 	{
 	case TextureWrap::REPEAT:
@@ -756,7 +492,7 @@ GLenum GLWrapper::ToGLType(TextureWrap wrap) {
 		return GL_REPEAT;
 	}
 }
-GLenum GLWrapper::ToGLType(TextureFilter filter) {
+GLenum wallpaper::gl::ToGLType(TextureFilter filter) {
 	switch (filter)
 	{
 	case TextureFilter::LINEAR:
@@ -767,7 +503,7 @@ GLenum GLWrapper::ToGLType(TextureFilter filter) {
 		return GL_NEAREST;
 	}
 }
-GLenum GLWrapper::ToGLType(MeshPrimitive p) {
+GLenum wallpaper::gl::ToGLType(MeshPrimitive p) {
 	switch (p)
 	{
 	case MeshPrimitive::POINT:

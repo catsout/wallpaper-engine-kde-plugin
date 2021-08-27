@@ -12,7 +12,6 @@ import Qt.labs.folderlistmodel 2.11
 Column {
     id: root
     anchors.fill: parent
-    anchors.verticalCenter: parent.verticalCenter
     anchors.topMargin: 5
     spacing: 5
     
@@ -29,9 +28,12 @@ Column {
 
     property alias cfg_MuteAudio: muteAudio.checked
     property alias cfg_UseMpv: useMpv.checked
+    property alias cfg_RandomizeWallpaper: randomizeWallpaper.checked
 
     property alias cfg_Fps: sliderFps.value
-    Column { 
+    property alias cfg_SwitchTimer: sliderTimer.value
+
+    Column {
         id: warnRow
         anchors.horizontalCenter: parent.horizontalCenter
         Text {
@@ -102,6 +104,12 @@ Column {
             }          
 
             CheckBox{
+                id: randomizeWallpaper
+                Layout.columnSpan: 2
+                text: "Randomize every X minutes"
+            }
+
+            CheckBox{
                 Layout.columnSpan: 2
                 visible: Common.checklib_wallpaper(configCol)
                 id: useMpv
@@ -120,10 +128,10 @@ Column {
                 }
             }
             RowLayout {
-                Label{
+                Text {
+                    Layout.preferredWidth: font.pixelSize * 2
                     text: sliderFps.value.toString()
                 }
-
                 Slider {
                     id: sliderFps
                     Layout.fillWidth: true
@@ -136,16 +144,12 @@ Column {
             Label{
                 visible: !cfg_MuteAudio
                 id: volumLabel
-                text: "Volum"
-                MouseArea {
-                    id: volumMouse
-                    anchors.fill: parent
-                    hoverEnabled: true
-                }
+                text: "Volume"
             }
             RowLayout {
                 visible: !cfg_MuteAudio
-                Label {
+                Text {
+                    Layout.preferredWidth: font.pixelSize * 2
                     text: sliderVol.value.toString()
                 }
                 Slider {
@@ -154,6 +158,26 @@ Column {
                     from: 0
                     to: 100
                     stepSize: 5.0
+                    snapMode: Slider.SnapOnRelease
+                }
+            }
+            Label{
+                visible: cfg_RandomizeWallpaper
+                id: switchTimer
+                text: "Timer"
+            }
+            RowLayout {
+                visible: cfg_RandomizeWallpaper
+                Text {
+                    Layout.preferredWidth: font.pixelSize * 2
+                    text: sliderTimer.value.toString()
+                }
+                Slider {
+                    id: sliderTimer
+                    Layout.fillWidth: true
+                    from: 1
+                    to: 200
+                    stepSize: 1.0
                     snapMode: Slider.SnapOnRelease
                 }
             }

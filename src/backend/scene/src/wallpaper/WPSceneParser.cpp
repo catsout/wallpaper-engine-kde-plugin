@@ -28,6 +28,7 @@
 #include <Eigen/Dense>
 
 using namespace wallpaper;
+using namespace Eigen;
 
 typedef std::unordered_map<std::string, int32_t> Combos;
 
@@ -401,6 +402,7 @@ void LoadMaterial(const wpscene::WPMaterial& wpmat, Scene* pScene, SceneNode* pN
 				name = "_rt_ParticleRefract";
 			}
 			else name = "_rt_default";
+			name = "_rt_default";
 		}
 		if(name.compare(0, 6, "_rt_im") == 0) {
 			name = "";
@@ -596,7 +598,7 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 	globalBaseConstSvs["g_ViewForward"]= {"g_ViewForward", {0, 0, -1.0f}};
 	globalBaseConstSvs["g_EyePosition"]= {"g_EyePosition", {0, 0, 0}};
 
-	std::vector<float> cori{ortho.width/2.0f,ortho.height/2.0f,0},cscale{1.0f,1.0f,1.0f},cangle(3);
+	Vector3f cori{ortho.width/2.0f,ortho.height/2.0f,0},cscale{1.0f,1.0f,1.0f},cangle(Vector3f::Zero());
 	auto spCamNode = std::make_shared<SceneNode>(cori, cscale, cangle);
 	upScene->activeCamera->AttatchNode(spCamNode);
 	upScene->sceneGraph->AppendChild(spCamNode);
@@ -609,7 +611,7 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 		algorism::CalculatePersperctiveFov(1000.0f, ortho.height)
 	);
 	{
-		std::vector<float> cperori = cori; cperori[2] = 1000.0f;
+		Vector3f cperori = cori; cperori[2] = 1000.0f;
 		auto spPerCamNode = std::make_shared<SceneNode>(cperori, cscale, cangle);
 		upScene->cameras["global_perspective"]->AttatchNode(spPerCamNode);
 		upScene->sceneGraph->AppendChild(spPerCamNode);
@@ -662,7 +664,11 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 				continue;
 
 			wpimgobj.origin[1] = ortho.height - wpimgobj.origin[1];
-			auto spImgNode = std::make_shared<SceneNode>(wpimgobj.origin, wpimgobj.scale, wpimgobj.angles);
+			auto spImgNode = std::make_shared<SceneNode>(
+				Vector3f(&wpimgobj.origin[0]), 
+				Vector3f(&wpimgobj.scale[0]), 
+				Vector3f(&wpimgobj.angles[0]) 
+			);
 
 			SceneMaterial material;
 			WPShaderValueData svData;
@@ -740,10 +746,10 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 				}
 				else {
 					// applly scale to crop
-					int32_t w = wpimgobj.size[0] * wpimgobj.scale[0];
-					int32_t h = wpimgobj.size[1] * wpimgobj.scale[1];
+					int32_t w = wpimgobj.size[0];
+					int32_t h = wpimgobj.size[1];
 					upScene->cameras[nodeAddr] = std::make_shared<SceneCamera>(w, h, -1.0f, 1.0f);
-					upScene->cameras.at(nodeAddr)->AttatchNode(spImgNode);
+					upScene->cameras.at(nodeAddr)->AttatchNode(spEffCamNode);
 				}
 				spImgNode->SetCamera(nodeAddr);
 				// set image effect
@@ -899,6 +905,8 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 						if((i_eff + 1 == count_eff && i_mat + 1 == wpeffobj.materials.size()) && !wpimgobj.fullscreen) {
 							GenCardMesh(mesh, {(int32_t)wpimgobj.size[0], (int32_t)wpimgobj.size[1]}, false);
 							spEffNode->CopyTrans(*spImgNode);
+							if(!isCompose)
+								spImgNode->CopyTrans(SceneNode());
 							svData.parallaxDepth = wpimgobj.parallaxDepth;
 							material.blenmode = imgBlendMode;
 						} else {
@@ -920,7 +928,11 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 			auto& wppartobj = wppartobjs.at(indexT.second);
 			wppartobj.origin[1] = ortho.height - wppartobj.origin[1];
 
-			auto spNode = std::make_shared<SceneNode>(wppartobj.origin, wppartobj.scale, wppartobj.angles);
+			auto spNode = std::make_shared<SceneNode>(
+				Vector3f(&wppartobj.origin[0]), 
+				Vector3f(&wppartobj.scale[0]), 
+				Vector3f(&wppartobj.angles[0]) 
+			);
 			if(wppartobj.particleObj.flags.perspective) {
 				spNode->SetCamera("global_perspective");
 			}

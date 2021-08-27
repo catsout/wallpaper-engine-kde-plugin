@@ -48,7 +48,6 @@ enum class TextureFormat {
 	BC1,  // DXT1
 	BC2,  // DXT3
 	BC3,  // DXT5
-	A8,
 	RGB8,
 	RGBA8,
 	RG8,
@@ -82,6 +81,23 @@ enum class FillMode {
 	STRETCH,
 	ASPECTFIT,	
 	ASPECTCROP
+};
+
+enum class TextureWrap {
+	CLAMP_TO_EDGE,
+	REPEAT
+};
+
+enum class TextureFilter {
+	LINEAR,
+	NEAREST
+};
+
+struct TextureSample {
+	TextureWrap wrapS {TextureWrap::REPEAT};
+	TextureWrap wrapT {TextureWrap::REPEAT};
+	TextureFilter magFilter {TextureFilter::NEAREST};
+	TextureFilter minFilter {TextureFilter::NEAREST};
 };
 
 }

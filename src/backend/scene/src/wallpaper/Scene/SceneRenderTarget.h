@@ -14,7 +14,7 @@ struct SceneRenderTarget {
     uint32_t height;
     bool allowReuse {false};
     bool withDepth {false};
-    SceneTextureSample sample {TextureWrap::CLAMP_TO_EDGE, TextureWrap::CLAMP_TO_EDGE,
+    TextureSample sample {TextureWrap::CLAMP_TO_EDGE, TextureWrap::CLAMP_TO_EDGE,
                                 TextureFilter::LINEAR, TextureFilter::LINEAR};
 };
 }
