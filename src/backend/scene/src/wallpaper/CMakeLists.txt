@@ -40,6 +40,7 @@ add_library(${PROJECT_NAME}
 	Renderer/Fg/FrameGraph.cpp
 
 	WPParticleParser.cpp
+	WPShaderParser.cpp
 	WPSceneParser.cpp
 	WPShaderValueUpdater.cpp
 	WPTexImageParser.cpp

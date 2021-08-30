@@ -4,76 +4,34 @@
 #include "Util.h"
 #include "Log.h"
 #include "wallpaper.h"
-#include "WPTexImageParser.h"
 #include "Type.h"
+#include "Algorism.h"
+
+#include "WPShaderParser.h"
+#include "WPTexImageParser.h"
+#include "Particle/WPParticleRawGener.h"
+#include "WPParticleParser.h"
+
 
 #include "WPShaderValueUpdater.h"
 #include "wpscene/WPImageObject.h"
 #include "wpscene/WPParticleObject.h"
 #include "wpscene/WPScene.h"
 
-#include "Particle/WPParticleRawGener.h"
-#include "WPParticleParser.h"
-#include "Algorism.h"
-
 #include <iostream>
 #include <sstream>
 #include <string>
 #include <unordered_map>
-#include <stack>
-#include <array>
 #include <random>
 #include <cmath>
 #include <functional>
-#include <regex>
 #include <Eigen/Dense>
 
 using namespace wallpaper;
 using namespace Eigen;
 
-typedef std::unordered_map<std::string, int32_t> Combos;
-
-// ui material name to gl uniform name
-typedef std::unordered_map<std::string, std::string> WPAliasValueDict;
-
-typedef std::vector<std::pair<int32_t, std::string>> WPDefaultTexs;
 
 typedef std::function<float()> RandomFn;
-
-struct WPShaderInfo {
-	Combos combos;
-	ShaderValues svs;
-	ShaderValues baseConstSvs;
-	WPAliasValueDict alias;
-	WPDefaultTexs defTexs;
-};
-
-const std::string pre_shader_code = R"(#version 130
-#define GLSL 1
-#define highp
-#define mediump
-#define lowp
-#define mul(x, y) (y * x)
-#define frac fract
-#define CAST2(x) (vec2(x))
-#define CAST3(x) (vec3(x))
-#define CAST4(x) (vec4(x))
-#define CAST3X3(x) (mat3(x))
-#define saturate(x) (clamp(x, 0.0, 1.0))
-#define texSample2D texture2D
-#define texSample2DLod texture2DLod
-#define texture2DLod texture2D
-#define atan2 atan
-#define ddx dFdx
-#define max(x, y) max(y, x)
-#define float1 float
-#define float2 vec2
-#define float3 vec3
-#define float4 vec4
-#define lerp mix
-#define ddy(x) dFdy(-(x))
-
-)";
 
 std::string getAddr(void *p) {
 	return std::to_string(reinterpret_cast<intptr_t>(p));
@@ -164,220 +122,6 @@ void LoadEmitter(ParticleSubSystem& pSys, const wpscene::Particle& wp, float cou
 	}
 }
 
-std::string LoadGlslInclude(const std::string& input) {
-	std::string::size_type pos = 0;
-	std::string output;
-	std::string::size_type linePos = std::string::npos;
-
-	while(linePos = input.find("#include", pos), linePos != std::string::npos) {
-		auto lineEnd = input.find_first_of('\n', linePos);
-		auto lineSize = lineEnd - linePos;
-		auto lineStr = input.substr(linePos, lineSize);
-		output.append(input.substr(pos, linePos-pos));
-
-		auto inP = lineStr.find_first_of('\"') + 1;
-		auto inE = lineStr.find_last_of('\"');
-		auto includeName = lineStr.substr(inP, inE - inP);
-		auto includeSrc = fs::GetContent(WallpaperGL::GetPkgfs(),"shaders/"+includeName);
-		output.append("\n//-----include " + includeName + "\n");
-		output.append(LoadGlslInclude(includeSrc));
-		output.append("\n//-----include end\n");
-
-		pos = lineEnd;
-	}
-	output.append(input.substr(pos));
-	return output;
-}
-
-void ParseWPShader(const std::string& src, int32_t texcount, WPShaderInfo* pWPShaderInfo) {
-	auto& combos = pWPShaderInfo->combos;
-	auto& wpAliasDict = pWPShaderInfo->alias;
-	auto& shadervalues = pWPShaderInfo->svs;
-	auto& defTexs = pWPShaderInfo->defTexs;
-	// pos start of line
-	std::string::size_type pos = 0, lineEnd = std::string::npos;
-	while((lineEnd = src.find_first_of(('\n'), pos)), true) {
-		const auto clineEnd = lineEnd;
-		const auto line = src.substr(pos, lineEnd - pos);
-
-		/*
-        if(line.find("attribute ") != std::string::npos || line.find("in ") != std::string::npos) {
-			update_pos = true;
-		}
-		else if(line.find("varying ") != std::string::npos || line.find("out ") != std::string::npos) {
-			update_pos = true;
-		}
-		*/
-		if(line.find("// [COMBO]") != std::string::npos) {
-			nlohmann::json combo_json;
-			if(PARSE_JSON(line.substr(line.find_first_of('{')), combo_json)) {
-				if(combo_json.contains("combo")) {
-					std::string name;
-					int32_t value = 0;
-					GET_JSON_NAME_VALUE(combo_json, "combo", name);
-					GET_JSON_NAME_VALUE(combo_json, "default", value);
-					combos[name] = value;
-				}
-			}
-		}
-		else if(line.find("uniform ") != std::string::npos) {
-			if(line.find("// {") != std::string::npos) {
-				nlohmann::json sv_json;
-				if(PARSE_JSON(line.substr(line.find_first_of('{')), sv_json)) {
-					std::vector<std::string> defines = SpliteString(line.substr(0, line.find_first_of(';')), " ");
-
-					std::string material;
-					GET_JSON_NAME_VALUE_NOWARN(sv_json, "material", material);
-					if(!material.empty())
-						wpAliasDict[material] = defines.back();	
-
-					ShaderValue sv;	
-					sv.name = defines.back();
-					if(defines.back()[0] != 'g') {
-						LOG_INFO("PreShaderSrc User shadervalue not supported");
-					}
-					if(sv_json.contains("default")){
-						auto value = sv_json.at("default");
-						if(sv.name.compare(0, 9, "g_Texture") == 0) {
-							int32_t index {0};
-							std::string strValue;
-							STRCONV(sv.name.substr(9, sv.name.size()-9), index);
-							GET_JSON_VALUE(value, strValue);
-							defTexs.push_back({index, strValue});
-						} else {
-							ShaderValue sv;	
-							sv.name = defines.back();
-							if(value.is_string())
-								GET_JSON_VALUE(value, sv.value);
-							if(value.is_number()) {
-								sv.value.resize(1);
-								GET_JSON_VALUE(value, sv.value[0]);
-							}
-								//sv.value = {value.get<float>()};
-							shadervalues[sv.name] = sv;
-						}
-					}
-					if(sv_json.contains("combo")) {
-						std::string name;
-						int32_t value = 1;
-						GET_JSON_NAME_VALUE(sv_json, "combo", name);
-						if(sv.name.compare(0, 9, "g_Texture") == 0) {
-							int32_t t;
-							STRCONV(sv.name.substr(9), t);
-							if(t >= texcount)
-								value = 0;
-						}
-						combos[name] = value;
-					}
-				}
-			}
-		}
-
-		// end
-		if(clineEnd == std::string::npos) {
-			break;
-		}
-		if(line.find("void main()") != std::string::npos) {
-			break;
-		}
-		pos = lineEnd + 1;	
-	} 
-}
-
-
-std::size_t FindIncludeInsertPos(const std::string& src, std::size_t startPos) {
-	/* rule:
-	  after attribute/varying/uniform/struct
-	  befor any func
-	  not in {}
-	  not in #if #endif
-	*/
-	auto NposToZero = [](std::size_t p) { return p == std::string::npos ? 0 : p; };
-	auto search = [](const std::string& p, std::size_t pos, const auto& re) {
-		std::smatch match;
-		if(std::regex_search(p.begin() + pos, p.end(), match, re)) {
-			return pos + match.position();
-		}
-		return std::string::npos;
-	};		
-	auto searchLast = [](const std::string& p, const auto& re) { 
-		auto startPos = p.begin();
-		std::smatch match;
-		while(std::regex_search(startPos+1, p.end(), match, re)) {
-			startPos++;
-			startPos += match.position();
-		}
-		return startPos == p.end() ? std::string::npos : startPos - p.begin();
-	};
-	auto nextLinePos = [](const std::string& p, std::size_t pos) {
-		return p.find_first_of('\n', pos) + 1;
-	};
-
-	std::size_t mainPos = src.find("void main(");
-	std::size_t pos;
-	{
-		const std::regex reAfters(R"(\n(attribute|varying|uniform|struct) )");
-		std::size_t afterPos = searchLast(src, reAfters);
-		if(afterPos != std::string::npos) {
-			afterPos = nextLinePos(src, afterPos+1);
-		}
-		pos = std::min({NposToZero(afterPos), mainPos});
-	}
-	{
-		std::stack<std::size_t> ifStack;
-		std::size_t nowPos {0};
-		const std::regex reIfs(R"((#if|#endif))");
-		while(true) {
-			auto p = search(src, nowPos + 1, reIfs);
-			if(p > mainPos || p == std::string::npos) break;
-			if(src.substr(p, 3) == "#if") {
-				ifStack.push(p);
-			} else {
-				if(ifStack.empty()) break;
-				std::size_t ifp = ifStack.top();
-				ifStack.pop();
-				std::size_t endp = p;
-				if(pos > ifp && pos <= endp) {
-					pos = nextLinePos(src, endp + 1); 
-				}
-			}
-			nowPos = p;
-		}
-		pos = std::min({pos, mainPos});
-	}
-
-	return NposToZero(pos);
-}
-
-std::string PreShaderSrc(const std::string& src, int32_t texcount, WPShaderInfo* pWPShaderInfo) {
-	std::string newsrc(src);
-	std::string::size_type pos = 0;
-	std::string include;
-	while(pos = src.find("#include", pos), pos != std::string::npos) {
-		auto begin = pos;
-		pos = src.find_first_of('\n', pos);	
-		newsrc.replace(begin, pos-begin, pos-begin, ' ');
-		include.append(src.substr(begin, pos - begin) + "\n");
-	}
-	include = LoadGlslInclude(include);
-
-	ParseWPShader(include, texcount, pWPShaderInfo);
-	ParseWPShader(newsrc, texcount, pWPShaderInfo);
-
-	newsrc.insert(FindIncludeInsertPos(newsrc, 0), include); 
-	return newsrc;
-}
-
-std::string PreShaderHeader(const std::string& src, const Combos& combos) {
-	std::string header(pre_shader_code);
-	for(const auto& c:combos) {
-		std::string cup(c.first);
-		std::transform(c.first.begin(), c.first.end(), cup.begin(), ::toupper);
-		header.append("#define " + cup + " " + std::to_string(c.second) + "\n");
-	}
-	return header + src;
-}
-
 void LoadMaterial(const wpscene::WPMaterial& wpmat, Scene* pScene, SceneNode* pNode, SceneMaterial* pMaterial, WPShaderValueData* pSvData, WPShaderInfo* pWPShaderInfo=nullptr) {
 	auto& svData = *pSvData;
 	auto& material = *pMaterial;
@@ -396,8 +140,8 @@ void LoadMaterial(const wpscene::WPMaterial& wpmat, Scene* pScene, SceneNode* pN
 	std::string svCode = fs::GetContent(WallpaperGL::GetPkgfs(),shaderPath+".vert");
 	std::string fgCode = fs::GetContent(WallpaperGL::GetPkgfs(),shaderPath+".frag");
 	int32_t texcount = wpmat.textures.size();
-	svCode = PreShaderSrc(svCode, texcount, pWPShaderInfo);
-	fgCode = PreShaderSrc(fgCode, texcount, pWPShaderInfo);
+	svCode = WPShaderParser::PreShaderSrc(svCode, texcount, pWPShaderInfo);
+	fgCode = WPShaderParser::PreShaderSrc(fgCode, texcount, pWPShaderInfo);
 	shader->uniforms = pWPShaderInfo->svs;
 
 	for(const auto& el:wpmat.combos) {
@@ -503,8 +247,8 @@ void LoadMaterial(const wpscene::WPMaterial& wpmat, Scene* pScene, SceneNode* pN
 		}
 	}
 
-	svCode = PreShaderHeader(svCode, pWPShaderInfo->combos);
-	fgCode = PreShaderHeader(fgCode, pWPShaderInfo->combos);
+	svCode = WPShaderParser::PreShaderHeader(svCode, pWPShaderInfo->combos);
+	fgCode = WPShaderParser::PreShaderHeader(fgCode, pWPShaderInfo->combos);
 
 	shader->vertexCode = svCode;
 	shader->fragmentCode = fgCode;
