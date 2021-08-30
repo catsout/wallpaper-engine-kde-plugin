@@ -131,23 +131,48 @@ std::shared_ptr<RenderPassData> FrameGraphBuilder::UseRenderPass(RenderPassData 
 }
 
 void FrameGraph::Compile() {
-	// sort render pass node
+	auto sorted = m_graph.TopologicalOrder();
+	m_resNodeSet = std::unordered_set<NodeID>(m_resNodes.begin(), m_resNodes.end());
 	{
 		std::vector<NodeID> result;
 		std::unordered_set<NodeID> pidSet(m_passNodes.begin(), m_passNodes.end());
-		auto sorted = m_graph.TopologicalOrder();
-
 		result.reserve(sorted.size());
+
+		// sort render pass node
 		std::copy_if(sorted.begin(), sorted.end(), std::back_inserter(result), [&](NodeID id) {
 			return pidSet.count(id) > 0;
 		});
 		m_sorted = result;
 	}
-	m_resNodeSet = std::unordered_set<NodeID>(m_resNodes.begin(), m_resNodes.end());
+	{
+		int pos = 0;
+		std::unordered_map<uint16_t,int> orderMap;
+		std::for_each(m_sorted.begin(), m_sorted.end(), [&](NodeID n){
+			PassNode* node = static_cast<PassNode*>(m_graph.GetNode(n));
+			for(auto& in:node->Inputs()) {
+				if(m_textures.Check({in->GetResourceHandle().idx}, in->ID())) {
+					auto *tex = m_textures.Get( {in->GetResourceHandle().idx} );
+					if(tex && tex->desc.temperary) {
+						uint16_t handle = in->GetResourceHandle().idx;
+						orderMap[handle] = pos;
+					}
+				}
+			}
+			pos++;
+		});
+		m_releaseAfter.clear();
+		m_releaseAfter.resize(m_sorted.size());
+		for(const auto& el:orderMap) {
+			m_releaseAfter[el.second].push_back({ el.first });
+		}
+	}
 }
 
 void FrameGraph::Execute(IGraphicManager& gm) {
+	int pos=-1;
 	for(auto& n:m_sorted) {
+		pos++;
+
 		PassNode* node = static_cast<PassNode*>(m_graph.GetNode(n));
 		{
 			auto loadTex = [this, &gm](ResourceNode* node) {
@@ -157,15 +182,11 @@ void FrameGraph::Execute(IGraphicManager& gm) {
 						tex->Initialize();
 						if(tex->desc.getImgOp) {
 							auto img = tex->desc.getImgOp();
-							tex->handle = gm.CreateTexture(*img);
+							tex->handle = m_texCache.Query(*img, gm);
 							tex->desc.width = img->width;
 							tex->desc.height = img->height;
 						} else {
-							tex->handle = gm.CreateTexture(IGraphicManager::TextureDesc {
-								.width = tex->desc.width,
-								.height = tex->desc.height,
-								.format = tex->desc.format
-							});
+							tex->handle = m_texCache.Query(tex->desc, gm);
 						}
 					}
 				}
@@ -186,7 +207,7 @@ void FrameGraph::Execute(IGraphicManager& gm) {
 		FrameGraphResourceManager rm(*this, node);
 		{
 			auto* renderdata = node->GetRenderPassData().get();;
-			if(renderdata != nullptr && renderdata->target.idx == 0) {
+			if(renderdata != nullptr) {// && HwRenderTargetHandle::IsInvalied(renderdata->target)) {
 				IGraphicManager::RenderTargetDesc desc {
 					.width = renderdata->viewport.width,
 					.height = renderdata->viewport.height,
@@ -203,10 +224,25 @@ void FrameGraph::Execute(IGraphicManager& gm) {
 			}
 		}
 		node->Pass()->execute(rm);
+		{
+			auto* renderdata = node->GetRenderPassData().get();;
+			if(renderdata != nullptr && HwRenderTargetHandle::IsInvalied(renderdata->target)) {
+				gm.DestroyRenderTarget(renderdata->target);
+				renderdata->target = HwRenderTargetHandle();
+			}
+		}
+		{
+			for(const auto& el:m_releaseAfter[pos]) {
+				auto* tex = m_textures.Get({el.idx});
+				m_texCache.Release(tex->handle);
+				tex->Release();
+			}
+		}
 	}
+	//m_texCache.ClearUnused(gm);
 }
 const TextureResource* FrameGraphResourceManager::GetTexture(FrameGraphResource rsc) {
-	if(!rsc.IsInitialed()) LOG_ERROR("aaaaaaaaaaa");
+	assert(rsc.IsInitialed());
 	auto* rscNode = GetResourceNode(m_fg.m_graph, m_fg.m_resNodes.at(rsc.Index()));
 	if(m_fg.m_textures.Check({ rscNode->GetResourceHandle().idx }, rscNode->ID())) {
 		return m_fg.m_textures.Get({ rscNode->GetResourceHandle().idx });

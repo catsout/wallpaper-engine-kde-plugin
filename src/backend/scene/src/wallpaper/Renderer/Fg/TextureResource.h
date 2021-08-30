@@ -19,6 +19,7 @@ struct TextureResource : public Resource {
 		TextureFormat format {TextureFormat::RGBA8};
 		TextureSample sample;
 		std::function<std::shared_ptr<Image>(void)> getImgOp;
+		bool temperary {false};
 
 		std::string name;
 	};
@@ -26,6 +27,9 @@ struct TextureResource : public Resource {
 	void Initialize() {
 		inited = true;
 	}; 
+	void Release() {
+		inited = false;
+	}
 	bool Initialed() const { return inited; };
 	bool inited {false};
 

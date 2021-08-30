@@ -481,7 +481,8 @@ void GLGraphicManager::ToFrameGraphPass(SceneNode* node, std::string output) {
 			data.output = builder.CreateTexture({
 				.width = 1920,
 				.height = 1080,
-				.name = output
+				.temperary = true,
+				.name = output,
 			});
 		}
 		data.output = builder.Write(data.output);
@@ -583,6 +584,10 @@ HwRenderTargetHandle GLGraphicManager::CreateRenderTarget(RenderTargetDesc desc)
 
 void GLGraphicManager::DestroyTexture(HwTexHandle h) {
 	pImpl->glw->DestroyTexture(h);
+}
+
+void GLGraphicManager::DestroyRenderTarget(HwRenderTargetHandle h) {
+	pImpl->glw->DestroyRenderTarget(h);
 }
 
 void GLGraphicManager::InitializeScene(Scene* scene) {

@@ -579,9 +579,9 @@ public:
 			LOG_ERROR("framebuffer not complite " + std::to_string(status));
 			break;
 		}
-		glColorMask(true, true, true, true);
-		glClearColor(0,0,0,1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
+		//glColorMask(true, true, true, true);
+		//glClearColor(0,0,0,1.0f);
+		//glClear(GL_COLOR_BUFFER_BIT);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		CHECK_GL_ERROR_IF_DEBUG();
 		return rtHandle;

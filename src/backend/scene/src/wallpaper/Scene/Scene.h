@@ -17,7 +17,9 @@ public:
 	Scene():paritileSys(*this) {};
 	~Scene() = default;
 	Scene(const Scene&) = delete;
+	Scene& operator=(const Scene&) = delete;
 	Scene(Scene&&) = delete;
+	Scene& operator=(Scene&&) = delete;
 
 	std::unordered_map<std::string, std::shared_ptr<SceneTexture>> textures;
 	std::unordered_map<std::string, SceneRenderTarget> renderTargets;

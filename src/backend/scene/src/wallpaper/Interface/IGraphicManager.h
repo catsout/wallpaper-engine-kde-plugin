@@ -12,8 +12,18 @@ struct RenderTargetHandle { uint16_t idx {Uninitialed}; };
 
 constexpr uint8_t MaxAttachmentNum {8};
 
-struct HwTexHandle { uint32_t idx {0}; };
-struct HwRenderTargetHandle { uint32_t idx {0}; };
+struct HwTexHandle { uint32_t idx {0};
+	bool operator==(const HwTexHandle& r) const {
+		return idx == r.idx;
+	}
+	static bool IsInvalied(const HwTexHandle& h) { return h.idx == 0; }
+};
+struct HwRenderTargetHandle { uint32_t idx {0}; 
+	bool operator==(const HwTexHandle& r) const {
+		return idx == r.idx;
+	}
+	static bool IsInvalied(const HwRenderTargetHandle& h) { return h.idx == 0; }
+};
 struct HwShaderHandle { uint32_t idx {0}; };
 
 class IGraphicManager {
@@ -45,6 +55,7 @@ public:
 	};
 	virtual HwRenderTargetHandle CreateRenderTarget(RenderTargetDesc) { return {}; }
 	virtual void DestroyTexture(HwTexHandle) {}
+	virtual void DestroyRenderTarget(HwRenderTargetHandle) {}
 
 
 	virtual void SetFlip(bool xflip, bool yflip) {};

@@ -11,6 +11,7 @@
 
 #include "Resource.h"
 #include "TextureResource.h"
+#include "TextureCache.h"
 #include "RenderTargetResource.h"
 
 #include "Interface/IGraphicManager.h"
@@ -76,6 +77,7 @@ private:
 	inline PassNode* AddRenderPassNode(std::string_view name, PassBase* pass);
 
 	std::vector<NodeID> m_sorted;
+	std::vector<std::vector<ResourceNode::ResourceHandle>> m_releaseAfter;
 
 	std::vector<PassBase*> m_passes;
 
@@ -86,6 +88,7 @@ private:
 	std::unordered_set<NodeID> m_resNodeSet;
 
 	ResourceContainer<TextureResource> m_textures;
+	TextureCache m_texCache;
 };
 
 inline PassNode* FrameGraph::AddRenderPassNode(std::string_view name, PassBase* pass) {

@@ -44,6 +44,7 @@ public:
 	HwTexHandle CreateTexture(const Image&) override; 
 	HwRenderTargetHandle CreateRenderTarget(RenderTargetDesc) override;
 	void DestroyTexture(HwTexHandle) override;
+	void DestroyRenderTarget(HwRenderTargetHandle) override;
 
 	void SetDefaultFbo(uint fbo, uint32_t w, uint32_t h, FillMode FillMode = FillMode::ASPECTCROP);
 	void ChangeFillMode(FillMode);
