@@ -115,6 +115,7 @@ void GLGraphicManager::AddPreParePass() {
 			data.output = builder.CreateTexture({
 				.width = rt.width,
 				.height = rt.height,
+				.sample = rt.sample,
 				.temperary = true,
 				.name = def,
 				.UpdateDescOp = [&](fg::TextureResource::Desc& d) {
@@ -309,6 +310,7 @@ void GLGraphicManager::ToFrameGraphPass(SceneNode* node, std::string output) {
 			fg::TextureResource::Desc desc {
 				.width = rt.width,
 				.height = rt.height,
+				.sample = rt.sample,
 				.temperary = true,
 				.name = output
 			};
@@ -400,6 +402,7 @@ HwTexHandle GLGraphicManager::CreateTexture(TextureDesc desc) {
 	gdesc.numMips = desc.numMips;
 	gdesc.target = gl::ToGLType(desc.type);
 	gdesc.format = desc.format;
+	gdesc.sample = desc.sample;
 	return pImpl->glw->CreateTexture(gdesc);
 }
 

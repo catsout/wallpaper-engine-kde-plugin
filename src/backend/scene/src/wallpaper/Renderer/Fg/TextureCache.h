@@ -7,8 +7,6 @@
 #include "Utils/Hash.h"
 #include "Type.h"
 
-#include "Log.h"
-
 namespace wallpaper
 {
 namespace fg {
@@ -23,13 +21,18 @@ struct TextureKey {
 	uint16_t height;
 	TexUsage usage;
 	TextureFormat format;
+	TextureSample sample;
 
 	static std::size_t HashValue(const TextureKey& k) {
 		std::size_t seed {0};
-		utils::hash_combine_fast(seed, k.width);
-		utils::hash_combine_fast(seed, k.height);
+		utils::hash_combine(seed, k.width);
+		utils::hash_combine(seed, k.height);
 		utils::hash_combine_fast(seed, (int)k.usage);
 		utils::hash_combine_fast(seed, (int)k.format);
+
+		utils::hash_combine_fast(seed, (int)k.sample.wrapS);
+		utils::hash_combine_fast(seed, (int)k.sample.wrapT);
+		utils::hash_combine_fast(seed, (int)k.sample.magFilter);
 		return seed;
 	}
 };
@@ -57,7 +60,8 @@ public:
 		TexHash hash = TextureKey::HashValue(TextureKey{
 			.width = desc.width,
 			.height = desc.height,
-			.format = desc.format
+			.format = desc.format,
+			.sample = desc.sample
 		});
 
 		{
@@ -72,7 +76,8 @@ public:
 			.width = desc.width,
 			.height = desc.height,
 			.type = TextureType::IMG_2D,
-			.format = desc.format
+			.format = desc.format,
+			.sample = desc.sample
 		};
 		HwTexHandle h = gm.CreateTexture(gmdesc);
 		m_inused.insert({h, hash});

@@ -440,25 +440,45 @@ public:
 				auto target = tex->desc.target;
 				glBindTexture(target, tex->gltexs[i]);
 				auto& img = image->imageDatas[i];
+
+
 				for(uint16_t imip=0;imip<img.size();imip++) {
 					auto& mip = img[imip];
 					GLenum format, type;	
 					GLint internalFormat;
 					auto texformat = tex->desc.format;
 					TextureFormat2GLFormat(texformat, internalFormat, format, type);
+
+					GLuint pbo;
+					std::size_t bufferSize = mip.size;
+					if(texformat == TextureFormat::R8 || texformat == TextureFormat::RG8) bufferSize *= 2;
+					glGenBuffers(1, &pbo);
+					glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbo);
+					glBufferData(GL_PIXEL_UNPACK_BUFFER, bufferSize, nullptr, GL_STATIC_DRAW);
+					void* ptr = glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY);
+					CHECK_GL_ERROR_IF_DEBUG();
+					if(ptr == nullptr) {
+						LOG_ERROR("Can't map pbo buffer");
+						continue;
+					}
+					memcpy(ptr, mip.data.get(), mip.size);
+					glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
+					CHECK_GL_ERROR_IF_DEBUG();
+
 					switch(texformat) {
 					case TextureFormat::R8:
 					case TextureFormat::RG8:
 					case TextureFormat::RGB8:
 					case TextureFormat::RGBA8:
-						glTexImage2D(tex->desc.target, imip, internalFormat, mip.width, mip.height, 0, format, type, mip.data.get());
+						glTexImage2D(tex->desc.target, imip, internalFormat, mip.width, mip.height, 0, format, type, NULL);
 						break;
 					case TextureFormat::BC1:
 					case TextureFormat::BC2:
 					case TextureFormat::BC3:
-						glCompressedTexImage2D(tex->desc.target, imip, internalFormat, mip.width, mip.height, 0, mip.size, mip.data.get());
+						glCompressedTexImage2D(tex->desc.target, imip, internalFormat, mip.width, mip.height, 0, mip.size, NULL);
 						break;
 					}
+					glDeleteBuffers(1, &pbo);
 					CHECK_GL_ERROR_IF_DEBUG();
 				}
 				glTexParameteri(target, GL_TEXTURE_WRAP_S, ToGLType(tex->desc.sample.wrapS));

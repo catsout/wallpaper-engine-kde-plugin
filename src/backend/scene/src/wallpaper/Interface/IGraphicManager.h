@@ -45,6 +45,7 @@ public:
     	uint16_t numMips {0};
 		TextureType type {TextureType::IMG_2D};
 		TextureFormat format {TextureFormat::RGBA8};
+		TextureSample sample;
 	};
 	virtual HwTexHandle CreateTexture(TextureDesc) { return {}; }
 	virtual HwTexHandle CreateTexture(const Image&) { return {}; }
