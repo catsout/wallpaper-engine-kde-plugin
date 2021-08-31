@@ -560,8 +560,8 @@ public:
 	void ApplyBindings(const GBindings& binds) {
 		for(uint16_t i=0;i<binds.texs.size();i++) {
 			auto* tex = m_texPool.Lookup(binds.texs[i]);
+			glActiveTexture(GL_TEXTURE0 + i);
 			if(tex != nullptr) {
-				glActiveTexture(GL_TEXTURE0 + i);
 				glBindTexture(tex->desc.target, tex->gltexs[tex->desc.activeSlot]);
 			}
 		}

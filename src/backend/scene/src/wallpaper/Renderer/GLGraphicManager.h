@@ -35,6 +35,7 @@ private:
 	class impl;
     std::unique_ptr<impl> pImpl;
 
+	void AddCopyCmdPasses(const std::string& dst, const std::string src);
 	void AddPreParePass();
 	void ToFrameGraphPass(SceneNode*, std::string output="");
 	std::unique_ptr<fg::FrameGraph> m_fg;

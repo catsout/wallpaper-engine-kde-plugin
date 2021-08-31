@@ -64,7 +64,7 @@ void WPShaderValueUpdater::UpdateShaderValues(SceneNode* pNode, SceneShader* pSh
 			if(!CONTAINS(valueSet, name)) continue;
 
 			const auto& rt = m_scene->renderTargets.at(el.second);
-			std::vector<uint32_t> resolution_uint({
+			std::array<uint16_t,4> resolution_uint({
 				rt.width, rt.height, 
 				rt.width, rt.height
 			});

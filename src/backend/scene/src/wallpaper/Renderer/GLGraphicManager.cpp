@@ -50,6 +50,16 @@ std::vector<gl::GLTexture*> LoadImage(gl::GLWrapper* pglw, const SceneTexture& t
 }
 */
 
+void UpdateSceneRenderTargetSize(Scene& scene, std::array<uint16_t, 2> screenSize) {
+	for(auto& el:scene.renderTargets) {
+		auto& rt = el.second;
+		if(rt.bind.enable && rt.bind.screen) {
+			rt.width = screenSize[0] * rt.bind.scale;
+			rt.height = screenSize[1] * rt.bind.scale;
+		}
+	}
+}
+
 void TraverseNode(const std::function<void(SceneNode*)>& func, SceneNode* node) {
 	func(node);
 	for(auto& child:node->GetChildren())
@@ -82,7 +92,7 @@ HwShaderHandle InitShader(gl::GLWrapper* pglw, SceneMaterial* material) {
 	return handle;
 }
 
-fg::FrameGraphResource AddCopyPass(fg::FrameGraph& fg, gl::GLWrapper& glw, fg::FrameGraphResource src) {
+fg::FrameGraphMutableResource AddCopyPass(fg::FrameGraph& fg, gl::GLWrapper& glw, fg::FrameGraphResource src) {
 	struct PassData {
 		fg::FrameGraphResource src;
 		fg::FrameGraphMutableResource output;
@@ -100,6 +110,61 @@ fg::FrameGraphResource AddCopyPass(fg::FrameGraph& fg, gl::GLWrapper& glw, fg::F
 	return pass->output;
 }
 
+fg::TextureResource::Desc GenFgTextureRsc(Scene& scene, const std::string& name, 
+		const std::array<uint16_t,2>& screenSize, 
+		bool temperary,
+		SceneRenderTarget* pRt = nullptr) {
+	SceneRenderTarget rt {.width = 1920, .height = 1080};
+	if(scene.renderTargets.count(name) > 0) {
+		rt = scene.renderTargets[name];
+	}
+	fg::TextureResource::Desc desc {
+		.width = rt.width,
+		.height = rt.height,
+		.sample = rt.sample,
+		.temperary = temperary,
+		.name = name
+	};
+	if(rt.bind.enable) {// && rt.bind.screen) {
+		auto scale = rt.bind.scale;
+		desc.UpdateDescOp = [&, scale](fg::TextureResource::Desc& d) {
+			d.width = screenSize[0] * scale;
+			d.height = screenSize[1] * scale;
+		};
+	}
+	if(pRt) *pRt = rt;
+	return desc;
+}
+
+void GLGraphicManager::AddCopyCmdPasses(const std::string& dst, const std::string src) {
+	bool createSrc = m_fgrscMap.count(src) == 0;
+	bool createDst = m_fgrscMap.count(dst) == 0;
+	struct PassData {
+		fg::FrameGraphMutableResource src;
+		fg::FrameGraphMutableResource output;
+	};
+	auto& pass = m_fg->AddPass<PassData>("copy command",
+		[&](fg::FrameGraphBuilder& builder, PassData& data) {
+			if(createSrc) {
+				data.src = builder.CreateTexture(GenFgTextureRsc(*m_scene, src, m_screenSize, false));
+			} else data.src = m_fgrscMap[src];
+			if(createDst) {
+				data.output = builder.CreateTexture(GenFgTextureRsc(*m_scene, dst, m_screenSize, true));
+			} else data.output = m_fgrscMap[dst];
+			data.src = builder.Read(data.src);
+			data.output = builder.Write(data.output);
+		},
+		[this](fg::FrameGraphResourceManager& rsm, const PassData& data) mutable {
+			pImpl->glw->CopyTexture(rsm.GetTexture(data.output)->handle, rsm.GetTexture(data.src)->handle);
+		}
+	);
+
+	if(createSrc) {
+		auto movedSrc = m_fg->AddMovePass(pass->src);
+		m_fgrscMap[src] = movedSrc;
+	}
+}
+
 
 void GLGraphicManager::AddPreParePass() {
 	struct PassData {
@@ -108,23 +173,9 @@ void GLGraphicManager::AddPreParePass() {
 	m_fg->AddPass<PassData>("prepare",
 		[&](fg::FrameGraphBuilder& builder, PassData& data) {
 			std::string def {SpecTex_Default};
-			SceneRenderTarget rt {.width = 1920, .height = 1080};
-			{
-				if(m_scene->renderTargets.count(def) > 0) {
-					rt = m_scene->renderTargets[def];
-				}
-			}
-			data.output = builder.CreateTexture({
-				.width = rt.width,
-				.height = rt.height,
-				.sample = rt.sample,
-				.temperary = true,
-				.name = def,
-				.UpdateDescOp = [&](fg::TextureResource::Desc& d) {
-					d.width = m_screenSize[0];
-					d.height = m_screenSize[1];
-				}
-			});
+
+			const auto& desc = GenFgTextureRsc(*m_scene, def, m_screenSize, true);
+			data.output = builder.CreateTexture(desc);
 			data.output = builder.Write(data.output);
 			m_fgrscMap[def] = data.output;
 		},
@@ -227,12 +278,20 @@ void GLGraphicManager::ToFrameGraphPass(SceneNode* node, std::string output) {
 		//tex.desc.height = img->height;
 	};
 
-	auto loadEffect = [this](SceneImageEffectLayer* effs) {
+	auto loadEffect = [this, glw](SceneImageEffectLayer* effs) {
 		for(int32_t i=0;i<effs->EffectCount();i++) {
 			auto& eff = effs->GetEffect(i);
+			auto cmdItor = eff->commands.begin();
+			auto cmdEnd = eff->commands.end();
+			int nodePos = 0;
 			for(auto& n:eff->nodes) {
+				if(cmdItor != cmdEnd && nodePos == cmdItor->afterpos) {
+					AddCopyCmdPasses(cmdItor->dst, cmdItor->src);
+					cmdItor++;
+				}
 				auto& name = n.output;
 				ToFrameGraphPass(n.sceneNode.get(), name);
+				nodePos++;
 			}
 		}
 	};
@@ -256,6 +315,8 @@ void GLGraphicManager::ToFrameGraphPass(SceneNode* node, std::string output) {
 
 	m_fg->AddPass<PassData>(passName, 
 	[&,loadImage, glw](fg::FrameGraphBuilder& builder, PassData& data) {
+
+		// input
 		data.inputs.resize(material->textures.size());
 		int32_t i=-1;
 		for(const auto& url:material->textures) {
@@ -270,11 +331,13 @@ void GLGraphicManager::ToFrameGraphPass(SceneNode* node, std::string output) {
 					} else {
 						data.inputs[i] = m_fgrscMap[url];
 					}
+				} else if(m_scene->renderTargets.count(url) > 0) {
+					const auto& desc = GenFgTextureRsc(*m_scene, url, m_screenSize, true);
+					data.inputs[i] = builder.CreateTexture(desc);
 				} else {
 					LOG_ERROR(url + " not found, at pass " + passName);
 				}
-			}
-			else {
+			} else {
 				fg::TextureResource::Desc desc;
 				desc.path = url;
 				desc.name = url;
@@ -285,56 +348,41 @@ void GLGraphicManager::ToFrameGraphPass(SceneNode* node, std::string output) {
 			}
 			data.inputs[i] = builder.Read(data.inputs[i]);
 		}
-		SceneRenderTarget rt {.width = 1920, .height = 1080};
-		std::function<decltype(m_screenSize)()> dynOutputSizeOp;
+		
+		// output
+		fg::RenderPassData rPassData;
 		{
+			SceneRenderTarget rt {.width = 1920, .height = 1080};
 			if(m_scene->renderTargets.count(output) > 0) {
 				rt = m_scene->renderTargets[output];
 			}
+			rPassData.viewPort.width = rt.width;
+			rPassData.viewPort.height = rt.height;
 			if(rt.bind.enable) {
 				auto scale = rt.bind.scale;
-				dynOutputSizeOp = [&,scale]() {
-					return decltype(m_screenSize) {
-						(uint16_t)(m_screenSize[0] * scale),
-						(uint16_t)(m_screenSize[1] * scale)
-					};
-				};
-				data.dynViewportOp = [dynOutputSizeOp](gl::ViewPort& v) {
-					auto s = dynOutputSizeOp();
-					v.width = s[0];
-					v.height = s[1];
+				data.dynViewportOp = [&,scale](gl::ViewPort& v) {
+					v.width = m_screenSize[0] * scale;
+					v.height = m_screenSize[1] * scale;
 				};
 			}
 		}
+
 		if(m_fgrscMap.count(output) > 0) {
 			data.output = m_fg->AddMovePass(m_fgrscMap.at(output));
 		} else {
-			fg::TextureResource::Desc desc {
-				.width = rt.width,
-				.height = rt.height,
-				.sample = rt.sample,
-				.temperary = true,
-				.name = output
-			};
-			if(rt.bind.enable) {
-				desc.UpdateDescOp = [dynOutputSizeOp](fg::TextureResource::Desc& d){
-					auto s = dynOutputSizeOp();
-					d.width = s[0];
-					d.height = s[1];
-				};
-			}
+			const auto& desc = GenFgTextureRsc(*m_scene, output, m_screenSize, true);
 			data.output = builder.CreateTexture(desc);
 		}
 		data.output = builder.Write(data.output);
 		m_fgrscMap[output] = data.output;
+
 		data.colorMask = {
 			true,true,true,
 			!(node->Camera().empty() || node->Camera().compare(0, 6, "global") == 0)
 		};
-		data.renderpassData = builder.UseRenderPass({
-			.attachments = {data.output},
-			.viewPort = {0, 0, rt.width, rt.height}
-		});
+
+		rPassData.attachments = {data.output};
+		data.renderpassData = builder.UseRenderPass(rPassData);
 	}, 
 	[this, material, mshaderPtr, mesh, node, output, glw](fg::FrameGraphResourceManager& rsm, const PassData& data) {
 		gl::GPass gpass;
@@ -455,6 +503,8 @@ void GLGraphicManager::InitializeScene(Scene* scene) {
 
 void GLGraphicManager::Draw() {
 	m_scene->paritileSys.Emitt();
+
+	UpdateSceneRenderTargetSize(*m_scene, m_screenSize);
 	m_scene->shaderValueUpdater->FrameBegin();
 
 	const auto& cc = m_scene->clearColor;

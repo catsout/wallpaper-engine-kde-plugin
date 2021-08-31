@@ -32,10 +32,10 @@ struct ImageData {
 typedef std::vector<ImageData> MipmapDatas;
 
 struct Image {
-	uint32_t width;
-	uint32_t height;
-	uint32_t mapWidth;
-	uint32_t mapHeight;
+	uint16_t width;
+	uint16_t height;
+	uint16_t mapWidth;
+	uint16_t mapHeight;
 	ImageType type {ImageType::UNKNOWN};
 	TextureFormat format;
 	uint32_t count;

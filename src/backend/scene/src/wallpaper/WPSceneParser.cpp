@@ -209,18 +209,16 @@ void LoadMaterial(const wpscene::WPMaterial& wpmat, Scene* pScene, SceneNode* pN
 			//LOG_ERROR("empty texture name");
 			continue;
 		}
-		std::vector<float> resolution;
-		if(name.compare(0, 4,"_rt_") == 0) {
+		std::array<uint16_t, 4> resolution;
+		if(IsSpecTex(name)) {
 			if(pScene->renderTargets.count(name) == 0) {
-				LOG_INFO(name);
+				LOG_ERROR(name);
 			} else {
 				svData.renderTargetResolution.push_back({i, name});
 				const auto& rt = pScene->renderTargets.at(name);
 				resolution = {
-					(float)rt.width, 
-					(float)rt.height, 
-					(float)rt.width, 
-					(float)rt.height
+					rt.width,rt.height, 
+					rt.width,rt.height
 				};
 			}
 		} else {
@@ -233,17 +231,13 @@ void LoadMaterial(const wpscene::WPMaterial& wpmat, Scene* pScene, SceneNode* pN
 			}
 			if(texh->type == ImageType::UNKNOWN)
 				resolution = {
-					(float)texh->width, 
-					(float)texh->height, 
-					(float)texh->mapWidth, 
-					(float)texh->mapHeight
+					texh->width,texh->height, 
+					texh->mapWidth,texh->mapHeight
 				};
 			else
 				resolution = {
-					(float)texh->mapWidth, 
-					(float)texh->mapHeight, 
-					(float)texh->mapWidth, 
-					(float)texh->mapHeight
+					texh->mapWidth,texh->mapHeight, 
+					texh->mapWidth,texh->mapHeight
 				};
 			if(pScene->textures.count(name) == 0) {
 				SceneTexture stex;
@@ -272,7 +266,8 @@ void LoadMaterial(const wpscene::WPMaterial& wpmat, Scene* pScene, SceneNode* pN
 		}
 		if(!resolution.empty()) {
 			const std::string gResolution = "g_Texture" + std::to_string(i) + "Resolution";
-			materialShader.constValues[gResolution] = {gResolution, resolution};
+			std::vector<float> vrl {resolution.begin(), resolution.end()};
+			materialShader.constValues[gResolution] = {gResolution, vrl};
 		}
 	}
 
@@ -424,6 +419,8 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 			auto& wpimgobj = wpimgobjs.at(indexT.second);
 			if(!wpimgobj.visible)
 				continue;
+
+			// coloBlendMode load passthrough manaully
 			if(wpimgobj.colorBlendMode != 0) {
 				wpscene::WPImageEffect colorEffect;
 				wpscene::WPMaterial colorMat;
@@ -437,6 +434,7 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 				colorEffect.materials.push_back(colorMat);
 				wpimgobj.effects.push_back(colorEffect);
 			}	
+
 			int32_t count_eff = 0;
 			for(const auto& wpeffobj:wpimgobj.effects) {
 				if(wpeffobj.visible)
@@ -462,18 +460,21 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 
 			SceneMaterial material;
 			WPShaderValueData svData;
-			if(!hasEffect)
-				svData.parallaxDepth = wpimgobj.parallaxDepth;
 
 			ShaderValues baseConstSvs = globalBaseConstSvs;
-			baseConstSvs["g_Alpha"] = {"g_Alpha", {wpimgobj.alpha}};
-			baseConstSvs["g_Color"] = {"g_Color", wpimgobj.color};
-			baseConstSvs["g_UserAlpha"] = {"g_UserAlpha", {wpimgobj.alpha}};
-			baseConstSvs["g_Brightness"] = {"g_Brightness", {wpimgobj.brightness}};
-
 			WPShaderInfo shaderInfo;
-			shaderInfo.baseConstSvs = baseConstSvs;
-			LoadMaterial(wpimgobj.material, upScene.get(), spImgNode.get(), &material, &svData, &shaderInfo);
+			{
+				if(!hasEffect)
+					svData.parallaxDepth = wpimgobj.parallaxDepth;
+
+				baseConstSvs["g_Alpha"] = {"g_Alpha", {wpimgobj.alpha}};
+				baseConstSvs["g_Color"] = {"g_Color", wpimgobj.color};
+				baseConstSvs["g_UserAlpha"] = {"g_UserAlpha", {wpimgobj.alpha}};
+				baseConstSvs["g_Brightness"] = {"g_Brightness", {wpimgobj.brightness}};
+
+				shaderInfo.baseConstSvs = baseConstSvs;
+				LoadMaterial(wpimgobj.material, upScene.get(), spImgNode.get(), &material, &svData, &shaderInfo);
+			}
 			
 			for(const auto& cs:wpimgobj.material.constantshadervalues) {
 				const auto& name = cs.first;
@@ -579,34 +580,54 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 					const std::string& inRT = effectRTs[(i_eff)%2];
 					std::string outRT;
 					if(i_eff + 1 == count_eff) {
-						outRT = "_rt_default";
+						outRT = SpecTex_Default;
 					} else {
 						outRT = effectRTs[(i_eff+1)%2];
 					}
 
-					// fbo name map
+					// fbo name map and effect command
 					std::string effaddr = getAddr(imgEffectLayer.get());
 					std::unordered_map<std::string, std::string> fboMap;
-					fboMap["previous"] = inRT;
-					for(int32_t i=0;i < wpeffobj.fbos.size();i++) {
-						const auto& wpfbo = wpeffobj.fbos.at(i);
-						std::string rtname = "_rt_" + effaddr + std::to_string(i);
-						if(wpimgobj.fullscreen) {
-							upScene->renderTargets[rtname] = {2, 2, true};
-							upScene->renderTargets[rtname].bind = {
-								.enable = true,
-								.screen = true,
-								.scale = 1.0f/wpfbo.scale
-							};
-						} else {
-							// i+2 for not override object's rt
-							upScene->renderTargets[rtname] = {
-								.width = (uint16_t)(wpimgobj.size[0]/wpfbo.scale),
-								.height = (uint16_t)(wpimgobj.size[1]/wpfbo.scale), 
-								.allowReuse = true
-							};
+					{
+						fboMap["previous"] = inRT;
+						for(int32_t i=0;i < wpeffobj.fbos.size();i++) {
+							const auto& wpfbo = wpeffobj.fbos.at(i);
+							std::string rtname = wpfbo.name +"_"+ effaddr;
+							if(wpimgobj.fullscreen) {
+								upScene->renderTargets[rtname] = {2, 2, true};
+								upScene->renderTargets[rtname].bind = {
+									.enable = true,
+									.screen = true,
+									.scale = 1.0f/wpfbo.scale
+								};
+							} else {
+								// i+2 for not override object's rt
+								upScene->renderTargets[rtname] = {
+									.width = (uint16_t)(wpimgobj.size[0]/wpfbo.scale),
+									.height = (uint16_t)(wpimgobj.size[1]/wpfbo.scale), 
+									.allowReuse = true
+								};
+							}
+							fboMap[wpfbo.name] = rtname;
 						}
-						fboMap[wpfbo.name] = rtname;
+					}
+					// load effect commands
+					{
+						for(const auto& el:wpeffobj.commands) {
+							if(el.command != "copy") {
+								LOG_ERROR("Unknown effect command: " + el.command);
+								continue;
+							}
+							if(fboMap.count(el.target) + fboMap.count(el.source) < 2) {
+								LOG_ERROR("Unknown effect command dst or src: " + el.target + " " + el.source);
+								continue;
+							}
+							imgEffect->commands.push_back({
+								.cmd = SceneImageEffect::CmdType::Copy,
+								.dst = fboMap[el.target],
+								.src = fboMap[el.source]
+							});
+						}
 					}
 
 					for(int32_t i_mat=0;i_mat < wpeffobj.materials.size();i_mat++) {
