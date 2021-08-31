@@ -7,6 +7,8 @@
 #include "Utils/Hash.h"
 #include "Type.h"
 
+#include "Log.h"
+
 namespace wallpaper
 {
 namespace fg {
@@ -23,7 +25,7 @@ struct TextureKey {
 	TextureFormat format;
 
 	static std::size_t HashValue(const TextureKey& k) {
-		std::size_t seed;
+		std::size_t seed {0};
 		utils::hash_combine_fast(seed, k.width);
 		utils::hash_combine_fast(seed, k.height);
 		utils::hash_combine_fast(seed, (int)k.usage);
@@ -57,7 +59,7 @@ public:
 			.height = desc.height,
 			.format = desc.format
 		});
-		
+
 		{
 			HwTexHandle h = ChangeToInUse(hash);
 			if(!HwTexHandle::IsInvalied(h)) {

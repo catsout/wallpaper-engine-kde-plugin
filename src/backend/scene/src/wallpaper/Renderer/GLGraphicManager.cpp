@@ -440,20 +440,15 @@ void GLGraphicManager::DestroyRenderTarget(HwRenderTargetHandle h) {
 void GLGraphicManager::InitializeScene(Scene* scene) {
 	using namespace std::placeholders;
 	m_scene = scene;
-	//UpdateDefaultRenderTargetBind(*m_scene);
 
 	AddPreParePass();
 	TraverseNode(std::bind(&GLGraphicManager::ToFrameGraphPass, this, _1, std::string(SpecTex_Default)), scene->sceneGraph.get());
-	LOG_INFO("--------------------end");
 	AddEndPass(*m_fg, *(pImpl->glw), m_fgrscMap.at(std::string(SpecTex_Default)), m_xyflip);
 	m_fg->Compile();
 	m_fg->ToGraphviz();
 }
 
 void GLGraphicManager::Draw() {
-	if(m_scene == nullptr) return;
-	//m_rtm.GetFrameBuffer("_rt_default", m_scene->renderTargets.at("_rt_default"));
-
 	m_scene->paritileSys.Emitt();
 	m_scene->shaderValueUpdater->FrameBegin();
 
@@ -531,7 +526,7 @@ void GLGraphicManager::SetDefaultFbo(uint fbo, uint16_t w, uint16_t h, FillMode 
 
 void GLGraphicManager::ChangeFillMode(FillMode fillMode) {
 	if(m_scene == nullptr) return;
-	//UpdateCameraForFbo(*m_scene, m_defaultFbo.width, m_defaultFbo.height, fillMode);
+		UpdateCameraForFbo(*m_scene, m_screenSize[0], m_screenSize[1], fillMode);
 }
 
 void GLGraphicManager::Destroy() {

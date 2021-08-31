@@ -54,7 +54,11 @@ class FrameGraph {
 	friend class FrameGraphResourceManager;
 public:
 	FrameGraph() = default;
-	~FrameGraph() = default;
+	~FrameGraph() {
+		for(auto& el:m_passes) {
+			delete el;
+		}
+	}
 	FrameGraph(const FrameGraph&) = delete;
 	FrameGraph& operator=(const FrameGraph&) = delete;
 
