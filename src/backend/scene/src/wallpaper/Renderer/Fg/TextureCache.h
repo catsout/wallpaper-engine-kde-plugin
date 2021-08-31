@@ -93,7 +93,6 @@ public:
 		// not use unused as image
 		HwTexHandle h = gm.CreateTexture(img);
 		m_inused.insert({h, hash});
-		assert(h.idx != 65537);
 		return h;
 	}
 

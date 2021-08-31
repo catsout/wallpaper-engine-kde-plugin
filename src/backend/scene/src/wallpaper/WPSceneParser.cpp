@@ -143,7 +143,7 @@ void ParseSpecTexName(std::string& name, const wpscene::WPMaterial& wpmat, const
 	if(IsSpecTex(name)) {
 		if(name == "_rt_FullFrameBuffer") {
 			name = SpecTex_Default;
-			if(wpmat.shader == "genericimage2" && (sinfo.combos.count("BLENDMODE") && sinfo.combos.at("BLENDMODE") != 1))
+			if(wpmat.shader == "genericimage2" && (sinfo.combos.count("BLENDMODE") == 0 || sinfo.combos.at("BLENDMODE") == 0))
 				name = "";
 			/*
 			if(wpmat.shader == "genericparticle") {
