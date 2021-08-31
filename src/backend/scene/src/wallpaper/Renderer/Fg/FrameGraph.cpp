@@ -117,6 +117,7 @@ FrameGraphMutableResource FrameGraphBuilder::CreateTexture(FrameGraphResource sr
 	} 
 	{
 		tex.desc.name += "_copy";
+		tex.desc.temperary = true;
 		ResourceNode* dstNode = GetResourceNode(m_fg.m_graph, nodeId);
 		dstNode->LinkResource(m_fg.m_textures.New(tex, nodeId));
 		dstNode->SetName(tex.desc.name);

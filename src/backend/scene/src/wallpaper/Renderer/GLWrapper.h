@@ -143,6 +143,7 @@ struct GContext {
 
 struct GBindings {
 	std::array<HwTexHandle, MaxTexBinding> texs;
+	std::uint8_t texNum {1};
 };
 
 struct GPass {
@@ -261,6 +262,7 @@ struct GShader {
 			char* name = new char[256];
 			glGetActiveUniform(s.glpro, i, 256, nullptr, &uniforms[i].count, &uniforms[i].type, name);
 			uniforms[i].name = std::string(name);
+			//LOG_INFO("------------" + uniforms[i].name);
 			delete [] name;
 			uniforms[i].location = glGetUniformLocation(s.glpro, uniforms[i].name.c_str());
 		}
@@ -448,7 +450,6 @@ public:
 					GLint internalFormat;
 					auto texformat = tex->desc.format;
 					TextureFormat2GLFormat(texformat, internalFormat, format, type);
-
 					GLuint pbo;
 					std::size_t bufferSize = mip.size;
 					if(texformat == TextureFormat::R8 || texformat == TextureFormat::RG8) bufferSize *= 2;
@@ -558,10 +559,10 @@ public:
 	}
 
 	void ApplyBindings(const GBindings& binds) {
-		for(uint16_t i=0;i<binds.texs.size();i++) {
+		for(uint16_t i=0;i<binds.texNum;i++) {
 			auto* tex = m_texPool.Lookup(binds.texs[i]);
-			glActiveTexture(GL_TEXTURE0 + i);
 			if(tex != nullptr) {
+				glActiveTexture(GL_TEXTURE0 + i);
 				glBindTexture(tex->desc.target, tex->gltexs[tex->desc.activeSlot]);
 			}
 		}

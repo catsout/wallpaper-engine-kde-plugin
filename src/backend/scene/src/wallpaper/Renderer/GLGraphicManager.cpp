@@ -77,8 +77,9 @@ HwShaderHandle InitShader(gl::GLWrapper* pglw, SceneMaterial* material) {
 	for(auto& el:shader->attrs) {
 		desc.attrs.push_back({el.location, el.name});
 	}
-	for(const auto& def:material->defines)
+	for(const auto& def:material->defines) {
 		desc.texnames.push_back(def);
+	}
 	auto handle = pglw->CreateShader(desc);
 	materialShader.valueSet = pglw->GetUniforms(handle);
 
@@ -424,6 +425,7 @@ void GLGraphicManager::ToFrameGraphPass(SceneNode* node, std::string output) {
 					}
 				}
 				gbindings.texs[i] = tex->handle;
+				gbindings.texNum = i+1;
 			}
 		}
 		{

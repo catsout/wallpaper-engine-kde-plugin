@@ -209,6 +209,7 @@ void LoadMaterial(const wpscene::WPMaterial& wpmat, Scene* pScene, SceneNode* pN
 			//LOG_ERROR("empty texture name");
 			continue;
 		}
+		
 		std::array<uint16_t, 4> resolution;
 		if(IsSpecTex(name)) {
 			if(pScene->renderTargets.count(name) == 0) {
@@ -394,6 +395,14 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 	globalBaseConstSvs["g_EyePosition"]= {"g_EyePosition", {0, 0, 0}};
 	globalBaseConstSvs["g_TexelSize"]= {"g_TexelSize", {1.0f/1920.0f, 1.0f/1080.0f}};
 	globalBaseConstSvs["g_TexelSizeHalf"]= {"g_TexelSizeHalf", {1.0f/1920.0f/2.0f, 1.0f/1080.0f/2.0f}};
+	/*
+	globalBaseConstSvs["g_LightsPosition[0]"]= {"g_LightsPosition[0]", {1718.0f, 969.0f, 500.0f}};
+	globalBaseConstSvs["g_LightAmbientColor"]= {"g_LightAmbientColor", {0.16f, 0.19f, 0.28f}};
+	globalBaseConstSvs["g_LightsColorPremultiplied[0]"]= {"g_LightsColorPremultiplied[0]", {848496.0f, 893676.0f, 1250141.0f, 0.0f}};
+	globalBaseConstSvs["g_NormalModelMatrix"] = {"g_NormalModelMatrix", ShaderValue::ValueOf(Matrix3f::Identity())};
+	globalBaseConstSvs["g_AltNormalModelMatrix"] = {"g_AltNormalModelMatrix", ShaderValue::ValueOf(Matrix3f::Identity())};
+	globalBaseConstSvs["g_Texture2Resolution"] = {"g_Texture2Resolution", {1280.0f, 720.0f, 1280.0f, 720.0f}};
+	*/
 
 	Vector3f cori{ortho.width/2.0f,ortho.height/2.0f,0},cscale{1.0f,1.0f,1.0f},cangle(Vector3f::Zero());
 	auto spCamNode = std::make_shared<SceneNode>(cori, cscale, cangle);
