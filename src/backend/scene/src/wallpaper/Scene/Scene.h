@@ -14,16 +14,16 @@ namespace wallpaper
 
 class Scene {
 public:
-	Scene():paritileSys(*this) {};
+	Scene():paritileSys(*this),
+		sceneGraph(std::make_shared<SceneNode>()) {};
 	~Scene() = default;
 	Scene(const Scene&) = delete;
 	Scene& operator=(const Scene&) = delete;
 	Scene(Scene&&) = delete;
 	Scene& operator=(Scene&&) = delete;
 
-	std::unordered_map<std::string, std::shared_ptr<SceneTexture>> textures;
+	std::unordered_map<std::string, SceneTexture> textures;
 	std::unordered_map<std::string, SceneRenderTarget> renderTargets;
-//	std::unordered_map<std::string, SceneBindRenderTarget> renderTargetBindMap;
 
 	std::unordered_map<std::string, std::shared_ptr<SceneCamera>> cameras;
 	std::unordered_map<std::string, std::vector<std::string>> linkedCameras;
@@ -38,7 +38,7 @@ public:
 
 	uint32_t ortho[2] {1920, 1080}; // w, h
 	double elapsingTime {0.0f}, frameTime {0.0f};
-	std::vector<float> clearColor {1.0f, 1.0f, 1.0f};
+	std::array<float, 3> clearColor {1.0f, 1.0f, 1.0f};
 
 	void UpdateLinkedCamera(const std::string& name) {
 		if(linkedCameras.count(name) != 0) {

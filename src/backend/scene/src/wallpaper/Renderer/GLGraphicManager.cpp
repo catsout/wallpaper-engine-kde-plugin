@@ -27,6 +27,7 @@ std::string OutImageType(const Image& img) {
 		return ToString(img.type);
 }
 
+/*
 std::vector<gl::GLTexture*> LoadImage(gl::GLWrapper* pglw, const SceneTexture& tex, const Image& img) {
 	auto& glw = *pglw;
 	LOG_INFO(std::string("Load tex ") + OutImageType(img) + " " + tex.url);
@@ -47,6 +48,7 @@ std::vector<gl::GLTexture*> LoadImage(gl::GLWrapper* pglw, const SceneTexture& t
 	}
 	return texs;
 }
+*/
 
 void TraverseNode(const std::function<void(SceneNode*)>& func, SceneNode* node) {
 	func(node);
@@ -368,8 +370,8 @@ void GLGraphicManager::ToFrameGraphPass(SceneNode* node, std::string output) {
 				uint16_t imageId = 0;
 				if(!(IsSpecTex(tex->desc.name) || tex->desc.name.empty())) {
 					const auto& stex = m_scene->textures.at(tex->desc.name);
-					if(stex->isSprite) {
-						imageId = stex->spriteAnim.GetCurFrame().imageId;
+					if(stex.isSprite) {
+						imageId = stex.spriteAnim.GetCurFrame().imageId;
 						glw->UpdateTextureSlot(tex->handle, imageId);
 					}
 				}

@@ -127,8 +127,8 @@ void WPShaderValueUpdater::UpdateShaderValues(SceneNode* pNode, SceneShader* pSh
 			const auto& texname = material->textures.at(i);
 			if(m_scene->textures.count(texname) != 0) {
 				auto& ptex = m_scene->textures.at(texname);
-				if(ptex->isSprite) {
-					auto& sp = ptex->spriteAnim;
+				if(ptex.isSprite) {
+					auto& sp = ptex.spriteAnim;
 					const auto& frame = sp.GetAnimateFrame(m_scene->frameTime);
 					auto grot = gtex + std::to_string(i) + "Rotation";
 					auto gtrans = gtex + std::to_string(i) + "Translation";

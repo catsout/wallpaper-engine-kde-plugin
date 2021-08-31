@@ -55,7 +55,7 @@ bool GLWrapper::Init(void *get_proc_address(const char *)) {
 	return true;
 }
 
-
+/*
 GLTexture* GLWrapper::CreateTexture(GLenum target, uint32_t width, uint32_t height, uint32_t numMips, TextureSample sample) {
 	GLTexture* tex = new GLTexture(target, width, height, numMips);
 	glGenTextures(1, &tex->texture);
@@ -119,7 +119,6 @@ GLFramebuffer* GLWrapper::CreateFramebuffer(uint32_t width, uint32_t height, Tex
 	return fbo;
 }
 
-/*
 GLProgram* GLWrapper::CreateProgram(std::vector<GLShader *> shaders,
 									std::vector<GLProgram::AttribLoc> attribLocs) {
 	GLProgram* program = new GLProgram();

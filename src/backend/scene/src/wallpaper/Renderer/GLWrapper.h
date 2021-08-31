@@ -649,9 +649,11 @@ public:
 		m_fbPool.Free(h);
 	}
 
+	/*
 	GLTexture* CreateTexture(GLenum target, uint32_t width, uint32_t height, uint32_t numMips, TextureSample sample={});
 	GLBuffer* CreateBuffer(GLuint target, std::size_t size, GLuint usage);
 	GLFramebuffer *CreateFramebuffer(uint32_t width, uint32_t height, TextureSample sample={});
+	*/
 
 	//void CopyTexture(GLFramebuffer* src, GLTexture* dst);
 	//GLTexture* CopyTexture(GLFramebuffer* fbo);

@@ -253,9 +253,9 @@ void LoadMaterial(const wpscene::WPMaterial& wpmat, Scene* pScene, SceneNode* pN
 					stex.isSprite = texh->isSprite;
 					stex.spriteAnim = texh->spriteAnim;
 				}
-				pScene->textures[name] = std::make_shared<SceneTexture>(stex);
+				pScene->textures[name] = stex;
 			}
-			if((pScene->textures.at(name))->isSprite) {
+			if((pScene->textures.at(name)).isSprite) {
 				material.hasSprite = true;
 				const auto& f1 = texh->spriteAnim.GetCurFrame();
 				if(wpmat.shader == "genericparticle") {
@@ -344,14 +344,16 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 
 
 	auto upScene = std::make_unique<Scene>();
-	upScene->sceneGraph = std::make_shared<SceneNode>();
 	upScene->imageParser = std::make_unique<WPTexImageParser>();
 	upScene->paritileSys.gener = std::make_unique<WPParticleRawGener>();
 	auto shaderValueUpdater = std::make_unique<WPShaderValueUpdater>(upScene.get());
 
 	shaderValueUpdater->SetOrtho(sc.general.orthogonalprojection.width, sc.general.orthogonalprojection.height);
-
-	upScene->clearColor = sc.general.clearcolor;
+	
+	{	
+		auto& cc = sc.general.clearcolor;
+		upScene->clearColor = {cc[0], cc[1], cc[2]};
+	}
 	
 	WPCameraParallax cameraParallax;
 	cameraParallax.enable = sc.general.cameraparallax;
