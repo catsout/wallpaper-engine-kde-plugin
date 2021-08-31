@@ -23,7 +23,7 @@ public:
 
 	std::unordered_map<std::string, std::shared_ptr<SceneTexture>> textures;
 	std::unordered_map<std::string, SceneRenderTarget> renderTargets;
-	std::unordered_map<std::string, SceneBindRenderTarget> renderTargetBindMap;
+//	std::unordered_map<std::string, SceneBindRenderTarget> renderTargetBindMap;
 
 	std::unordered_map<std::string, std::shared_ptr<SceneCamera>> cameras;
 	std::unordered_map<std::string, std::vector<std::string>> linkedCameras;

@@ -42,7 +42,7 @@ public:
 	struct TextureDesc {
 		uint16_t width {2};
 		uint16_t height {2};
-    	uint8_t numMips {0};
+    	uint16_t numMips {0};
 		TextureType type {TextureType::IMG_2D};
 		TextureFormat format {TextureFormat::RGBA8};
 	};
@@ -53,6 +53,7 @@ public:
 		uint16_t height {1};
 		std::array<HwTexHandle, MaxAttachmentNum> attachs;
 	};
+	virtual void ClearTexture(HwTexHandle thandle, std::array<float, 4> clearcolors) {};
 	virtual HwRenderTargetHandle CreateRenderTarget(RenderTargetDesc) { return {}; }
 	virtual void DestroyTexture(HwTexHandle) {}
 	virtual void DestroyRenderTarget(HwRenderTargetHandle) {}

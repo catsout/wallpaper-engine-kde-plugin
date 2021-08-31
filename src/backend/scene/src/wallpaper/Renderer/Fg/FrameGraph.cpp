@@ -180,6 +180,9 @@ void FrameGraph::Execute(IGraphicManager& gm) {
 					auto* tex = m_textures.Get({node->GetResourceHandle().idx});
 					if(!tex->Initialed()) {
 						tex->Initialize();
+						if(tex->desc.UpdateDescOp) {
+							tex->desc.UpdateDescOp(tex->desc);
+						}
 						if(tex->desc.getImgOp) {
 							auto img = tex->desc.getImgOp();
 							tex->handle = m_texCache.Query(*img, gm);
@@ -206,31 +209,30 @@ void FrameGraph::Execute(IGraphicManager& gm) {
 		}
 		FrameGraphResourceManager rm(*this, node);
 		{
-			auto* renderdata = node->GetRenderPassData().get();;
-			if(renderdata != nullptr) {// && HwRenderTargetHandle::IsInvalied(renderdata->target)) {
-				IGraphicManager::RenderTargetDesc desc {
-					.width = renderdata->viewport.width,
-					.height = renderdata->viewport.height,
-				};
+			auto* renderdata = node->GetRenderPassData().get();
+			if(renderdata != nullptr) {
+				if(!HwRenderTargetHandle::IsInvalied(renderdata->target)) {
+					gm.DestroyRenderTarget(renderdata->target);
+					renderdata->target = HwRenderTargetHandle();
+				} 
+				IGraphicManager::RenderTargetDesc desc; 
 				for(int i=0;i<renderdata->attachments.size();i++) {
 					if(!renderdata->attachments[i].IsInitialed()) break;
 					auto* tex = rm.GetTexture(renderdata->attachments[i]);
 					if(tex != nullptr) {
 						if(!tex->Initialed()) assert(false);
 						desc.attachs[i] = tex->handle;
+
+						if(i == 0) {
+							desc.width = tex->desc.width;
+							desc.height = tex->desc.height;
+						}
 					}
 				}
 				renderdata->target = gm.CreateRenderTarget(desc);
 			}
 		}
 		node->Pass()->execute(rm);
-		{
-			auto* renderdata = node->GetRenderPassData().get();;
-			if(renderdata != nullptr && HwRenderTargetHandle::IsInvalied(renderdata->target)) {
-				gm.DestroyRenderTarget(renderdata->target);
-				renderdata->target = HwRenderTargetHandle();
-			}
-		}
 		{
 			for(const auto& el:m_releaseAfter[pos]) {
 				auto* tex = m_textures.Get({el.idx});

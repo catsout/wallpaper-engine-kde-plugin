@@ -49,7 +49,9 @@ bool GLWrapper::Init(void *get_proc_address(const char *)) {
 	if (!gladLoadGLLoader((GLADloadproc)get_proc_address))
 	{
 		LOG_ERROR("Failed to initialize GLAD");
+		return false;
 	}
+	GFrameBuffer::Init(m_clearFb, {});
 	return true;
 }
 
@@ -142,7 +144,6 @@ GLProgram* GLWrapper::CreateProgram(std::vector<GLShader *> shaders,
 	CHECK_GL_ERROR_IF_DEBUG();
 	return program;
 }
-*/
 
 void GLWrapper::CopyTexture(GLFramebuffer* src, GLTexture* dst) {
 	BindFramebuffer(src);
@@ -165,6 +166,7 @@ GLTexture* GLWrapper::CopyTexture(GLFramebuffer* fbo) {
 	CHECK_GL_ERROR_IF_DEBUG();
 	return tex;
 }
+*/
 
 void GLWrapper::ClearColor(float r, float g, float b, float a) {
 	glClearColor(r, g, b, a);
@@ -181,7 +183,7 @@ void GLWrapper::BindTexture(GLTexture *tex) {
 	glBindTexture(tex->target, tex->texture);
 	CHECK_GL_ERROR_IF_DEBUG();
 }
-
+/*
 void GLWrapper::BindFramebuffer(GLFramebuffer* fbo) {
 	glBindFramebuffer(GL_FRAMEBUFFER, fbo->framebuffer);
 	CHECK_GL_ERROR_IF_DEBUG();
@@ -201,6 +203,7 @@ void GLWrapper::BindDefaultFramebuffer() {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	CHECK_GL_ERROR_IF_DEBUG();
 }
+*/
 
 void GLWrapper::DeleteBuffer(GLBuffer* buffer) {
 	delete buffer;

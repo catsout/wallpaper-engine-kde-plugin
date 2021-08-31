@@ -30,7 +30,7 @@ public:
 	void SetMousePos(float x, float y) {m_mousePos = std::vector<float>({x,y});};
 
 	// call this after loaded
-	void SetDefaultFbo(uint fbo, uint32_t w, uint32_t h);
+	void SetDefaultFbo(uint fbo, uint16_t w, uint16_t h);
 	void SetFillMode(FillMode);
 
 	uint32_t CurrentFps() const;

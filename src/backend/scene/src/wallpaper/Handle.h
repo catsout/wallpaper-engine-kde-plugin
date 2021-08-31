@@ -83,6 +83,17 @@ public:
 	}
 
 	std::size_t Size() const { return m_size; }
+
+	void FreeAll() {
+		m_counts.resize(m_size+1, 0);
+		for(auto& el:m_slots) {
+			if(el.id != 0) {
+				THandleResource::Destroy(el.rsc);
+			}
+			RestSlot(el);
+		}
+	}
+
 private:
 	class Slot {
 	public:

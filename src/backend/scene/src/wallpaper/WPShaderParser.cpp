@@ -36,7 +36,7 @@ static constexpr const char* pre_shader_code = R"(#version 130
 
 )";
 
-std::string WPShaderParser::LoadGlslInclude(const std::string& input) {
+std::string LoadGlslInclude(const std::string& input) {
 	std::string::size_type pos = 0;
 	std::string output;
 	std::string::size_type linePos = std::string::npos;
@@ -62,7 +62,7 @@ std::string WPShaderParser::LoadGlslInclude(const std::string& input) {
 }
 
 
-void WPShaderParser::ParseWPShader(const std::string& src, int32_t texcount, WPShaderInfo* pWPShaderInfo) {
+void ParseWPShader(const std::string& src, int32_t texcount, WPShaderInfo* pWPShaderInfo) {
 	auto& combos = pWPShaderInfo->combos;
 	auto& wpAliasDict = pWPShaderInfo->alias;
 	auto& shadervalues = pWPShaderInfo->svs;
@@ -157,7 +157,7 @@ void WPShaderParser::ParseWPShader(const std::string& src, int32_t texcount, WPS
 	} 
 }
 
-std::size_t WPShaderParser::FindIncludeInsertPos(const std::string& src, std::size_t startPos) {
+std::size_t FindIncludeInsertPos(const std::string& src, std::size_t startPos) {
 	/* rule:
 	after attribute/varying/uniform/struct
 	befor any func

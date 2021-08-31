@@ -22,7 +22,7 @@ struct RenderPassData {
 	};
 	HwRenderTargetHandle target;
 	std::array<FrameGraphResource, MaxAttachmentNum> attachments; 
-	ViewPort viewport;
+	ViewPort viewPort;
 };
 
 class PassNode : public DependencyGraph::Node {

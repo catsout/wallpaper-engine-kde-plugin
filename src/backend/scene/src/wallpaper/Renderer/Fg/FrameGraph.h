@@ -56,7 +56,7 @@ public:
 	FrameGraph() = default;
 	~FrameGraph() = default;
 	FrameGraph(const FrameGraph&) = delete;
-	FrameGraph& operator=(FrameGraph&) = delete;
+	FrameGraph& operator=(const FrameGraph&) = delete;
 
 	template<typename Data, typename Setup, typename Execute>
 	Pass<Data, Execute>& AddPass(std::string_view name, Setup setup, Execute&& execute);

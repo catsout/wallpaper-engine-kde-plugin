@@ -18,10 +18,13 @@ struct TextureResource : public Resource {
 		std::string path;
 		TextureFormat format {TextureFormat::RGBA8};
 		TextureSample sample;
-		std::function<std::shared_ptr<Image>(void)> getImgOp;
 		bool temperary {false};
 
 		std::string name;
+
+		std::function<std::shared_ptr<Image>(void)> getImgOp;
+		std::function<void(Desc&)> UpdateDescOp;
+
 	};
 
 	void Initialize() {

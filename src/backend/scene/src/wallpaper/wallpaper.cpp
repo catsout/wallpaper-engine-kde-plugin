@@ -134,7 +134,7 @@ void WallpaperGL::Stop() {
 }
 
 
-void WallpaperGL::SetDefaultFbo(uint fbo, uint32_t w, uint32_t h) {
+void WallpaperGL::SetDefaultFbo(uint fbo, uint16_t w, uint16_t h) {
 	pImpl->gm.SetDefaultFbo(fbo, w, h, m_fillMode);	
 	pImpl->fboW = w;
 	pImpl->fboH = h;

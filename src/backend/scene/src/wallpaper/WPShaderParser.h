@@ -21,12 +21,6 @@ struct WPShaderInfo {
 
 class WPShaderParser {
 public:
-	static std::string LoadGlslInclude(const std::string& input);	
-
-	static void ParseWPShader(const std::string& src, int32_t texcount, WPShaderInfo* pWPShaderInfo);
-
-	static std::size_t FindIncludeInsertPos(const std::string& src, std::size_t startPos);
-
 	static std::string PreShaderSrc(const std::string& src, int32_t texcount, WPShaderInfo* pWPShaderInfo);
 
 	static std::string PreShaderHeader(const std::string& src, const Combos& combos); 

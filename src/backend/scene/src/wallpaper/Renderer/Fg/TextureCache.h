@@ -43,6 +43,12 @@ public:
 	TextureCache(TextureCache&& o):m_inused(std::move(o.m_inused)),
 									m_unused(std::move(o.m_unused)) {}
 
+	TextureCache& operator=(TextureCache&& o){
+		m_inused = (std::move(o.m_inused));
+		m_unused = (std::move(o.m_unused));
+		return *this;
+	}
+
 	typedef std::size_t TexHash;
 
 	HwTexHandle Query(const TextureResource::Desc& desc, IGraphicManager& gm) {
@@ -55,6 +61,7 @@ public:
 		{
 			HwTexHandle h = ChangeToInUse(hash);
 			if(!HwTexHandle::IsInvalied(h)) {
+				//gm.ClearTexture(h, {0,0,0,1.0f});  heigh gpu usage
 				return h;
 			}
 		}
@@ -79,6 +86,7 @@ public:
 		// not use unused as image
 		HwTexHandle h = gm.CreateTexture(img);
 		m_inused.insert({h, hash});
+		assert(h.idx != 65537);
 		return h;
 	}
 

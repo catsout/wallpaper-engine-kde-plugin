@@ -16,90 +16,9 @@ public:
 	std::shared_ptr<gl::GLWrapper> glw;
 };
 
-/*
-// render target
 
-void GLRenderTargetManager::Clear() {
-	for(const auto& el:m_unuse) {
-		m_pGlw->DeleteFramebuffer(el.second);
-	}
-	m_unuse.clear();
-	for(const auto& el:m_inuse) {
-		m_pGlw->DeleteFramebuffer(el.second);
-	}	
-	m_inuse.clear();
-}
+GLGraphicManager::GLGraphicManager():pImpl(std::make_unique<impl>()),m_fg(std::make_unique<fg::FrameGraph>()) {}
 
-uint64_t GLRenderTargetManager::GetID(const SceneRenderTarget& rt) const {
-	uint64_t id = 0;	
-	id += rt.width;
-	id <<= 14;
-	id += rt.height;
-	id <<= 1;
-	id += rt.withDepth;
-	return id;
-}
-
-gl::GLFramebuffer* GLRenderTargetManager::GetFrameBuffer(const std::string& name, const SceneRenderTarget& rt) {
-	auto id = GetID(rt);
-	std::string keystr = name + std::to_string(id);
-	if(m_inuse.count(keystr) == 0) {
-		auto unuseEl = m_unuse.end();
-		for(auto it=m_unuse.begin();it != m_unuse.end();it++) {
-			if(id == it->first) {
-				unuseEl = it;	
-			}
-		}
-		if(unuseEl == m_unuse.end()) {
-			auto* fb = m_pGlw->CreateFramebuffer(rt.width, rt.height, rt.sample);
-			m_inuse[keystr] = fb;
-		} else {
-			m_inuse[keystr] = unuseEl->second;
-			m_unuse.erase(unuseEl);
-		}
-	}
-	return m_inuse.at(keystr);
-}
-
-void GLRenderTargetManager::ReleaseFrameBuffer(const std::string& name, const SceneRenderTarget& rt) {
-	auto id = GetID(rt);
-	std::string keystr = name + std::to_string(id);
-	if(m_inuse.count(keystr) != 0) {
-		m_unuse.emplace_back(id, m_inuse.at(keystr));
-		m_inuse.erase(keystr);
-	}
-}
-
-void GLRenderTargetManager::ReleaseAndDeleteFrameBuffer(const std::string& name, const SceneRenderTarget& rt) {
-	auto id = GetID(rt);
-	std::string keystr = name + std::to_string(id);
-	if(m_inuse.count(keystr) != 0) {
-		m_pGlw->DeleteFramebuffer(m_inuse.at(keystr));
-		m_inuse.erase(keystr);
-	}
-}
-
-
-
-void UpdateDefaultRenderTargetBind(Scene& scene, GLRenderTargetManager& rtm, uint32_t w, uint32_t h) {
-
-	if(scene.renderTargets.count("_rt_default") != 0)
-		rtm.ReleaseAndDeleteFrameBuffer("_rt_default", scene.renderTargets.at("_rt_default"));
-	scene.renderTargets["_rt_default"] = {w, h};
-
-	for(const auto& el:scene.renderTargetBindMap) {
-		if(!el.second.copy && el.second.name == "_rt_default") {
-			uint32_t sw = w * el.second.scale;
-			uint32_t sh = h * el.second.scale;
-			scene.renderTargets[el.first] = {sw, sh};
-		}
-	}
-}
-*/
-
-
-
-GLGraphicManager::GLGraphicManager():pImpl(std::make_unique<impl>()) {}
 
 std::string OutImageType(const Image& img) {
 	if(img.type == ImageType::UNKNOWN)
@@ -134,158 +53,6 @@ void TraverseNode(const std::function<void(SceneNode*)>& func, SceneNode* node) 
 	for(auto& child:node->GetChildren())
 		TraverseNode(func, child.get());
 }
-/*
-void GLGraphicManager::LoadNode(SceneNode* node) {
-	auto& glw = *m_glw;
-	if(node->Mesh() == nullptr) return;
-	auto* mesh = node->Mesh();
-	glw.LoadMesh(*mesh);
-	if(mesh->Material() == nullptr) return;
-
-	auto* material = mesh->Material();
-	for(const auto& url:material->textures) {
-		if(url.empty() || url.compare(0, 4, "_rt_") == 0) continue;
-		if(m_textureMap.count(url) > 0) continue;
-		auto img = m_scene->imageParser->Parse(url);
-		m_textureMap[url] = LoadImage(m_glw.get(), *m_scene->textures[url].get(), *img);
-	}
-	auto& materialShader = material->customShader;
-	auto* shader = materialShader.shader.get();
-
-	std::vector<gl::GLShader*> glshaders;
-	glshaders.push_back(glw.CreateShader(glw.ToGLType(ShaderType::VERTEX), shader->vertexCode));
-	glshaders.push_back(glw.CreateShader(glw.ToGLType(ShaderType::FRAGMENT), shader->fragmentCode));
-	if(!shader->geometryCode.empty()) {
-		glshaders.push_back(glw.CreateShader(glw.ToGLType(ShaderType::GEOMETRY), shader->geometryCode));
-	}
-
-	m_programMap[shader] = glw.CreateProgram(glshaders, shader->attrs);
-	auto* program = m_programMap.at(shader);
-	glw.BindProgram(program);
-
-	glw.QueryProUniforms(program);
-	for(const auto& el:program->uniformLocs) {
-		if(el.name.empty()) continue;
-		materialShader.valueSet.insert(el.name);
-	}
-
-	for(auto& el:shader->uniforms)
-		glw.UpdateUniform(program, el.second);
-	for(auto& el:materialShader.constValues) {
-		glw.UpdateUniform(program, el.second);
-	}
-	int32_t i = 0;
-	for(const auto& def:material->defines)
-		glw.SetTexSlot(program, def, i++);
-}
-
-void GLGraphicManager::RenderNode(SceneNode* node) {
-	auto& glw = *m_glw;
-	if(node->Mesh() == nullptr) return;
-	auto* mesh = node->Mesh();
-	if(mesh->Material() == nullptr) return;
-	gl::GLFramebuffer* target(nullptr);
-	
-	// set color mask
-	bool alphaMask = !(node->Camera().empty() || node->Camera().compare(0, 6, "global") == 0);
-	glw.SetColorMask(true, true, true, alphaMask);
-
-	// Bind target first, this make first frame show correct
-	if(!node->Camera().empty()) {
-		auto& cam = m_scene->cameras.at(node->Camera());
-		if(cam->HasImgEffect()) {
-			const auto& name = cam->GetImgEffect()->FirstTarget();
-			if(m_scene->renderTargets.count(name) != 0) {
-				target = m_rtm.GetFrameBuffer(name, m_scene->renderTargets.at(name));
-				m_glw->BindFramebufferViewport(target);
-			}
-		}
-	}
-	auto* material = mesh->Material();
-
-	auto& materialShader = material->customShader;
-	auto* shader = materialShader.shader.get();
-	m_scene->shaderValueUpdater->UpdateShaderValues(node, shader);
-
-	int32_t i_tex = -1;
-	for(const auto& name:material->textures) {
-		i_tex++;
-		glw.ActiveTexture(i_tex);
-		int32_t imageId = 0;
-		if(name.compare(0, 4, "_rt_") == 0) {
-			if(m_scene->renderTargets.count(name) == 0) continue;
-			auto& rt = m_scene->renderTargets.at(name);
-			if(m_scene->renderTargetBindMap.count(name) != 0) {
-				const auto& copy = m_scene->renderTargetBindMap.at(name);
-				if(copy.copy) {
-					const auto& rtcopy = m_scene->renderTargets.at(copy.name);
-					rt = rtcopy;
-					auto* gltex = &m_rtm.GetFrameBuffer(name, rt)->color_texture;
-					auto* glcopy = m_rtm.GetFrameBuffer(copy.name, rtcopy);
-					glw.CopyTexture(glcopy, gltex);
-				}
-			}
-			glw.BindFramebufferTex(m_rtm.GetFrameBuffer(name, rt));
-		}
-		else if(m_textureMap.count(name) != 0) {
-			// deal sprite
-			if(m_scene->textures.count(name) != 0) {
-				const auto& stex = m_scene->textures.at(name);
-				if(stex->isSprite)
-					imageId = stex->spriteAnim.GetCurFrame().imageId;
-			}
-			auto& texs = m_textureMap.at(name);
-			if(!texs.empty())
-				glw.BindTexture(texs[imageId]);
-		}
-	}
-	auto program = m_programMap.at(shader);
-	glw.BindProgram(program);
-	for(auto& el:materialShader.updateValueList)
-		glw.UpdateUniform(program, el);
-	materialShader.updateValueList.clear();
-	glw.SetBlend(material->blenmode);
-	if(target != nullptr)
-		m_glw->BindFramebufferViewport(target);
-	glw.RenderMesh(*mesh);
-
-	if(!node->Camera().empty()) {
-		auto& cam = m_scene->cameras.at(node->Camera());
-		if(cam->HasImgEffect()) {
-			auto& effs = cam->GetImgEffect();
-			for(int32_t i=0;i<effs->EffectCount();i++) {
-				auto& eff = effs->GetEffect(i);
-				for(auto& n:eff->nodes) {
-					auto& name = n.output;
-					m_glw->BindFramebufferViewport(m_rtm.GetFrameBuffer(name, m_scene->renderTargets.at(name)));
-					if(name != "_rt_default") {
-						//m_glw.ClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-					}
-					RenderNode(n.sceneNode.get());
-					m_glw->BindFramebufferViewport(m_rtm.GetFrameBuffer("_rt_default", m_scene->renderTargets.at("_rt_default")));
-				}
-			}
-
-			for(int32_t i=0;i<effs->EffectCount();i++) {
-				auto& eff = effs->GetEffect(i);
-				for(auto& n:eff->nodes) {
-					if(n.sceneNode->Mesh() == nullptr) continue;
-					const auto& nodeMesh = n.sceneNode->Mesh();
-					if(nodeMesh->Material() == nullptr) continue;
-					const auto& mat = nodeMesh->Material();
-					for(const auto& t:mat->textures) {
-						if(t.compare(0, 4, "_rt_") == 0 && m_scene->renderTargets.count(t) != 0) {
-							const auto& rt = m_scene->renderTargets.at(t);
-							if(t != "_rt_default" && rt.allowReuse) {
-								m_rtm.ReleaseFrameBuffer(t, rt);
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-}*/
 
 HwShaderHandle InitShader(gl::GLWrapper* pglw, SceneMaterial* material) {
 	auto& glw = *pglw;
@@ -329,6 +96,44 @@ fg::FrameGraphResource AddCopyPass(fg::FrameGraph& fg, gl::GLWrapper& glw, fg::F
 		}
 	);
 	return pass->output;
+}
+
+
+void GLGraphicManager::AddPreParePass() {
+	struct PassData {
+		fg::FrameGraphMutableResource output;
+	};
+	m_fg->AddPass<PassData>("prepare",
+		[&](fg::FrameGraphBuilder& builder, PassData& data) {
+			std::string def {SpecTex_Default};
+			SceneRenderTarget rt {.width = 1920, .height = 1080};
+			{
+				if(m_scene->renderTargets.count(def) > 0) {
+					rt = m_scene->renderTargets[def];
+				}
+			}
+			data.output = builder.CreateTexture({
+				.width = rt.width,
+				.height = rt.height,
+				.temperary = true,
+				.name = def,
+				.UpdateDescOp = [&](fg::TextureResource::Desc& d) {
+					d.width = m_screenSize[0];
+					d.height = m_screenSize[1];
+				}
+			});
+			data.output = builder.Write(data.output);
+			m_fgrscMap[def] = data.output;
+		},
+		[this](fg::FrameGraphResourceManager& rsm, const PassData& data) mutable {
+			//glw.ClearTexture(, );
+			const auto& cc = m_scene->clearColor;
+			auto* tex = rsm.GetTexture(data.output);
+			assert(tex != nullptr);
+			pImpl->glw->ClearTexture(tex->handle, {cc[0], cc[1], cc[2], 1.0f});
+		}
+	);
+
 }
 
 void AddEndPass(fg::FrameGraph& fg, gl::GLWrapper& glw, fg::FrameGraphResource input,const std::array<bool, 2>& flips) {
@@ -411,6 +216,7 @@ void GLGraphicManager::ToFrameGraphPass(SceneNode* node, std::string output) {
 		fg::FrameGraphMutableResource output;
 		std::shared_ptr<fg::RenderPassData> renderpassData;
 		std::array<bool, 4> colorMask;
+		std::function<void(gl::ViewPort&)> dynViewportOp;
 	};
 	auto loadImage = [this, glw](const std::string& url) {
 		return m_scene->imageParser->Parse(url);
@@ -443,9 +249,10 @@ void GLGraphicManager::ToFrameGraphPass(SceneNode* node, std::string output) {
 		}
 	}
 
-	m_fg.AddPass<PassData>("test", 
+	std::string passName = material->name;
+
+	m_fg->AddPass<PassData>(passName, 
 	[&,loadImage, glw](fg::FrameGraphBuilder& builder, PassData& data) {
-		LOG_INFO("-----------" + output);
 		data.inputs.resize(material->textures.size());
 		int32_t i=-1;
 		for(const auto& url:material->textures) {
@@ -454,14 +261,14 @@ void GLGraphicManager::ToFrameGraphPass(SceneNode* node, std::string output) {
 			else if(IsSpecTex(url)) {
 				if(m_fgrscMap.count(url) > 0) {
 					if(url == output) {
-						data.inputs[i] = AddCopyPass(m_fg, *glw, m_fgrscMap[url]);
-						LOG_INFO("++++bind: " + url);
+						data.inputs[i] = AddCopyPass(*m_fg, *glw, m_fgrscMap[url]);
+						if(url != SpecTex_Default)
+							LOG_INFO("copy bind: " + url);
 					} else {
 						data.inputs[i] = m_fgrscMap[url];
-						LOG_INFO("bind: " + url);
 					}
 				} else {
-					LOG_ERROR(url + " not found");
+					LOG_ERROR(url + " not found, at pass " + passName);
 				}
 			}
 			else {
@@ -475,15 +282,44 @@ void GLGraphicManager::ToFrameGraphPass(SceneNode* node, std::string output) {
 			}
 			data.inputs[i] = builder.Read(data.inputs[i]);
 		}
+		SceneRenderTarget rt {.width = 1920, .height = 1080};
+		std::function<decltype(m_screenSize)()> dynOutputSizeOp;
+		{
+			if(m_scene->renderTargets.count(output) > 0) {
+				rt = m_scene->renderTargets[output];
+			}
+			if(rt.bind.enable) {
+				auto scale = rt.bind.scale;
+				dynOutputSizeOp = [&,scale]() {
+					return decltype(m_screenSize) {
+						(uint16_t)(m_screenSize[0] * scale),
+						(uint16_t)(m_screenSize[1] * scale)
+					};
+				};
+				data.dynViewportOp = [dynOutputSizeOp](gl::ViewPort& v) {
+					auto s = dynOutputSizeOp();
+					v.width = s[0];
+					v.height = s[1];
+				};
+			}
+		}
 		if(m_fgrscMap.count(output) > 0) {
-			data.output = m_fg.AddMovePass(m_fgrscMap.at(output));
+			data.output = m_fg->AddMovePass(m_fgrscMap.at(output));
 		} else {
-			data.output = builder.CreateTexture({
-				.width = 1920,
-				.height = 1080,
+			fg::TextureResource::Desc desc {
+				.width = rt.width,
+				.height = rt.height,
 				.temperary = true,
-				.name = output,
-			});
+				.name = output
+			};
+			if(rt.bind.enable) {
+				desc.UpdateDescOp = [dynOutputSizeOp](fg::TextureResource::Desc& d){
+					auto s = dynOutputSizeOp();
+					d.width = s[0];
+					d.height = s[1];
+				};
+			}
+			data.output = builder.CreateTexture(desc);
 		}
 		data.output = builder.Write(data.output);
 		m_fgrscMap[output] = data.output;
@@ -493,7 +329,7 @@ void GLGraphicManager::ToFrameGraphPass(SceneNode* node, std::string output) {
 		};
 		data.renderpassData = builder.UseRenderPass({
 			.attachments = {data.output},
-			.viewport = {0, 0, 1920, 1080},
+			.viewPort = {0, 0, rt.width, rt.height}
 		});
 	}, 
 	[this, material, mshaderPtr, mesh, node, output, glw](fg::FrameGraphResourceManager& rsm, const PassData& data) {
@@ -501,7 +337,14 @@ void GLGraphicManager::ToFrameGraphPass(SceneNode* node, std::string output) {
 		gl::GBindings gbindings;
 
 		gpass.target = data.renderpassData->target;
-		gpass.viewport = {0,0, 1920, 1080};
+		{
+			if(data.dynViewportOp) {
+				data.dynViewportOp(gpass.viewport);
+			} else {
+				auto& v = data.renderpassData->viewPort;
+				gpass.viewport = {v.x, v.y, v.width, v.height};
+			}
+		}
 		gpass.colorMask = data.colorMask;
 		gpass.blend = material->blenmode;
 
@@ -574,6 +417,10 @@ HwTexHandle GLGraphicManager::CreateTexture(const Image& img) {
 }
 
 
+void GLGraphicManager::ClearTexture(HwTexHandle thandle, std::array<float, 4> clearcolors) {
+	pImpl->glw->ClearTexture(thandle, clearcolors);
+}
+
 HwRenderTargetHandle GLGraphicManager::CreateRenderTarget(RenderTargetDesc desc) {
 	gl::GFrameBuffer::Desc gdesc;
 	gdesc.width = desc.width;
@@ -593,17 +440,14 @@ void GLGraphicManager::DestroyRenderTarget(HwRenderTargetHandle h) {
 void GLGraphicManager::InitializeScene(Scene* scene) {
 	using namespace std::placeholders;
 	m_scene = scene;
+	//UpdateDefaultRenderTargetBind(*m_scene);
 
-	/*
-	if(m_defaultFbo.width != 0) {
-		//UpdateDefaultRenderTargetBind(*m_scene, m_rtm, m_defaultFbo.width, m_defaultFbo.height);
-	}
-	*/
-	TraverseNode(std::bind(&GLGraphicManager::ToFrameGraphPass, this, _1, std::string(Tex_Default)), scene->sceneGraph.get());
+	AddPreParePass();
+	TraverseNode(std::bind(&GLGraphicManager::ToFrameGraphPass, this, _1, std::string(SpecTex_Default)), scene->sceneGraph.get());
 	LOG_INFO("--------------------end");
-	AddEndPass(m_fg, *(pImpl->glw), m_fgrscMap.at(std::string(Tex_Default)), m_xyflip);
-	m_fg.Compile();
-	m_fg.ToGraphviz();
+	AddEndPass(*m_fg, *(pImpl->glw), m_fgrscMap.at(std::string(SpecTex_Default)), m_xyflip);
+	m_fg->Compile();
+	m_fg->ToGraphviz();
 }
 
 void GLGraphicManager::Draw() {
@@ -614,23 +458,13 @@ void GLGraphicManager::Draw() {
 	m_scene->shaderValueUpdater->FrameBegin();
 
 	const auto& cc = m_scene->clearColor;
-	/*
-	m_glw->BindFramebufferViewport(m_rtm.GetFrameBuffer("_rt_default", m_scene->renderTargets.at("_rt_default")));
-	m_glw->SetDepthTest(false);
-	m_glw->SetColorMask(true, true, true, true);
-	m_glw->ClearColor(cc[0], cc[1], cc[2], 1.0f);
-	TraverseNode(this, &GLGraphicManager::RenderNode, m_scene->sceneGraph.get());
-	*/
+
 	auto glw = pImpl->glw.get();
 
 
-	//glw->BindFramebufferViewport(&m_defaultFbo);
-	/*
-	glw->SetDepthTest(false);
-	*/
 	glw->ClearColor(cc[0], cc[1], cc[2], 1.0f);
-	//if(m_fboNode) RenderNode(m_fboNode.get());
-	m_fg.Execute(*this);
+
+	m_fg->Execute(*this);
 
 	m_scene->shaderValueUpdater->FrameEnd();
 }
@@ -686,17 +520,12 @@ void UpdateCameraForFbo(Scene& scene, uint32_t fbow, uint32_t fboh, FillMode fil
 	scene.UpdateLinkedCamera("global");
 }
 
-void GLGraphicManager::SetDefaultFbo(uint fbo, uint32_t w, uint32_t h, FillMode fillMode) {
-	if(m_scene != nullptr) {
-		if(m_scene->renderTargets.count("_rt_default") == 0)
-			m_scene->renderTargets["_rt_default"] = {w, h};
-	} else return;
+void GLGraphicManager::SetDefaultFbo(uint fbo, uint16_t w, uint16_t h, FillMode fillMode) {
+	m_screenSize = {w, h};
 
-	//m_defaultFbo = {w, h};
-	//m_defaultFbo.framebuffer = fbo;
 	pImpl->glw->SetDefaultFrameBuffer(fbo, w, h);
 
-	//UpdateDefaultRenderTargetBind(*m_scene, m_rtm, w, h);
+	//UpdateDefaultRenderTargetBind(*m_scene);
 	UpdateCameraForFbo(*m_scene, w, h, fillMode);
 }
 
@@ -706,23 +535,11 @@ void GLGraphicManager::ChangeFillMode(FillMode fillMode) {
 }
 
 void GLGraphicManager::Destroy() {
-	auto glw = pImpl->glw.get();
 	m_scene = nullptr;
-	for(const auto& el:m_shaderMap) {
-		glw->DestroyShader(el.second);
-	}
+	m_fg = std::make_unique<fg::FrameGraph>();
 	m_shaderMap.clear();
-	/*
-	for(const auto& el:m_textureMap) {
-		for(const auto& t:el) {
-			glw->DeleteTexture(t);
-		}
-	}
-	m_textureMap.clear();
-	*/
-	glw->CleanMeshBuf();
-	//m_rtm.Clear();
-	m_fboNode = nullptr;
+	m_fgrscMap.clear();
+	pImpl->glw->ClearAll();
 }
 
 GLGraphicManager::~GLGraphicManager() {

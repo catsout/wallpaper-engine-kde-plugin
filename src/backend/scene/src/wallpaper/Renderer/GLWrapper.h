@@ -135,6 +135,9 @@ struct ViewPort {
 
 struct GContext {
 	GLuint defaultFb {0};
+	GLuint curFb {0};
+	GLuint backCurFb {0};
+
 	ViewPort viewPort;
 };
 
@@ -154,7 +157,7 @@ struct GTexture {
 	struct Desc {
 		uint16_t w {2};
 		uint16_t h {2};
-    	uint8_t numMips {0};
+    	uint16_t numMips {0};
 		uint16_t numSlots {1};
 		uint16_t activeSlot {0};
 		GLenum target {0xFFFF};
@@ -411,12 +414,22 @@ inline void TextureFormat2GLFormat(TextureFormat texformat, GLint& internalForma
 	}
 }
 
+
 class GLWrapper{
 public:
 	GLWrapper();
-	~GLWrapper() = default;
+	~GLWrapper() {
+		ClearAll();
+		GFrameBuffer::Destroy(m_clearFb);
+	}
 
 	bool Init(void *get_proc_address(const char*));
+
+	void gBindFramebuffer(GLenum target, GLuint fb) {
+		glBindFramebuffer(target, fb);
+		m_context.backCurFb = m_context.curFb;
+		m_context.curFb = fb;
+	}
 
 	HwTexHandle CreateTexture(const GTexture::Desc& desc, const Image* image = nullptr) {
 		HwTexHandle texh = m_texPool.Alloc(desc);
@@ -490,20 +503,40 @@ public:
 		GLuint fbo {0};
 		auto target = srcTex->desc.target;
 		glGenFramebuffers(1, &fbo);
-		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+		gBindFramebuffer(GL_FRAMEBUFFER, fbo);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, 
 			target, srcTex->gltexs[srcTex->desc.activeSlot], 0);
+		CHECK_GL_ERROR_IF_DEBUG();
 		glReadBuffer(GL_COLOR_ATTACHMENT0);
 		glBindTexture(target, dstTex->gltexs[dstTex->desc.activeSlot]);
+		CHECK_GL_ERROR_IF_DEBUG();
 		GLenum format, type;	
 		GLint internalFormat;
 		auto texformat = srcTex->desc.format;
 		TextureFormat2GLFormat(texformat, internalFormat, format, type);
 		glCopyTexSubImage2D(target, 0, 0, 0, 0, 0, srcTex->desc.w, srcTex->desc.h);
+		CHECK_GL_ERROR_IF_DEBUG();
 		glBindTexture(target, 0);
 		glDeleteFramebuffers(1, &fbo);
+		m_context.curFb = 0;
 		CHECK_GL_ERROR_IF_DEBUG();
+		gBindFramebuffer(GL_FRAMEBUFFER, m_context.backCurFb);
 	}
+
+	void ClearTexture(HwTexHandle thandle, std::array<float, 4> clearcolors) {
+		gBindFramebuffer(GL_FRAMEBUFFER, m_clearFb.glfb);
+
+		auto* tex = m_texPool.Lookup(thandle);
+		assert(tex != nullptr);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+				tex->desc.target, tex->gltexs[tex->desc.activeSlot], 0);
+		glColorMask(true, true, true, true);
+		glClearColor(clearcolors[0],clearcolors[1],clearcolors[2],clearcolors[3]);
+		glClear(GL_COLOR_BUFFER_BIT);
+
+		gBindFramebuffer(GL_FRAMEBUFFER, m_context.backCurFb);
+	}
+
 	void ApplyBindings(const GBindings& binds) {
 		for(uint16_t i=0;i<binds.texs.size();i++) {
 			auto* tex = m_texPool.Lookup(binds.texs[i]);
@@ -529,11 +562,11 @@ public:
 		{
 			auto* fb = m_fbPool.Lookup(pass.target);
 			if(fb != nullptr) {
-				glBindFramebuffer(GL_FRAMEBUFFER, fb->glfb);
+				gBindFramebuffer(GL_FRAMEBUFFER, fb->glfb);
 				auto& v = pass.viewport;
 				glViewport(v.x, v.y, v.width, v.height);
 			} else {
-				glBindFramebuffer(GL_FRAMEBUFFER, m_context.defaultFb);
+				gBindFramebuffer(GL_FRAMEBUFFER, m_context.defaultFb);
 				auto& v = m_context.viewPort;
 				glViewport(v.x, v.y, v.width, v.height);
 			}
@@ -554,7 +587,8 @@ public:
 	HwRenderTargetHandle CreateRenderTarget(const GFrameBuffer::Desc& desc) {
 		auto rtHandle = m_fbPool.Alloc(desc);
 		auto* fb = m_fbPool.Lookup(rtHandle);
-		glBindFramebuffer(GL_FRAMEBUFFER, fb->glfb);
+		gBindFramebuffer(GL_FRAMEBUFFER, fb->glfb);
+		CHECK_GL_ERROR_IF_DEBUG();
 
 		for(uint8_t i=0;i<desc.attachs.size();i++) {
 			auto* tex = m_texPool.Lookup(desc.attachs[i]);
@@ -564,6 +598,7 @@ public:
 			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, 
 				tex->desc.target, tex->gltexs[tex->desc.activeSlot], 0);
 		}
+		CHECK_GL_ERROR_IF_DEBUG();
 
 		GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 		switch (status) {
@@ -582,11 +617,15 @@ public:
 		//glColorMask(true, true, true, true);
 		//glClearColor(0,0,0,1.0f);
 		//glClear(GL_COLOR_BUFFER_BIT);
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		gBindFramebuffer(GL_FRAMEBUFFER, m_context.backCurFb);
 		CHECK_GL_ERROR_IF_DEBUG();
 		return rtHandle;
 	}
 	void DestroyRenderTarget(HwRenderTargetHandle h) {
+		auto * fb = m_fbPool.Lookup(h);
+		if(fb->glfb == m_context.defaultFb) {
+			gBindFramebuffer(GL_FRAMEBUFFER, 0);
+		}
 		m_fbPool.Free(h);
 	}
 
@@ -594,17 +633,17 @@ public:
 	GLBuffer* CreateBuffer(GLuint target, std::size_t size, GLuint usage);
 	GLFramebuffer *CreateFramebuffer(uint32_t width, uint32_t height, TextureSample sample={});
 
-	void CopyTexture(GLFramebuffer* src, GLTexture* dst);
-	GLTexture* CopyTexture(GLFramebuffer* fbo);
+	//void CopyTexture(GLFramebuffer* src, GLTexture* dst);
+	//GLTexture* CopyTexture(GLFramebuffer* fbo);
 	void ClearColor(float r, float g, float b, float a);
 	void Viewport(int32_t ,int32_t ,int32_t ,int32_t);
 
 	void BindTexture(GLTexture *tex);
 
-	void BindFramebuffer(GLFramebuffer* fbo);
-	void BindFramebufferViewport(GLFramebuffer* fbo);
-	void BindDefaultFramebuffer();
-	void BindFramebufferTex(GLFramebuffer* fbo);
+	//void BindFramebuffer(GLFramebuffer* fbo);
+	//void BindFramebufferViewport(GLFramebuffer* fbo);
+	//void BindDefaultFramebuffer();
+	//void BindFramebufferTex(GLFramebuffer* fbo);
 	void DeleteBuffer(GLBuffer* buffer);
 	void DeleteFramebuffer(GLFramebuffer *framebuffer);
 
@@ -690,8 +729,19 @@ public:
 
 	GLFramebuffer* GetNowFramebuffer();
 
+	void ClearAll() {
+		CleanMeshBuf();
+		m_texPool.FreeAll();
+		m_shaderPool.FreeAll();
+		m_fbPool.FreeAll();
+	}
+
 private:
 	GContext m_context;	
+
+	// for tex clear;
+	GFrameBuffer m_clearFb;
+
 	std::unordered_map<int, int> uniformCount_;	
 	GLFramebuffer* m_curFbo;
 

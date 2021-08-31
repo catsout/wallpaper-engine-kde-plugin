@@ -32,6 +32,18 @@ public:
 		NodeID id;
 	};
 
+	DependencyGraph() = default;
+	~DependencyGraph() = default;
+	DependencyGraph(const DependencyGraph&) = delete;
+	DependencyGraph& operator=(const DependencyGraph&) = delete;
+	DependencyGraph(DependencyGraph&& o):m_nodeNext(std::move(o.m_nodeNext)),
+		m_nodes(std::move(o.m_nodes)) {}
+	DependencyGraph& operator=(DependencyGraph&& o) {
+		m_nodeNext = std::move(o.m_nodeNext);
+		m_nodes = std::move(o.m_nodes);
+		return *this;
+	}
+
 	size_t NodeNum() const { return m_nodes.size(); }
 	size_t EdgeNum() const { return std::accumulate(m_nodeNext.begin(), m_nodeNext.end(), 
 		0, 

@@ -6,6 +6,7 @@
 #include "wallpaper.h"
 #include "Type.h"
 #include "Algorism.h"
+#include "SpecTexs.h"
 
 #include "WPShaderParser.h"
 #include "WPTexImageParser.h"
@@ -122,6 +123,44 @@ void LoadEmitter(ParticleSubSystem& pSys, const wpscene::Particle& wp, float cou
 	}
 }
 
+BlendMode ParseBlendMode(std::string_view str) {
+	BlendMode bm;
+	if(str == "translucent") {
+		bm = BlendMode::Translucent;
+	} else if(str == "additive") {
+		bm = BlendMode::Additive;
+	} else if(str == "normal") {
+		bm = BlendMode::Normal;
+	} else if(str == "disabled") {
+		bm = BlendMode::Disable;
+	} else {
+		LOG_ERROR("unknown blending: "+std::string(str));
+	}
+	return bm;
+}
+
+void ParseSpecTexName(std::string& name, const wpscene::WPMaterial& wpmat, const WPShaderInfo& sinfo) {
+	if(IsSpecTex(name)) {
+		if(name == "_rt_FullFrameBuffer") {
+			name = SpecTex_Default;
+			if(wpmat.shader == "genericimage2" && (sinfo.combos.count("BLENDMODE") && sinfo.combos.at("BLENDMODE") != 1))
+				name = "";
+			/*
+			if(wpmat.shader == "genericparticle") {
+				name = "_rt_ParticleRefract";
+			}
+			*/
+		}
+		if(name.compare(0, 6, "_rt_im") == 0) {
+			name = "";
+			LOG_ERROR("unsupported layer texture");
+		}
+		if(name == "_rt_MipMappedFrameBuffer") {
+			name = "";
+		}
+	}
+}
+
 void LoadMaterial(const wpscene::WPMaterial& wpmat, Scene* pScene, SceneNode* pNode, SceneMaterial* pMaterial, WPShaderValueData* pSvData, WPShaderInfo* pWPShaderInfo=nullptr) {
 	auto& svData = *pSvData;
 	auto& material = *pMaterial;
@@ -163,17 +202,7 @@ void LoadMaterial(const wpscene::WPMaterial& wpmat, Scene* pScene, SceneNode* pN
 //		svData.resolutions.resize(content.at("textures").size());
 	for(int32_t i=0;i<textures.size();i++) {
 		std::string name = textures.at(i);
-		if(name == "_rt_FullFrameBuffer") {
-			if(wpmat.shader == "genericparticle") {
-				name = "_rt_ParticleRefract";
-			}
-			else name = "_rt_default";
-			name = "_rt_default";
-		}
-		if(name.compare(0, 6, "_rt_im") == 0) {
-			name = "";
-			LOG_ERROR("unsupported layer texture");
-		}
+		ParseSpecTexName(name, wpmat, *pWPShaderInfo);
 		material.textures.push_back(name);
 		material.defines.push_back("g_Texture" + std::to_string(i));
 		if(name.empty()) {
@@ -257,22 +286,13 @@ void LoadMaterial(const wpscene::WPMaterial& wpmat, Scene* pScene, SceneNode* pN
 	shader->attrs.push_back({"a_TexCoordVec4", 1});
 	shader->attrs.push_back({"a_Color", 2});
 
+	material.blenmode = ParseBlendMode(wpmat.blending);
 
-	if(wpmat.blending == "translucent") {
-		material.blenmode = BlendMode::Translucent;
-	} else if(wpmat.blending == "additive") {
-		material.blenmode = BlendMode::Additive;
-	} else if(wpmat.blending == "normal") {
-		material.blenmode = BlendMode::Normal;
-	} else if(wpmat.blending == "disabled") {
-		material.blenmode = BlendMode::Disable;
-	} else {
-		LOG_ERROR("unknown blending "+wpmat.blending);
-	}
 	for(const auto& el:pWPShaderInfo->baseConstSvs) {
 		materialShader.constValues[el.first] = el.second;
 	}
 	material.customShader = materialShader;
+	material.name = wpmat.shader;
 }
 
 std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
@@ -343,7 +363,17 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 	const auto& ortho = sc.general.orthogonalprojection; 
 	upScene->ortho[0] = (uint32_t)ortho.width;
 	upScene->ortho[1] = (uint32_t)ortho.height;
-	upScene->renderTargets["_rt_default"] = {(uint32_t)ortho.width, (uint32_t)ortho.height};
+	{
+		std::string def {SpecTex_Default};
+		upScene->renderTargets[def] = {
+			.width = (uint16_t)ortho.width, 
+			.height = (uint16_t)ortho.height,
+			.bind = {
+				.enable = true,
+				.screen = true
+			}
+		};
+	}
 
 	// effect camera 
 	upScene->cameras["effect"] = std::make_shared<SceneCamera>(2, 2, -1.0f, 1.0f);
@@ -386,18 +416,6 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 		upScene->cameras["global_perspective"]->AttatchNode(spPerCamNode);
 		upScene->sceneGraph->AppendChild(spPerCamNode);
 	}
-
-	// particle refract framebuffer
-	{
-		auto rtname = "_rt_ParticleRefract";
-		SceneRenderTarget rt;	
-		upScene->renderTargets[rtname] = rt;
-		SceneBindRenderTarget rtb;
-		rtb.name = "_rt_default";
-		rtb.copy = true;
-		upScene->renderTargetBindMap[rtname] = rtb;
-	}
-
 
     for(const auto& indexT:indexTable) {
 		if(indexT.first == "image") {	
@@ -530,17 +548,19 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 				effectRTs[0] = "_rt_" + nodeAddr;
 				effectRTs[1] = "_rt_" + nodeAddr + "1";
 				upScene->renderTargets[effectRTs[0]] = {
-					.width = (uint32_t)wpimgobj.size[0], 
-					.height = (uint32_t)wpimgobj.size[1], 
+					.width = (uint16_t)wpimgobj.size[0], 
+					.height = (uint16_t)wpimgobj.size[1], 
 					.allowReuse = true
 				};
 				upScene->renderTargets[effectRTs[1]] = upScene->renderTargets.at(effectRTs[0]);
 				if(wpimgobj.fullscreen) {
-					upScene->renderTargetBindMap[effectRTs[0]] = {
-						.name = "_rt_default"
+					upScene->renderTargets[effectRTs[0]].bind = {
+						.enable = true,
+						.screen = true
 					};
-					upScene->renderTargetBindMap[effectRTs[1]] = {
-						.name = "_rt_default"
+					upScene->renderTargets[effectRTs[1]].bind = {
+						.enable = true,
+						.screen = true
 					};
 				}
 				imgEffectLayer->SetFirstTarget(effectRTs[0]);
@@ -570,17 +590,17 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 						const auto& wpfbo = wpeffobj.fbos.at(i);
 						std::string rtname = "_rt_" + effaddr + std::to_string(i);
 						if(wpimgobj.fullscreen) {
-							upScene->renderTargetBindMap[rtname] = {
-								.name = "_rt_default",
-								.copy = false,
+							upScene->renderTargets[rtname] = {2, 2, true};
+							upScene->renderTargets[rtname].bind = {
+								.enable = true,
+								.screen = true,
 								.scale = 1.0f/wpfbo.scale
 							};
-							upScene->renderTargets[rtname] = {2, 2, true};
 						} else {
 							// i+2 for not override object's rt
 							upScene->renderTargets[rtname] = {
-								.width = (uint32_t)(wpimgobj.size[0]/wpfbo.scale),
-								.height = (uint32_t)(wpimgobj.size[1]/wpfbo.scale), 
+								.width = (uint16_t)(wpimgobj.size[0]/wpfbo.scale),
+								.height = (uint16_t)(wpimgobj.size[1]/wpfbo.scale), 
 								.allowReuse = true
 							};
 						}
@@ -652,21 +672,6 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 								LOG_ERROR("ShaderValue: " +name+ " not found in glsl");
 							} else {
 								material.customShader.constValues[glname] = {glname, value}; 
-							}
-						}
-						for(int32_t i=0;i<material.textures.size();i++) {
-							auto& t = material.textures.at(i);
-							if(t == matOutRT) {
-								t = "_rt_" + effmataddr + std::to_string(i);
-								upScene->renderTargetBindMap[t] = {
-									.name = matOutRT,
-									.copy = true
-								};
-								upScene->renderTargets[t] = upScene->renderTargets.at(matOutRT);
-								for(auto& el:svData.renderTargetResolution) {
-									if(el.first == i)
-										el = {i,t};
-								}
 							}
 						}
 						auto spMesh = std::make_shared<SceneMesh>();
