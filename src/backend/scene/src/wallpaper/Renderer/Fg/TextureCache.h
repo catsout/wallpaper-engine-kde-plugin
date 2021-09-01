@@ -27,12 +27,12 @@ struct TextureKey {
 		std::size_t seed {0};
 		utils::hash_combine(seed, k.width);
 		utils::hash_combine(seed, k.height);
-		utils::hash_combine_fast(seed, (int)k.usage);
-		utils::hash_combine_fast(seed, (int)k.format);
+		utils::hash_combine(seed, (int)k.usage);
+		utils::hash_combine(seed, (int)k.format);
 
-		utils::hash_combine_fast(seed, (int)k.sample.wrapS);
-		utils::hash_combine_fast(seed, (int)k.sample.wrapT);
-		utils::hash_combine_fast(seed, (int)k.sample.magFilter);
+		utils::hash_combine(seed, (int)k.sample.wrapS);
+		utils::hash_combine(seed, (int)k.sample.wrapT);
+		utils::hash_combine(seed, (int)k.sample.magFilter);
 		return seed;
 	}
 };
