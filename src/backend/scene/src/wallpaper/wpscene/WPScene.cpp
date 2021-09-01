@@ -23,6 +23,16 @@ bool WPSceneCamera::FromJson(const nlohmann::json& json) {
 }
 
 bool WPSceneGeneral::FromJson(const nlohmann::json& json) {
+    std::vector<float> t; 
+    {
+	    GET_JSON_NAME_VALUE(json, "ambientcolor", t);
+        if(t.size() == 3)
+            ambientcolor = {t[0], t[1], t[2]};
+	    GET_JSON_NAME_VALUE(json, "skylightcolor", t);
+        if(t.size() == 3)
+            skylightcolor = {t[0], t[1], t[2]};
+
+    }
 	GET_JSON_NAME_VALUE(json, "clearcolor", clearcolor);
 	GET_JSON_NAME_VALUE(json, "cameraparallax", cameraparallax);
 	GET_JSON_NAME_VALUE(json, "cameraparallaxamount", cameraparallaxamount);

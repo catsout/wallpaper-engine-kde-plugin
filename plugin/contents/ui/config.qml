@@ -12,7 +12,6 @@ import Qt.labs.folderlistmodel 2.11
 Column {
     id: root
     anchors.fill: parent
-    anchors.verticalCenter: parent.verticalCenter
     anchors.topMargin: 5
     spacing: 5
     

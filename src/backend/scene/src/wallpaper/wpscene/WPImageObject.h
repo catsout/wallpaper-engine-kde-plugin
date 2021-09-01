@@ -8,6 +8,16 @@ namespace wallpaper
 namespace wpscene
 {
 
+class WPEffectCommand {
+public:
+    bool FromJson(const nlohmann::json&);
+    std::string command;
+    std::string target;
+    std::string source;
+
+    uint32_t afterpos {0}; // 0 for begin, start from 1
+};
+
 class WPEffectFbo {
 public:
     bool FromJson(const nlohmann::json&);
@@ -26,6 +36,7 @@ public:
     int32_t version;
     std::vector<WPMaterial> materials;
     std::vector<WPMaterialPass> passes;
+    std::vector<WPEffectCommand> commands;
     std::vector<WPEffectFbo> fbos;
 };
 

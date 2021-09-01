@@ -83,4 +83,21 @@ enum class FillMode {
 	ASPECTCROP
 };
 
+enum class TextureWrap {
+	CLAMP_TO_EDGE,
+	REPEAT
+};
+
+enum class TextureFilter {
+	LINEAR,
+	NEAREST
+};
+
+struct TextureSample {
+	TextureWrap wrapS {TextureWrap::REPEAT};
+	TextureWrap wrapT {TextureWrap::REPEAT};
+	TextureFilter magFilter {TextureFilter::NEAREST};
+	TextureFilter minFilter {TextureFilter::NEAREST};
+};
+
 }

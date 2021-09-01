@@ -1,4 +1,5 @@
 project(wallpaper)
+set(CMAKE_CXX_STANDARD 17)
 
 find_package(OpenGL REQUIRED)
 find_package(Threads REQUIRED)
@@ -11,20 +12,12 @@ endif ()
 add_library(${PROJECT_NAME}
 	Util.cpp
 	Log.cpp
-	GLWrapper.cpp
-	GLGraphicManager.cpp
 	pkg.cpp
 	wallpaper.cpp
 	Image.cpp
 	WPJson.cpp
 	FpsCounter.cpp
 	FrameTimer.cpp
-	Scene.cpp
-	SceneIndexArray.cpp
-	SceneVertexArray.cpp
-	SceneCamera.cpp
-	SceneNode.cpp
-	SceneShader.cpp
 	Type.cpp
 	Algorism.cpp
 	wpscene/WPImageObject.cpp
@@ -35,10 +28,23 @@ add_library(${PROJECT_NAME}
 	Particle/ParticleSystem.cpp
 	Particle/ParticleEmitter.cpp
 	Particle/WPParticleRawGener.cpp
+	Scene/Scene.cpp
+	Scene/SceneIndexArray.cpp
+	Scene/SceneVertexArray.cpp
+	Scene/SceneCamera.cpp
+	Scene/SceneNode.cpp
+	Scene/SceneShader.cpp
+	Renderer/GLWrapper.cpp
+	Renderer/GLGraphicManager.cpp
+	Renderer/Fg/DependencyGraph.cpp
+	Renderer/Fg/FrameGraph.cpp
+
 	WPParticleParser.cpp
+	WPShaderParser.cpp
 	WPSceneParser.cpp
 	WPShaderValueUpdater.cpp
 	WPTexImageParser.cpp
+
 )
 set_property(TARGET ${PROJECT_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
 target_link_libraries(${PROJECT_NAME}

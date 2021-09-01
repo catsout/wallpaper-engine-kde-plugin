@@ -1,6 +1,6 @@
 #pragma once
 #include "ParticleEmitter.h"
-#include "SceneMesh.h"
+#include "Scene/SceneMesh.h"
 #include "Interface/IParticleRawGener.h"
 
 #include <memory>

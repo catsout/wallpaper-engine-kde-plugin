@@ -2,7 +2,7 @@
 #include "SceneNode.h"
 #include "Log.h"
 #include <iostream>
-#include "EigenUtil.h"
+#include "Utils/Eigen.h"
 
 using namespace wallpaper;
 using namespace Eigen;

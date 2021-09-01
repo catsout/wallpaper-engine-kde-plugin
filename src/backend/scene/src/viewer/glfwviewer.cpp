@@ -60,6 +60,7 @@ int main(int argc, char**argv)
 	wgl.SetFlip(true);
     //const wallpaper::fs::file_node& x = wallpaper::WallpaperGL::GetPkgfs();
     wgl.Load(argv[2]);
+	wgl.OutGraphviz("framegraph.dot");
 
 	wgl.SetUpdateCallback(updateCallback);
 

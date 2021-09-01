@@ -40,6 +40,8 @@ public:
     float fov {50.0f};
     float nearz {0.01f};
     float farz {10000.0f};
+    std::array<float, 3> ambientcolor {0.2f, 0.2f, 0.2f};
+    std::array<float, 3> skylightcolor {0.3f, 0.3f, 0.3f};
 };
 
 class WPScene {

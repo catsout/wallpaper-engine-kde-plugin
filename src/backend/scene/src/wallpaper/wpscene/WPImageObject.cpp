@@ -5,6 +5,14 @@
 
 using namespace wallpaper::wpscene;
 
+
+bool WPEffectCommand::FromJson(const nlohmann::json& json) {
+    GET_JSON_NAME_VALUE(json, "command", command);
+    GET_JSON_NAME_VALUE(json, "target", target);
+    GET_JSON_NAME_VALUE(json, "source", source);
+    return true;
+}
+
 bool WPEffectFbo::FromJson(const nlohmann::json& json) {
     GET_JSON_NAME_VALUE(json, "name", name);
     GET_JSON_NAME_VALUE(json, "format", format);
@@ -27,6 +35,7 @@ bool WPImageEffect::FromJson(const nlohmann::json& json) {
         return false;
     if(!FromFileJson(jEffect))
         return false;
+
     if(json.contains("passes")) {
         const auto& jPasses = json.at("passes");
         if(jPasses.size() > passes.size()) {
@@ -58,8 +67,13 @@ bool WPImageEffect::FromFileJson(const nlohmann::json& json) {
         bool compose {false};
         for(const auto& jP:jEPasses) {
             if(!jP.contains("material")) {
-                if(jP.contains("command"))
+                if(jP.contains("command")) {
+                    WPEffectCommand cmd;
+                    cmd.FromJson(jP);
+                    cmd.afterpos = passes.size();
+                    commands.push_back(cmd);
                     continue;
+                }
                 LOG_ERROR("no material in effect pass");
                 return false;
             }
@@ -106,7 +120,6 @@ bool WPImageObject::FromJson(const nlohmann::json& json) {
     GET_JSON_NAME_VALUE_NOWARN(jImage, "fullscreen", fullscreen);
 	GET_JSON_NAME_VALUE_NOWARN(json, "name", name);
 	GET_JSON_NAME_VALUE_NOWARN(json, "id", id);
-    LOG_INFO(name);
 	GET_JSON_NAME_VALUE_NOWARN(json, "colorBlendMode", colorBlendMode);
 	if(!fullscreen) {
 		GET_JSON_NAME_VALUE(json, "origin", origin);	

@@ -7,7 +7,7 @@
 
 #include "Type.h"
 #include "SpriteAnimation.h"
-#include "SceneTexture.h"
+#include "Scene/SceneTexture.h"
 
 namespace wallpaper
 {
@@ -29,23 +29,27 @@ struct ImageData {
 	ImageData(ImageData&&) = default;
 };
 
-typedef std::vector<ImageData> MipmapDatas;
-
-struct Image {
-	uint32_t width;
-	uint32_t height;
-	uint32_t mapWidth;
-	uint32_t mapHeight;
+struct ImageHeader {
+	uint16_t width;
+	uint16_t height;
+	uint16_t mapWidth;
+	uint16_t mapHeight;
 	ImageType type {ImageType::UNKNOWN};
 	TextureFormat format;
 	uint32_t count;
 	bool isSprite;
-	SceneTextureSample sample;
+	TextureSample sample;
 	
 	SpriteAnimation spriteAnim;
-
 	// for specific property
 	std::unordered_map<std::string, ImageExtra> extraHeader;
-	std::vector<MipmapDatas> imageDatas;
+
 };
+
+struct Image {
+	typedef std::vector<ImageData> Slot;
+	ImageHeader header;
+	std::vector<Slot> slots;
+};
+
 }

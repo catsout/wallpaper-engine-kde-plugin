@@ -24,7 +24,6 @@ Rectangle {
     property int switchTimer: wallpaper.configuration.SwitchTimer
 
     property string filterStr: wallpaper.configuration.FilterStr
-
     // auto pause
     property bool ok: windowModel.playVideoWallpaper
 

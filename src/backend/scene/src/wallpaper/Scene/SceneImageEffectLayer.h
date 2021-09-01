@@ -1,12 +1,36 @@
 #pragma once
-#include "SceneImageEffect.h"
 #include <vector>
 #include <list>
+#include <memory>
+#include <cstdint>
+#include <string>
+
 
 namespace wallpaper
 {
 
 class SceneNode;
+
+class SceneNode;
+struct SceneImageEffectNode {
+    std::string output; // render target
+    std::shared_ptr<SceneNode> sceneNode; 
+};
+
+struct SceneImageEffect {
+    enum class CmdType {
+        Copy,
+    };
+    struct Command {
+        CmdType cmd {CmdType::Copy};
+        std::string dst;
+        std::string src;
+        uint32_t afterpos {0}; // start at 1, 0 for begin at all
+    };
+    std::vector<Command> commands;
+    std::list<SceneImageEffectNode> nodes; 
+};
+
 class SceneImageEffectLayer {
 public:
     SceneImageEffectLayer(SceneNode* node, float w, float h):m_worldNode(node) {};
@@ -17,7 +41,6 @@ public:
     auto& GetEffect(std::size_t index) { return m_effects.at(index); }
     const auto& FirstTarget() const { return m_firstTarget; }
     void SetFirstTarget(const std::string& ft) { m_firstTarget = ft; }
-
 private:
     SceneNode* m_worldNode;
     std::string m_firstTarget;

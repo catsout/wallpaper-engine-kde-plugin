@@ -26,11 +26,11 @@ public:
     void Render();//uint fbo, int width, int height);
     void Clear();
 	void SetAssets(const std::string& path);
-	void SetFlip(bool value) {m_flip = value;};
+	void SetFlip(bool value);
 	void SetMousePos(float x, float y) {m_mousePos = std::vector<float>({x,y});};
 
 	// call this after loaded
-	void SetDefaultFbo(uint fbo, uint32_t w, uint32_t h);
+	void SetDefaultFbo(uint fbo, uint16_t w, uint16_t h);
 	void SetFillMode(FillMode);
 
 	uint32_t CurrentFps() const;
@@ -43,6 +43,8 @@ public:
 	void Start();
 	void Stop();
 
+	void OutGraphviz(const std::string& path);
+
 private:
 	class impl;
     std::unique_ptr<impl> pImpl;
@@ -53,7 +55,6 @@ private:
 	bool m_inited {false};
 	bool m_loaded {false};
 	int m_framecount {0};
-	bool m_flip {false};
 	std::vector<float> m_mousePos;
 
 	float m_aspect;

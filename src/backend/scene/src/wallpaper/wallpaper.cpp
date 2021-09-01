@@ -4,9 +4,10 @@
 #include "FpsCounter.h"
 #include "FrameTimer.h"
 
-#include "Scene.h"
+#include "Scene/SceneMesh.h"
+#include "Scene/Scene.h"
 #include "WPSceneParser.h"
-#include "GLGraphicManager.h"
+#include "Renderer/GLGraphicManager.h"
 
 #include <chrono>
 #include <thread>
@@ -133,7 +134,7 @@ void WallpaperGL::Stop() {
 }
 
 
-void WallpaperGL::SetDefaultFbo(uint fbo, uint32_t w, uint32_t h) {
+void WallpaperGL::SetDefaultFbo(uint fbo, uint16_t w, uint16_t h) {
 	pImpl->gm.SetDefaultFbo(fbo, w, h, m_fillMode);	
 	pImpl->fboW = w;
 	pImpl->fboH = h;
@@ -149,4 +150,12 @@ void WallpaperGL::SetFillMode(FillMode f) {
 uint32_t WallpaperGL::CurrentFps() const { return pImpl->fpsCounter.Fps(); }
 uint8_t WallpaperGL::Fps() const { return pImpl->frameTimer.Fps(); }
 void WallpaperGL::SetFps(uint8_t value) { return pImpl->frameTimer.SetFps(value); }
+
+void WallpaperGL::SetFlip(bool value) {
+	pImpl->gm.SetFlip(false, value);
+}
+
+void WallpaperGL::OutGraphviz(const std::string& path) {
+	pImpl->gm.OutGriphviz(path);
+}
 

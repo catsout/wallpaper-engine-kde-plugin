@@ -4,76 +4,35 @@
 #include "Util.h"
 #include "Log.h"
 #include "wallpaper.h"
-#include "WPTexImageParser.h"
 #include "Type.h"
+#include "Algorism.h"
+#include "SpecTexs.h"
+
+#include "WPShaderParser.h"
+#include "WPTexImageParser.h"
+#include "Particle/WPParticleRawGener.h"
+#include "WPParticleParser.h"
+
 
 #include "WPShaderValueUpdater.h"
 #include "wpscene/WPImageObject.h"
 #include "wpscene/WPParticleObject.h"
 #include "wpscene/WPScene.h"
 
-#include "Particle/WPParticleRawGener.h"
-#include "WPParticleParser.h"
-#include "Algorism.h"
-
 #include <iostream>
 #include <sstream>
 #include <string>
 #include <unordered_map>
-#include <stack>
-#include <array>
 #include <random>
 #include <cmath>
 #include <functional>
-#include <regex>
 #include <Eigen/Dense>
 
 using namespace wallpaper;
 using namespace Eigen;
 
-typedef std::unordered_map<std::string, int32_t> Combos;
-
-// ui material name to gl uniform name
-typedef std::unordered_map<std::string, std::string> WPAliasValueDict;
-
-typedef std::vector<std::pair<int32_t, std::string>> WPDefaultTexs;
 
 typedef std::function<float()> RandomFn;
-
-struct WPShaderInfo {
-	Combos combos;
-	ShaderValues svs;
-	ShaderValues baseConstSvs;
-	WPAliasValueDict alias;
-	WPDefaultTexs defTexs;
-};
-
-const std::string pre_shader_code = R"(#version 130
-#define GLSL 1
-#define highp
-#define mediump
-#define lowp
-#define mul(x, y) (y * x)
-#define frac fract
-#define CAST2(x) (vec2(x))
-#define CAST3(x) (vec3(x))
-#define CAST4(x) (vec4(x))
-#define CAST3X3(x) (mat3(x))
-#define saturate(x) (clamp(x, 0.0, 1.0))
-#define texSample2D texture2D
-#define texSample2DLod texture2DLod
-#define texture2DLod texture2D
-#define atan2 atan
-#define ddx dFdx
-#define max(x, y) max(y, x)
-#define float1 float
-#define float2 vec2
-#define float3 vec3
-#define float4 vec4
-#define lerp mix
-#define ddy(x) dFdy(-(x))
-
-)";
 
 std::string getAddr(void *p) {
 	return std::to_string(reinterpret_cast<intptr_t>(p));
@@ -164,218 +123,42 @@ void LoadEmitter(ParticleSubSystem& pSys, const wpscene::Particle& wp, float cou
 	}
 }
 
-std::string LoadGlslInclude(const std::string& input) {
-	std::string::size_type pos = 0;
-	std::string output;
-	std::string::size_type linePos = std::string::npos;
-
-	while(linePos = input.find("#include", pos), linePos != std::string::npos) {
-		auto lineEnd = input.find_first_of('\n', linePos);
-		auto lineSize = lineEnd - linePos;
-		auto lineStr = input.substr(linePos, lineSize);
-		output.append(input.substr(pos, linePos-pos));
-
-		auto inP = lineStr.find_first_of('\"') + 1;
-		auto inE = lineStr.find_last_of('\"');
-		auto includeName = lineStr.substr(inP, inE - inP);
-		auto includeSrc = fs::GetContent(WallpaperGL::GetPkgfs(),"shaders/"+includeName);
-		output.append("\n//-----include " + includeName + "\n");
-		output.append(LoadGlslInclude(includeSrc));
-		output.append("\n//-----include end\n");
-
-		pos = lineEnd;
+BlendMode ParseBlendMode(std::string_view str) {
+	BlendMode bm;
+	if(str == "translucent") {
+		bm = BlendMode::Translucent;
+	} else if(str == "additive") {
+		bm = BlendMode::Additive;
+	} else if(str == "normal") {
+		bm = BlendMode::Normal;
+	} else if(str == "disabled") {
+		bm = BlendMode::Disable;
+	} else {
+		LOG_ERROR("unknown blending: "+std::string(str));
 	}
-	output.append(input.substr(pos));
-	return output;
+	return bm;
 }
 
-void ParseWPShader(const std::string& src, int32_t texcount, WPShaderInfo* pWPShaderInfo) {
-	auto& combos = pWPShaderInfo->combos;
-	auto& wpAliasDict = pWPShaderInfo->alias;
-	auto& shadervalues = pWPShaderInfo->svs;
-	auto& defTexs = pWPShaderInfo->defTexs;
-	// pos start of line
-	std::string::size_type pos = 0, lineEnd = std::string::npos;
-	while((lineEnd = src.find_first_of(('\n'), pos)), true) {
-		const auto clineEnd = lineEnd;
-		const auto line = src.substr(pos, lineEnd - pos);
-
-		/*
-        if(line.find("attribute ") != std::string::npos || line.find("in ") != std::string::npos) {
-			update_pos = true;
-		}
-		else if(line.find("varying ") != std::string::npos || line.find("out ") != std::string::npos) {
-			update_pos = true;
-		}
-		*/
-		if(line.find("// [COMBO]") != std::string::npos) {
-			nlohmann::json combo_json;
-			if(PARSE_JSON(line.substr(line.find_first_of('{')), combo_json)) {
-				if(combo_json.contains("combo")) {
-					std::string name;
-					int32_t value = 0;
-					GET_JSON_NAME_VALUE(combo_json, "combo", name);
-					GET_JSON_NAME_VALUE(combo_json, "default", value);
-					combos[name] = value;
-				}
+void ParseSpecTexName(std::string& name, const wpscene::WPMaterial& wpmat, const WPShaderInfo& sinfo) {
+	if(IsSpecTex(name)) {
+		if(name == "_rt_FullFrameBuffer") {
+			name = SpecTex_Default;
+			if(wpmat.shader == "genericimage2" && (sinfo.combos.count("BLENDMODE") == 0 || sinfo.combos.at("BLENDMODE") == 0))
+				name = "";
+			/*
+			if(wpmat.shader == "genericparticle") {
+				name = "_rt_ParticleRefract";
 			}
+			*/
 		}
-		else if(line.find("uniform ") != std::string::npos) {
-			if(line.find("// {") != std::string::npos) {
-				nlohmann::json sv_json;
-				if(PARSE_JSON(line.substr(line.find_first_of('{')), sv_json)) {
-					std::vector<std::string> defines = SpliteString(line.substr(0, line.find_first_of(';')), " ");
-
-					std::string material;
-					GET_JSON_NAME_VALUE_NOWARN(sv_json, "material", material);
-					if(!material.empty())
-						wpAliasDict[material] = defines.back();	
-
-					ShaderValue sv;	
-					sv.name = defines.back();
-					if(defines.back()[0] != 'g') {
-						LOG_INFO("PreShaderSrc User shadervalue not supported");
-					}
-					if(sv_json.contains("default")){
-						auto value = sv_json.at("default");
-						if(sv.name.compare(0, 9, "g_Texture") == 0) {
-							int32_t index {0};
-							std::string strValue;
-							STRCONV(sv.name.substr(9, sv.name.size()-9), index);
-							GET_JSON_VALUE(value, strValue);
-							defTexs.push_back({index, strValue});
-						} else {
-							ShaderValue sv;	
-							sv.name = defines.back();
-							if(value.is_string())
-								GET_JSON_VALUE(value, sv.value);
-							if(value.is_number()) {
-								sv.value.resize(1);
-								GET_JSON_VALUE(value, sv.value[0]);
-							}
-								//sv.value = {value.get<float>()};
-							shadervalues[sv.name] = sv;
-						}
-					}
-					if(sv_json.contains("combo")) {
-						std::string name;
-						int32_t value = 1;
-						GET_JSON_NAME_VALUE(sv_json, "combo", name);
-						if(sv.name.compare(0, 9, "g_Texture") == 0) {
-							int32_t t;
-							STRCONV(sv.name.substr(9), t);
-							if(t >= texcount)
-								value = 0;
-						}
-						combos[name] = value;
-					}
-				}
-			}
+		if(name.compare(0, 6, "_rt_im") == 0) {
+			name = "";
+			LOG_ERROR("unsupported layer texture");
 		}
-
-		// end
-		if(clineEnd == std::string::npos) {
-			break;
+		if(name == "_rt_MipMappedFrameBuffer") {
+			name = "";
 		}
-		if(line.find("void main()") != std::string::npos) {
-			break;
-		}
-		pos = lineEnd + 1;	
-	} 
-}
-
-
-std::size_t FindIncludeInsertPos(const std::string& src, std::size_t startPos) {
-	/* rule:
-	  after attribute/varying/uniform/struct
-	  befor any func
-	  not in {}
-	  not in #if #endif
-	*/
-	auto NposToZero = [](std::size_t p) { return p == std::string::npos ? 0 : p; };
-	auto search = [](const std::string& p, std::size_t pos, const auto& re) {
-		std::smatch match;
-		if(std::regex_search(p.begin() + pos, p.end(), match, re)) {
-			return pos + match.position();
-		}
-		return std::string::npos;
-	};		
-	auto searchLast = [](const std::string& p, const auto& re) { 
-		auto startPos = p.begin();
-		std::smatch match;
-		while(std::regex_search(startPos+1, p.end(), match, re)) {
-			startPos++;
-			startPos += match.position();
-		}
-		return startPos == p.end() ? std::string::npos : startPos - p.begin();
-	};
-	auto nextLinePos = [](const std::string& p, std::size_t pos) {
-		return p.find_first_of('\n', pos) + 1;
-	};
-
-	std::size_t mainPos = src.find("void main(");
-	std::size_t pos;
-	{
-		const std::regex reAfters(R"(\n(attribute|varying|uniform|struct) )");
-		std::size_t afterPos = searchLast(src, reAfters);
-		if(afterPos != std::string::npos) {
-			afterPos = nextLinePos(src, afterPos+1);
-		}
-		pos = std::min({NposToZero(afterPos), mainPos});
 	}
-	{
-		std::stack<std::size_t> ifStack;
-		std::size_t nowPos {0};
-		const std::regex reIfs(R"((#if|#endif))");
-		while(true) {
-			auto p = search(src, nowPos + 1, reIfs);
-			if(p > mainPos || p == std::string::npos) break;
-			if(src.substr(p, 3) == "#if") {
-				ifStack.push(p);
-			} else {
-				if(ifStack.empty()) break;
-				std::size_t ifp = ifStack.top();
-				ifStack.pop();
-				std::size_t endp = p;
-				if(pos > ifp && pos <= endp) {
-					pos = nextLinePos(src, endp + 1); 
-				}
-			}
-			nowPos = p;
-		}
-		pos = std::min({pos, mainPos});
-	}
-
-	return NposToZero(pos);
-}
-
-std::string PreShaderSrc(const std::string& src, int32_t texcount, WPShaderInfo* pWPShaderInfo) {
-	std::string newsrc(src);
-	std::string::size_type pos = 0;
-	std::string include;
-	while(pos = src.find("#include", pos), pos != std::string::npos) {
-		auto begin = pos;
-		pos = src.find_first_of('\n', pos);	
-		newsrc.replace(begin, pos-begin, pos-begin, ' ');
-		include.append(src.substr(begin, pos - begin) + "\n");
-	}
-	include = LoadGlslInclude(include);
-
-	ParseWPShader(include, texcount, pWPShaderInfo);
-	ParseWPShader(newsrc, texcount, pWPShaderInfo);
-
-	newsrc.insert(FindIncludeInsertPos(newsrc, 0), include); 
-	return newsrc;
-}
-
-std::string PreShaderHeader(const std::string& src, const Combos& combos) {
-	std::string header(pre_shader_code);
-	for(const auto& c:combos) {
-		std::string cup(c.first);
-		std::transform(c.first.begin(), c.first.end(), cup.begin(), ::toupper);
-		header.append("#define " + cup + " " + std::to_string(c.second) + "\n");
-	}
-	return header + src;
 }
 
 void LoadMaterial(const wpscene::WPMaterial& wpmat, Scene* pScene, SceneNode* pNode, SceneMaterial* pMaterial, WPShaderValueData* pSvData, WPShaderInfo* pWPShaderInfo=nullptr) {
@@ -395,9 +178,31 @@ void LoadMaterial(const wpscene::WPMaterial& wpmat, Scene* pScene, SceneNode* pN
 	std::string shaderPath("shaders/"+wpmat.shader);
 	std::string svCode = fs::GetContent(WallpaperGL::GetPkgfs(),shaderPath+".vert");
 	std::string fgCode = fs::GetContent(WallpaperGL::GetPkgfs(),shaderPath+".frag");
-	int32_t texcount = wpmat.textures.size();
-	svCode = PreShaderSrc(svCode, texcount, pWPShaderInfo);
-	fgCode = PreShaderSrc(fgCode, texcount, pWPShaderInfo);
+
+	std::vector<WPShaderTexInfo> texinfos;
+	std::unordered_map<std::string, ImageHeader> texHeaders;
+	for(const auto& el:wpmat.textures) {
+		if(el.empty()) {
+			texinfos.push_back({false});
+		}
+		else if(!IsSpecTex(el)) {
+			const auto& texh = pScene->imageParser->ParseHeader(el);
+			texHeaders[el] = texh;
+			if(texh.extraHeader.count("compo1") == 0) {
+				texinfos.push_back({false});
+				continue;
+			}
+			texinfos.push_back({true,{
+				(bool)texh.extraHeader.at("compo1").val,
+				(bool)texh.extraHeader.at("compo2").val,
+				(bool)texh.extraHeader.at("compo3").val,
+			}});
+		} else
+			texinfos.push_back({true});
+	}
+
+	svCode = WPShaderParser::PreShaderSrc(svCode, pWPShaderInfo, texinfos);
+	fgCode = WPShaderParser::PreShaderSrc(fgCode, pWPShaderInfo, texinfos);
 	shader->uniforms = pWPShaderInfo->svs;
 
 	for(const auto& el:wpmat.combos) {
@@ -416,81 +221,69 @@ void LoadMaterial(const wpscene::WPMaterial& wpmat, Scene* pScene, SceneNode* pN
 			textures[t.first] = t.second;
 		}
 	}
-//		svData.resolutions.resize(content.at("textures").size());
+
 	for(int32_t i=0;i<textures.size();i++) {
 		std::string name = textures.at(i);
-		if(name == "_rt_FullFrameBuffer") {
-			if(wpmat.shader == "genericparticle") {
-				name = "_rt_ParticleRefract";
-			}
-			else name = "_rt_default";
-		}
-		if(name.compare(0, 6, "_rt_im") == 0) {
-			name = "";
-			LOG_ERROR("unsupported layer texture");
-		}
+		ParseSpecTexName(name, wpmat, *pWPShaderInfo);
 		material.textures.push_back(name);
 		material.defines.push_back("g_Texture" + std::to_string(i));
 		if(name.empty()) {
 			//LOG_ERROR("empty texture name");
 			continue;
 		}
-		std::vector<float> resolution;
-		if(name.compare(0, 4,"_rt_") == 0) {
+		
+		std::array<uint16_t, 4> resolution;
+		if(IsSpecTex(name)) {
 			if(pScene->renderTargets.count(name) == 0) {
-				LOG_INFO(name);
+				LOG_ERROR(name);
 			} else {
 				svData.renderTargetResolution.push_back({i, name});
 				const auto& rt = pScene->renderTargets.at(name);
 				resolution = {
-					(float)rt.width, 
-					(float)rt.height, 
-					(float)rt.width, 
-					(float)rt.height
+					rt.width,rt.height, 
+					rt.width,rt.height
 				};
 			}
 		} else {
-			auto texh = pScene->imageParser->ParseHeader(name);
+			const ImageHeader& texh = texHeaders.count(name)==0 
+						? pScene->imageParser->ParseHeader(name) 
+						: texHeaders.at(name);
 			if(i == 0) {
-				if(texh->format == TextureFormat::R8)
+				if(texh.format == TextureFormat::R8)
 					fgCode = "#define TEX0FORMAT FORMAT_R8\n" + fgCode;
-				else if (texh->format == TextureFormat::RG8)
+				else if (texh.format == TextureFormat::RG8)
 					fgCode = "#define TEX0FORMAT FORMAT_RG88\n" + fgCode;
 			}
-			if(texh->type == ImageType::UNKNOWN)
+			if(texh.type == ImageType::UNKNOWN)
 				resolution = {
-					(float)texh->width, 
-					(float)texh->height, 
-					(float)texh->mapWidth, 
-					(float)texh->mapHeight
+					texh.width,texh.height, 
+					texh.mapWidth,texh.mapHeight
 				};
 			else
 				resolution = {
-					(float)texh->mapWidth, 
-					(float)texh->mapHeight, 
-					(float)texh->mapWidth, 
-					(float)texh->mapHeight
+					texh.mapWidth,texh.mapHeight, 
+					texh.mapWidth,texh.mapHeight
 				};
 			if(pScene->textures.count(name) == 0) {
 				SceneTexture stex;
-				stex.sample = texh->sample;
+				stex.sample = texh.sample;
 				stex.url = name;
-				if(texh->isSprite) {
-					stex.isSprite = texh->isSprite;
-					stex.spriteAnim = texh->spriteAnim;
+				if(texh.isSprite) {
+					stex.isSprite = texh.isSprite;
+					stex.spriteAnim = texh.spriteAnim;
 				}
-				pScene->textures[name] = std::make_shared<SceneTexture>(stex);
+				pScene->textures[name] = stex;
 			}
-			if((pScene->textures.at(name))->isSprite) {
+			if((pScene->textures.at(name)).isSprite) {
 				material.hasSprite = true;
-				const auto& f1 = texh->spriteAnim.GetCurFrame();
+				const auto& f1 = texh.spriteAnim.GetCurFrame();
 				if(wpmat.shader == "genericparticle") {
 					pWPShaderInfo->combos["SPRITESHEET"] = 1;
 					pWPShaderInfo->combos["THICKFORMAT"] = 1;
 					materialShader.constValues["g_RenderVar1"] = { "g_RenderVar1", {
 						f1.width,
 						f1.height,
-						(float)(texh->spriteAnim.numFrames()),
+						(float)(texh.spriteAnim.numFrames()),
 						f1.rate
 					}};
 				}
@@ -498,12 +291,16 @@ void LoadMaterial(const wpscene::WPMaterial& wpmat, Scene* pScene, SceneNode* pN
 		}
 		if(!resolution.empty()) {
 			const std::string gResolution = "g_Texture" + std::to_string(i) + "Resolution";
-			materialShader.constValues[gResolution] = {gResolution, resolution};
+			std::vector<float> vrl {resolution.begin(), resolution.end()};
+			materialShader.constValues[gResolution] = {gResolution, vrl};
 		}
 	}
+	if(pWPShaderInfo->combos.count("LIGHTING") > 0) {
+		//pWPShaderInfo->combos["PRELIGHTING"] = pWPShaderInfo->combos.at("LIGHTING");
+	}
 
-	svCode = PreShaderHeader(svCode, pWPShaderInfo->combos);
-	fgCode = PreShaderHeader(fgCode, pWPShaderInfo->combos);
+	svCode = WPShaderParser::PreShaderHeader(svCode, pWPShaderInfo->combos);
+	fgCode = WPShaderParser::PreShaderHeader(fgCode, pWPShaderInfo->combos);
 
 	shader->vertexCode = svCode;
 	shader->fragmentCode = fgCode;
@@ -512,22 +309,13 @@ void LoadMaterial(const wpscene::WPMaterial& wpmat, Scene* pScene, SceneNode* pN
 	shader->attrs.push_back({"a_TexCoordVec4", 1});
 	shader->attrs.push_back({"a_Color", 2});
 
+	material.blenmode = ParseBlendMode(wpmat.blending);
 
-	if(wpmat.blending == "translucent") {
-		material.blenmode = BlendMode::Translucent;
-	} else if(wpmat.blending == "additive") {
-		material.blenmode = BlendMode::Additive;
-	} else if(wpmat.blending == "normal") {
-		material.blenmode = BlendMode::Normal;
-	} else if(wpmat.blending == "disabled") {
-		material.blenmode = BlendMode::Disable;
-	} else {
-		LOG_ERROR("unknown blending "+wpmat.blending);
-	}
 	for(const auto& el:pWPShaderInfo->baseConstSvs) {
 		materialShader.constValues[el.first] = el.second;
 	}
 	material.customShader = materialShader;
+	material.name = wpmat.shader;
 }
 
 std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
@@ -579,14 +367,16 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 
 
 	auto upScene = std::make_unique<Scene>();
-	upScene->sceneGraph = std::make_shared<SceneNode>();
 	upScene->imageParser = std::make_unique<WPTexImageParser>();
 	upScene->paritileSys.gener = std::make_unique<WPParticleRawGener>();
 	auto shaderValueUpdater = std::make_unique<WPShaderValueUpdater>(upScene.get());
 
 	shaderValueUpdater->SetOrtho(sc.general.orthogonalprojection.width, sc.general.orthogonalprojection.height);
-
-	upScene->clearColor = sc.general.clearcolor;
+	
+	{	
+		auto& cc = sc.general.clearcolor;
+		upScene->clearColor = {cc[0], cc[1], cc[2]};
+	}
 	
 	WPCameraParallax cameraParallax;
 	cameraParallax.enable = sc.general.cameraparallax;
@@ -598,7 +388,17 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 	const auto& ortho = sc.general.orthogonalprojection; 
 	upScene->ortho[0] = (uint32_t)ortho.width;
 	upScene->ortho[1] = (uint32_t)ortho.height;
-	upScene->renderTargets["_rt_default"] = {(uint32_t)ortho.width, (uint32_t)ortho.height};
+	{
+		std::string def {SpecTex_Default};
+		upScene->renderTargets[def] = {
+			.width = (uint16_t)ortho.width, 
+			.height = (uint16_t)ortho.height,
+			.bind = {
+				.enable = true,
+				.screen = true
+			}
+		};
+	}
 
 	// effect camera 
 	upScene->cameras["effect"] = std::make_shared<SceneCamera>(2, 2, -1.0f, 1.0f);
@@ -623,6 +423,10 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 	globalBaseConstSvs["g_TexelSize"]= {"g_TexelSize", {1.0f/1920.0f, 1.0f/1080.0f}};
 	globalBaseConstSvs["g_TexelSizeHalf"]= {"g_TexelSizeHalf", {1.0f/1920.0f/2.0f, 1.0f/1080.0f/2.0f}};
 
+	globalBaseConstSvs["g_LightAmbientColor"]= {"g_LightAmbientColor", {sc.general.ambientcolor.begin(), sc.general.ambientcolor.end()}};
+	globalBaseConstSvs["g_LightsColorPremultiplied[0]"]= {"g_LightsColorPremultiplied[0]", {848496.0f, 893676.0f, 1250141.0f, 0.0f}};
+	globalBaseConstSvs["g_NormalModelMatrix"] = {"g_NormalModelMatrix", ShaderValue::ValueOf(Matrix3f::Identity())};
+
 
 	Vector3f cori{ortho.width/2.0f,ortho.height/2.0f,0},cscale{1.0f,1.0f,1.0f},cangle(Vector3f::Zero());
 	auto spCamNode = std::make_shared<SceneNode>(cori, cscale, cangle);
@@ -643,23 +447,13 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 		upScene->sceneGraph->AppendChild(spPerCamNode);
 	}
 
-	// particle refract framebuffer
-	{
-		auto rtname = "_rt_ParticleRefract";
-		SceneRenderTarget rt;	
-		upScene->renderTargets[rtname] = rt;
-		SceneBindRenderTarget rtb;
-		rtb.name = "_rt_default";
-		rtb.copy = true;
-		upScene->renderTargetBindMap[rtname] = rtb;
-	}
-
-
     for(const auto& indexT:indexTable) {
 		if(indexT.first == "image") {	
 			auto& wpimgobj = wpimgobjs.at(indexT.second);
 			if(!wpimgobj.visible)
 				continue;
+
+			// coloBlendMode load passthrough manaully
 			if(wpimgobj.colorBlendMode != 0) {
 				wpscene::WPImageEffect colorEffect;
 				wpscene::WPMaterial colorMat;
@@ -673,6 +467,7 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 				colorEffect.materials.push_back(colorMat);
 				wpimgobj.effects.push_back(colorEffect);
 			}	
+
 			int32_t count_eff = 0;
 			for(const auto& wpeffobj:wpimgobj.effects) {
 				if(wpeffobj.visible)
@@ -698,18 +493,21 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 
 			SceneMaterial material;
 			WPShaderValueData svData;
-			if(!hasEffect)
-				svData.parallaxDepth = wpimgobj.parallaxDepth;
 
 			ShaderValues baseConstSvs = globalBaseConstSvs;
-			baseConstSvs["g_Alpha"] = {"g_Alpha", {wpimgobj.alpha}};
-			baseConstSvs["g_Color"] = {"g_Color", wpimgobj.color};
-			baseConstSvs["g_UserAlpha"] = {"g_UserAlpha", {wpimgobj.alpha}};
-			baseConstSvs["g_Brightness"] = {"g_Brightness", {wpimgobj.brightness}};
-
 			WPShaderInfo shaderInfo;
-			shaderInfo.baseConstSvs = baseConstSvs;
-			LoadMaterial(wpimgobj.material, upScene.get(), spImgNode.get(), &material, &svData, &shaderInfo);
+			{
+				if(!hasEffect)
+					svData.parallaxDepth = wpimgobj.parallaxDepth;
+
+				baseConstSvs["g_Alpha"] = {"g_Alpha", {wpimgobj.alpha}};
+				baseConstSvs["g_Color"] = {"g_Color", wpimgobj.color};
+				baseConstSvs["g_UserAlpha"] = {"g_UserAlpha", {wpimgobj.alpha}};
+				baseConstSvs["g_Brightness"] = {"g_Brightness", {wpimgobj.brightness}};
+
+				shaderInfo.baseConstSvs = baseConstSvs;
+				LoadMaterial(wpimgobj.material, upScene.get(), spImgNode.get(), &material, &svData, &shaderInfo);
+			}
 			
 			for(const auto& cs:wpimgobj.material.constantshadervalues) {
 				const auto& name = cs.first;
@@ -786,17 +584,19 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 				effectRTs[0] = "_rt_" + nodeAddr;
 				effectRTs[1] = "_rt_" + nodeAddr + "1";
 				upScene->renderTargets[effectRTs[0]] = {
-					.width = (uint32_t)wpimgobj.size[0], 
-					.height = (uint32_t)wpimgobj.size[1], 
+					.width = (uint16_t)wpimgobj.size[0], 
+					.height = (uint16_t)wpimgobj.size[1], 
 					.allowReuse = true
 				};
 				upScene->renderTargets[effectRTs[1]] = upScene->renderTargets.at(effectRTs[0]);
 				if(wpimgobj.fullscreen) {
-					upScene->renderTargetBindMap[effectRTs[0]] = {
-						.name = "_rt_default"
+					upScene->renderTargets[effectRTs[0]].bind = {
+						.enable = true,
+						.screen = true
 					};
-					upScene->renderTargetBindMap[effectRTs[1]] = {
-						.name = "_rt_default"
+					upScene->renderTargets[effectRTs[1]].bind = {
+						.enable = true,
+						.screen = true
 					};
 				}
 				imgEffectLayer->SetFirstTarget(effectRTs[0]);
@@ -813,34 +613,54 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 					const std::string& inRT = effectRTs[(i_eff)%2];
 					std::string outRT;
 					if(i_eff + 1 == count_eff) {
-						outRT = "_rt_default";
+						outRT = SpecTex_Default;
 					} else {
 						outRT = effectRTs[(i_eff+1)%2];
 					}
 
-					// fbo name map
+					// fbo name map and effect command
 					std::string effaddr = getAddr(imgEffectLayer.get());
 					std::unordered_map<std::string, std::string> fboMap;
-					fboMap["previous"] = inRT;
-					for(int32_t i=0;i < wpeffobj.fbos.size();i++) {
-						const auto& wpfbo = wpeffobj.fbos.at(i);
-						std::string rtname = "_rt_" + effaddr + std::to_string(i);
-						if(wpimgobj.fullscreen) {
-							upScene->renderTargetBindMap[rtname] = {
-								.name = "_rt_default",
-								.copy = false,
-								.scale = 1.0f/wpfbo.scale
-							};
-							upScene->renderTargets[rtname] = {2, 2, true};
-						} else {
-							// i+2 for not override object's rt
-							upScene->renderTargets[rtname] = {
-								.width = (uint32_t)(wpimgobj.size[0]/wpfbo.scale),
-								.height = (uint32_t)(wpimgobj.size[1]/wpfbo.scale), 
-								.allowReuse = true
-							};
+					{
+						fboMap["previous"] = inRT;
+						for(int32_t i=0;i < wpeffobj.fbos.size();i++) {
+							const auto& wpfbo = wpeffobj.fbos.at(i);
+							std::string rtname = wpfbo.name +"_"+ effaddr;
+							if(wpimgobj.fullscreen) {
+								upScene->renderTargets[rtname] = {2, 2, true};
+								upScene->renderTargets[rtname].bind = {
+									.enable = true,
+									.screen = true,
+									.scale = 1.0f/wpfbo.scale
+								};
+							} else {
+								// i+2 for not override object's rt
+								upScene->renderTargets[rtname] = {
+									.width = (uint16_t)(wpimgobj.size[0]/wpfbo.scale),
+									.height = (uint16_t)(wpimgobj.size[1]/wpfbo.scale), 
+									.allowReuse = true
+								};
+							}
+							fboMap[wpfbo.name] = rtname;
 						}
-						fboMap[wpfbo.name] = rtname;
+					}
+					// load effect commands
+					{
+						for(const auto& el:wpeffobj.commands) {
+							if(el.command != "copy") {
+								LOG_ERROR("Unknown effect command: " + el.command);
+								continue;
+							}
+							if(fboMap.count(el.target) + fboMap.count(el.source) < 2) {
+								LOG_ERROR("Unknown effect command dst or src: " + el.target + " " + el.source);
+								continue;
+							}
+							imgEffect->commands.push_back({
+								.cmd = SceneImageEffect::CmdType::Copy,
+								.dst = fboMap[el.target],
+								.src = fboMap[el.source]
+							});
+						}
 					}
 
 					for(int32_t i_mat=0;i_mat < wpeffobj.materials.size();i_mat++) {
@@ -908,21 +728,6 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 								LOG_ERROR("ShaderValue: " +name+ " not found in glsl");
 							} else {
 								material.customShader.constValues[glname] = {glname, value}; 
-							}
-						}
-						for(int32_t i=0;i<material.textures.size();i++) {
-							auto& t = material.textures.at(i);
-							if(t == matOutRT) {
-								t = "_rt_" + effmataddr + std::to_string(i);
-								upScene->renderTargetBindMap[t] = {
-									.name = matOutRT,
-									.copy = true
-								};
-								upScene->renderTargets[t] = upScene->renderTargets.at(matOutRT);
-								for(auto& el:svData.renderTargetResolution) {
-									if(el.first == i)
-										el = {i,t};
-								}
 							}
 						}
 						auto spMesh = std::make_shared<SceneMesh>();

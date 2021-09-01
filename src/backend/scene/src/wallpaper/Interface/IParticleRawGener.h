@@ -3,7 +3,7 @@
 #include <functional>
 
 #include "Particle/Particle.h"
-#include "SceneMesh.h"
+#include "Scene/SceneMesh.h"
 
 namespace wallpaper {
 struct ParticleRawGenSpec {
