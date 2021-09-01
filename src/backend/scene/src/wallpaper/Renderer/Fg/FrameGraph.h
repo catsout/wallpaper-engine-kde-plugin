@@ -72,8 +72,8 @@ public:
 
 	const DependencyGraph& Graph() const { return m_graph; }
 
-	void ToGraphviz() const {
-		m_graph.ToGraphviz("");	
+	void ToGraphviz(std::string_view path) const {
+		m_graph.ToGraphviz(path);	
 	};
 private:
 	struct ResourceData {

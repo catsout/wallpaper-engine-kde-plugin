@@ -120,7 +120,6 @@ bool WPImageObject::FromJson(const nlohmann::json& json) {
     GET_JSON_NAME_VALUE_NOWARN(jImage, "fullscreen", fullscreen);
 	GET_JSON_NAME_VALUE_NOWARN(json, "name", name);
 	GET_JSON_NAME_VALUE_NOWARN(json, "id", id);
-    LOG_INFO(name);
 	GET_JSON_NAME_VALUE_NOWARN(json, "colorBlendMode", colorBlendMode);
 	if(!fullscreen) {
 		GET_JSON_NAME_VALUE(json, "origin", origin);	

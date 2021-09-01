@@ -155,3 +155,7 @@ void WallpaperGL::SetFlip(bool value) {
 	pImpl->gm.SetFlip(false, value);
 }
 
+void WallpaperGL::OutGraphviz(const std::string& path) {
+	pImpl->gm.OutGriphviz(path);
+}
+

@@ -501,7 +501,6 @@ void GLGraphicManager::InitializeScene(Scene* scene) {
 	TraverseNode(std::bind(&GLGraphicManager::ToFrameGraphPass, this, _1, std::string(SpecTex_Default)), scene->sceneGraph.get());
 	AddEndPass(*m_fg, *(pImpl->glw), m_fgrscMap.at(std::string(SpecTex_Default)), m_xyflip);
 	m_fg->Compile();
-	m_fg->ToGraphviz();
 }
 
 void GLGraphicManager::Draw() {
@@ -593,6 +592,10 @@ void GLGraphicManager::Destroy() {
 	m_shaderMap.clear();
 	m_fgrscMap.clear();
 	pImpl->glw->ClearAll();
+}
+
+void GLGraphicManager::OutGriphviz(std::string_view path) {
+	m_fg->ToGraphviz(path);
 }
 
 GLGraphicManager::~GLGraphicManager() {

@@ -43,6 +43,8 @@ public:
 	void Start();
 	void Stop();
 
+	void OutGraphviz(const std::string& path);
+
 private:
 	class impl;
     std::unique_ptr<impl> pImpl;

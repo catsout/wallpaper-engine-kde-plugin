@@ -65,6 +65,9 @@ std::vector<NodeID> DependencyGraph::TopologicalOrder() const {
 void DependencyGraph::ToGraphviz(std::string_view path) const {
 	std::string output;output.reserve(4096);
 	std::ofstream fs;
+	fs.open(std::string(path), std::fstream::out | std::fstream::trunc);
+	if(!fs.is_open()) return;
+
 	output += R"(
 digraph framegraph {
 node [shape=box]
@@ -80,7 +83,7 @@ node [shape=box]
 	}
 
 	output += "}";
-	fs.open("out.dot", std::fstream::out | std::fstream::trunc);
+
 	fs << output;
 	fs.close();
 };

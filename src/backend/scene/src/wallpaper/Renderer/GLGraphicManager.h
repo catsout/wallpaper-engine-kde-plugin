@@ -31,6 +31,8 @@ public:
 	void SetDefaultFbo(uint fbo, uint16_t w, uint16_t h, FillMode FillMode = FillMode::ASPECTCROP);
 	void ChangeFillMode(FillMode);
 	virtual void SetFlip(bool xflip, bool yflip) override { m_xyflip = {xflip, yflip}; };
+
+	void OutGriphviz(std::string_view path);
 private:
 	class impl;
     std::unique_ptr<impl> pImpl;
