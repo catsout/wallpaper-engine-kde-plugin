@@ -37,7 +37,8 @@ typedef std::function<float()> RandomFn;
 std::string getAddr(void *p) {
 	return std::to_string(reinterpret_cast<intptr_t>(p));
 }
-void GenCardMesh(SceneMesh& mesh, const std::vector<int> size, bool autosize=false) {
+// mapRate < 1.0
+void GenCardMesh(SceneMesh& mesh, const std::array<uint16_t, 2> size, const std::array<float, 2> mapRate = {1.0f,1.0f}) {
 	float left = -(size[0]/2.0f);
 	float right = size[0]/2.0f;
 	float bottom = -(size[1]/2.0f);
@@ -50,14 +51,7 @@ void GenCardMesh(SceneMesh& mesh, const std::vector<int> size, bool autosize=fal
 			left,  top, z,
 	};
 	std::vector<float> texCoord;
-	float tw = 1.0f,th = 1.0f;
-	if(autosize) {
-		uint32_t x = 1,y = 1;
-		while(x < size[0]) x*=2;	
-		while(y < size[1]) y*=2;	
-		tw = size[0] / (float)x;
-		th = size[1] / (float)y;
-	}
+	float tw = mapRate[0],th = mapRate[1];
 	texCoord = {
 			0.0f, 0.0f,
 			tw, 0.0f,
@@ -254,16 +248,11 @@ void LoadMaterial(const wpscene::WPMaterial& wpmat, Scene* pScene, SceneNode* pN
 				else if (texh.format == TextureFormat::RG8)
 					fgCode = "#define TEX0FORMAT FORMAT_RG88\n" + fgCode;
 			}
-			if(texh.type == ImageType::UNKNOWN)
-				resolution = {
-					texh.width,texh.height, 
-					texh.mapWidth,texh.mapHeight
-				};
-			else
-				resolution = {
-					texh.mapWidth,texh.mapHeight, 
-					texh.mapWidth,texh.mapHeight
-				};
+			resolution = {
+				texh.width,texh.height, 
+				texh.mapWidth,texh.mapHeight
+			};
+
 			if(pScene->textures.count(name) == 0) {
 				SceneTexture stex;
 				stex.sample = texh.sample;
@@ -533,15 +522,19 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 			// mesh
 			auto spMesh = std::make_shared<SceneMesh>();
 			auto& mesh = *spMesh;
-			bool pow2Split = false;
 
-			if(!wpimgobj.nopadding && material.customShader.constValues.count("g_Texture0Resolution") != 0) {
-				const auto& resolution = material.customShader.constValues.at("g_Texture0Resolution").value;
-				pow2Split = (int32_t)resolution[0] != (int32_t)resolution[2];
-				pow2Split = pow2Split || (int32_t)resolution[1] != (int32_t)resolution[3];
+			{
+				// deal with pow of 2
+				std::array<float, 2> mapRate {1.0f, 1.0f};
+				if(!wpimgobj.nopadding && material.customShader.constValues.count("g_Texture0Resolution") != 0) {
+					const auto& r = material.customShader.constValues.at("g_Texture0Resolution").value;
+					mapRate = {
+						r[2] / r[0],
+						r[3] / r[1]
+					};
+				}
+				GenCardMesh(mesh, {(uint16_t)wpimgobj.size[0], (uint16_t)wpimgobj.size[1]}, mapRate);
 			}
-
-			GenCardMesh(mesh, std::vector<int32_t>(wpimgobj.size.begin(), wpimgobj.size.end()), pow2Split);
 
 			// material blendmode for last step to use
 			auto imgBlendMode = material.blenmode;
@@ -734,14 +727,14 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 						auto& mesh = *spMesh;
 						// the last effect and last material
 						if((i_eff + 1 == count_eff && i_mat + 1 == wpeffobj.materials.size()) && !wpimgobj.fullscreen) {
-							GenCardMesh(mesh, {(int32_t)wpimgobj.size[0], (int32_t)wpimgobj.size[1]}, false);
+							GenCardMesh(mesh, {(uint16_t)wpimgobj.size[0], (uint16_t)wpimgobj.size[1]});
 							spEffNode->CopyTrans(*spImgNode);
 							if(!isCompose)
 								spImgNode->CopyTrans(SceneNode());
 							svData.parallaxDepth = wpimgobj.parallaxDepth;
 							material.blenmode = imgBlendMode;
 						} else {
-							GenCardMesh(mesh, {2, 2}, false);
+							GenCardMesh(mesh, {2, 2});
 							// disable blend for effect node, as it seems blend manually
 							material.blenmode = BlendMode::Normal;
 							spEffNode->SetCamera("effect");

@@ -151,6 +151,12 @@ std::shared_ptr<Image> WPTexImageParser::Parse(const std::string& name) {
             auto& mipmap = mipmaps.at(i_mipmap);
             mipmap.width = readInt32(file);
             mipmap.height = readInt32(file);
+            if (i_mipmap == 0) {
+                if(mipmap.width != img.header.width || mipmap.height != img.header.height) {
+                    img.header.width = mipmap.width;
+                    img.header.height = mipmap.height;
+                }
+            }
 
             bool LZ4_compressed = false;
             int32_t decompressed_size = 0;
@@ -212,10 +218,15 @@ ImageHeader WPTexImageParser::ParseHeader(const std::string& name) {
         for (int32_t i_image = 0; i_image < image_count; i_image++) {
             int mipmap_count = readInt32(file);
             for (int32_t i_mipmap = 0; i_mipmap < mipmap_count; i_mipmap++) {
-                float width = readInt32(file);
-                float height = readInt32(file);
-                if (i_mipmap == 0)
-                    imageDatas.at(i_image) = {width, height};
+                int32_t width = readInt32(file);
+                int32_t height = readInt32(file);
+                if (i_mipmap == 0) {
+                    imageDatas.at(i_image) = {(float)width, (float)height};
+                    if(width != header.width || height != header.height) {
+                        header.width = width;
+                        header.height = height;
+                    }
+                }
                 if (header.extraHeader["texb"].val > 1) {
                     int32_t LZ4_compressed = readInt32(file);
                     int32_t decompressed_size = readInt32(file);
@@ -263,6 +274,15 @@ ImageHeader WPTexImageParser::ParseHeader(const std::string& name) {
             sf.rate = height / width;
             header.spriteAnim.AppendFrame(sf);
         }
+    } else {
+            int mipmap_count = readInt32(file);
+            int32_t width = readInt32(file);
+            int32_t height = readInt32(file);
+            if(width != header.width || height != header.height) {
+                header.width = width;
+                header.height = height;
+            }
+ 
     }
     return header;
 }
