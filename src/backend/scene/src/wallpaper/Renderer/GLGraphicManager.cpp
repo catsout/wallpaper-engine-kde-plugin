@@ -485,6 +485,14 @@ HwRenderTargetHandle GLGraphicManager::CreateRenderTarget(RenderTargetDesc desc)
 	return pImpl->glw->CreateRenderTarget(gdesc);
 }
 
+void GLGraphicManager::UpdateRenderTarget(HwRenderTargetHandle h, RenderTargetDesc desc) {
+	gl::GFrameBuffer::Desc gdesc;
+	gdesc.width = desc.width;
+	gdesc.height = desc.height;
+	gdesc.attachs = desc.attachs;
+	return pImpl->glw->UpdateRenderTarget(h, gdesc);
+}
+
 void GLGraphicManager::DestroyTexture(HwTexHandle h) {
 	pImpl->glw->DestroyTexture(h);
 }

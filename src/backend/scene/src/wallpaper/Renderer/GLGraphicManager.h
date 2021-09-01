@@ -25,6 +25,7 @@ public:
 	HwTexHandle CreateTexture(const Image&) override; 
 	void ClearTexture(HwTexHandle thandle, std::array<float, 4> clearcolors) override;
 	HwRenderTargetHandle CreateRenderTarget(RenderTargetDesc) override;
+	void UpdateRenderTarget(HwRenderTargetHandle, RenderTargetDesc) override;
 	void DestroyTexture(HwTexHandle) override;
 	void DestroyRenderTarget(HwRenderTargetHandle) override;
 

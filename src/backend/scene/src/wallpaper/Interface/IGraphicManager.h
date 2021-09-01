@@ -56,6 +56,7 @@ public:
 	};
 	virtual void ClearTexture(HwTexHandle thandle, std::array<float, 4> clearcolors) {};
 	virtual HwRenderTargetHandle CreateRenderTarget(RenderTargetDesc) { return {}; }
+	virtual void UpdateRenderTarget(HwRenderTargetHandle, RenderTargetDesc) {}
 	virtual void DestroyTexture(HwTexHandle) {}
 	virtual void DestroyRenderTarget(HwRenderTargetHandle) {}
 

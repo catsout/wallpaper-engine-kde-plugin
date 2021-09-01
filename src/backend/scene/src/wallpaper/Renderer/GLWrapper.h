@@ -547,7 +547,8 @@ public:
 		glDeleteFramebuffers(1, &fbo);
 		m_context.curFb = 0;
 		CHECK_GL_ERROR_IF_DEBUG();
-		gBindFramebuffer(GL_FRAMEBUFFER, m_context.backCurFb);
+
+		//gBindFramebuffer(GL_FRAMEBUFFER, m_context.backCurFb);
 	}
 
 	void ClearTexture(HwTexHandle thandle, std::array<float, 4> clearcolors) {
@@ -561,7 +562,7 @@ public:
 		glClearColor(clearcolors[0],clearcolors[1],clearcolors[2],clearcolors[3]);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		gBindFramebuffer(GL_FRAMEBUFFER, m_context.backCurFb);
+		//gBindFramebuffer(GL_FRAMEBUFFER, m_context.backCurFb);
 	}
 
 	void ApplyBindings(const GBindings& binds) {
@@ -647,6 +648,22 @@ public:
 		gBindFramebuffer(GL_FRAMEBUFFER, m_context.backCurFb);
 		CHECK_GL_ERROR_IF_DEBUG();
 		return rtHandle;
+	}
+	void UpdateRenderTarget(HwRenderTargetHandle h, const GFrameBuffer::Desc& desc) {
+		auto *fb = m_fbPool.Lookup(h);
+		if(fb == nullptr) return;
+		gBindFramebuffer(GL_FRAMEBUFFER, fb->glfb);
+		for(uint8_t i=0;i<desc.attachs.size();i++) {
+			auto* tex = m_texPool.Lookup(desc.attachs[i]);
+			if(i == 0 && tex == nullptr)
+				assert(false);
+			if(tex == nullptr) break;
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, 
+				tex->desc.target, tex->gltexs[tex->desc.activeSlot], 0);
+		}
+		CHECK_GL_ERROR_IF_DEBUG();
+
+		//gBindFramebuffer(GL_FRAMEBUFFER, m_context.backCurFb);
 	}
 	void DestroyRenderTarget(HwRenderTargetHandle h) {
 		auto * fb = m_fbPool.Lookup(h);
