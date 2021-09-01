@@ -29,6 +29,8 @@ namespace wallpaper
 namespace gl
 {
 
+constexpr uint16_t TexSlotMaxNum {512};
+
 inline void checkGlError(const char* file, const char* func, int line)
 {
 	int err = glGetError();
@@ -171,10 +173,14 @@ struct GTexture {
 		TextureFormat format {TextureFormat::RGBA8};
 		TextureSample sample;
 	};
-	std::array<GLuint, 12> gltexs;
+	std::array<GLuint, TexSlotMaxNum> gltexs;
 	Desc desc;
 	static void Init(GTexture& t, const Desc& d) {
 		t.desc = d;
+		if(t.desc.numSlots > TexSlotMaxNum) {
+			LOG_ERROR("texture solts num overflow:" + std::to_string(t.desc.numSlots));
+			t.desc.numSlots = TexSlotMaxNum;
+		}
 		for(uint16_t i=0;i<t.desc.numSlots;i++) {
 			auto& gltex = t.gltexs[i];
 			glGenTextures(1, &gltex);
@@ -443,13 +449,13 @@ public:
 		HwTexHandle texh = m_texPool.Alloc(desc);
 		auto* tex = m_texPool.Lookup(texh);
 		if(image != nullptr) {
-			tex->desc.numSlots = image->slots.size();
-			for(uint16_t i=0;i<image->slots.size();i++) {
+			auto slotsNum = tex->desc.numSlots;
+			for(uint16_t i=0;i<slotsNum;i++) {
 				auto target = tex->desc.target;
 				glBindTexture(target, tex->gltexs[i]);
+				CHECK_GL_ERROR_IF_DEBUG();
+
 				auto& img = image->slots[i];
-
-
 				for(uint16_t imip=0;imip<img.size();imip++) {
 					auto& mip = img[imip];
 					GLenum format, type;	
@@ -461,7 +467,8 @@ public:
 					if(texformat == TextureFormat::R8 || texformat == TextureFormat::RG8) bufferSize *= 2;
 					glGenBuffers(1, &pbo);
 					glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbo);
-					glBufferData(GL_PIXEL_UNPACK_BUFFER, bufferSize, nullptr, GL_STATIC_DRAW);
+					glBufferData(GL_PIXEL_UNPACK_BUFFER, bufferSize, NULL, GL_STATIC_DRAW);
+					CHECK_GL_ERROR_IF_DEBUG();
 					void* ptr = glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY);
 					CHECK_GL_ERROR_IF_DEBUG();
 					if(ptr == nullptr) {
@@ -485,6 +492,7 @@ public:
 						glCompressedTexImage2D(tex->desc.target, imip, internalFormat, mip.width, mip.height, 0, mip.size, NULL);
 						break;
 					}
+					glBindBuffer(GL_PIXEL_UNPACK_BUFFER, NULL);
 					glDeleteBuffers(1, &pbo);
 					CHECK_GL_ERROR_IF_DEBUG();
 				}
