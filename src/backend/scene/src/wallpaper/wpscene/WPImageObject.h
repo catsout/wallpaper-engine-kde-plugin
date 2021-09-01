@@ -43,7 +43,7 @@ public:
 class WPImageObject {
 public:
     bool FromJson(const nlohmann::json&);
-    int32_t id;
+    int32_t id {0};
     std::string name;
     std::vector<float> origin {0.0f, 0.0f, 0.0f};
     std::vector<float> scale {1.0f, 1.0f, 1.0f};
@@ -58,7 +58,8 @@ public:
 	bool nopadding {false};
     bool visible {true};
     std::string image;
-    WPMaterial material;    
+    std::string alignment {"center"};
+    WPMaterial material;
     std::vector<WPImageEffect> effects;
 };
 

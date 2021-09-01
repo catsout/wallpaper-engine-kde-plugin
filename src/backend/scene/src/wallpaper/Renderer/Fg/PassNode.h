@@ -22,6 +22,7 @@ struct RenderPassData {
 	};
 	HwRenderTargetHandle target;
 	std::array<FrameGraphResource, MaxAttachmentNum> attachments; 
+	IGraphicManager::RenderTargetDesc lastGMDesc;
 	ViewPort viewPort;
 };
 

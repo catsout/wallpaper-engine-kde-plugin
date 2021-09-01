@@ -53,6 +53,11 @@ public:
 		uint16_t width {1};
 		uint16_t height {1};
 		std::array<HwTexHandle, MaxAttachmentNum> attachs;
+		bool operator==(const RenderTargetDesc& o) const {
+			return width == o.width &&
+				height == o.height &&
+				attachs == o.attachs;
+		}
 	};
 	virtual void ClearTexture(HwTexHandle thandle, std::array<float, 4> clearcolors) {};
 	virtual HwRenderTargetHandle CreateRenderTarget(RenderTargetDesc) { return {}; }

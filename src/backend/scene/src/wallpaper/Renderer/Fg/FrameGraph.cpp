@@ -169,7 +169,7 @@ void FrameGraph::Compile() {
 	}
 }
 
-wallpaper::IGraphicManager::RenderTargetDesc GenRenderTargetDesc(const RenderPassData& renderdata, FrameGraphResourceManager& rm) {
+wallpaper::IGraphicManager::RenderTargetDesc GenGMRenderTargetDesc(const RenderPassData& renderdata, FrameGraphResourceManager& rm) {
 	wallpaper::IGraphicManager::RenderTargetDesc desc; 
 	for(int i=0;i<renderdata.attachments.size();i++) {
 		if(!renderdata.attachments[i].IsInitialed()) break;
@@ -230,10 +230,13 @@ void FrameGraph::Execute(IGraphicManager& gm) {
 		{
 			auto* renderdata = node->GetRenderPassData().get();
 			if(renderdata != nullptr) {
-				if(!HwRenderTargetHandle::IsInvalied(renderdata->target)) {
-					gm.UpdateRenderTarget(renderdata->target, GenRenderTargetDesc(*renderdata, rm));
-				} else {
-					renderdata->target = gm.CreateRenderTarget(GenRenderTargetDesc(*renderdata, rm));
+				auto gdesc = GenGMRenderTargetDesc(*renderdata, rm);
+				if(HwRenderTargetHandle::IsInvalied(renderdata->target)) {
+					renderdata->target = gm.CreateRenderTarget(gdesc);
+					renderdata->lastGMDesc = gdesc;
+				} else if(!(gdesc == renderdata->lastGMDesc)) {
+					gm.UpdateRenderTarget(renderdata->target, gdesc);
+					renderdata->lastGMDesc = gdesc;
 				}
 			}
 		}

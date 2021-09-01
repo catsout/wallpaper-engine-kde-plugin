@@ -112,6 +112,7 @@ bool WPImageEffect::FromFileJson(const nlohmann::json& json) {
 bool WPImageObject::FromJson(const nlohmann::json& json) {
     GET_JSON_NAME_VALUE(json, "image", image);
     GET_JSON_NAME_VALUE_NOWARN(json, "visible", visible);
+    GET_JSON_NAME_VALUE_NOWARN(json, "alignment", alignment);
     nlohmann::json jImage;
     if(!PARSE_JSON(fs::GetContent(WallpaperGL::GetPkgfs(), image), jImage)) {
         LOG_ERROR("Can't load image json: " + image);
