@@ -83,9 +83,9 @@ It's almost usable.
 - Scene script  
 - Text layer  
 - Audio play
-- PBR light
-- Camera shake,fade,~~zoom,parallax~~
+- Camera shake,fade,path,~~zoom,parallax~~
 - Global bloom effect  
+- ~~PBR light~~
 - ~~Perspective renderable~~  
 - ~~Particle System~~  
 - ~~Gif scene~~
