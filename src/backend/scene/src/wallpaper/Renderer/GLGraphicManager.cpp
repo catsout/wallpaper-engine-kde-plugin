@@ -148,9 +148,11 @@ void GLGraphicManager::AddCopyCmdPasses(const std::string& dst, const std::strin
 		[&](fg::FrameGraphBuilder& builder, PassData& data) {
 			if(createSrc) {
 				data.src = builder.CreateTexture(GenFgTextureRsc(*m_scene, src, m_screenSize, false));
+				m_fgrscMap[src] = data.src;
 			} else data.src = m_fgrscMap[src];
 			if(createDst) {
 				data.output = builder.CreateTexture(GenFgTextureRsc(*m_scene, dst, m_screenSize, true));
+				m_fgrscMap[dst] = data.output;
 			} else data.output = m_fgrscMap[dst];
 			data.src = builder.Read(data.src);
 			data.output = builder.Write(data.output);
@@ -159,11 +161,6 @@ void GLGraphicManager::AddCopyCmdPasses(const std::string& dst, const std::strin
 			pImpl->glw->CopyTexture(rsm.GetTexture(data.output)->handle, rsm.GetTexture(data.src)->handle);
 		}
 	);
-
-	if(createSrc) {
-		auto movedSrc = m_fg->AddMovePass(pass->src);
-		m_fgrscMap[src] = movedSrc;
-	}
 }
 
 
@@ -333,8 +330,8 @@ void GLGraphicManager::ToFrameGraphPass(SceneNode* node, std::string output) {
 						data.inputs[i] = m_fgrscMap[url];
 					}
 				} else if(m_scene->renderTargets.count(url) > 0) {
-					const auto& desc = GenFgTextureRsc(*m_scene, url, m_screenSize, true);
-					data.inputs[i] = builder.CreateTexture(desc);
+					m_fgrscMap[url] = builder.CreateTexture(GenFgTextureRsc(*m_scene, url, m_screenSize, true));
+					data.inputs[i] = m_fgrscMap[url];
 				} else {
 					LOG_ERROR(url + " not found, at pass " + passName);
 				}
