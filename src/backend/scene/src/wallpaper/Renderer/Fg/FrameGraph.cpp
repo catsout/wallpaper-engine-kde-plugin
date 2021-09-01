@@ -187,8 +187,8 @@ void FrameGraph::Execute(IGraphicManager& gm) {
 						if(tex->desc.getImgOp) {
 							auto img = tex->desc.getImgOp();
 							tex->handle = m_texCache.Query(*img, gm);
-							tex->desc.width = img->width;
-							tex->desc.height = img->height;
+							tex->desc.width = img->header.width;
+							tex->desc.height = img->header.height;
 						} else {
 							tex->handle = m_texCache.Query(tex->desc, gm);
 						}

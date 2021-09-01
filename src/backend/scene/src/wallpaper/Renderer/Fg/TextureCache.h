@@ -86,9 +86,9 @@ public:
 
 	HwTexHandle Query(const Image& img, IGraphicManager& gm) {
 		TexHash hash = TextureKey::HashValue(TextureKey{
-			.width = (uint16_t)img.width,
-			.height = (uint16_t)img.height,
-			.format = img.format
+			.width = (uint16_t)img.header.width,
+			.height = (uint16_t)img.header.height,
+			.format = img.header.format
 		});
 		// not use unused as image
 		HwTexHandle h = gm.CreateTexture(img);

@@ -4,6 +4,8 @@
 #include "wallpaper.h"
 #include "pkg.h"
 
+#include "wpscene/WPUniform.h"
+
 #include <regex>
 #include <stack>
 
@@ -62,11 +64,13 @@ std::string LoadGlslInclude(const std::string& input) {
 }
 
 
-void ParseWPShader(const std::string& src, int32_t texcount, WPShaderInfo* pWPShaderInfo) {
+void ParseWPShader(const std::string& src, WPShaderInfo* pWPShaderInfo, const std::vector<WPShaderTexInfo>& texinfos) {
 	auto& combos = pWPShaderInfo->combos;
 	auto& wpAliasDict = pWPShaderInfo->alias;
 	auto& shadervalues = pWPShaderInfo->svs;
 	auto& defTexs = pWPShaderInfo->defTexs;
+	int32_t texcount = texinfos.size();
+
 	// pos start of line
 	std::string::size_type pos = 0, lineEnd = std::string::npos;
 	while((lineEnd = src.find_first_of(('\n'), pos)), true) {
@@ -106,18 +110,32 @@ void ParseWPShader(const std::string& src, int32_t texcount, WPShaderInfo* pWPSh
 
 					ShaderValue sv;	
 					sv.name = defines.back();
-					if(defines.back()[0] != 'g') {
-						LOG_INFO("PreShaderSrc User shadervalue not supported");
-					}
-					if(sv_json.contains("default")){
-						auto value = sv_json.at("default");
-						if(sv.name.compare(0, 9, "g_Texture") == 0) {
-							int32_t index {0};
-							std::string strValue;
-							STRCONV(sv.name.substr(9, sv.name.size()-9), index);
-							GET_JSON_VALUE(value, strValue);
-							defTexs.push_back({index, strValue});
-						} else {
+					bool istex = sv.name.compare(0, 9, "g_Texture") == 0;
+					if(istex) {
+						wpscene::WPUniformTex wput;
+						wput.FromJson(sv_json);
+						int32_t index {0};
+						STRCONV(sv.name.substr(9), index);
+						if(!wput.default_.empty())
+							defTexs.push_back({index,wput.default_});
+						if(!wput.combo.empty()) {
+							int32_t value {1};
+							if(index >= texcount)
+								value = 0;
+							combos[wput.combo] = value;
+						}
+						if(index < texcount && texinfos[index].enabled) {
+							auto& compos = texinfos[index].composEnabled;
+							int num = std::min(compos.size(), wput.components.size());
+							for(int i=0;i<num;i++) {
+								if(compos[i])
+									combos[wput.components[i].combo] = 1;
+							}
+						}
+
+					} else {
+						if(sv_json.contains("default")){
+							auto value = sv_json.at("default");
 							ShaderValue sv;	
 							sv.name = defines.back();
 							if(value.is_string())
@@ -129,28 +147,22 @@ void ParseWPShader(const std::string& src, int32_t texcount, WPShaderInfo* pWPSh
 								//sv.value = {value.get<float>()};
 							shadervalues[sv.name] = sv;
 						}
-					}
-					if(sv_json.contains("combo")) {
-						std::string name;
-						int32_t value = 1;
-						GET_JSON_NAME_VALUE(sv_json, "combo", name);
-						if(sv.name.compare(0, 9, "g_Texture") == 0) {
-							int32_t t;
-							STRCONV(sv.name.substr(9), t);
-							if(t >= texcount)
-								value = 0;
+						if(sv_json.contains("combo")) {
+							std::string name;
+							int32_t value = 1;
+							GET_JSON_NAME_VALUE(sv_json, "combo", name);
+							combos[name] = value;
 						}
-						combos[name] = value;
+					}
+					if(defines.back()[0] != 'g') {
+						LOG_INFO("PreShaderSrc User shadervalue not supported");
 					}
 				}
 			}
 		}
 
 		// end
-		if(clineEnd == std::string::npos) {
-			break;
-		}
-		if(line.find("void main()") != std::string::npos) {
+		if(line.find("void main()") != std::string::npos || clineEnd == std::string::npos) {
 			break;
 		}
 		pos = lineEnd + 1;	
@@ -221,7 +233,7 @@ std::size_t FindIncludeInsertPos(const std::string& src, std::size_t startPos) {
 	return NposToZero(pos);
 }
 
-std::string WPShaderParser::PreShaderSrc(const std::string& src, int32_t texcount, WPShaderInfo* pWPShaderInfo) {
+std::string WPShaderParser::PreShaderSrc(const std::string& src, WPShaderInfo* pWPShaderInfo, const std::vector<WPShaderTexInfo>& texinfos) {
 	std::string newsrc(src);
 	std::string::size_type pos = 0;
 	std::string include;
@@ -233,8 +245,8 @@ std::string WPShaderParser::PreShaderSrc(const std::string& src, int32_t texcoun
 	}
 	include = LoadGlslInclude(include);
 
-	ParseWPShader(include, texcount, pWPShaderInfo);
-	ParseWPShader(newsrc, texcount, pWPShaderInfo);
+	ParseWPShader(include, pWPShaderInfo, texinfos);
+	ParseWPShader(newsrc,pWPShaderInfo, texinfos);
 
 	newsrc.insert(FindIncludeInsertPos(newsrc, 0), include); 
 	return newsrc;

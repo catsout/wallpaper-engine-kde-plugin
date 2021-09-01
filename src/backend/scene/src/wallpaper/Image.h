@@ -29,9 +29,7 @@ struct ImageData {
 	ImageData(ImageData&&) = default;
 };
 
-typedef std::vector<ImageData> MipmapDatas;
-
-struct Image {
+struct ImageHeader {
 	uint16_t width;
 	uint16_t height;
 	uint16_t mapWidth;
@@ -43,9 +41,15 @@ struct Image {
 	TextureSample sample;
 	
 	SpriteAnimation spriteAnim;
-
 	// for specific property
 	std::unordered_map<std::string, ImageExtra> extraHeader;
-	std::vector<MipmapDatas> imageDatas;
+
 };
+
+struct Image {
+	typedef std::vector<ImageData> Slot;
+	ImageHeader header;
+	std::vector<Slot> slots;
+};
+
 }

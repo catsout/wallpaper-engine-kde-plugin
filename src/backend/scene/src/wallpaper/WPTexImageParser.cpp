@@ -64,44 +64,67 @@ TextureFormat ToTexFormate(int type) {
     }
 }
 struct WPTexFlag {
+	static constexpr int Num {6};
+	static constexpr const std::array<uint32_t, Num> Masks {
+		1u,
+		1u<<1,
+		1u<<2,
+		1u<<20,
+		1u<<21,
+		1u<<22
+	};
     // true for no bilinear
-    bool noInterpolation{false};
+    bool noInterpolation {false};
     // true for no repeat
-    bool clampUVs{false};
-    bool sprite{false};
+    bool clampUVs {false};
+    bool sprite {false};
+
+	bool compo1 {false};
+	bool compo2 {false};
+	bool compo3 {false};
 };
 
-WPTexFlag LoadFlags(int32_t value) {
+WPTexFlag LoadFlags(uint32_t value) {
     WPTexFlag flags;
-    std::vector<bool*> values({&flags.noInterpolation,
-                               &flags.clampUVs,
-                               &flags.sprite});
-    for (auto& el : values) {
-        (*el) = value % 2;
-        value /= 2;
-    }
+    std::array<bool*, WPTexFlag::Num> values({
+		&flags.noInterpolation,
+        &flags.clampUVs,
+        &flags.sprite,
+		&flags.compo1,
+		&flags.compo2,
+		&flags.compo3
+	});
+	for(int i=0;i<WPTexFlag::Num;i++) {
+		*values[i] = (value&WPTexFlag::Masks[i]) > 0u;
+	}
     return flags;
 }
 
-void LoadHeader(std::ifstream& file, Image& image) {
+void LoadHeader(std::ifstream& file, ImageHeader& header) {
     int32_t unkown;
-    image.extraHeader["texv"].val = ReadTexVesion(file);
-    image.extraHeader["texi"].val = ReadTexVesion(file);
-    image.format = ToTexFormate(readInt32(file));
+    header.extraHeader["texv"].val = ReadTexVesion(file);
+    header.extraHeader["texi"].val = ReadTexVesion(file);
+    header.format = ToTexFormate(readInt32(file));
     auto flags = LoadFlags(readInt32(file));
-    image.isSprite = flags.sprite;
-    image.sample.wrapS = image.sample.wrapT = flags.clampUVs ? TextureWrap::CLAMP_TO_EDGE : TextureWrap::REPEAT;
-    image.sample.minFilter = image.sample.magFilter = flags.noInterpolation ? TextureFilter::NEAREST : TextureFilter::LINEAR;
-    image.width = readInt32(file);
-    image.height = readInt32(file);
+    {
+        header.isSprite = flags.sprite;
+        header.sample.wrapS = header.sample.wrapT = flags.clampUVs ? TextureWrap::CLAMP_TO_EDGE : TextureWrap::REPEAT;
+        header.sample.minFilter = header.sample.magFilter = flags.noInterpolation ? TextureFilter::NEAREST : TextureFilter::LINEAR;
+        header.extraHeader["compo1"].val = flags.compo1;
+        header.extraHeader["compo2"].val = flags.compo2;
+        header.extraHeader["compo3"].val = flags.compo3;
+    }
+    
+    header.width = readInt32(file);
+    header.height = readInt32(file);
     // in sprite this mean one pic
-    image.mapWidth = readInt32(file);
-    image.mapHeight = readInt32(file);
+    header.mapWidth = readInt32(file);
+    header.mapHeight = readInt32(file);
     unkown = readInt32(file);
-    image.extraHeader["texb"].val = ReadTexVesion(file);
-    image.count = readInt32(file);
-    if (image.extraHeader["texb"].val == 3)
-        image.type = static_cast<ImageType>(readInt32(file));
+    header.extraHeader["texb"].val = ReadTexVesion(file);
+    header.count = readInt32(file);
+    if (header.extraHeader["texb"].val == 3)
+        header.type = static_cast<ImageType>(readInt32(file));
 }
 
 std::shared_ptr<Image> WPTexImageParser::Parse(const std::string& name) {
@@ -112,14 +135,14 @@ std::shared_ptr<Image> WPTexImageParser::Parse(const std::string& name) {
     if (!file.is_open())
         return nullptr;
     auto startpos = file.tellg();
-    LoadHeader(file, img);
+    LoadHeader(file, img.header);
 
     // image
-    int32_t image_count = img.count;
+    int32_t image_count = img.header.count;
 
-    img.imageDatas.resize(image_count);
+    img.slots.resize(image_count);
     for (int32_t i_image = 0; i_image < image_count; i_image++) {
-        auto& mipmaps = img.imageDatas.at(i_image);
+        auto& mipmaps = img.slots.at(i_image);
 
         int mipmap_count = readInt32(file);
         mipmaps.resize(mipmap_count);
@@ -132,7 +155,7 @@ std::shared_ptr<Image> WPTexImageParser::Parse(const std::string& name) {
             bool LZ4_compressed = false;
             int32_t decompressed_size = 0;
             // check compress
-            if (img.extraHeader["texb"].val > 1) {
+            if (img.header.extraHeader["texb"].val > 1) {
                 LZ4_compressed = readInt32(file) == 1;
                 decompressed_size = readInt32(file);
             }
@@ -155,7 +178,7 @@ std::shared_ptr<Image> WPTexImageParser::Parse(const std::string& name) {
                 }
             }
             // is image container
-            if (img.extraHeader["texb"].val == 3 && (int32_t)img.type != -1) {
+            if (img.header.extraHeader["texb"].val == 3 && (int32_t)img.header.type != -1) {
                 int32_t w, h, n;
                 auto* data = stbi_load_from_memory((const unsigned char*)result, src_size, &w, &h, &n, 4);
                 mipmap.data = ImageDataPtr((uint8_t*)data,
@@ -173,17 +196,17 @@ std::shared_ptr<Image> WPTexImageParser::Parse(const std::string& name) {
     return img_ptr;
 }
 
-std::shared_ptr<Image> WPTexImageParser::ParseHeader(const std::string& name) {
+ImageHeader WPTexImageParser::ParseHeader(const std::string& name) {
+	ImageHeader header;
     std::string path = "materials/" + name + ".tex";
-    auto img_ptr = std::make_shared<Image>();
-    auto& img = *img_ptr.get();
     std::ifstream file = fs::GetFstream(WallpaperGL::GetPkgfs(), path);
-    if (!file.is_open())
-        return img_ptr;
-    LoadHeader(file, img);
-    int32_t image_count = img.count;
+    if (!file.is_open()) 
+        return header;
+
+    LoadHeader(file, header);
+    int32_t image_count = header.count;
     // load sprite info
-    if (img.isSprite) {
+    if (header.isSprite) {
         // bypass image data, store width and height
         std::vector<std::vector<float>> imageDatas(image_count);
         for (int32_t i_image = 0; i_image < image_count; i_image++) {
@@ -193,7 +216,7 @@ std::shared_ptr<Image> WPTexImageParser::ParseHeader(const std::string& name) {
                 float height = readInt32(file);
                 if (i_mipmap == 0)
                     imageDatas.at(i_image) = {width, height};
-                if (img.extraHeader["texb"].val > 1) {
+                if (header.extraHeader["texb"].val > 1) {
                     int32_t LZ4_compressed = readInt32(file);
                     int32_t decompressed_size = readInt32(file);
                 }
@@ -211,7 +234,7 @@ std::shared_ptr<Image> WPTexImageParser::ParseHeader(const std::string& name) {
             int32_t width = readInt32(file);
             int32_t height = readInt32(file);
         }
-        auto& spriteAnim = img.spriteAnim;
+        auto& spriteAnim = header.spriteAnim;
         for (int32_t i = 0; i < framecount; i++) {
             SpriteFrame sf;
             sf.imageId = readInt32(file);
@@ -238,8 +261,8 @@ std::shared_ptr<Image> WPTexImageParser::ParseHeader(const std::string& name) {
             sf.width = width / spriteWidth;
             sf.height = height / spriteHeight;
             sf.rate = height / width;
-            img.spriteAnim.AppendFrame(sf);
+            header.spriteAnim.AppendFrame(sf);
         }
     }
-    return img_ptr;
+    return header;
 }

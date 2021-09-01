@@ -12,8 +12,12 @@
 #define G_VP "g_ViewProjectionMatrix"
 #define G_MVP "g_ModelViewProjectionMatrix"
 
+#define G_AM "g_AltModelMatrix"
+
 #define G_MI "g_ModelMatrixInverse"
 #define G_MVPI "g_ModelViewProjectionMatrixInverse"
+
+#define G_LP "g_LightsPosition[0]"
 
 #define CONTAINS(s, v) (s.count(v) == 1)
 
@@ -75,6 +79,7 @@ void WPShaderValueUpdater::UpdateShaderValues(SceneNode* pNode, SceneShader* pSh
 
 	bool reqMI = CONTAINS(valueSet, G_MI);
 	bool reqM = CONTAINS(valueSet, G_M);
+	bool reqAM = CONTAINS(valueSet, G_AM);
 	bool reqMVP = CONTAINS(valueSet, G_MVP);
 	bool reqMVPI CONTAINS(valueSet, G_MVPI);
 
@@ -99,6 +104,7 @@ void WPShaderValueUpdater::UpdateShaderValues(SceneNode* pNode, SceneShader* pSh
 			}
 		}
 		if(reqM) shadervs.push_back({G_M, ShaderValue::ValueOf(modelTrans)});
+		if(reqAM) shadervs.push_back({G_AM, ShaderValue::ValueOf(modelTrans)});
 		if(reqMI) shadervs.push_back({G_MI, ShaderValue::ValueOf(modelTrans.inverse())});
 		if(reqMVP) {
 			Matrix4d mvpTrans = viewProTrans * modelTrans;
@@ -137,6 +143,11 @@ void WPShaderValueUpdater::UpdateShaderValues(SceneNode* pNode, SceneShader* pSh
 				}
 			}
 		}
+	}
+	if(CONTAINS(valueSet, G_LP)) {
+		Vector2f ortho{m_ortho[0], m_ortho[1]};
+		Vector2f mouseVec = -(Vector2f{0.5f, 0.5f} - Vector2f(&m_mousePos[0])).cwiseProduct(ortho);
+		shadervs.push_back({G_LP, {mouseVec[0], mouseVec[1], 500.0f}});
 	}
 }
 

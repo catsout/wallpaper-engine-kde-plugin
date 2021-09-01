@@ -6,17 +6,17 @@
 namespace wallpaper
 {
 struct SpriteFrame {
-	uint32_t imageId;
-	float frametime;
-	float x;
-	float y;
-	float width;
-	float height;
+	uint32_t imageId {0};
+	float frametime {0};
+	float x {0};
+	float y {0};
+	float width {1};
+	float height {1};
 
-	float rate; // real h / w
+	float rate {1}; // real h / w
 
-	float unk0;
-	float unk1;
+	float unk0 {0};
+	float unk1 {0};
 };
 
 class SpriteAnimation {
@@ -44,8 +44,8 @@ private:
 			m_curFrame = 0;
 		else m_curFrame++;
 	}
-	int32_t m_curFrame;
-	double m_remainTime;
+	int32_t m_curFrame {0};
+	double m_remainTime {0};
 	std::vector<SpriteFrame> m_frames;
 };
 }

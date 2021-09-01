@@ -108,6 +108,12 @@ inline void SetUniformMat4(GLint loc, const float *udata) {
 		CHECK_GL_ERROR_IF_DEBUG();
 	}
 }
+inline void SetUniformMat3(GLint loc, const float *udata) {
+	if (loc >= 0) {
+		glUniformMatrix3fv(loc, 1, false, udata);
+		CHECK_GL_ERROR_IF_DEBUG();
+	}
+}
 
 /*
 typedef uint32_t GLenum;
@@ -437,11 +443,11 @@ public:
 		HwTexHandle texh = m_texPool.Alloc(desc);
 		auto* tex = m_texPool.Lookup(texh);
 		if(image != nullptr) {
-			tex->desc.numSlots = image->imageDatas.size();
-			for(uint16_t i=0;i<image->imageDatas.size();i++) {
+			tex->desc.numSlots = image->slots.size();
+			for(uint16_t i=0;i<image->slots.size();i++) {
 				auto target = tex->desc.target;
 				glBindTexture(target, tex->gltexs[i]);
-				auto& img = image->imageDatas[i];
+				auto& img = image->slots[i];
 
 
 				for(uint16_t imip=0;imip<img.size();imip++) {
@@ -690,11 +696,15 @@ public:
 		if(shader == nullptr) return;
 
 		int32_t loc = GShader::GetUnifLoc(*shader, sv.name);
-		if(loc == -1) return;
+		if(loc == -1) {
+			return;
+		}
 		std::size_t size = sv.value.size();
 		const float* value = &sv.value[0];
 		if(size == 16)
 			SetUniformMat4(loc, static_cast<const float*>(value));
+		else if(size == 9)
+			SetUniformMat3(loc, static_cast<const float*>(value));
 		else
 			SetUniformF(loc, size, static_cast<const float*>(value));
 	}

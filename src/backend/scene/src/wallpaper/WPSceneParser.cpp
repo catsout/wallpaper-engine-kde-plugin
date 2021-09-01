@@ -178,9 +178,31 @@ void LoadMaterial(const wpscene::WPMaterial& wpmat, Scene* pScene, SceneNode* pN
 	std::string shaderPath("shaders/"+wpmat.shader);
 	std::string svCode = fs::GetContent(WallpaperGL::GetPkgfs(),shaderPath+".vert");
 	std::string fgCode = fs::GetContent(WallpaperGL::GetPkgfs(),shaderPath+".frag");
-	int32_t texcount = wpmat.textures.size();
-	svCode = WPShaderParser::PreShaderSrc(svCode, texcount, pWPShaderInfo);
-	fgCode = WPShaderParser::PreShaderSrc(fgCode, texcount, pWPShaderInfo);
+
+	std::vector<WPShaderTexInfo> texinfos;
+	std::unordered_map<std::string, ImageHeader> texHeaders;
+	for(const auto& el:wpmat.textures) {
+		if(el.empty()) {
+			texinfos.push_back({false});
+		}
+		else if(!IsSpecTex(el)) {
+			const auto& texh = pScene->imageParser->ParseHeader(el);
+			texHeaders[el] = texh;
+			if(texh.extraHeader.count("compo1") == 0) {
+				texinfos.push_back({false});
+				continue;
+			}
+			texinfos.push_back({true,{
+				(bool)texh.extraHeader.at("compo1").val,
+				(bool)texh.extraHeader.at("compo2").val,
+				(bool)texh.extraHeader.at("compo3").val,
+			}});
+		} else
+			texinfos.push_back({true});
+	}
+
+	svCode = WPShaderParser::PreShaderSrc(svCode, pWPShaderInfo, texinfos);
+	fgCode = WPShaderParser::PreShaderSrc(fgCode, pWPShaderInfo, texinfos);
 	shader->uniforms = pWPShaderInfo->svs;
 
 	for(const auto& el:wpmat.combos) {
@@ -199,7 +221,7 @@ void LoadMaterial(const wpscene::WPMaterial& wpmat, Scene* pScene, SceneNode* pN
 			textures[t.first] = t.second;
 		}
 	}
-//		svData.resolutions.resize(content.at("textures").size());
+
 	for(int32_t i=0;i<textures.size();i++) {
 		std::string name = textures.at(i);
 		ParseSpecTexName(name, wpmat, *pWPShaderInfo);
@@ -223,43 +245,45 @@ void LoadMaterial(const wpscene::WPMaterial& wpmat, Scene* pScene, SceneNode* pN
 				};
 			}
 		} else {
-			auto texh = pScene->imageParser->ParseHeader(name);
+			const ImageHeader& texh = texHeaders.count(name)==0 
+						? pScene->imageParser->ParseHeader(name) 
+						: texHeaders.at(name);
 			if(i == 0) {
-				if(texh->format == TextureFormat::R8)
+				if(texh.format == TextureFormat::R8)
 					fgCode = "#define TEX0FORMAT FORMAT_R8\n" + fgCode;
-				else if (texh->format == TextureFormat::RG8)
+				else if (texh.format == TextureFormat::RG8)
 					fgCode = "#define TEX0FORMAT FORMAT_RG88\n" + fgCode;
 			}
-			if(texh->type == ImageType::UNKNOWN)
+			if(texh.type == ImageType::UNKNOWN)
 				resolution = {
-					texh->width,texh->height, 
-					texh->mapWidth,texh->mapHeight
+					texh.width,texh.height, 
+					texh.mapWidth,texh.mapHeight
 				};
 			else
 				resolution = {
-					texh->mapWidth,texh->mapHeight, 
-					texh->mapWidth,texh->mapHeight
+					texh.mapWidth,texh.mapHeight, 
+					texh.mapWidth,texh.mapHeight
 				};
 			if(pScene->textures.count(name) == 0) {
 				SceneTexture stex;
-				stex.sample = texh->sample;
+				stex.sample = texh.sample;
 				stex.url = name;
-				if(texh->isSprite) {
-					stex.isSprite = texh->isSprite;
-					stex.spriteAnim = texh->spriteAnim;
+				if(texh.isSprite) {
+					stex.isSprite = texh.isSprite;
+					stex.spriteAnim = texh.spriteAnim;
 				}
 				pScene->textures[name] = stex;
 			}
 			if((pScene->textures.at(name)).isSprite) {
 				material.hasSprite = true;
-				const auto& f1 = texh->spriteAnim.GetCurFrame();
+				const auto& f1 = texh.spriteAnim.GetCurFrame();
 				if(wpmat.shader == "genericparticle") {
 					pWPShaderInfo->combos["SPRITESHEET"] = 1;
 					pWPShaderInfo->combos["THICKFORMAT"] = 1;
 					materialShader.constValues["g_RenderVar1"] = { "g_RenderVar1", {
 						f1.width,
 						f1.height,
-						(float)(texh->spriteAnim.numFrames()),
+						(float)(texh.spriteAnim.numFrames()),
 						f1.rate
 					}};
 				}
@@ -270,6 +294,9 @@ void LoadMaterial(const wpscene::WPMaterial& wpmat, Scene* pScene, SceneNode* pN
 			std::vector<float> vrl {resolution.begin(), resolution.end()};
 			materialShader.constValues[gResolution] = {gResolution, vrl};
 		}
+	}
+	if(pWPShaderInfo->combos.count("LIGHTING") > 0) {
+		//pWPShaderInfo->combos["PRELIGHTING"] = pWPShaderInfo->combos.at("LIGHTING");
 	}
 
 	svCode = WPShaderParser::PreShaderHeader(svCode, pWPShaderInfo->combos);
@@ -395,14 +422,11 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 	globalBaseConstSvs["g_EyePosition"]= {"g_EyePosition", {0, 0, 0}};
 	globalBaseConstSvs["g_TexelSize"]= {"g_TexelSize", {1.0f/1920.0f, 1.0f/1080.0f}};
 	globalBaseConstSvs["g_TexelSizeHalf"]= {"g_TexelSizeHalf", {1.0f/1920.0f/2.0f, 1.0f/1080.0f/2.0f}};
-	/*
-	globalBaseConstSvs["g_LightsPosition[0]"]= {"g_LightsPosition[0]", {1718.0f, 969.0f, 500.0f}};
-	globalBaseConstSvs["g_LightAmbientColor"]= {"g_LightAmbientColor", {0.16f, 0.19f, 0.28f}};
+
+	globalBaseConstSvs["g_LightAmbientColor"]= {"g_LightAmbientColor", {sc.general.ambientcolor.begin(), sc.general.ambientcolor.end()}};
 	globalBaseConstSvs["g_LightsColorPremultiplied[0]"]= {"g_LightsColorPremultiplied[0]", {848496.0f, 893676.0f, 1250141.0f, 0.0f}};
 	globalBaseConstSvs["g_NormalModelMatrix"] = {"g_NormalModelMatrix", ShaderValue::ValueOf(Matrix3f::Identity())};
-	globalBaseConstSvs["g_AltNormalModelMatrix"] = {"g_AltNormalModelMatrix", ShaderValue::ValueOf(Matrix3f::Identity())};
-	globalBaseConstSvs["g_Texture2Resolution"] = {"g_Texture2Resolution", {1280.0f, 720.0f, 1280.0f, 720.0f}};
-	*/
+
 
 	Vector3f cori{ortho.width/2.0f,ortho.height/2.0f,0},cscale{1.0f,1.0f,1.0f},cangle(Vector3f::Zero());
 	auto spCamNode = std::make_shared<SceneNode>(cori, cscale, cangle);

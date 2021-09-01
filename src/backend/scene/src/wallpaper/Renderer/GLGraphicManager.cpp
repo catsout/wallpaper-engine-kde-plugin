@@ -21,10 +21,10 @@ GLGraphicManager::GLGraphicManager():pImpl(std::make_unique<impl>()),m_fg(std::m
 
 
 std::string OutImageType(const Image& img) {
-	if(img.type == ImageType::UNKNOWN)
-		return ToString(img.format);
+	if(img.header.type == ImageType::UNKNOWN)
+		return ToString(img.header.format);
 	else 
-		return ToString(img.type);
+		return ToString(img.header.type);
 }
 
 /*
@@ -460,14 +460,15 @@ HwTexHandle GLGraphicManager::CreateTexture(TextureDesc desc) {
 
 HwTexHandle GLGraphicManager::CreateTexture(const Image& img) {
 	gl::GTexture::Desc desc; 
-	desc.w = img.width;
-	desc.h = img.height;
-	desc.numMips = img.imageDatas[0].size();
+	const auto& header = img.header;
+	desc.w = header.width;
+	desc.h = header.height;
+	desc.numMips = img.slots[0].size();
 	desc.numMips = desc.numMips>0?desc.numMips-1:0;
-	desc.numSlots = img.count;
+	desc.numSlots = header.count;
 	desc.target = gl::ToGLType(TextureType::IMG_2D);
-	desc.format = img.format;
-	desc.sample = img.sample;
+	desc.format = header.format;
+	desc.sample = header.sample;
 	return pImpl->glw->CreateTexture(desc, &img);
 }
 
