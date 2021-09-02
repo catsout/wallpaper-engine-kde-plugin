@@ -307,6 +307,25 @@ void LoadMaterial(const wpscene::WPMaterial& wpmat, Scene* pScene, SceneNode* pN
 	material.name = wpmat.shader;
 }
 
+
+void LoadAlignment(SceneNode& node, std::string_view align, Vector2f size) {
+	Vector3f trans = node.Translate();
+	size *= 0.5f;size.y() *= -1.0f; // flip y
+
+	auto contains = [&](std::string_view s) {
+		return align.find(s) != std::string::npos;
+	};
+
+	// topleft top center ...
+	if(contains("top")) trans.y() -= size.y();
+	if(contains("left")) trans.x() += size.x();
+	if(contains("right")) trans.x() -= size.x();
+	if(contains("bottom")) trans.y() += size.y();
+
+	node.SetTranslate(trans);
+}
+
+
 std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 	nlohmann::json json;
 	if(!PARSE_JSON(buf, json)) 
@@ -479,6 +498,7 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 				Vector3f(&wpimgobj.scale[0]), 
 				Vector3f(&wpimgobj.angles[0]) 
 			);
+			LoadAlignment(*spImgNode, wpimgobj.alignment, {wpimgobj.size[0], wpimgobj.size[1]});
 
 			SceneMaterial material;
 			WPShaderValueData svData;
