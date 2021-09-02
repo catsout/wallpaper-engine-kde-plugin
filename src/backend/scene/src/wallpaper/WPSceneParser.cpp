@@ -26,6 +26,7 @@
 #include <random>
 #include <cmath>
 #include <functional>
+#include <regex>
 #include <Eigen/Dense>
 
 using namespace wallpaper;
@@ -133,6 +134,7 @@ BlendMode ParseBlendMode(std::string_view str) {
 	return bm;
 }
 
+
 void ParseSpecTexName(std::string& name, const wpscene::WPMaterial& wpmat, const WPShaderInfo& sinfo) {
 	if(IsSpecTex(name)) {
 		if(name == "_rt_FullFrameBuffer") {
@@ -145,17 +147,28 @@ void ParseSpecTexName(std::string& name, const wpscene::WPMaterial& wpmat, const
 			}
 			*/
 		}
-		if(name.compare(0, 6, "_rt_im") == 0) {
-			name = "";
-			LOG_ERROR("unsupported layer texture");
+		else if(name.find("_rt_imageLayerComposite_") != std::string::npos) {
+			int wpid {-1};
+			std::regex reImgId {R"(_rt_imageLayerComposite_([0-9]+))"};
+			std::smatch match;
+			if(std::regex_search(name, match, reImgId)) {
+				wpid = StrConv<int>(match[1]);
+			}
+			name = GenLinkTex(wpid);
 		}
-		if(name == "_rt_MipMappedFrameBuffer") {
+		else if(name == "_rt_MipMappedFrameBuffer") {
 			name = "";
 		}
 	}
 }
 
-void LoadMaterial(const wpscene::WPMaterial& wpmat, Scene* pScene, SceneNode* pNode, SceneMaterial* pMaterial, WPShaderValueData* pSvData, WPShaderInfo* pWPShaderInfo=nullptr) {
+void LoadMaterial(const wpscene::WPMaterial& wpmat, 
+ Scene* pScene,
+ SceneNode* pNode,
+ SceneMaterial* pMaterial,
+ WPShaderValueData* pSvData,
+ WPShaderInfo* pWPShaderInfo=nullptr) {
+
 	auto& svData = *pSvData;
 	auto& material = *pMaterial;
 
@@ -228,7 +241,10 @@ void LoadMaterial(const wpscene::WPMaterial& wpmat, Scene* pScene, SceneNode* pN
 		
 		std::array<uint16_t, 4> resolution;
 		if(IsSpecTex(name)) {
-			if(pScene->renderTargets.count(name) == 0) {
+			if(IsSpecLinkTex(name)) {
+				svData.renderTargetResolution.push_back({i, name});
+			}
+			else if(pScene->renderTargets.count(name) == 0) {
 				LOG_ERROR(name);
 			} else {
 				svData.renderTargetResolution.push_back({i, name});
@@ -334,6 +350,7 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 	sc.FromJson(json);
 //	LOG_INFO(nlohmann::json(sc).dump(4));
 
+	// randomFn
 	auto ur = std::make_shared<std::uniform_real_distribution<float>>(0.0f, 1.0f);
 	auto randomSeed = std::make_shared<std::default_random_engine>();
 	RandomFn randomFn = [randomSeed, ur]() { return (*ur)(*randomSeed); };
@@ -499,6 +516,7 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 				Vector3f(&wpimgobj.angles[0]) 
 			);
 			LoadAlignment(*spImgNode, wpimgobj.alignment, {wpimgobj.size[0], wpimgobj.size[1]});
+			spImgNode->ID() = wpimgobj.id;
 
 			SceneMaterial material;
 			WPShaderValueData svData;
@@ -708,29 +726,29 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 						}
 						auto spEffNode = std::make_shared<SceneNode>();
 						std::string effmataddr = getAddr(spEffNode.get());
-						WPShaderInfo wpShaderInfo;
-						shaderInfo.baseConstSvs = baseConstSvs;
-						shaderInfo.baseConstSvs["g_EffectTextureProjectionMatrix"] = {
+						WPShaderInfo wpEffShaderInfo;
+						wpEffShaderInfo.baseConstSvs = baseConstSvs;
+						wpEffShaderInfo.baseConstSvs["g_EffectTextureProjectionMatrix"] = {
 							"g_EffectTextureProjectionMatrix", 
 							ShaderValue::ValueOf(Eigen::Matrix4f::Identity())
 						};
-						shaderInfo.baseConstSvs["g_EffectTextureProjectionMatrixInverse"] = {
+						wpEffShaderInfo.baseConstSvs["g_EffectTextureProjectionMatrixInverse"] = {
 							"g_EffectTextureProjectionMatrixInverse", 
 							ShaderValue::ValueOf(Eigen::Matrix4f::Identity())
 						};
 						SceneMaterial material;
 						WPShaderValueData svData;
-						LoadMaterial(wpmat, upScene.get(), spEffNode.get(), &material, &svData, &wpShaderInfo);
+						LoadMaterial(wpmat, upScene.get(), spEffNode.get(), &material, &svData, &wpEffShaderInfo);
 
 						// load glname from alias and load to constvalue
 						for(const auto& cs:wpmat.constantshadervalues) {
 							const auto& name = cs.first;
 							const std::vector<float>& value = cs.second;
 							std::string glname;
-							if(wpShaderInfo.alias.count(name) != 0) {
-								glname = wpShaderInfo.alias.at(name);
+							if(wpEffShaderInfo.alias.count(name) != 0) {
+								glname = wpEffShaderInfo.alias.at(name);
 							} else {
-								for(const auto& el:wpShaderInfo.alias) {
+								for(const auto& el:wpEffShaderInfo.alias) {
 									if(el.second.substr(2) == name) {
 										glname = el.second;
 										break;

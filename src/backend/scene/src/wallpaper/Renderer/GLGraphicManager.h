@@ -40,13 +40,14 @@ private:
 
 	void AddCopyCmdPasses(const std::string& dst, const std::string src);
 	void AddPreParePass();
-	void ToFrameGraphPass(SceneNode*, std::string output="");
+	void ToFrameGraphPass(SceneNode*, std::string output="", uint32_t imgId=0);
 	std::unique_ptr<fg::FrameGraph> m_fg;
 	Scene* m_scene;
 	std::array<bool, 2> m_xyflip {false, false};
 	std::array<uint16_t, 2> m_screenSize {1920, 1080};
 
 	std::unordered_map<std::string, fg::FrameGraphMutableResource> m_fgrscMap;
+	std::unordered_map<uint32_t, fg::FrameGraphMutableResource> m_fgrscIdMap;
 
 	std::unordered_map<void*, HwShaderHandle> m_shaderMap;
 };

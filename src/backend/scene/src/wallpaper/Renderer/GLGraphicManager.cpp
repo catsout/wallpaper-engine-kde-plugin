@@ -93,7 +93,7 @@ HwShaderHandle InitShader(gl::GLWrapper* pglw, SceneMaterial* material) {
 	return handle;
 }
 
-fg::FrameGraphMutableResource AddCopyPass(fg::FrameGraph& fg, gl::GLWrapper& glw, fg::FrameGraphResource src) {
+fg::FrameGraphMutableResource AddCopyPass(fg::FrameGraph& fg, gl::GLWrapper& glw, fg::FrameGraphResource src, std::string copyName = {""}) {
 	struct PassData {
 		fg::FrameGraphResource src;
 		fg::FrameGraphMutableResource output;
@@ -101,7 +101,7 @@ fg::FrameGraphMutableResource AddCopyPass(fg::FrameGraph& fg, gl::GLWrapper& glw
 	auto& pass = fg.AddPass<PassData>("copy",
 		[&](fg::FrameGraphBuilder& builder, PassData& data) {
 			data.src = builder.Read(src);
-			data.output = builder.CreateTexture(data.src);
+			data.output = builder.CreateTexture(data.src, copyName);
 			data.output = builder.Write(data.output);
 		},
 		[=,&glw](fg::FrameGraphResourceManager& rsm, const PassData& data) mutable {
@@ -261,7 +261,7 @@ void main() {
 	);
 };
 
-void GLGraphicManager::ToFrameGraphPass(SceneNode* node, std::string output) {
+void GLGraphicManager::ToFrameGraphPass(SceneNode* node, std::string output, uint32_t imgId) {
 	auto glw = pImpl->glw.get();
 	struct PassData {
 		std::vector<fg::FrameGraphResource> inputs;
@@ -276,7 +276,7 @@ void GLGraphicManager::ToFrameGraphPass(SceneNode* node, std::string output) {
 		//tex.desc.height = img->height;
 	};
 
-	auto loadEffect = [this, glw](SceneImageEffectLayer* effs) {
+	auto loadEffect = [this, glw, node](SceneImageEffectLayer* effs) {
 		for(int32_t i=0;i<effs->EffectCount();i++) {
 			auto& eff = effs->GetEffect(i);
 			auto cmdItor = eff->commands.begin();
@@ -288,7 +288,7 @@ void GLGraphicManager::ToFrameGraphPass(SceneNode* node, std::string output) {
 					cmdItor++;
 				}
 				auto& name = n.output;
-				ToFrameGraphPass(n.sceneNode.get(), name);
+				ToFrameGraphPass(n.sceneNode.get(), name, node->ID());
 				nodePos++;
 			}
 		}
@@ -311,8 +311,12 @@ void GLGraphicManager::ToFrameGraphPass(SceneNode* node, std::string output) {
 
 	std::string passName = material->name;
 
+	if(imgId == 0) {
+		imgId = node->ID();
+	}
+
 	m_fg->AddPass<PassData>(passName, 
-	[&,loadImage, glw](fg::FrameGraphBuilder& builder, PassData& data) {
+	[&,loadImage, glw, imgId](fg::FrameGraphBuilder& builder, PassData& data) {
 
 		// input
 		data.inputs.resize(material->textures.size());
@@ -332,6 +336,13 @@ void GLGraphicManager::ToFrameGraphPass(SceneNode* node, std::string output) {
 				} else if(m_scene->renderTargets.count(url) > 0) {
 					m_fgrscMap[url] = builder.CreateTexture(GenFgTextureRsc(*m_scene, url, m_screenSize, true));
 					data.inputs[i] = m_fgrscMap[url];
+				} else if(IsSpecLinkTex(url)) {
+					auto id = ParseLinkTex(url);
+					if(m_fgrscIdMap.count(id)) {
+						data.inputs[i] = AddCopyPass(*m_fg, *glw, m_fgrscIdMap.at(id), url);
+					} else {
+						LOG_ERROR(url + " link tex not found, at pass " + passName);
+					}
 				} else {
 					LOG_ERROR(url + " not found, at pass " + passName);
 				}
@@ -381,6 +392,12 @@ void GLGraphicManager::ToFrameGraphPass(SceneNode* node, std::string output) {
 
 		rPassData.attachments = {data.output};
 		data.renderpassData = builder.UseRenderPass(rPassData);
+
+		{
+			if(output == SpecTex_Default) {
+				m_fgrscIdMap[imgId] = data.output;
+			}
+		}
 	}, 
 	[this, material, mshaderPtr, mesh, node, output, glw](fg::FrameGraphResourceManager& rsm, const PassData& data) {
 		gl::GPass gpass;
@@ -503,7 +520,7 @@ void GLGraphicManager::InitializeScene(Scene* scene) {
 	m_scene = scene;
 
 	AddPreParePass();
-	TraverseNode(std::bind(&GLGraphicManager::ToFrameGraphPass, this, _1, std::string(SpecTex_Default)), scene->sceneGraph.get());
+	TraverseNode(std::bind(&GLGraphicManager::ToFrameGraphPass, this, _1, std::string(SpecTex_Default), 0), scene->sceneGraph.get());
 	AddEndPass(*m_fg, *(pImpl->glw), m_fgrscMap.at(std::string(SpecTex_Default)), m_xyflip);
 	m_fg->Compile();
 }

@@ -112,7 +112,9 @@ void WPShaderValueUpdater::UpdateShaderValues(SceneNode* pNode, SceneShader* pSh
 			if(reqMVPI) shadervs.push_back({G_MVPI, ShaderValue::ValueOf(mvpTrans.inverse())});
 		}
 	}
+	
 	//	g_EffectTextureProjectionMatrix
+	//shadervs.push_back({"g_EffectTextureProjectionMatrixInverse", ShaderValue::ValueOf(Eigen::Matrix4f::Identity())});
 	if(CONTAINS(valueSet, "g_Time"))
 		shadervs.push_back({"g_Time", {(float)m_scene->elapsingTime}});
 

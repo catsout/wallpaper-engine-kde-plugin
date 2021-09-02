@@ -30,7 +30,7 @@ public:
 
 	
 	FrameGraphMutableResource CreateTexture(TextureResource::Desc);
-	FrameGraphMutableResource CreateTexture(FrameGraphResource);
+	FrameGraphMutableResource CreateTexture(FrameGraphResource, std::string name = {""});
 	std::shared_ptr<RenderPassData> UseRenderPass(RenderPassData);
 private:
 	NodeID InitResource(ResourceOper*);

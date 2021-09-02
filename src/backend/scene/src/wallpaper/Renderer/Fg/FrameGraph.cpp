@@ -106,7 +106,7 @@ FrameGraphMutableResource FrameGraphBuilder::CreateTexture(TextureResource::Desc
 }
 
 
-FrameGraphMutableResource FrameGraphBuilder::CreateTexture(FrameGraphResource src) {
+FrameGraphMutableResource FrameGraphBuilder::CreateTexture(FrameGraphResource src, std::string name) {
 	FrameGraphMutableResource dst;
 	auto nodeId = InitResource(&dst);
 	auto tex = TextureResource();
@@ -116,7 +116,9 @@ FrameGraphMutableResource FrameGraphBuilder::CreateTexture(FrameGraphResource sr
 		tex.desc = srcTex->desc;
 	} 
 	{
-		tex.desc.name += "_copy";
+		if(name.empty())
+			tex.desc.name += "_copy";
+		else tex.desc.name = name;
 		tex.desc.temperary = true;
 		ResourceNode* dstNode = GetResourceNode(m_fg.m_graph, nodeId);
 		dstNode->LinkResource(m_fg.m_textures.New(tex, nodeId));

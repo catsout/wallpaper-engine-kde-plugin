@@ -42,7 +42,10 @@ public:
 	
 	const auto& GetChildren() const { return m_children; }
 	auto& GetChildren() { return m_children; }
+
+	uint32_t& ID() { return m_id; }
 private:
+	uint32_t m_id;
 	std::string m_name;
 	Eigen::Matrix4d m_trans;
 	Eigen::Vector3f m_translate;
