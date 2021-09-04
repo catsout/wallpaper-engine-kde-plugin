@@ -74,7 +74,9 @@ public:
 		for(auto iter = m_mountedFss.rbegin();iter < m_mountedFss.rend();iter++) {
 			auto& el = *iter;
 			if(MountedFs::InMountPoint(el.mountPoint, path)) {
-				return true;
+				auto mpath = MountedFs::GetPathInMount(el.mountPoint, path);
+				if(el.fs->Contains(mpath))
+					return true;
 			}
 		}
 		return false;

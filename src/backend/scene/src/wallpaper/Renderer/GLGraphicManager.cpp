@@ -526,7 +526,7 @@ void GLGraphicManager::InitializeScene(Scene* scene) {
 }
 
 void GLGraphicManager::Draw() {
-	m_scene->paritileSys.Emitt();
+	//m_scene->paritileSys.Emitt();
 
 	UpdateSceneRenderTargetSize(*m_scene, m_screenSize);
 	m_scene->shaderValueUpdater->FrameBegin();

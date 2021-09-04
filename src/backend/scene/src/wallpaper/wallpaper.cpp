@@ -24,6 +24,7 @@ using namespace wallpaper;
 class WallpaperGL::impl {
 public:
 	impl() = default;
+	~impl()	{ frameTimer.Stop(); }
 	FpsCounter fpsCounter;
 	FrameTimer frameTimer;
 	WPSceneParser parser;
@@ -146,7 +147,16 @@ void WallpaperGL::SetAssets(const std::string& path) {
 }
 
 void WallpaperGL::SetUpdateCallback(const std::function<void()>& func) {
-	pImpl->frameTimer.SetCallback(func);
+	std::function<void()> copyf = func;
+	// the callback runs on other thread, but it will be stopped before pImpl destructed
+	// so use raw point
+	auto* pImplRaw = pImpl.get();
+	auto wrapperf = [copyf,pImplRaw]() {
+		copyf();
+		if(pImplRaw->scene)
+			pImplRaw->scene->paritileSys.Emitt();
+	};
+	pImpl->frameTimer.SetCallback(wrapperf);
 	pImpl->frameTimer.Run();
 }
 
