@@ -58,7 +58,7 @@ TextureFormat ToTexFormate(int type) {
     case 9:
         return TextureFormat::R8;
     default:
-        LOG_ERROR("ERROR::ToTexFormate Unkown image type: " + std::to_string(type));
+        LOG_ERROR("ERROR::ToTexFormate Unkown image type: %d", type);
         return TextureFormat::RGBA8;
     }
 }

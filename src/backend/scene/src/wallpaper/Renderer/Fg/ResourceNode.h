@@ -3,7 +3,7 @@
 #include <string_view>
 #include "PassNode.h"
 #include "DependencyGraph.h"
-#include "Utils/Log.h"
+#include "Utils/Logging.h"
 
 namespace wallpaper {
 namespace fg {

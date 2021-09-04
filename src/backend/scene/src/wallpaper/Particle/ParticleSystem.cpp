@@ -1,5 +1,4 @@
 #include "ParticleSystem.h"
-#include "Utils/Log.h"
 #include "Scene/Scene.h"
 #include "ParticleModify.h"
 #include <algorithm>

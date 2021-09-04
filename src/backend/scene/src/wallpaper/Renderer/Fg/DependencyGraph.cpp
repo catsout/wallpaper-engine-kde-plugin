@@ -3,7 +3,7 @@
 #include <functional>
 #include <fstream>
 #include <cassert>
-#include "Utils/Log.h"
+#include "Utils/Logging.h"
 
 using namespace wallpaper::fg;
 

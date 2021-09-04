@@ -6,7 +6,7 @@
 #include <memory>
 #include <filesystem>
 #include "IBinaryStream.h"
-#include "../Utils/Log.h"
+#include "../Utils/Logging.h"
 
 namespace wallpaper 
 {
@@ -56,12 +56,12 @@ inline std::shared_ptr<CBinarayStream> CreateCBinaryStream(std::string_view path
 		Shared(std::string_view path, std::FILE* file):CBinarayStream(path, file) {};
 	};
 	if(std::filesystem::is_directory(path)) {
-		LOG_ERROR("can't open " + std::string(path));
+		LOG_ERROR("can't open: %s", path.data());
 	 	return nullptr;
 	}
 	auto* file = std::fopen(std::string(path).c_str(), "rb");
 	if(file == NULL) {
-		LOG_ERROR("can't open " + std::string(path));
+		LOG_ERROR("can't open: %s", path.data());
 		return nullptr;
 	}
 	auto cb = std::make_shared<Shared>(path, file);

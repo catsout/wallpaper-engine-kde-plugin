@@ -52,7 +52,7 @@ namespace wallpaper {
 		try {
 			return GetJsonValue<T>(json, value);
 		} catch(njson::type_error& e) {
-			Logger::Log(func, line, "Error read json at: ", e.what() + nameinfo +"\n"+ json.dump(4));
+			WallpaperLog(LOGLEVEL_INFO, func, line, "%s %s\n%s", e.what(), nameinfo.c_str(), json.dump(4).c_str());
 		}
 		return false; 
 	}
@@ -61,11 +61,11 @@ namespace wallpaper {
 	bool GetJsonValue(const char* func, int line, const nlohmann::json& json, const std::string& name, T& value, bool warn = true) {
 		if(!json.contains(name)) {
 			if(warn)
-				Logger::Log(func, line, "Warning read json: ", name + " not a key");
+				WallpaperLog(LOGLEVEL_INFO, func, line, "read json \"%s\" not a key", name.data());
 			return false;
 		} else if(json.at(name).is_null()) {
 			if(warn)
-				Logger::Log(func, line, "Warning read json: ", name + " is null");
+				WallpaperLog(LOGLEVEL_INFO, func, line, "read json \"%s\" is null", name.data());
 			return false;
 		}
 		return GetJsonValue<T>(func, line, json.at(name), value, name.c_str());

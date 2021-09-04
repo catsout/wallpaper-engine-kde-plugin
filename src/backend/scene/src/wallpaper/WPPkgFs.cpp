@@ -1,5 +1,5 @@
 #include "WPPkgFs.h"
-#include "Utils/Log.h"
+#include "Utils/Logging.h"
 #include "Fs/LimitedBinaryStream.h"
 #include <vector>
 
@@ -19,7 +19,7 @@ std::unique_ptr<WPPkgFs> WPPkgFs::CreatePkgFs(std::string_view pkgpath) {
 
 	auto& pkg = *ppkg;
    	std::string ver = ReadSizedString(pkg);
-	LOG_INFO("pkg version: " + ver);
+	LOG_INFO("pkg version: %s", ver.data());
 
 	std::vector<PkgFile> pkgfiles;
     int entryCount = pkg.ReadInt32();

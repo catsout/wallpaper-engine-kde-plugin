@@ -1,5 +1,5 @@
 #include "WPImageObject.h"
-#include "Utils/Log.h"
+#include "Utils/Logging.h"
 #include "Fs/VFS.h"
 
 using namespace wallpaper::wpscene;
@@ -114,7 +114,7 @@ bool WPImageObject::FromJson(const nlohmann::json& json, fs::VFS& vfs) {
     GET_JSON_NAME_VALUE_NOWARN(json, "alignment", alignment);
     nlohmann::json jImage;
     if(!PARSE_JSON(fs::GetFileContent(vfs, "/assets/" + image), jImage)) {
-        LOG_ERROR("Can't load image json: " + image);
+        LOG_ERROR("Can't load image json: %s", image.c_str());
         return false;
     }
     GET_JSON_NAME_VALUE_NOWARN(jImage, "fullscreen", fullscreen);
@@ -146,7 +146,7 @@ bool WPImageObject::FromJson(const nlohmann::json& json, fs::VFS& vfs) {
 		GET_JSON_NAME_VALUE(jImage, "material", matPath);	
         nlohmann::json jMat;
         if(!PARSE_JSON(fs::GetFileContent(vfs, "/assets/" + matPath), jMat)) {
-            LOG_ERROR("Can't load material json: " + matPath);
+            LOG_ERROR("Can't load material json: %s", matPath.c_str());
             return false;
         }
         material.FromJson(jMat);

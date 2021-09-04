@@ -16,7 +16,7 @@ add_library(${PROJECT_NAME}
 	WPJson.cpp
 	WPPkgFs.cpp
 	Type.cpp
-	Utils/Log.cpp
+	Utils/Logging.cpp
 	Utils/FpsCounter.cpp
 	Utils/FrameTimer.cpp
 	Utils/Algorism.cpp

@@ -1,5 +1,4 @@
 #include "ParticleModify.h"
-#include "Utils/Log.h"
 #include <cstring>
 #include <cmath>
 #include <algorithm>

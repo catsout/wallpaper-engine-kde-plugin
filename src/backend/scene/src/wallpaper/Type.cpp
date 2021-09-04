@@ -1,6 +1,6 @@
 #include "Type.h"
 
-#include "Utils/Log.h"
+#include "Utils/Logging.h"
 
 std::string wallpaper::ToString(const ImageType& type) {
 	#define IMG(str) case ImageType::str: return #str;
@@ -12,7 +12,7 @@ std::string wallpaper::ToString(const ImageType& type) {
         IMG(JNG)
         IMG(PNG)
 		default:
-			LOG_ERROR("Not valied image type: " + std::to_string((int)type));
+			LOG_ERROR("Not valied image type: %d", (int)type);
 			return "";
 	}
 }
@@ -28,7 +28,7 @@ std::string wallpaper::ToString(const TextureFormat& format) {
 		Fmt(RG8)
 		Fmt(R8)
 		default:
-			LOG_ERROR("Not valied tex format: " + std::to_string((int)format));
+			LOG_ERROR("Not valied tex format: %d", (int)format);
 			return "";
 	}
 }

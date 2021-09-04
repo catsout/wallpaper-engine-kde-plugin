@@ -1,6 +1,6 @@
 #include "FrameGraph.h"
 #include <algorithm>
-#include "Utils/Log.h"
+#include "Utils/Logging.h"
 
 using namespace wallpaper::fg;
 

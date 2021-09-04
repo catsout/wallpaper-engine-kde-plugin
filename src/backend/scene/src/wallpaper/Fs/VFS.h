@@ -3,7 +3,7 @@
 #include <memory>
 #include <string>
 #include "Fs.h"
-#include "../Utils/Log.h"
+#include "../Utils/Logging.h"
 
 namespace wallpaper
 {
@@ -67,7 +67,7 @@ public:
 					return el.fs->Open(mpath);
 			}
 		}
-		LOG_ERROR("not found \"" + std::string(path) + "\" in vfs");
+		LOG_ERROR("not found \"%s\" in vfs", path.data());
 		return nullptr;
 	}
 	bool Contains(std::string_view path) const {

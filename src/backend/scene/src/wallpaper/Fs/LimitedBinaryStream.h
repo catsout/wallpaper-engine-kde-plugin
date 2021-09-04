@@ -1,8 +1,6 @@
 #pragma once
 #include <memory>
 #include "IBinaryStream.h"
-//#include <cassert>
-//#include "../Log.h"
 
 namespace wallpaper 
 {

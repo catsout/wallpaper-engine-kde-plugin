@@ -2,7 +2,6 @@
 #include <cstring>
 #include <Eigen/Dense>
 #include <array>
-#include "Utils/Log.h"
 #include "ParticleModify.h"
 
 using namespace wallpaper;

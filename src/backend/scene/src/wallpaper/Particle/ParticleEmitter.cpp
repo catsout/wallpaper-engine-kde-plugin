@@ -2,7 +2,6 @@
 #include "ParticleModify.h"
 #include <random>
 #include <array>
-#include "Utils/Log.h"
 
 using namespace wallpaper;
 

@@ -1,7 +1,7 @@
 #include "WPSceneParser.h"
 #include "WPJson.h"
 #include "Util.h"
-#include "Utils/Log.h"
+#include "Utils/Logging.h"
 #include "Utils/Algorism.h"
 #include "SpecTexs.h"
 
@@ -128,7 +128,7 @@ BlendMode ParseBlendMode(std::string_view str) {
 	} else if(str == "disabled") {
 		bm = BlendMode::Disable;
 	} else {
-		LOG_ERROR("unknown blending: "+std::string(str));
+		LOG_ERROR("unknown blending: %s", str.data());
 	}
 	return bm;
 }
@@ -245,7 +245,7 @@ void LoadMaterial(fs::VFS& vfs,
 				svData.renderTargetResolution.push_back({i, name});
 			}
 			else if(pScene->renderTargets.count(name) == 0) {
-				LOG_ERROR(name);
+				LOG_ERROR(name.c_str());
 			} else {
 				svData.renderTargetResolution.push_back({i, name});
 				const auto& rt = pScene->renderTargets.at(name);
@@ -551,7 +551,7 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf, fs::VFS& vfs
 					}
 				}
 				if(glname.empty()) {
-					LOG_ERROR("ShaderValue: " +name+ " not found in glsl");
+					LOG_ERROR("ShaderValue: %s not found in glsl", name.c_str());
 				} else {
 					material.customShader.constValues[glname] = {glname, value}; 
 				}
@@ -679,11 +679,11 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf, fs::VFS& vfs
 					{
 						for(const auto& el:wpeffobj.commands) {
 							if(el.command != "copy") {
-								LOG_ERROR("Unknown effect command: " + el.command);
+								LOG_ERROR("Unknown effect command: %s", el.command.c_str());
 								continue;
 							}
 							if(fboMap.count(el.target) + fboMap.count(el.source) < 2) {
-								LOG_ERROR("Unknown effect command dst or src: " + el.target + " " + el.source);
+								LOG_ERROR("Unknown effect command dst or src: %s %s", el.target.c_str(), el.source.c_str());
 								continue;
 							}
 							imgEffect->commands.push_back({
@@ -703,7 +703,7 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf, fs::VFS& vfs
 							// Set rendertarget, in and out
 							for(const auto& el:wppass.bind) {
 								if(fboMap.count(el.name) == 0) {
-									LOG_ERROR("fbo " +el.name+ " not found");
+									LOG_ERROR("fbo %s not found", el.name.c_str());
 									continue;
 								}
 								if(wpmat.textures.size() <= el.index)
@@ -712,7 +712,7 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf, fs::VFS& vfs
 							}
 							if(!wppass.target.empty()) {
 								if(fboMap.count(wppass.target) == 0) {
-									LOG_ERROR("fbo " +wppass.target+ " not found");
+									LOG_ERROR("fbo %s not found",wppass.target.c_str());
 								}
 								else {
 									matOutRT = fboMap.at(wppass.target);
@@ -756,7 +756,7 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf, fs::VFS& vfs
 								}
 							}
 							if(glname.empty()) {
-								LOG_ERROR("ShaderValue: " +name+ " not found in glsl");
+								LOG_ERROR("ShaderValue: %s not found in glsl", name.c_str());
 							} else {
 								material.customShader.constValues[glname] = {glname, value}; 
 							}

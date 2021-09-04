@@ -1,5 +1,5 @@
 #include "GLGraphicManager.h"
-#include "Utils/Log.h"
+#include "Utils/Logging.h"
 #include "Utils/Algorism.h"
 #include "SpriteAnimation.h"
 #include "SpecTexs.h"
@@ -329,7 +329,7 @@ void GLGraphicManager::ToFrameGraphPass(SceneNode* node, std::string output, uin
 					if(url == output) {
 						data.inputs[i] = AddCopyPass(*m_fg, *glw, m_fgrscMap[url]);
 						if(url != SpecTex_Default)
-							LOG_INFO("copy bind: " + url);
+							LOG_INFO("copy bind: %s", url.c_str());
 					} else {
 						data.inputs[i] = m_fgrscMap[url];
 					}
@@ -341,10 +341,10 @@ void GLGraphicManager::ToFrameGraphPass(SceneNode* node, std::string output, uin
 					if(m_fgrscIdMap.count(id)) {
 						data.inputs[i] = AddCopyPass(*m_fg, *glw, m_fgrscIdMap.at(id), url);
 					} else {
-						LOG_ERROR(url + " link tex not found, at pass " + passName);
+						LOG_ERROR("%s link tex not found, at pass %s", url.c_str(), passName.c_str());
 					}
 				} else {
-					LOG_ERROR(url + " not found, at pass " + passName);
+					LOG_ERROR("%s not found, at pass %s",url.c_str(), passName.c_str());
 				}
 			} else {
 				fg::TextureResource::Desc desc;

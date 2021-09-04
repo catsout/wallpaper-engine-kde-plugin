@@ -1,6 +1,5 @@
 #include "Algorism.h"
-#include "Utils/Eigen.h"
-#include "Utils/Log.h"
+#include "Eigen.h"
 
 using namespace wallpaper;
 using namespace Eigen;

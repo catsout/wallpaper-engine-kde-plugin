@@ -1,5 +1,5 @@
 #include "wallpaper.h"
-#include "Utils/Log.h"
+#include "Utils/Logging.h"
 
 #include "Utils/FpsCounter.h"
 #include "Utils/FrameTimer.h"
@@ -70,7 +70,7 @@ void WallpaperGL::Load(const std::string& pkg_path) {
 		if(!sus) return;
 	}
 	if(!pImpl->vfs.Mount("/assets", fs::WPPkgFs::CreatePkgFs(pkg_path))) {
-		LOG_ERROR("Can't load pkg file: " + pkg_path);
+		LOG_ERROR("Can't load pkg file: %s", pkg_path.c_str());
 		return;
 	}
 

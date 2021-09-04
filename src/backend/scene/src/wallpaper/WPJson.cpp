@@ -4,7 +4,7 @@ bool wallpaper::ParseJson(const char* func, int line, const std::string& source,
     try {
         result = nlohmann::json::parse(source);
     } catch(nlohmann::json::parse_error& e) {
-        Logger::Log(func, line, "Error parse json ", e.what());
+		WallpaperLog(LOGLEVEL_INFO, func, line, "parse json, %s", e.what());
         return false;
     }
     return true;

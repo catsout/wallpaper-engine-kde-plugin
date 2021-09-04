@@ -5,7 +5,7 @@
 #include <iostream>
 #include <fstream>
 #include <cstdint>
-#include "Utils/Log.h"
+#include "Utils/Logging.h"
 
 #define STRCONV(str,t) wallpaper::StrConv((str), (t), __FUNCTION__, __LINE__);
 
@@ -56,7 +56,7 @@ bool StrConv(const std::string& str, T& target, const char* func, int32_t line) 
 		temp = StrConv<T>(str);
 	}
 	catch (const std::invalid_argument& e) {
-		Logger::Log(func, line, "Error converting string at ", std::string("invalid argument ") + e.what());
+		WallpaperLog(LOGLEVEL_DEBUG, func, line, "converting string, invalid argument: %s", e.what());
 		return false;
 	}
 	target = temp;

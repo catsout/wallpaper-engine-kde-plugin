@@ -16,7 +16,7 @@
 #include "Type.h"
 #include "Image.h"
 #include "Handle.h"
-#include "Utils/Log.h"
+#include "Utils/Logging.h"
 
 #if defined(DEBUG_OPENGL)
 #define CHECK_GL_ERROR_IF_DEBUG() checkGlError(__FILE__, __FUNCTION__, __LINE__);
@@ -178,7 +178,7 @@ struct GTexture {
 	static void Init(GTexture& t, const Desc& d) {
 		t.desc = d;
 		if(t.desc.numSlots > TexSlotMaxNum) {
-			LOG_ERROR("texture solts num overflow:" + std::to_string(t.desc.numSlots));
+			LOG_ERROR("texture solts num overflow: %d", t.desc.numSlots);
 			t.desc.numSlots = TexSlotMaxNum;
 		}
 		for(uint16_t i=0;i<t.desc.numSlots;i++) {
@@ -258,8 +258,8 @@ struct GShader {
 		if(!success)
 		{
 			std::string infolog = GetInfoLog(shader, glGetShaderiv, glGetShaderInfoLog);
-			LOG_ERROR("COMPILATION_FAILED\n" + infolog);
-			LOG_INFO(source);
+			LOG_ERROR("COMPILATION_FAILED\n %s", infolog.c_str());
+			LOG_INFO(source.c_str());
 		}
 		CHECK_GL_ERROR_IF_DEBUG();
 		return shader;
@@ -300,7 +300,7 @@ struct GShader {
 		glGetProgramiv(s.glpro, GL_LINK_STATUS, &success);
 		if(!success) {
 			std::string infoLog = GetInfoLog(s.glpro, glGetProgramiv, glGetProgramInfoLog);
-			LOG_ERROR("LINKING_FAILED\n" + infoLog);
+			LOG_ERROR("LINKING_FAILED\n %s", infoLog.c_str());
 		}
 
 		QueryProUniforms(s);
@@ -467,7 +467,7 @@ public:
 					if(texformat == TextureFormat::R8 || texformat == TextureFormat::RG8) bufferSize *= 2;
 					glGenBuffers(1, &pbo);
 					glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbo);
-					glBufferData(GL_PIXEL_UNPACK_BUFFER, bufferSize, NULL, GL_STATIC_DRAW);
+					glBufferData(GL_PIXEL_UNPACK_BUFFER, bufferSize, 0, GL_STATIC_DRAW);
 					CHECK_GL_ERROR_IF_DEBUG();
 					void* ptr = glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY);
 					CHECK_GL_ERROR_IF_DEBUG();
@@ -492,7 +492,7 @@ public:
 						glCompressedTexImage2D(tex->desc.target, imip, internalFormat, mip.width, mip.height, 0, mip.size, NULL);
 						break;
 					}
-					glBindBuffer(GL_PIXEL_UNPACK_BUFFER, NULL);
+					glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 					glDeleteBuffers(1, &pbo);
 					CHECK_GL_ERROR_IF_DEBUG();
 				}
@@ -647,7 +647,7 @@ public:
 			LOG_ERROR("GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT");
 			break;
 		default:
-			LOG_ERROR("framebuffer not complite " + std::to_string(status));
+			LOG_ERROR("framebuffer not complite %d", status);
 			break;
 		}
 		//glColorMask(true, true, true, true);

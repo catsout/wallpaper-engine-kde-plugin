@@ -1,6 +1,6 @@
 #include "WPParticleObject.h"
 
-#include "Utils/Log.h"
+#include "Utils/Logging.h"
 #include "Fs/VFS.h"
 
 using namespace wallpaper::wpscene;
