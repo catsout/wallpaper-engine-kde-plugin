@@ -5,6 +5,7 @@
 
 namespace wallpaper
 {
+namespace fs { class VFS; }
 namespace wpscene
 {
 
@@ -76,7 +77,7 @@ public:
 
 class WPParticleObject {
 public:
-    bool FromJson(const nlohmann::json&);
+    bool FromJson(const nlohmann::json&, fs::VFS&);
     int32_t id;
     std::string name;
     std::vector<float> origin {0.0f, 0.0f, 0.0f};

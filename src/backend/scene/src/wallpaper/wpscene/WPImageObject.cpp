@@ -1,7 +1,6 @@
 #include "WPImageObject.h"
-#include "pkg.h"
-#include "wallpaper.h"
 #include "Log.h"
+#include "Fs/VFS.h"
 
 using namespace wallpaper::wpscene;
 
@@ -25,15 +24,15 @@ bool WPEffectFbo::FromJson(const nlohmann::json& json) {
     return true;
 }
 
-bool WPImageEffect::FromJson(const nlohmann::json& json) {
+bool WPImageEffect::FromJson(const nlohmann::json& json, fs::VFS& vfs) {
     std::string filePath;
     GET_JSON_NAME_VALUE(json, "file", filePath);
     GET_JSON_NAME_VALUE_NOWARN(json, "visible", visible);
 	GET_JSON_NAME_VALUE_NOWARN(json, "id", id);
     nlohmann::json jEffect;
-    if(!PARSE_JSON(fs::GetContent(WallpaperGL::GetPkgfs(), filePath), jEffect))
+    if(!PARSE_JSON(fs::GetFileContent(vfs, "/assets/" + filePath), jEffect))
         return false;
-    if(!FromFileJson(jEffect))
+    if(!FromFileJson(jEffect, vfs))
         return false;
 
     if(json.contains("passes")) {
@@ -52,7 +51,7 @@ bool WPImageEffect::FromJson(const nlohmann::json& json) {
     return true;
 }
 
-bool WPImageEffect::FromFileJson(const nlohmann::json& json) {
+bool WPImageEffect::FromFileJson(const nlohmann::json& json, fs::VFS& vfs) {
 	GET_JSON_NAME_VALUE_NOWARN(json, "version", version);
     GET_JSON_NAME_VALUE(json, "name", name);
     if(json.contains("fbos")) {
@@ -80,7 +79,7 @@ bool WPImageEffect::FromFileJson(const nlohmann::json& json) {
             std::string matPath;
             GET_JSON_NAME_VALUE(jP, "material", matPath);
             nlohmann::json jMat;
-            if(!PARSE_JSON(fs::GetContent(WallpaperGL::GetPkgfs(), matPath), jMat))
+            if(!PARSE_JSON(fs::GetFileContent(vfs, "/assets/" + matPath), jMat))
                 return false;
             WPMaterial material;
             material.FromJson(jMat);
@@ -109,12 +108,12 @@ bool WPImageEffect::FromFileJson(const nlohmann::json& json) {
     return true;
 }
 
-bool WPImageObject::FromJson(const nlohmann::json& json) {
+bool WPImageObject::FromJson(const nlohmann::json& json, fs::VFS& vfs) {
     GET_JSON_NAME_VALUE(json, "image", image);
     GET_JSON_NAME_VALUE_NOWARN(json, "visible", visible);
     GET_JSON_NAME_VALUE_NOWARN(json, "alignment", alignment);
     nlohmann::json jImage;
-    if(!PARSE_JSON(fs::GetContent(WallpaperGL::GetPkgfs(), image), jImage)) {
+    if(!PARSE_JSON(fs::GetFileContent(vfs, "/assets/" + image), jImage)) {
         LOG_ERROR("Can't load image json: " + image);
         return false;
     }
@@ -146,7 +145,7 @@ bool WPImageObject::FromJson(const nlohmann::json& json) {
         std::string matPath;
 		GET_JSON_NAME_VALUE(jImage, "material", matPath);	
         nlohmann::json jMat;
-        if(!PARSE_JSON(fs::GetContent(WallpaperGL::GetPkgfs(), matPath), jMat)) {
+        if(!PARSE_JSON(fs::GetFileContent(vfs, "/assets/" + matPath), jMat)) {
             LOG_ERROR("Can't load material json: " + matPath);
             return false;
         }
@@ -158,7 +157,7 @@ bool WPImageObject::FromJson(const nlohmann::json& json) {
     if(json.contains("effects")) {
         for(const auto& jE:json.at("effects")) {
             WPImageEffect wpeff;
-            wpeff.FromJson(jE);
+            wpeff.FromJson(jE, vfs);
             effects.push_back(std::move(wpeff));
         }
     }

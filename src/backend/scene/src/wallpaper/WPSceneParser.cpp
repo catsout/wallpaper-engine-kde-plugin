@@ -1,10 +1,7 @@
 #include "WPSceneParser.h"
 #include "WPJson.h"
-#include "pkg.h"
 #include "Util.h"
 #include "Log.h"
-#include "wallpaper.h"
-#include "Type.h"
 #include "Algorism.h"
 #include "SpecTexs.h"
 
@@ -18,6 +15,8 @@
 #include "wpscene/WPImageObject.h"
 #include "wpscene/WPParticleObject.h"
 #include "wpscene/WPScene.h"
+
+#include "Fs/VFS.h"
 
 #include <iostream>
 #include <sstream>
@@ -162,7 +161,8 @@ void ParseSpecTexName(std::string& name, const wpscene::WPMaterial& wpmat, const
 	}
 }
 
-void LoadMaterial(const wpscene::WPMaterial& wpmat, 
+void LoadMaterial(fs::VFS& vfs,
+ const wpscene::WPMaterial& wpmat, 
  Scene* pScene,
  SceneNode* pNode,
  SceneMaterial* pMaterial,
@@ -182,9 +182,9 @@ void LoadMaterial(const wpscene::WPMaterial& wpmat,
 
 	auto& shader = materialShader.shader;
 	shader = std::make_shared<SceneShader>();
-	std::string shaderPath("shaders/"+wpmat.shader);
-	std::string svCode = fs::GetContent(WallpaperGL::GetPkgfs(),shaderPath+".vert");
-	std::string fgCode = fs::GetContent(WallpaperGL::GetPkgfs(),shaderPath+".frag");
+	std::string shaderPath("/assets/shaders/"+wpmat.shader);
+	std::string svCode = fs::GetFileContent(vfs, shaderPath+".vert");
+	std::string fgCode = fs::GetFileContent(vfs, shaderPath+".frag");
 
 	std::vector<WPShaderTexInfo> texinfos;
 	std::unordered_map<std::string, ImageHeader> texHeaders;
@@ -208,8 +208,8 @@ void LoadMaterial(const wpscene::WPMaterial& wpmat,
 			texinfos.push_back({true});
 	}
 
-	svCode = WPShaderParser::PreShaderSrc(svCode, pWPShaderInfo, texinfos);
-	fgCode = WPShaderParser::PreShaderSrc(fgCode, pWPShaderInfo, texinfos);
+	svCode = WPShaderParser::PreShaderSrc(vfs, svCode, pWPShaderInfo, texinfos);
+	fgCode = WPShaderParser::PreShaderSrc(vfs, fgCode, pWPShaderInfo, texinfos);
 	shader->uniforms = pWPShaderInfo->svs;
 
 	for(const auto& el:wpmat.combos) {
@@ -342,7 +342,7 @@ void LoadAlignment(SceneNode& node, std::string_view align, Vector2f size) {
 }
 
 
-std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
+std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf, fs::VFS& vfs) {
 	nlohmann::json json;
 	if(!PARSE_JSON(buf, json)) 
 		return nullptr;
@@ -362,7 +362,7 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
     for(auto& obj:json.at("objects")) {
 		if(obj.contains("image") && !obj.at("image").is_null()) {
 			wpscene::WPImageObject wpimgobj;
-			if(!wpimgobj.FromJson(obj)) continue;
+			if(!wpimgobj.FromJson(obj, vfs)) continue;
 			if(!wpimgobj.visible) continue;
 			wpimgobjs.push_back(wpimgobj);
 			indexTable.push_back({"image", wpimgobjs.size() - 1});
@@ -370,7 +370,7 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 		} else if(obj.contains("particle") && !obj.at("particle").is_null()) {
 			//continue;
 			wpscene::WPParticleObject wppartobj;
-			if(!wppartobj.FromJson(obj)) continue;
+			if(!wppartobj.FromJson(obj, vfs)) continue;
 			if(!wppartobj.visible) continue;
 			wppartobjs.push_back(wppartobj);
 			indexTable.push_back({"particle", wppartobjs.size() - 1});
@@ -392,7 +392,7 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 
 
 	auto upScene = std::make_unique<Scene>();
-	upScene->imageParser = std::make_unique<WPTexImageParser>();
+	upScene->imageParser = std::make_unique<WPTexImageParser>(&vfs);
 	upScene->paritileSys.gener = std::make_unique<WPParticleRawGener>();
 	auto shaderValueUpdater = std::make_unique<WPShaderValueUpdater>(upScene.get());
 
@@ -483,7 +483,7 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 				wpscene::WPImageEffect colorEffect;
 				wpscene::WPMaterial colorMat;
 				nlohmann::json json;
-				if(!PARSE_JSON(fs::GetContent(WallpaperGL::GetPkgfs(), "materials/util/effectpassthrough.json"), json)) 
+				if(!PARSE_JSON(fs::GetFileContent(vfs, "/assets/materials/util/effectpassthrough.json"), json)) 
 					return nullptr;
 				colorMat.FromJson(json);
 				colorMat.combos["BONECOUNT"] = 1;
@@ -533,7 +533,7 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 				baseConstSvs["g_Brightness"] = {"g_Brightness", {wpimgobj.brightness}};
 
 				shaderInfo.baseConstSvs = baseConstSvs;
-				LoadMaterial(wpimgobj.material, upScene.get(), spImgNode.get(), &material, &svData, &shaderInfo);
+				LoadMaterial(vfs, wpimgobj.material, upScene.get(), spImgNode.get(), &material, &svData, &shaderInfo);
 			}
 			
 			for(const auto& cs:wpimgobj.material.constantshadervalues) {
@@ -738,7 +738,7 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 						};
 						SceneMaterial material;
 						WPShaderValueData svData;
-						LoadMaterial(wpmat, upScene.get(), spEffNode.get(), &material, &svData, &wpEffShaderInfo);
+						LoadMaterial(vfs, wpmat, upScene.get(), spEffNode.get(), &material, &svData, &wpEffShaderInfo);
 
 						// load glname from alias and load to constvalue
 						for(const auto& cs:wpmat.constantshadervalues) {
@@ -823,7 +823,7 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf) {
 				shaderInfo.combos["SPRITESHEETBLENDNPOT"] = 1;
 			}
 
-			LoadMaterial(wppartobj.material, upScene.get(), spNode.get(), &material, &svData, &shaderInfo);
+			LoadMaterial(vfs, wppartobj.material, upScene.get(), spNode.get(), &material, &svData, &shaderInfo);
 			auto spMesh = std::make_shared<SceneMesh>(true);
 			auto& mesh = *spMesh;
 			uint32_t maxcount = wppartobj.particleObj.maxcount;

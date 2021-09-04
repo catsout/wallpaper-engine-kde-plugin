@@ -9,6 +9,6 @@ class WPSceneParser : public ISceneParser {
 public:
 	WPSceneParser() = default;
 	~WPSceneParser() = default;
-	std::unique_ptr<Scene> Parse(const std::string&) override;
+	std::unique_ptr<Scene> Parse(const std::string&, fs::VFS&) override;
 };
 }

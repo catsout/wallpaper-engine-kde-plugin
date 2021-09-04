@@ -1,10 +1,9 @@
 #include "WPShaderParser.h"
 
 #include "WPJson.h"
-#include "wallpaper.h"
-#include "pkg.h"
 
 #include "wpscene/WPUniform.h"
+#include "Fs/VFS.h"
 
 #include <regex>
 #include <stack>
@@ -38,7 +37,7 @@ static constexpr const char* pre_shader_code = R"(#version 130
 
 )";
 
-std::string LoadGlslInclude(const std::string& input) {
+std::string LoadGlslInclude(fs::VFS& vfs, const std::string& input) {
 	std::string::size_type pos = 0;
 	std::string output;
 	std::string::size_type linePos = std::string::npos;
@@ -52,9 +51,9 @@ std::string LoadGlslInclude(const std::string& input) {
 		auto inP = lineStr.find_first_of('\"') + 1;
 		auto inE = lineStr.find_last_of('\"');
 		auto includeName = lineStr.substr(inP, inE - inP);
-		auto includeSrc = fs::GetContent(WallpaperGL::GetPkgfs(),"shaders/"+includeName);
+		auto includeSrc = fs::GetFileContent(vfs, "/assets/shaders/"+includeName);
 		output.append("\n//-----include " + includeName + "\n");
-		output.append(LoadGlslInclude(includeSrc));
+		output.append(LoadGlslInclude(vfs, includeSrc));
 		output.append("\n//-----include end\n");
 
 		pos = lineEnd;
@@ -233,7 +232,7 @@ std::size_t FindIncludeInsertPos(const std::string& src, std::size_t startPos) {
 	return NposToZero(pos);
 }
 
-std::string WPShaderParser::PreShaderSrc(const std::string& src, WPShaderInfo* pWPShaderInfo, const std::vector<WPShaderTexInfo>& texinfos) {
+std::string WPShaderParser::PreShaderSrc(fs::VFS& vfs, const std::string& src, WPShaderInfo* pWPShaderInfo, const std::vector<WPShaderTexInfo>& texinfos) {
 	std::string newsrc(src);
 	std::string::size_type pos = 0;
 	std::string include;
@@ -243,7 +242,7 @@ std::string WPShaderParser::PreShaderSrc(const std::string& src, WPShaderInfo* p
 		newsrc.replace(begin, pos-begin, pos-begin, ' ');
 		include.append(src.substr(begin, pos - begin) + "\n");
 	}
-	include = LoadGlslInclude(include);
+	include = LoadGlslInclude(vfs, include);
 
 	ParseWPShader(include, pWPShaderInfo, texinfos);
 	ParseWPShader(newsrc,pWPShaderInfo, texinfos);

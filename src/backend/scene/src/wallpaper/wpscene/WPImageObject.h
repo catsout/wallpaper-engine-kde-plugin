@@ -5,6 +5,11 @@
 
 namespace wallpaper
 {
+namespace fs
+{
+class VFS;
+}
+
 namespace wpscene
 {
 
@@ -28,8 +33,8 @@ public:
 
 class WPImageEffect {
 public:
-    bool FromJson(const nlohmann::json&);
-    bool FromFileJson(const nlohmann::json&);
+    bool FromJson(const nlohmann::json&, fs::VFS& vfs);
+    bool FromFileJson(const nlohmann::json&, fs::VFS& vfs);
     int32_t id;
     std::string name;
     bool visible {true};
@@ -42,7 +47,7 @@ public:
 
 class WPImageObject {
 public:
-    bool FromJson(const nlohmann::json&);
+    bool FromJson(const nlohmann::json&, fs::VFS&);
     int32_t id {0};
     std::string name;
     std::vector<float> origin {0.0f, 0.0f, 0.0f};

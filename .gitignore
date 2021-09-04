@@ -12,6 +12,7 @@ _deps
 *.tar
 build
 *.swp
+*.out
 .vscode
 .idea
 cmake-build-debug

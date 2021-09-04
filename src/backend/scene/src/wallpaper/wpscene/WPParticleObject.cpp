@@ -1,9 +1,7 @@
 #include "WPParticleObject.h"
 
-#include "pkg.h"
-#include "wallpaper.h"
-
 #include "Log.h"
+#include "Fs/VFS.h"
 
 using namespace wallpaper::wpscene;
 
@@ -95,7 +93,7 @@ bool Particle::FromJson(const nlohmann::json& json) {
     return true;
 }
 
-bool WPParticleObject::FromJson(const nlohmann::json& json) {
+bool WPParticleObject::FromJson(const nlohmann::json& json, fs::VFS& vfs) {
     GET_JSON_NAME_VALUE(json, "particle", particle);
     GET_JSON_NAME_VALUE_NOWARN(json, "visible", visible);
 
@@ -111,7 +109,7 @@ bool WPParticleObject::FromJson(const nlohmann::json& json) {
     }
 
     nlohmann::json jParticle;
-    if(!PARSE_JSON(fs::GetContent(WallpaperGL::GetPkgfs(), particle), jParticle))
+    if(!PARSE_JSON(fs::GetFileContent(vfs, "/assets/" + particle), jParticle))
         return false;
     if(!particleObj.FromJson(jParticle))
         return false;
@@ -119,7 +117,7 @@ bool WPParticleObject::FromJson(const nlohmann::json& json) {
         std::string matPath;
 		GET_JSON_NAME_VALUE(jParticle, "material", matPath);	
         nlohmann::json jMat;
-        if(!PARSE_JSON(fs::GetContent(WallpaperGL::GetPkgfs(), matPath), jMat))
+        if(!PARSE_JSON(fs::GetFileContent(vfs, "/assets/" + matPath), jMat))
             return false;
         material.FromJson(jMat);
     } else {

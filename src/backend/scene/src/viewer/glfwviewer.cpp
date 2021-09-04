@@ -4,7 +4,6 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <atomic>
-#include "pkg.h"
 #include "wallpaper.h"
 
 using namespace std;

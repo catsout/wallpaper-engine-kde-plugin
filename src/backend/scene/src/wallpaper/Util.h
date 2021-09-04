@@ -15,19 +15,7 @@ namespace wallpaper
 std::vector<std::string> SpliteString(std::string str, std::string spliter);
 std::string ConectVecString(const std::vector<std::string>& strs,const std::string& conector, int first, int last);
 
-int readInt32(std::ifstream&);
-float ReadFloat(std::ifstream&);
-std::string readSizedString(std::ifstream&);
 std::string	FileSuffix(const std::string& file);
-
-struct LineStr
-{
-    std::string::size_type pos;
-	std::string::size_type len; 
-	std::string value;
-};
-LineStr GetLineWith(const std::string& src, const std::string& find, long pos=0);
-bool DeleteLine(std::string& src, LineStr& line);
 
 template<typename T>
 T StrConv(const std::string& str);

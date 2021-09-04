@@ -10,6 +10,8 @@
 namespace wallpaper
 {
 
+namespace fs { class VFS; }
+
 class GLGraphicManager : public IGraphicManager {
 public:
 	GLGraphicManager();

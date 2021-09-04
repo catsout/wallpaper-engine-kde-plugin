@@ -3,7 +3,7 @@
 
 namespace wallpaper
 {
-
+namespace fs { class VFS; }
 typedef std::unordered_map<std::string, int32_t> Combos;
 
 // ui material name to gl uniform name
@@ -26,7 +26,7 @@ struct WPShaderTexInfo {
 
 class WPShaderParser {
 public:
-	static std::string PreShaderSrc(const std::string& src, WPShaderInfo* pWPShaderInfo, const std::vector<WPShaderTexInfo>& texs);
+	static std::string PreShaderSrc(fs::VFS&, const std::string& src, WPShaderInfo* pWPShaderInfo, const std::vector<WPShaderTexInfo>& texs);
 
 	static std::string PreShaderHeader(const std::string& src, const Combos& combos); 
 };

@@ -1,11 +1,11 @@
 #pragma once
 #include "Image.h"
+//#include "Fs/VFS.h"
 #include <memory>
 #include <string>
 
 namespace wallpaper
 {
-
 class IImageParser {
 public:
 	IImageParser() = default;

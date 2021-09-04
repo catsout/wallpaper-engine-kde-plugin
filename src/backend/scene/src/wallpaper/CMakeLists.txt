@@ -12,10 +12,10 @@ endif ()
 add_library(${PROJECT_NAME}
 	Util.cpp
 	Log.cpp
-	pkg.cpp
 	wallpaper.cpp
 	Image.cpp
 	WPJson.cpp
+	WPPkgFs.cpp
 	FpsCounter.cpp
 	FrameTimer.cpp
 	Type.cpp

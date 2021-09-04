@@ -4,6 +4,10 @@
 #include "FpsCounter.h"
 #include "FrameTimer.h"
 
+#include "Fs/VFS.h"
+#include "Fs/PhysicalFs.h"
+#include "WPPkgFs.h"
+
 #include "Scene/SceneMesh.h"
 #include "Scene/Scene.h"
 #include "WPSceneParser.h"
@@ -12,10 +16,10 @@
 #include <chrono>
 #include <thread>
 
-typedef wallpaper::fs::file_node file_node;
+//typedef wallpaper::fs::file_node file_node;
 using namespace wallpaper;
 
-file_node wallpaper::WallpaperGL::m_pkgfs = file_node();
+//file_node wallpaper::WallpaperGL::m_pkgfs = file_node();
 
 class WallpaperGL::impl {
 public:
@@ -29,6 +33,8 @@ public:
 	std::unique_ptr<Scene> scene;
 	float fboW {1920.0f};
 	float fboH {1080.0f};
+
+	fs::VFS vfs;
 };
 
 WallpaperGL::WallpaperGL():m_mousePos({0,0}),m_aspect(16.0f/9.0f),pImpl(std::make_unique<impl>())
@@ -50,23 +56,40 @@ void WallpaperGL::Load(const std::string& pkg_path) {
 		Clear();
 	}
 	//load pkgfile
+	/*
 	m_pkgfs = file_node();
 	if(fs::ReadPkgToNode(m_pkgfs,pkg_path) == -1) {
 		LOG_ERROR("Can't load " + pkg_path);
 		return;
+	}*/
+	if(!pImpl->vfs.IsMounted("assets")) {
+		bool sus = pImpl->vfs.Mount("/assets",
+			fs::CreatePhysicalFs(m_assetsPath),
+			"assets"
+		);
+		if(!sus) return;
 	}
+	if(!pImpl->vfs.Mount("/assets", fs::WPPkgFs::CreatePkgFs(pkg_path))) {
+		LOG_ERROR("Can't load pkg file: " + pkg_path);
+		return;
+	}
+
 	m_pkgPath = pkg_path;
 	//fs::PrintFileTree(m_pkgfs, 100);
 	std::string scene_src;
-	if(wallpaper::fs::IsFileInNode(m_pkgfs, "scene.json"))
-		scene_src = wallpaper::fs::GetContent(m_pkgfs, "scene.json");
-	else if(wallpaper::fs::IsFileInNode(m_pkgfs, "gifscene.json"))
-		scene_src = wallpaper::fs::GetContent(m_pkgfs, "gifscene.json");
+	if(pImpl->vfs.Contains("/assets/scene.json")) {
+		auto f = pImpl->vfs.Open("/assets/scene.json");
+		if(f) scene_src = f->ReadAllStr();
+	}
+	else if(pImpl->vfs.Contains("/assets/gifscene.json")) {
+		auto f = pImpl->vfs.Open("/assets/gifscene.json");
+		if(f) scene_src = f->ReadAllStr();
+	}
 	if(scene_src.empty()) {
 		LOG_ERROR("Not supported scene type");
 		return;
 	}
-	pImpl->scene = pImpl->parser.Parse(scene_src);	
+	pImpl->scene = pImpl->parser.Parse(scene_src, pImpl->vfs);	
 	if(pImpl->scene) {
 		pImpl->gm.InitializeScene(pImpl->scene.get());
 	} else return;
@@ -112,12 +135,14 @@ void WallpaperGL::Clear()
 {
 	if(!m_inited) return;
 	pImpl->gm.Destroy();
+	pImpl->vfs.Unmount("/assets");
 	LOG_INFO("Date cleared");
 }
 
 void WallpaperGL::SetAssets(const std::string& path) {
-	std::string& assetsPath = fs::GetAssetsPath();
-	assetsPath = path;
+	//std::string& assetsPath = fs::GetAssetsPath();
+	//assetsPath = path;
+	m_assetsPath = path;
 }
 
 void WallpaperGL::SetUpdateCallback(const std::function<void()>& func) {

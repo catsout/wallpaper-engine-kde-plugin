@@ -600,7 +600,9 @@ void GLGraphicManager::SetDefaultFbo(uint fbo, uint16_t w, uint16_t h, FillMode 
 	pImpl->glw->SetDefaultFrameBuffer(fbo, w, h);
 
 	//UpdateDefaultRenderTargetBind(*m_scene);
-	UpdateCameraForFbo(*m_scene, w, h, fillMode);
+	if(m_scene != nullptr) {
+		UpdateCameraForFbo(*m_scene, w, h, fillMode);
+	}
 }
 
 void GLGraphicManager::ChangeFillMode(FillMode fillMode) {
