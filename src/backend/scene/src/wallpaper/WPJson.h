@@ -1,7 +1,7 @@
 #pragma once
 #include <nlohmann/json.hpp>
 #include <cstdint>
-#include "Util.h"
+#include "Utils/String.h"
 
 #define GET_JSON_VALUE(json, value) wallpaper::GetJsonValue(__FUNCTION__, __LINE__, (json), (value))
 #define GET_JSON_NAME_VALUE(json, name, value) wallpaper::GetJsonValue(__FUNCTION__, __LINE__, (json), (name), (value))
@@ -31,7 +31,7 @@ namespace wallpaper {
 		else {
 			std::string strvalue;
 			strvalue = njson.get<std::string>();
-			return StringToVec<Tv>(strvalue, value);
+			return utils::StringToVec<Tv>(strvalue, value);
 		}
 	}
 

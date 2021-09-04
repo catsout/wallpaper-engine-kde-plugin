@@ -1,6 +1,6 @@
 #include "WPSceneParser.h"
 #include "WPJson.h"
-#include "Util.h"
+#include "Utils/String.h"
 #include "Utils/Logging.h"
 #include "Utils/Algorism.h"
 #include "SpecTexs.h"
@@ -151,7 +151,7 @@ void ParseSpecTexName(std::string& name, const wpscene::WPMaterial& wpmat, const
 			std::regex reImgId {R"(_rt_imageLayerComposite_([0-9]+))"};
 			std::smatch match;
 			if(std::regex_search(name, match, reImgId)) {
-				wpid = StrConv<int>(match[1]);
+				STRTONUM(std::string(match[1]), wpid);
 			}
 			name = GenLinkTex(wpid);
 		}

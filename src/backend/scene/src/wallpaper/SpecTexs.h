@@ -1,7 +1,7 @@
 #pragma once
 #include <string_view>
 #include <cstdint>
-#include "Util.h"
+#include "Utils/String.h"
 
 namespace wallpaper {
 
@@ -17,7 +17,9 @@ inline bool IsSpecLinkTex(const std::string_view name) {
 inline uint32_t ParseLinkTex(const std::string_view name) {
 	std::string sid {name};
 	sid = sid.substr(9);
-	return StrConv<uint32_t>(sid);
+	uint32_t result {0};
+	STRTONUM(sid, result);
+	return result;
 }
 inline std::string GenLinkTex(uint32_t id) {
 	return std::string(SpecTex_Link) + std::to_string(id);

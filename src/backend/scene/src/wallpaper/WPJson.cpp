@@ -1,6 +1,7 @@
 #include "WPJson.h"
 
 bool wallpaper::ParseJson(const char* func, int line, const std::string& source, nlohmann::json& result) {
+    int x;
     try {
         result = nlohmann::json::parse(source);
     } catch(nlohmann::json::parse_error& e) {

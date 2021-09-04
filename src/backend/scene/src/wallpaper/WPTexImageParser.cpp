@@ -3,7 +3,6 @@
 #include <lz4.h>
 
 #include "SpriteAnimation.h"
-#include "Util.h"
 #include "Fs/VFS.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>

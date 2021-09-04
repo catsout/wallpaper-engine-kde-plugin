@@ -100,7 +100,7 @@ void ParseWPShader(const std::string& src, WPShaderInfo* pWPShaderInfo, const st
 			if(line.find("// {") != std::string::npos) {
 				nlohmann::json sv_json;
 				if(PARSE_JSON(line.substr(line.find_first_of('{')), sv_json)) {
-					std::vector<std::string> defines = SpliteString(line.substr(0, line.find_first_of(';')), " ");
+					std::vector<std::string> defines = utils::SpliteString(line.substr(0, line.find_first_of(';')), ' ');
 
 					std::string material;
 					GET_JSON_NAME_VALUE_NOWARN(sv_json, "material", material);
@@ -114,7 +114,7 @@ void ParseWPShader(const std::string& src, WPShaderInfo* pWPShaderInfo, const st
 						wpscene::WPUniformTex wput;
 						wput.FromJson(sv_json);
 						int32_t index {0};
-						STRCONV(sv.name.substr(9), index);
+						STRTONUM(sv.name.substr(9), index);
 						if(!wput.default_.empty())
 							defTexs.push_back({index,wput.default_});
 						if(!wput.combo.empty()) {

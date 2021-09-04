@@ -10,7 +10,6 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
 endif ()
 
 add_library(${PROJECT_NAME}
-	Util.cpp
 	wallpaper.cpp
 	Image.cpp
 	WPJson.cpp
