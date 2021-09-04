@@ -6,7 +6,7 @@
 #include <string_view>
 #include "Logging.h"
 
-#define STRTONUM(s, num) wallpaper::utils::StrToNum(s, num, __FILE__, __LINE__);
+#define STRTONUM(s, num) wallpaper::utils::StrToNum(s, num, __SHORT_FILE__, __LINE__);
 
 namespace wallpaper
 {
