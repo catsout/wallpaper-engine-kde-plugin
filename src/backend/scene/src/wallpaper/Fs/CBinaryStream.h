@@ -6,7 +6,7 @@
 #include <memory>
 #include <filesystem>
 #include "IBinaryStream.h"
-#include "../Log.h"
+#include "../Utils/Log.h"
 
 namespace wallpaper 
 {

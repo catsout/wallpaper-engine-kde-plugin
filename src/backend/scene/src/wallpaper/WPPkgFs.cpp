@@ -1,5 +1,5 @@
 #include "WPPkgFs.h"
-#include "Log.h"
+#include "Utils/Log.h"
 #include "Fs/LimitedBinaryStream.h"
 #include <vector>
 

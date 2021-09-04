@@ -11,15 +11,15 @@ endif ()
 
 add_library(${PROJECT_NAME}
 	Util.cpp
-	Log.cpp
 	wallpaper.cpp
 	Image.cpp
 	WPJson.cpp
 	WPPkgFs.cpp
-	FpsCounter.cpp
-	FrameTimer.cpp
 	Type.cpp
-	Algorism.cpp
+	Utils/Log.cpp
+	Utils/FpsCounter.cpp
+	Utils/FrameTimer.cpp
+	Utils/Algorism.cpp
 	wpscene/WPImageObject.cpp
 	wpscene/WPParticleObject.cpp
 	wpscene/WPMaterial.cpp

@@ -8,7 +8,7 @@
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
 
-#include "Log.h"
+#include "Utils/Log.h"
 
 using namespace wallpaper;
 using namespace Eigen;

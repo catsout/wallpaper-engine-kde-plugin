@@ -3,11 +3,7 @@
 
 namespace wp = wallpaper;
 
-void wp::Logger::Log(const char* func, int line, const char* prefix, const char* text) {
-	Log(func, line, prefix, std::string(text));
-}
-
-void wp::Logger::Log(const char* func, int line, const char* prefix, const std::string& text) {
+void wp::Logger::Log(const char* func, int line, const char* prefix, const std::string_view text) {
 	std::string linestr, prefixEnd;
 	if(line != -1)
 		linestr = '(' + std::to_string(line) + ')';

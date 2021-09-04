@@ -1,7 +1,7 @@
 #include "../../WPPkgFs.h"
 #include "../../Fs/PhysicalFs.h"
 #include "../../Fs/VFS.h"
-#include "../../Log.h"
+#include "../../Utils/Log.h"
 
 using namespace wallpaper::fs;
 

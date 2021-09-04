@@ -1,6 +1,6 @@
 #include "GLWrapper.h"
 #include <iostream>
-#include "Log.h"
+#include "Utils/Log.h"
 
 #include <functional>
 #include <cstring>

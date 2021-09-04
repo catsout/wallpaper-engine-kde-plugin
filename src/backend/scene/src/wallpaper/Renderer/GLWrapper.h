@@ -16,7 +16,7 @@
 #include "Type.h"
 #include "Image.h"
 #include "Handle.h"
-#include "Log.h"
+#include "Utils/Log.h"
 
 #if defined(DEBUG_OPENGL)
 #define CHECK_GL_ERROR_IF_DEBUG() checkGlError(__FILE__, __FUNCTION__, __LINE__);

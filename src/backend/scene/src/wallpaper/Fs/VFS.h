@@ -3,7 +3,7 @@
 #include <memory>
 #include <string>
 #include "Fs.h"
-#include "../Log.h"
+#include "../Utils/Log.h"
 
 namespace wallpaper
 {

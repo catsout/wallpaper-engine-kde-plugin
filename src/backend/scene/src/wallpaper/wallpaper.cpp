@@ -1,8 +1,8 @@
 #include "wallpaper.h"
-#include "Log.h"
+#include "Utils/Log.h"
 
-#include "FpsCounter.h"
-#include "FrameTimer.h"
+#include "Utils/FpsCounter.h"
+#include "Utils/FrameTimer.h"
 
 #include "Fs/VFS.h"
 #include "Fs/PhysicalFs.h"

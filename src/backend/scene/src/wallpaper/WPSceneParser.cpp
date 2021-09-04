@@ -1,8 +1,8 @@
 #include "WPSceneParser.h"
 #include "WPJson.h"
 #include "Util.h"
-#include "Log.h"
-#include "Algorism.h"
+#include "Utils/Log.h"
+#include "Utils/Algorism.h"
 #include "SpecTexs.h"
 
 #include "WPShaderParser.h"

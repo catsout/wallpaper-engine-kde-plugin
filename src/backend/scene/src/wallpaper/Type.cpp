@@ -1,6 +1,6 @@
 #include "Type.h"
 
-#include "Log.h"
+#include "Utils/Log.h"
 
 std::string wallpaper::ToString(const ImageType& type) {
 	#define IMG(str) case ImageType::str: return #str;

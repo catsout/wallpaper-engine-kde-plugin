@@ -1,6 +1,6 @@
 #include "SceneCamera.h"
 #include "SceneNode.h"
-#include "Log.h"
+#include "Utils/Log.h"
 #include <iostream>
 #include "Utils/Eigen.h"
 

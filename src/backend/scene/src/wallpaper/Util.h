@@ -5,7 +5,7 @@
 #include <iostream>
 #include <fstream>
 #include <cstdint>
-#include "Log.h"
+#include "Utils/Log.h"
 
 #define STRCONV(str,t) wallpaper::StrConv((str), (t), __FUNCTION__, __LINE__);
 

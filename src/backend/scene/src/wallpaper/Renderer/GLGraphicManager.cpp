@@ -1,7 +1,7 @@
 #include "GLGraphicManager.h"
-#include "Log.h"
+#include "Utils/Log.h"
+#include "Utils/Algorism.h"
 #include "SpriteAnimation.h"
-#include "Algorism.h"
 #include "SpecTexs.h"
 #include "GLWrapper.h"
 
