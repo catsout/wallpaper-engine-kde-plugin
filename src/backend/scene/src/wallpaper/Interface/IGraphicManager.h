@@ -1,11 +1,12 @@
 #pragma once
 #include "Handle.h"
-#include "Scene/Scene.h"
 #include "Image.h"
 #include "Type.h"
 
 namespace wallpaper
 {
+
+class Scene;
 
 struct TextureHandle { uint16_t idx {Uninitialed}; };
 struct RenderTargetHandle { uint16_t idx {Uninitialed}; };

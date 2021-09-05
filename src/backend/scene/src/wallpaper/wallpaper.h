@@ -10,11 +10,6 @@ namespace wallpaper
 class WallpaperGL
 {
 public:
-	/*
-    static const fs::file_node& GetPkgfs(){
-        return m_pkgfs;
-    }
-	*/
     WallpaperGL();
     ~WallpaperGL();
 	WallpaperGL(const WallpaperGL&) = delete;
@@ -50,7 +45,6 @@ private:
 	class impl;
     std::unique_ptr<impl> pImpl;
 
-    //static fs::file_node m_pkgfs;
 	std::string m_pkgPath;
 	std::string m_assetsPath;
 

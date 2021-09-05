@@ -7,35 +7,52 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <array>
+#include <cstring>
 
 #include "Interface/IGraphicManager.h"
-#include "Scene/SceneMesh.h"
-#include "Scene/SceneShader.h"
-#include "Scene/SceneTexture.h"
-#include "Scene/Scene.h"
 #include "Type.h"
 #include "Image.h"
 #include "Handle.h"
 #include "Utils/Logging.h"
 
 #if defined(DEBUG_OPENGL)
-#define CHECK_GL_ERROR_IF_DEBUG() checkGlError(__FILE__, __FUNCTION__, __LINE__);
+#define CHECK_GL_ERROR_IF_DEBUG() CheckGlError(__SHORT_FILE__, __FUNCTION__, __LINE__);
 #else
 #define CHECK_GL_ERROR_IF_DEBUG()
 #endif
 
 namespace wallpaper
 {
+
+class SceneMesh;
+class ShaderValue;
+
 namespace gl
 {
 
 constexpr uint16_t TexSlotMaxNum {512};
 
-inline void checkGlError(const char* file, const char* func, int line)
-{
+inline char const* const GLErrorToStr(GLenum const err) noexcept {
+#define Enum_GLError(glerr) case glerr: return #glerr;
+  switch (err) {
+    // opengl 2
+	Enum_GLError(GL_NO_ERROR);
+	Enum_GLError(GL_INVALID_ENUM);
+	Enum_GLError(GL_INVALID_VALUE);
+	Enum_GLError(GL_INVALID_OPERATION);
+	Enum_GLError(GL_OUT_OF_MEMORY);
+    // opengl 3 errors (1)
+	Enum_GLError(GL_INVALID_FRAMEBUFFER_OPERATION);
+    default:
+      return "Unknown GLError";
+  }
+}
+
+
+inline void CheckGlError(const char* file, const char* func, int line) {
 	int err = glGetError();
 	if(err != 0)
-		std::cerr << "GL_ERROR: " << err << "  " << func << "  at: " << file << "  line: " << line << std::endl;
+		WallpaperLog(LOGLEVEL_ERROR, file, line, "%s(%d) at %s", GLErrorToStr(err), err, func);
 }
 
 
@@ -324,43 +341,6 @@ struct GShader {
 	}
 };
 
-struct GLTexture{
-	GLTexture(GLint target, uint16_t width, uint16_t height, uint16_t numMips);
-	GLuint texture = 0;
-	uint16_t w;
-	uint16_t h;
-    uint8_t numMips = 0;	
-
-	GLint target = 0xFFFF;
-	GLenum wrapS = 0xFFFF;
-	GLenum wrapT = 0xFFFF;
-	GLenum magFilter = 0xFFFF;
-	GLenum minFilter = 0xFFFF;
-};
-
-class GLBuffer {
-public:
-	GLBuffer(GLenum target, std::size_t size) : target(target), size((int)size) {}
-	~GLBuffer();
-	GLuint buffer = 0;
-	GLint usage;
-	GLenum target;
-	int size;
-};
-
-
-class GLFramebuffer {
-public:
-	GLFramebuffer();
-	GLFramebuffer(uint32_t w, uint32_t h);
-
-	GLuint framebuffer = 0;
-	GLTexture color_texture;
-
-	uint32_t width;
-	uint32_t height;
-};
-
 struct GLUniform {
 	char name[256];
 	GLenum type;
@@ -368,35 +348,6 @@ struct GLUniform {
 	int count;
 };
 
-class GLProgram {
-public:
-    ~GLProgram();
-    struct AttribLoc {
-		int32_t location;
-		const char* name;
-	};
-
-	struct UniformLoc {
-		std::string name;
-		int32_t location = -1;
-		uint32_t type;
-		int32_t count;
-	};
-
-    GLuint program = 0;
-
-	std::vector<AttribLoc> attribLocs_;
-	std::vector<UniformLoc> uniformLocs;
-	static int32_t GetUniformLocation(GLProgram*, const std::string& name);
-};
-
-class GLShader
-{
-public:
-    ~GLShader();
-    GLuint shader = 0;
-	std::string source;
-};
 inline void TextureFormat2GLFormat(TextureFormat texformat, GLint& internalFormat, GLenum& format, GLenum& type) {
 	type = GL_UNSIGNED_BYTE;	
 	format = GL_RGBA;
@@ -681,29 +632,15 @@ public:
 		m_fbPool.Free(h);
 	}
 
-	/*
-	GLTexture* CreateTexture(GLenum target, uint32_t width, uint32_t height, uint32_t numMips, TextureSample sample={});
-	GLBuffer* CreateBuffer(GLuint target, std::size_t size, GLuint usage);
-	GLFramebuffer *CreateFramebuffer(uint32_t width, uint32_t height, TextureSample sample={});
-	*/
-
 	//void CopyTexture(GLFramebuffer* src, GLTexture* dst);
 	//GLTexture* CopyTexture(GLFramebuffer* fbo);
 	void ClearColor(float r, float g, float b, float a);
 	void Viewport(int32_t ,int32_t ,int32_t ,int32_t);
 
-	void BindTexture(GLTexture *tex);
-
-	//void BindFramebuffer(GLFramebuffer* fbo);
-	//void BindFramebufferViewport(GLFramebuffer* fbo);
-	//void BindDefaultFramebuffer();
-	//void BindFramebufferTex(GLFramebuffer* fbo);
-	void DeleteBuffer(GLBuffer* buffer);
-	void DeleteFramebuffer(GLFramebuffer *framebuffer);
-
-    void BufferSubData(GLBuffer* buffer, std::size_t size, const float* data);
+	/*
 	void TextureImage(GLTexture *texture, int level, int width, int height, TextureFormat texformat, uint8_t *data, std::size_t imgsize=0);
 	void TextureImagePbo(GLTexture *texture, int level, int width, int height, TextureFormat texformat, uint8_t *data, std::size_t imgsize);
+	*/
 
 	void SetBlend(BlendMode);
 	std::unordered_set<std::string> GetUniforms(HwShaderHandle h) {
@@ -716,23 +653,7 @@ public:
 		return result;
 	}
 
-	void UpdateUniform(HwShaderHandle h, const ShaderValue& sv) {
-		auto* shader = m_shaderPool.Lookup(h);
-		if(shader == nullptr) return;
-
-		int32_t loc = GShader::GetUnifLoc(*shader, sv.name);
-		if(loc == -1) {
-			return;
-		}
-		std::size_t size = sv.value.size();
-		const float* value = &sv.value[0];
-		if(size == 16)
-			SetUniformMat4(loc, static_cast<const float*>(value));
-		else if(size == 9)
-			SetUniformMat3(loc, static_cast<const float*>(value));
-		else
-			SetUniformF(loc, size, static_cast<const float*>(value));
-	}
+	void UpdateUniform(HwShaderHandle h, const ShaderValue& sv);
 
 	void UseShader(HwShaderHandle h, const std::function<void()>& func) {
 		auto* shader = m_shaderPool.Lookup(h);
@@ -782,10 +703,8 @@ public:
 	// scene
 	void LoadMesh(SceneMesh&);
 	void RenderMesh(const SceneMesh&);
-	bool MeshLoaded(const SceneMesh& m) const { return m_vaoMap.count(m.ID()) > 0; }
+	bool MeshLoaded(const SceneMesh& m) const;
 	void CleanMeshBuf();
-
-	GLFramebuffer* GetNowFramebuffer();
 
 	void ClearAll() {
 		CleanMeshBuf();
@@ -801,7 +720,6 @@ private:
 	GFrameBuffer m_clearFb;
 
 	std::unordered_map<int, int> uniformCount_;	
-	GLFramebuffer* m_curFbo;
 
 	std::unordered_map<uint32_t, uint32_t> m_bufMap;
 	std::unordered_map<uint32_t, uint32_t> m_vaoMap;

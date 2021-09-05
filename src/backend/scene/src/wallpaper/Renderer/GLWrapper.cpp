@@ -1,48 +1,12 @@
 #include "GLWrapper.h"
 #include <iostream>
-
 #include <functional>
-#include <cstring>
 
+#include "Scene/SceneMesh.h"
+#include "Scene/SceneShader.h"
 
 using namespace wallpaper::gl;
 
-GLBuffer::~GLBuffer() {
-	if (buffer) {
-		glDeleteBuffers(1, &buffer);
-	}
-}
-
-GLProgram::~GLProgram() {
-	if(program) {
-		glDeleteProgram(program);
-	}
-}
-
-GLShader::~GLShader() {
-	if(shader) {
-		glDeleteShader(shader);
-	}
-}
-
-GLTexture::GLTexture(GLint target, uint16_t width, uint16_t height, uint16_t numMips)
-		:target(target),
-		 w(width),
-		 h(height),
-		 numMips(numMips) {}
-
-GLFramebuffer::GLFramebuffer():width(0), height(0),color_texture(GL_TEXTURE_2D, 0, 0, 1) {}
-GLFramebuffer::GLFramebuffer(uint32_t _width, uint32_t _height)
-		: width(_width), height(_height),color_texture(GL_TEXTURE_2D, _width, _height, 1) {}
-
-/*
-GLFramebuffer::~GLFramebuffer() {
-	if (framebuffer)
-		glDeleteFramebuffers(1,&framebuffer);
-	if (color_texture.texture)
-		glDeleteTextures(1,&color_texture.texture);
-}
-*/
 
 bool GLWrapper::Init(void *get_proc_address(const char *)) {
 	if (!gladLoadGLLoader((GLADloadproc)get_proc_address))
@@ -53,118 +17,6 @@ bool GLWrapper::Init(void *get_proc_address(const char *)) {
 	GFrameBuffer::Init(m_clearFb, {});
 	return true;
 }
-
-/*
-GLTexture* GLWrapper::CreateTexture(GLenum target, uint32_t width, uint32_t height, uint32_t numMips, TextureSample sample) {
-	GLTexture* tex = new GLTexture(target, width, height, numMips);
-	glGenTextures(1, &tex->texture);
-	glBindTexture(tex->target, tex->texture);
-	glTexParameteri(tex->target, GL_TEXTURE_BASE_LEVEL, 0);
-	glTexParameteri(tex->target, GL_TEXTURE_MAX_LEVEL, numMips);
-	CHECK_GL_ERROR_IF_DEBUG();
-
-	tex->wrapS = ToGLType(sample.wrapS);
-	tex->wrapT = ToGLType(sample.wrapT);
-	tex->magFilter = ToGLType(sample.magFilter);
-	tex->minFilter = ToGLType(sample.minFilter);
-	glTexParameteri(tex->target, GL_TEXTURE_WRAP_S, tex->wrapS);
-	glTexParameteri(tex->target, GL_TEXTURE_WRAP_T, tex->wrapT);
-	glTexParameteri(tex->target, GL_TEXTURE_MAG_FILTER, tex->magFilter);
-	glTexParameteri(tex->target, GL_TEXTURE_MIN_FILTER, tex->minFilter);
-
-	glBindTexture(tex->target, 0);
-	CHECK_GL_ERROR_IF_DEBUG();
-	return tex;
-}
-
-GLBuffer* GLWrapper::CreateBuffer(GLenum target, std::size_t size, GLuint usage) {
-	GLBuffer* buffer = new GLBuffer(target, size);
-	buffer->size = (int)size;
-	buffer->usage = usage;
-	glGenBuffers(1, &buffer->buffer);
-	glBindBuffer(buffer->target, buffer->buffer);
-	glBufferData(buffer->target, buffer->size, nullptr, buffer->usage);
-	return buffer;
-}
-
-
-GLFramebuffer* GLWrapper::CreateFramebuffer(uint32_t width, uint32_t height, TextureSample sample) {
-	GLFramebuffer* fbo = new GLFramebuffer(width, height);
-	glGenFramebuffers(1, &fbo->framebuffer);
-	GLTexture* tex = CreateTexture(GL_TEXTURE_2D , width, height, 0, sample);
-	TextureImage(tex, 0, width, height, TextureFormat::RGBA8, nullptr, 0);
-	fbo->color_texture.texture = tex->texture;
-	delete tex;
-	glBindFramebuffer(GL_FRAMEBUFFER, fbo->framebuffer);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fbo->color_texture.texture, 0);
-	GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-	switch (status) {
-	case GL_FRAMEBUFFER_COMPLETE:
-		break;
-	case GL_FRAMEBUFFER_UNSUPPORTED:
-		LOG_ERROR("GL_FRAMEBUFFER_UNSUPPORTED");
-		break;
-	case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
-		LOG_ERROR("GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT");
-		break;
-	default:
-		LOG_ERROR("framebuffer not complite " + std::to_string(status));
-		break;
-	}
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	glBindTexture(GL_TEXTURE_2D, 0);
-	CHECK_GL_ERROR_IF_DEBUG();
-	m_curFbo = nullptr;
-	return fbo;
-}
-
-GLProgram* GLWrapper::CreateProgram(std::vector<GLShader *> shaders,
-									std::vector<GLProgram::AttribLoc> attribLocs) {
-	GLProgram* program = new GLProgram();
-	program->program = glCreateProgram();
-	for(auto& shader:shaders) {
-		glAttachShader(program->program, shader->shader);
-		CHECK_GL_ERROR_IF_DEBUG();
-	}
-	for(auto& attrib:attribLocs) {
-		glBindAttribLocation(program->program, attrib.location, attrib.name);
-		CHECK_GL_ERROR_IF_DEBUG();
-	}
-
-	glLinkProgram(program->program);
-	glUseProgram(program->program);
-	int success;
-	glGetProgramiv(program->program, GL_LINK_STATUS, &success);
-	if(!success) {
-		std::string infoLog = GetInfoLog(program->program, glGetProgramiv, glGetProgramInfoLog);
-		LOG_ERROR("LINKING_FAILED\n" + infoLog);
-	}
-	CHECK_GL_ERROR_IF_DEBUG();
-	return program;
-}
-
-void GLWrapper::CopyTexture(GLFramebuffer* src, GLTexture* dst) {
-	BindFramebuffer(src);
-	glReadBuffer(GL_COLOR_ATTACHMENT0);
-	BindTexture(dst);
-	glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, src->width, src->height);
-	CHECK_GL_ERROR_IF_DEBUG();
-}
-
-GLTexture* GLWrapper::CopyTexture(GLFramebuffer* fbo) {
-	BindFramebuffer(fbo);
-	glReadBuffer(GL_COLOR_ATTACHMENT0);
-
-	int width = fbo->width,height = fbo->height;
-	GLTexture* tex = CreateTexture(GL_TEXTURE_2D , width, height, 0);
-	TextureImage(tex, 0, width, height, TextureFormat::RGBA8, nullptr, 0);
-	BindTexture(tex);
-	glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, width, height);
-//	BindFramebuffer(backfbo);
-	CHECK_GL_ERROR_IF_DEBUG();
-	return tex;
-}
-*/
 
 void GLWrapper::ClearColor(float r, float g, float b, float a) {
 	glClearColor(r, g, b, a);
@@ -177,56 +29,7 @@ void GLWrapper::Viewport(int x,int y,int w,int h) {
 	CHECK_GL_ERROR_IF_DEBUG();
 }
 
-void GLWrapper::BindTexture(GLTexture *tex) {
-	glBindTexture(tex->target, tex->texture);
-	CHECK_GL_ERROR_IF_DEBUG();
-}
 /*
-void GLWrapper::BindFramebuffer(GLFramebuffer* fbo) {
-	glBindFramebuffer(GL_FRAMEBUFFER, fbo->framebuffer);
-	CHECK_GL_ERROR_IF_DEBUG();
-	m_curFbo = fbo;
-}
-
-void GLWrapper::BindFramebufferViewport(GLFramebuffer* fbo) {
-	BindFramebuffer(fbo);
-	Viewport(0,0, fbo->width, fbo->height);
-}
-
-void GLWrapper::BindFramebufferTex(GLFramebuffer* fbo) {
-	BindTexture(&fbo->color_texture);
-}
-
-void GLWrapper::BindDefaultFramebuffer() {
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	CHECK_GL_ERROR_IF_DEBUG();
-}
-*/
-
-void GLWrapper::DeleteBuffer(GLBuffer* buffer) {
-	delete buffer;
-	CHECK_GL_ERROR_IF_DEBUG();
-}
-
-void GLWrapper::DeleteFramebuffer(GLFramebuffer *glfbo) {
-	if(glfbo == nullptr)
-		return;
-	if (glfbo->framebuffer)
-		glDeleteFramebuffers(1, &glfbo->framebuffer);
-	if (glfbo->color_texture.texture)
-		glDeleteTextures(1, &glfbo->color_texture.texture);
-	delete glfbo;
-	CHECK_GL_ERROR_IF_DEBUG();
-}
-
-
-void GLWrapper::BufferSubData(GLBuffer* buffer, std::size_t size, const float* data) {
-	glBufferSubData(buffer->target, 0, size, data);
-	CHECK_GL_ERROR_IF_DEBUG();
-}
-
-
-
 void GLWrapper::TextureImage(GLTexture* texture, int level, int width, int height, TextureFormat texformat, uint8_t *data, std::size_t imgsize) {
 	GLTexture *tex = texture;
 	BindTexture(texture);
@@ -293,7 +96,7 @@ void GLWrapper::TextureImagePbo(GLTexture *texture, int level, int width, int he
 	glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 	glDeleteBuffers(1, &pbo);
 	CHECK_GL_ERROR_IF_DEBUG();
-}
+}*/
 
 void GLWrapper::SetBlend(BlendMode bm) {
 	//glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);	
@@ -318,6 +121,25 @@ void GLWrapper::SetBlend(BlendMode bm) {
 		break;
 	}
 }
+
+void GLWrapper::UpdateUniform(HwShaderHandle h, const ShaderValue& sv) {
+	auto* shader = m_shaderPool.Lookup(h);
+	if(shader == nullptr) return;
+
+	int32_t loc = GShader::GetUnifLoc(*shader, sv.name);
+	if(loc == -1) {
+		return;
+	}
+	std::size_t size = sv.value.size();
+	const float* value = &sv.value[0];
+	if(size == 16)
+		SetUniformMat4(loc, static_cast<const float*>(value));
+	else if(size == 9)
+		SetUniformMat3(loc, static_cast<const float*>(value));
+	else
+		SetUniformF(loc, size, static_cast<const float*>(value));
+}
+
 
 void GLWrapper::LoadMesh(SceneMesh& mesh) {
 	uint32_t vao;
@@ -429,14 +251,10 @@ void GLWrapper::CleanMeshBuf() {
 	m_bufidgen = 0;
 }
 
+bool GLWrapper::MeshLoaded(const SceneMesh& m) const { return m_vaoMap.count(m.ID()) > 0; }
 
-GLFramebuffer* GLWrapper::GetNowFramebuffer() {
-	return m_curFbo;
-}
 
-GLWrapper::GLWrapper()
-	: m_curFbo(nullptr)
-{
+GLWrapper::GLWrapper() {
 	uniformCount_[GL_FLOAT] = 1;
 	uniformCount_[GL_FLOAT_VEC2] = 2;
 	uniformCount_[GL_FLOAT_VEC3] = 3;
@@ -446,14 +264,6 @@ GLWrapper::GLWrapper()
 }
 
 namespace wp = wallpaper;
-
-int32_t GLProgram::GetUniformLocation(GLProgram* pro, const std::string& name) {
-	for(const auto& u:pro->uniformLocs) {
-		if(name == u.name)
-			return u.location;
-	}
-	return -1;
-}
 
 
 GLuint wallpaper::gl::ToGLType(ShaderType st) {

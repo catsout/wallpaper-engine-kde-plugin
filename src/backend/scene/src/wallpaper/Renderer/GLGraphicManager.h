@@ -1,6 +1,5 @@
 #pragma once
 #include "Interface/IGraphicManager.h"
-#include "Scene/SceneRenderTarget.h"
 #include "Fg/FrameGraph.h"
 #include <unordered_map>
 #include <list>
@@ -11,6 +10,8 @@ namespace wallpaper
 {
 
 namespace fs { class VFS; }
+
+class SceneNode;
 
 class GLGraphicManager : public IGraphicManager {
 public:

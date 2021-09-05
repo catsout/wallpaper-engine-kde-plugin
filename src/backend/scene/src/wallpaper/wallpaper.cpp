@@ -16,10 +16,7 @@
 #include <chrono>
 #include <thread>
 
-//typedef wallpaper::fs::file_node file_node;
 using namespace wallpaper;
-
-//file_node wallpaper::WallpaperGL::m_pkgfs = file_node();
 
 class WallpaperGL::impl {
 public:
@@ -57,12 +54,6 @@ void WallpaperGL::Load(const std::string& pkg_path) {
 		Clear();
 	}
 	//load pkgfile
-	/*
-	m_pkgfs = file_node();
-	if(fs::ReadPkgToNode(m_pkgfs,pkg_path) == -1) {
-		LOG_ERROR("Can't load " + pkg_path);
-		return;
-	}*/
 	if(!pImpl->vfs.IsMounted("assets")) {
 		bool sus = pImpl->vfs.Mount("/assets",
 			fs::CreatePhysicalFs(m_assetsPath),
@@ -76,7 +67,6 @@ void WallpaperGL::Load(const std::string& pkg_path) {
 	}
 
 	m_pkgPath = pkg_path;
-	//fs::PrintFileTree(m_pkgfs, 100);
 	std::string scene_src;
 	if(pImpl->vfs.Contains("/assets/scene.json")) {
 		auto f = pImpl->vfs.Open("/assets/scene.json");
@@ -141,8 +131,6 @@ void WallpaperGL::Clear()
 }
 
 void WallpaperGL::SetAssets(const std::string& path) {
-	//std::string& assetsPath = fs::GetAssetsPath();
-	//assetsPath = path;
 	m_assetsPath = path;
 }
 

@@ -4,6 +4,8 @@
 #include "SpriteAnimation.h"
 #include "SpecTexs.h"
 #include "GLWrapper.h"
+#include "Scene/Scene.h"
+#include "Scene/SceneRenderTarget.h"
 
 #include <functional>
 
@@ -26,29 +28,6 @@ std::string OutImageType(const Image& img) {
 	else 
 		return ToString(img.header.type);
 }
-
-/*
-std::vector<gl::GLTexture*> LoadImage(gl::GLWrapper* pglw, const SceneTexture& tex, const Image& img) {
-	auto& glw = *pglw;
-	LOG_INFO(std::string("Load tex ") + OutImageType(img) + " " + tex.url);
-	std::vector<gl::GLTexture*> texs;
-	for(int i_img=0;i_img < img.count;i_img++) {
-		auto& mipmaps = img.imageDatas.at(i_img);
-		if(mipmaps.empty()) {
-			LOG_ERROR("no tex data");
-			continue;
-		}
-		auto texture = glw.CreateTexture(gl::ToGLType(TextureType::IMG_2D), img.width, img.height, mipmaps.size()-1, tex.sample);
-		// mipmaps
-		for(int i_mip=0;i_mip < mipmaps.size();i_mip++){
-			auto& imgData = mipmaps.at(i_mip);
-			glw.TextureImagePbo(texture, i_mip, imgData.width, imgData.height, img.format, imgData.data.get(), imgData.size);
-		}
-		texs.push_back(texture);
-	}
-	return texs;
-}
-*/
 
 void UpdateSceneRenderTargetSize(Scene& scene, std::array<uint16_t, 2> screenSize) {
 	for(auto& el:scene.renderTargets) {
