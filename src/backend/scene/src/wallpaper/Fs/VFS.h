@@ -34,6 +34,11 @@ public:
 public:
 	VFS() = default;
 	~VFS() = default;
+	VFS(const VFS&) = delete;
+	VFS& operator=(const VFS&) = delete;
+	VFS(VFS&&) = default;
+	VFS& operator=(VFS&&) = default;
+
 
 	bool Mount(std::string_view mountpoint, std::unique_ptr<Fs> fs, std::string_view name="") {
 		if(!MountedFs::CheckMountPoint(mountpoint) || !fs) return false;

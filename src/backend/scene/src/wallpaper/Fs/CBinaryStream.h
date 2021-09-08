@@ -20,26 +20,26 @@ public:
 protected:
 	CBinarayStream(std::string_view path, std::FILE* file):m_file(file) {}
 public:
-    virtual int Read(void* buffer, int sizeInBytes) override {
-		return std::fread(buffer, sizeInBytes, 1, m_file);
+    virtual size_t Read(void* buffer, size_t sizeInBytes) override {
+		return sizeInBytes * std::fread(buffer, sizeInBytes, 1, m_file);
 	}
-    virtual int Write( const void* buffer, int sizeInBytes) override { return 0; }
-    virtual char* Gets( char* buffer, int sizeStr) override {
+    virtual size_t Write( const void* buffer, size_t sizeInBytes) override { return 0; }
+    virtual char* Gets( char* buffer, size_t sizeStr) override {
 		return std::fgets(buffer, sizeStr, m_file);
 	}
-	virtual long Tell() override {
+	virtual long Tell() const override {
 		return std::ftell(m_file);
 	}
 	virtual bool SeekSet(long offset) override {
-		return std::fseek(m_file, offset, SEEK_SET);
+		return std::fseek(m_file, offset, SEEK_SET) == 0;
 	}
 	virtual bool SeekCur(long offset) override {
-		return std::fseek(m_file, offset, SEEK_CUR);
+		return std::fseek(m_file, offset, SEEK_CUR) == 0;
 	}
 	virtual bool SeekEnd(long offset) override {
-		return std::fseek(m_file, offset, SEEK_END);
+		return std::fseek(m_file, offset, SEEK_END) == 0;
 	}
-    virtual std::size_t Size() override {
+    virtual std::size_t Size() const override {
 		long cur = std::ftell(m_file);
 		std::fseek(m_file, 0, SEEK_END);
 		long size = std::ftell(m_file);
