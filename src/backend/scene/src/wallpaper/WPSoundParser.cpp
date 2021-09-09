@@ -25,9 +25,10 @@ static PlaybackMode ToPlaybackMode(std::string_view s) {
 class WPSoundStream : public audio::SoundStream {
 public:
 	struct Config {
-		float maxtime;
-		float mintime;
-		PlaybackMode mode;
+		float maxtime {10.0f};
+		float mintime {0.0f};
+		float volume {1.0f};
+		PlaybackMode mode {PlaybackMode::Loop};
 	};
 	WPSoundStream(const std::vector<std::string>& paths, fs::VFS& vfs, Config c):m_soundPaths(paths),vfs(vfs),m_config(c) {};
 	virtual ~WPSoundStream() = default;
@@ -41,6 +42,14 @@ public:
 		if(frameReads == 0) {
 			Switch();
 			frameReads = m_curActive->NextPcmData(pData, frameCount);
+		}
+		// volume 
+		{
+			float* pData_float = static_cast<float*>(pData);
+			const auto num = frameReads * m_desc.channels;
+			for(uint i=0;i<num;i++,pData_float++) {
+				(*pData_float) *= m_config.volume;
+			}
 		}
 		return frameReads;
 	};
@@ -68,6 +77,7 @@ void WPSoundParser::Parse(const wpscene::WPSoundObject& obj, fs::VFS& vfs, audio
 	WPSoundStream::Config config{
 		.maxtime = obj.maxtime,
 		.mintime = obj.mintime,
+		.volume = obj.volume > 1.0f	? 1.0f : obj.volume,
 		.mode = ToPlaybackMode(obj.playbackmode)
 	};
 	auto ss = std::make_unique<WPSoundStream>(obj.sound, vfs, config);

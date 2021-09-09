@@ -99,14 +99,7 @@ public:
 
 private:
 	struct Slot {
-		/*
-	public:
-		Slot() = default;
-		~Slot() = default;
-		Slot(const Slot&) = delete;
-		*/
 		uint32_t id {0};
-		//bool import {false};
 		THandleResource* rsc;
 	};
 
@@ -122,7 +115,6 @@ private:
 	}
 	void RestSlot(Slot& slot) {
 		slot.id = 0;
-		//slot.rsc = THandleResource();
 		delete slot.rsc;
 		slot.rsc = nullptr;
 	}
