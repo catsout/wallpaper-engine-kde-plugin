@@ -8,6 +8,11 @@ Item{
     property string source: background.source
     property string assets: "assets"
     property int displayMode: background.displayMode
+    property var volumeFade: Common.createVolumeFade(
+        sceneItem, 
+        Qt.binding(function() { return background.mute ? 0 : background.volume; }),
+        (volume) => { player.volume = volume / 100.0; }
+    )
 
     onDisplayModeChanged: {
         if(displayMode == Common.DisplayMode.Scale)
@@ -22,6 +27,7 @@ Item{
         id: player
         anchors.fill: parent
         fps: background.fps
+        muted: background.mute
         source: ""
         assets: sceneItem.assets
         Component.onCompleted: {
@@ -39,9 +45,11 @@ Item{
         player.source = source_.substr(0, source_.length-5) + ".pkg";
     }
     function play() {
+        volumeFade.start();
         player.play();
     }
     function pause() {
+        volumeFade.stop();
         player.pause();
     }
     

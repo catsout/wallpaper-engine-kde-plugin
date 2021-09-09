@@ -7,13 +7,12 @@
 namespace wallpaper
 {
 
-namespace fs{
-class VFS;
-}
+namespace fs{ class VFS; }
+namespace audio{ class SoundManager; }
 class ISceneParser {
 public:
 	ISceneParser() = default;
 	virtual ~ISceneParser() = default;
-	virtual std::unique_ptr<Scene> Parse(const std::string&, fs::VFS&) = 0;
+	virtual std::unique_ptr<Scene> Parse(const std::string&, fs::VFS&, audio::SoundManager&) = 0;
 };
 }

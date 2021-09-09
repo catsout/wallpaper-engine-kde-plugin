@@ -15,6 +15,7 @@ add_library(${PROJECT_NAME}
 	WPJson.cpp
 	WPPkgFs.cpp
 	Type.cpp
+	Audio/SoundManager.cpp
 	Utils/Logging.cpp
 	Utils/FpsCounter.cpp
 	Utils/FrameTimer.cpp
@@ -43,7 +44,7 @@ add_library(${PROJECT_NAME}
 	WPSceneParser.cpp
 	WPShaderValueUpdater.cpp
 	WPTexImageParser.cpp
-
+	WPSoundParser.cpp
 )
 set_property(TARGET ${PROJECT_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
 target_link_libraries(${PROJECT_NAME}
@@ -51,6 +52,7 @@ target_link_libraries(${PROJECT_NAME}
 		OpenGL::GL
 		${LZ4_LIBRARIES}
 		${CMAKE_THREAD_LIBS_INIT}
+		${CMAKE_DL_LIBS}
 		glad
 )
 target_include_directories(${PROJECT_NAME} PUBLIC .)

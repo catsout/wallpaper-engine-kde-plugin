@@ -25,12 +25,13 @@ public:
 
 	uint8_t Fps() const {return m_fps;};
 	void SetFps(uint8_t);
+	bool IsRunning() const { return m_running; }
 	bool NoFrame() const;
 	// only used with one render
 	void RenderFrame();
 private:
 	std::atomic<uint32_t> m_frames;
-	std::atomic<uint8_t> m_fps;
+	uint8_t m_fps;
 	std::atomic<bool> m_running;
 	std::function<void()> m_callback;
 	std::mutex m_cvmutex;

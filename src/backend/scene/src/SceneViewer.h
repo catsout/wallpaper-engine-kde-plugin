@@ -19,6 +19,8 @@ class SceneViewer : public QQuickFramebufferObject
 	Q_PROPERTY(int curFps READ curFps)
 	Q_PROPERTY(int fps READ fps WRITE setFps NOTIFY fpsChanged)
 	Q_PROPERTY(int fillMode READ fillMode WRITE setFillMode NOTIFY fillModeChanged)
+	Q_PROPERTY(float volume READ volume WRITE setVolume NOTIFY volumeChanged)
+	Q_PROPERTY(bool muted READ muted WRITE setMuted)
 
     friend class SceneRenderer;
 public:
@@ -39,11 +41,15 @@ public:
 	int curFps() const;
 	int fps() const;
 	int fillMode() const;
+	float volume() const;
+	bool muted() const;
 
 	void setSource(const QUrl& source);
 	void setAssets(const QUrl& assets);
 	void setFps(int);
 	void setFillMode(int);
+	void setVolume(float);
+	void setMuted(bool);
 
 	Q_INVOKABLE void setAcceptMouse(bool);
 	Q_INVOKABLE void setAcceptHover(bool);
@@ -62,6 +68,7 @@ signals:
 	void sourceChanged();
 	void fpsChanged();
 	void fillModeChanged();
+	void volumeChanged();
 
 private:
 	QUrl m_source;
@@ -72,4 +79,6 @@ private:
 	int m_fps;
 	int m_curFps;
 	int m_fillMode;
+	float m_volume;
+	bool m_muted;
 };

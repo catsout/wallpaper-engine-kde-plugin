@@ -101,6 +101,14 @@ public:
 			else
 				m_wgl.Start();
 		}
+		if(m_volume != viewer->m_volume) {
+			m_volume = viewer->m_volume;
+			m_wgl.SetVolume(m_volume);
+		}
+		if(m_muted != viewer->m_muted) {
+			m_muted = viewer->m_muted;
+			m_wgl.SetMuted(m_muted);
+		}
 		if(viewer->fps() != m_wgl.Fps()) {
 			m_wgl.SetFps(viewer->fps());
 		}
@@ -122,6 +130,8 @@ private:
 	bool fboNotSet {true};
 	QPointF m_mousePos;
 	bool m_paused {false};
+	float m_volume {1.0f};
+	bool m_muted;
 	SceneViewer::FillMode m_fillMode {SceneViewer::FillMode::ASPECTCROP};
 };
 
@@ -130,7 +140,9 @@ SceneViewer::SceneViewer(QQuickItem * parent):QQuickFramebufferObject(parent),
 		m_fps(15),
 		m_paused(false),
 		m_curFps(0),
-		m_fillMode(FillMode::ASPECTCROP) {
+		m_fillMode(FillMode::ASPECTCROP),
+		m_volume(1.0f),
+		m_muted(false) {
 }
 
 SceneViewer::~SceneViewer() {
@@ -175,6 +187,8 @@ int SceneViewer::curFps() const { return m_curFps; }
 
 int SceneViewer::fps() const { return m_fps; }
 int SceneViewer::fillMode() const { return m_fillMode; }
+float SceneViewer::volume() const { return m_volume; }
+bool SceneViewer::muted() const { return m_muted; }
 
 void SceneViewer::setSource(const QUrl& source) {
 	if(source == m_source) return;
@@ -197,6 +211,15 @@ void SceneViewer::setFillMode(int value) {
 	if(m_fillMode == value) return;
 	m_fillMode = value;
 	Q_EMIT fillModeChanged();
+}
+void SceneViewer::setVolume(float value) {
+	if(m_volume == value) return;
+	m_volume = value;
+	Q_EMIT volumeChanged();
+}
+void SceneViewer::setMuted(bool value) {
+	if(m_muted == value) return;
+	m_muted = value;
 }
 
 void SceneViewer::play() {

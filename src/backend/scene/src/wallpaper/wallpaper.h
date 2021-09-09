@@ -38,9 +38,14 @@ public:
 
 	void Start();
 	void Stop();
+	bool IsRunning() const;
 
 	void OutGraphviz(const std::string& path);
 
+	float Volume() const;
+	bool Muted() const;
+	void SetMuted(bool);
+	void SetVolume(float);
 private:
 	class impl;
     std::unique_ptr<impl> pImpl;

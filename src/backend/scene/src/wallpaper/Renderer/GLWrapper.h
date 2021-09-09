@@ -46,6 +46,7 @@ inline char const* const GLErrorToStr(GLenum const err) noexcept {
     default:
       return "Unknown GLError";
   }
+#undef Enum_GLError
 }
 
 

@@ -12,6 +12,7 @@
 #include "Scene/Scene.h"
 #include "WPSceneParser.h"
 #include "Renderer/GLGraphicManager.h"
+#include "Audio/SoundManager.h"
 
 #include <chrono>
 #include <thread>
@@ -26,6 +27,8 @@ public:
 	FrameTimer frameTimer;
 	WPSceneParser parser;
 	GLGraphicManager gm;
+	audio::SoundManager sm;
+
 
 	std::chrono::time_point<std::chrono::steady_clock> timer {std::chrono::steady_clock::now()};
 	std::unique_ptr<Scene> scene;
@@ -50,6 +53,13 @@ bool WallpaperGL::Init(void *get_proc_address(const char *)) {
 void WallpaperGL::Load(const std::string& pkg_path) {
 	if(!m_inited || pkg_path == m_pkgPath) return;
 	m_loaded = false;
+	if(!pImpl->sm.IsInited()) {
+		LOG_INFO("loading sound device");
+		pImpl->sm.Init();
+		pImpl->sm.Play();
+	} else {
+		LOG_INFO("sound device loaded");
+	}
 	if(!m_pkgPath.empty()) {
 		Clear();
 	}
@@ -80,10 +90,11 @@ void WallpaperGL::Load(const std::string& pkg_path) {
 		LOG_ERROR("Not supported scene type");
 		return;
 	}
-	pImpl->scene = pImpl->parser.Parse(scene_src, pImpl->vfs);	
+	pImpl->scene = pImpl->parser.Parse(scene_src, pImpl->vfs, pImpl->sm);	
 	if(pImpl->scene) {
 		pImpl->gm.InitializeScene(pImpl->scene.get());
 	} else return;
+
 	m_loaded = true;
 
 	// required as camera is reloaded
@@ -126,6 +137,8 @@ void WallpaperGL::Clear()
 {
 	if(!m_inited) return;
 	pImpl->gm.Destroy();
+	pImpl->sm.UnMountAll();
+	// unmound fs at end
 	pImpl->vfs.Unmount("/assets");
 	LOG_INFO("Date cleared");
 }
@@ -150,10 +163,16 @@ void WallpaperGL::SetUpdateCallback(const std::function<void()>& func) {
 
 void WallpaperGL::Start() {
 	pImpl->frameTimer.Run();
+	pImpl->sm.Play();
 }
 
 void WallpaperGL::Stop() {
 	pImpl->frameTimer.Stop();
+	pImpl->sm.Pause();
+}
+
+bool WallpaperGL::IsRunning() const {
+	return pImpl->frameTimer.IsRunning();
 }
 
 
@@ -182,3 +201,15 @@ void WallpaperGL::OutGraphviz(const std::string& path) {
 	pImpl->gm.OutGriphviz(path);
 }
 
+float WallpaperGL::Volume() const {
+	return pImpl->sm.Volume();
+}
+bool WallpaperGL::Muted() const {
+	return pImpl->sm.Muted();
+}
+void WallpaperGL::SetMuted(bool v) {
+	pImpl->sm.SetMuted(v);
+}
+void WallpaperGL::SetVolume(float v) {
+	pImpl->sm.SetVolume(v);
+}

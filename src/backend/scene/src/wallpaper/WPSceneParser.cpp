@@ -9,11 +9,13 @@
 #include "WPTexImageParser.h"
 #include "Particle/WPParticleRawGener.h"
 #include "WPParticleParser.h"
+#include "WPSoundParser.h"
 
 
 #include "WPShaderValueUpdater.h"
 #include "wpscene/WPImageObject.h"
 #include "wpscene/WPParticleObject.h"
+#include "wpscene/WPSoundObject.h"
 #include "wpscene/WPScene.h"
 
 #include "Fs/VFS.h"
@@ -342,7 +344,7 @@ void LoadAlignment(SceneNode& node, std::string_view align, Vector2f size) {
 }
 
 
-std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf, fs::VFS& vfs) {
+std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf, fs::VFS& vfs, audio::SoundManager& sm) {
 	nlohmann::json json;
 	if(!PARSE_JSON(buf, json)) 
 		return nullptr;
@@ -357,6 +359,7 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf, fs::VFS& vfs
 
 	std::vector<wpscene::WPImageObject> wpimgobjs;
 	std::vector<wpscene::WPParticleObject> wppartobjs;
+	std::vector<wpscene::WPSoundObject> wpsoundobjs;
 	std::vector<std::pair<std::string, uint32_t>> indexTable;
 
     for(auto& obj:json.at("objects")) {
@@ -375,6 +378,11 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf, fs::VFS& vfs
 			wppartobjs.push_back(wppartobj);
 			indexTable.push_back({"particle", wppartobjs.size() - 1});
 			//LOG_INFO(nlohmann::json(wppartobj).dump(4));
+		} else if(obj.contains("sound") && !obj.at("sound").is_null()) {
+			wpscene::WPSoundObject wpsoundobj;
+			if(!wpsoundobj.FromJson(obj)) continue;
+			wpsoundobjs.push_back(wpsoundobj);
+			indexTable.push_back({"sound", wpsoundobjs.size() - 1});
 		}
 	}
 	if(sc.general.orthogonalprojection.auto_) {
@@ -860,7 +868,11 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf, fs::VFS& vfs
 			mesh.AddMaterial(std::move(material));
 			spNode->AddMesh(spMesh);
 			upScene->sceneGraph->AppendChild(spNode);
+		} else if(indexT.first == "sound") {
+			auto& wpsoundobj = wpsoundobjs.at(indexT.second);
+			WPSoundParser::Parse(wpsoundobj, vfs, sm);
 		}
+	
 	}
 	upScene->shaderValueUpdater = std::move(shaderValueUpdater);
 	return upScene;	
