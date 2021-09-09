@@ -50,7 +50,9 @@ public:
 			m_freeIdxs[i] = v;
 		}
 	}
-	~HandlePool() = default;
+	~HandlePool() {
+		FreeAll();
+	}
 	HandlePool(const HandlePool&) = delete;
 	HandlePool& operator=(const HandlePool&) = delete;
 
@@ -59,25 +61,26 @@ public:
 		if(idx == InvalidIdx) return { InvalidIdx };
 		uint32_t count = ++m_counts[idx];
 		auto& slot = m_slots.at(idx);
-		slot.import = import;
+		//slot.import = import;
 		slot.id = (count << Shift)|(idx);
-		//if(!import)
-			THandleResource::Init(slot.rsc, desc);
+		slot.rsc = new THandleResource();
+		THandleResource::Init(*slot.rsc, desc);
 		return { slot.id };
 	};
 	void Free(THandle h) {
 		uint16_t idx = h.idx;
 		FreeIdx(idx);
-		//if(!m_slots.at(idx).import)
-			THandleResource::Destroy(m_slots.at(idx).rsc);
-		RestSlot(m_slots[idx]);
+		auto& slot = m_slots.at(idx);
+		if(slot.rsc != nullptr)
+			THandleResource::Destroy(*slot.rsc);
+		RestSlot(slot);
 	}
 	THandleResource* Lookup(THandle h) {
 		if(h.idx == InvalidIdx) return nullptr;
 		uint16_t idx = h.idx;
 		auto& slot = m_slots.at(idx);
 		if(h.idx == slot.id) {
-			return &slot.rsc;
+			return slot.rsc;
 		}
 		return nullptr;
 	}
@@ -87,23 +90,24 @@ public:
 	void FreeAll() {
 		m_counts.resize(m_size+1, 0);
 		for(auto& el:m_slots) {
-			if(el.id != 0) {
-				THandleResource::Destroy(el.rsc);
+			if(el.id != 0 && el.rsc != nullptr) {
+				THandleResource::Destroy(*el.rsc);
 			}
 			RestSlot(el);
 		}
 	}
 
 private:
-	class Slot {
+	struct Slot {
+		/*
 	public:
 		Slot() = default;
 		~Slot() = default;
 		Slot(const Slot&) = delete;
-
+		*/
 		uint32_t id {0};
-		bool import {false};
-		THandleResource rsc;
+		//bool import {false};
+		THandleResource* rsc;
 	};
 
 	uint16_t AllocIdx() {
@@ -118,7 +122,9 @@ private:
 	}
 	void RestSlot(Slot& slot) {
 		slot.id = 0;
-		slot.rsc = THandleResource();
+		//slot.rsc = THandleResource();
+		delete slot.rsc;
+		slot.rsc = nullptr;
 	}
 	
 	std::size_t m_size;
