@@ -82,9 +82,10 @@ It's almost usable.
 - Puppet warp
 - Scene script  
 - Text layer  
-- Audio play
+- Audio visualization
 - Camera shake,fade,path,~~zoom,parallax~~
 - Global bloom effect  
+- ~~Playing audio~~
 - ~~PBR light~~
 - ~~Perspective renderable~~  
 - ~~Particle System~~  
