@@ -4,7 +4,7 @@ Shaders are written in GLSL version 120 with a few minor exceptions. They are th
 
 ### Uniforms json
 
-The following JSON options exist:
+The following JSON options exist:  
 
     material (STRING): Set "material": "MY MATERIAL NAME" to define the name shown in the editor.
     type (STRING): Set "type": "color" for vec3 uniforms to enable the color picker. Otherwise leave it out to use a slider or text boxes to enter values.
@@ -12,10 +12,10 @@ The following JSON options exist:
     range (ARRAY of FLOAT): Set "range": [-1.0, 1.0] to overwrite the slider range. It will use 0 to 1 if you omit it.
 
 ### Particle
-a_TexCoordVec4.xyz ParticleRotation
-vec3(a_TexCoordC2.xy, a_TexCoordVec4.z) ParticleRotation // no geometry
+a_TexCoordVec4.xyz ParticleRotation  
+vec3(a_TexCoordC2.xy, a_TexCoordVec4.z) ParticleRotation // no geometry  
 
-a_TexCoordVec4.w ParticleSize
+a_TexCoordVec4.w ParticleSize  
 
-a_TexCoordVec4C1.xyz ParticleVelocity
-TexCoordVec4C1.z ParticleLifeTime
+a_TexCoordVec4C1.xyz ParticleVelocity  
+TexCoordVec4C1.z ParticleLifeTime  

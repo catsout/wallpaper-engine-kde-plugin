@@ -79,7 +79,7 @@ Rectangle {
                 return false;
             console.log(screenGrid);
             background.mouseHooker = Qt.createQmlObject(`import QtQuick 2.12;
-                    import com.github.catsout.wallpaperEngineKde 1.0
+                    import com.github.catsout.wallpaperEngineKde 1.1
                     MouseGrabber {
                         z: -1
                         anchors.fill: parent

@@ -1,5 +1,5 @@
 import QtQuick 2.5
-import com.github.catsout.wallpaperEngineKde 1.0
+import com.github.catsout.wallpaperEngineKde 1.1
 import ".."
 
 Item{

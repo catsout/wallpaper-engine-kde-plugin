@@ -69,7 +69,7 @@ QtObject {
     }
 
     function checklib_wallpaper(parentItem) {
-        return checklib('com.github.catsout.wallpaperEngineKde 1.0', parentItem);
+        return checklib('com.github.catsout.wallpaperEngineKde 1.1', parentItem);
     }
 
     function checklib_folderlist(parentItem) {
