@@ -9,11 +9,32 @@ import org.kde.taskmanager 0.1 as TaskManager
 Item {
 
     id: wModel
-    property alias screenGeometry: tasksModel.screenGeometry // Not sure, that this line make any sense
     property bool playVideoWallpaper: true
-    property bool currentWindowMaximized: false
-    property bool isActiveWindowPinned: false
+    property bool logging: false
+
     property int modePlay: wallpaper.configuration.PauseMode
+
+    Timer{
+        id: playTimer
+        running: false
+        repeat: false
+        interval: 400
+        onTriggered: {
+            playVideoWallpaper = true;
+        }
+    }
+    function play() {
+        playTimer.stop();
+        playTimer.start();
+    }
+    function pause() {
+        playTimer.stop();
+        playVideoWallpaper = false;
+    }
+    function playBy(value) {
+        if(value) play();
+        else pause();
+    }
 
     TaskManager.VirtualDesktopInfo { id: virtualDesktopInfo }
     TaskManager.ActivityInfo { id: activityInfo }
@@ -30,98 +51,83 @@ Item {
         filterByVirtualDesktop: true
         filterByScreen: true
 
-        onActiveTaskChanged: updateWindowsinfo(wModel.modePlay)
+        //onActiveTaskChanged: updateWindowsinfo(wModel.modePlay)
         onDataChanged: updateWindowsinfo(wModel.modePlay)
-        Component.onCompleted: {
-            maximizedWindowModel.sourceModel = tasksModel
-            fullScreenWindowModel.sourceModel = tasksModel
-            minimizedWindowModel.sourceModel = tasksModel
-            onlyWindowsModel.sourceModel = tasksModel
+        onVirtualDesktopChanged: updateWindowsinfo(wModel.modePlay)
+    }
+    /*
+    filters {
+        IsWindows: true
+    }
+    callback(getproperty) { return getproperty("IsWindows") === true }
+    */
+    function filterTaskModel(model, filters, callback) {
+        function doCallback(idx) {
+            return callback((property) => model.data(idx, TaskManager.AbstractTasksModel[property]));
         }
-    }
-
-    PlasmaCore.SortFilterModel {
-        id: onlyWindowsModel
-        filterRole: 'IsWindow'
-        filterRegExp: 'true'
-        onDataChanged: updateWindowsinfo(wModel.modePlay)
-        onCountChanged: updateWindowsinfo(wModel.modePlay)
-    }
-
-    PlasmaCore.SortFilterModel {
-        id: maximizedWindowModel
-        filterRole: 'IsMaximized'
-        filterRegExp: 'true'
-        onDataChanged: updateWindowsinfo(wModel.modePlay)
-        onCountChanged: updateWindowsinfo(wModel.modePlay)
-    }
-    PlasmaCore.SortFilterModel {
-        id: fullScreenWindowModel
-        filterRole: 'IsFullScreen'
-        filterRegExp: 'true'
-        onDataChanged: updateWindowsinfo(wModel.modePlay)
-        onCountChanged: updateWindowsinfo(wModel.modePlay)
-    }
-
-    PlasmaCore.SortFilterModel {
-        id: minimizedWindowModel
-        filterRole: 'IsMinimized'
-        filterRegExp: 'true'
-        onDataChanged: updateWindowsinfo(wModel.modePlay)
-        onCountChanged: updateWindowsinfo(wModel.modePlay)
+        function filter(idx) {
+            for(const [key, value] of Object.entries(filters)) {
+                if(model.data(idx, TaskManager.AbstractTasksModel[key]) != value)
+                    return false;
+            };
+            if(callback) {
+                if(!doCallback(idx)) return false;
+            }
+            return true;
+        }
+        return {
+            filter: function() {
+                const result = [];
+                for (let i = 0 ; i < model.count; i++) {
+                    let idx = tasksModel.makeModelIndex(i);
+                    if(filter(idx)) 
+                        result.push(i);
+                }
+                return result;
+            },
+            filterExist: function(array) {
+                const result = [];
+                array.forEach((el) => {
+                    let idx = tasksModel.makeModelIndex(el);
+                    if(filter(idx)) 
+                        result.push(el);
+                });
+                return result;
+            }
+        };
     }
 
     function updateWindowsinfo(modePlay) {
-        if(modePlay === Common.PauseMode.Any) {
-            playVideoWallpaper = (onlyWindowsModel.count === minimizedWindowModel.count) ? true : false;
+        if(modePlay === Common.PauseMode.Never) {
+            play();
+            return;
         }
-        else if(modePlay === Common.PauseMode.Never) {
-            playVideoWallpaper = true;
+        const basefilters = {
+            IsWindow: true,
+            SkipTaskbar: false,
+            SkipPager: false
+        };
+        const notMinWModel = filterTaskModel(tasksModel, Object.assign({IsMinimized: false}, basefilters)).filter();
+        const maxWModel = filterTaskModel(tasksModel, {}, (getproperty) => {
+            return getproperty("IsMaximized") === true || getproperty("IsFullScreen") === true;
+        }).filterExist(notMinWModel);
+
+        if(logging) {
+            const printW = (i) => {
+                const idx = tasksModel.makeModelIndex(i);
+                console.log(tasksModel.data(idx, TaskManager.AbstractTasksModel.AppName));
+            }
+            console.log("--------Not Minimized--------");
+            notMinWModel.forEach(printW);
+            console.log("---------Maximized----------");
+            maxWModel.forEach(printW);
+        }
+        if(modePlay === Common.PauseMode.Any) {
+            playBy(notMinWModel.length == 0 ? true : false);
         }
         else {
-            var joinApps  = [];
-            var minApps  = [];
-            var aObj;
-            var i;
-            var j;
-            // add fullscreen apps
-            for (i = 0 ; i < fullScreenWindowModel.count ; i++){
-                aObj = fullScreenWindowModel.get(i)
-                joinApps.push(aObj.AppPid)
-            }
-            // add maximized apps
-            for (i = 0 ; i < maximizedWindowModel.count ; i++){
-                aObj = maximizedWindowModel.get(i)
-                joinApps.push(aObj.AppPid)                
-            }
-
-            // add minimized apps
-            for (i = 0 ; i < minimizedWindowModel.count ; i++){
-                aObj = minimizedWindowModel.get(i)
-                minApps.push(aObj.AppPid)
-            }
-            
-            joinApps = removeDuplicates(joinApps) // for qml Kubuntu 18.04
-            
-            joinApps.sort();
-            minApps.sort();
-
-            var twoStates = 0
-            j = 0;
-            for(i = 0 ; i < minApps.length ; i++){
-                if(minApps[i] === joinApps[j]){
-                    twoStates = twoStates + 1;
-                    j = j + 1;
-                }
-            }
-            playVideoWallpaper = (fullScreenWindowModel.count + maximizedWindowModel.count - twoStates) == 0 ? true : false
+            playBy(maxWModel.length == 0 ? true : false);
         }
-    }
-    
-    function removeDuplicates(arrArg){
-        return arrArg.filter(function(elem, pos,arr) {
-                        return arr.indexOf(elem) == pos;
-                });
     }
 }
 

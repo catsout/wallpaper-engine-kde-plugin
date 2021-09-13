@@ -182,22 +182,16 @@ Column {
             AnimatedImage {
                 id: previewAnim
                 anchors.fill: parent
-                property var nullItem: QtObject {
-                    property string source: ""
-                }
-                property var picItem: (picViewLoader.status == Loader.Ready && picViewLoader.item.view.currentItem)
-                                    ? picViewLoader.item.view.currentItem
-                                    : nullItem
+                property var picIndex: (picViewLoader.status == Loader.Ready && picViewLoader.item.view.currentIndex >= 0)
+                                    ? picViewLoader.item.view.currentIndex
+                                    : 0
                 source: ""
                 cache: false
                 asynchronous: true
                 onStatusChanged: playing = (status == AnimatedImage.Ready) 
-                onPicItemChanged: {
-                    if(picItem != nullItem) {
-                        try {
-                            source = picItem.thumbnail[1].source;
-                        } catch(e) {}
-                    }
+                onPicIndexChanged: {
+                    const m = wpListModel.model.get(picIndex);
+                    if(m) source = m.path + "/" + m.preview;
                 }
             }
         }
