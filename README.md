@@ -114,9 +114,10 @@ Need to compile plugin lib.
 The config is set to `hwdec=auto`, and not configurable at now.  
 
 ### Acknowledgments
-- Pause support based on [Smart Video Wallpaper](https://store.kde.org/p/1316299/)  
 - [RePKG](https://github.com/notscuffed/repkg)
 - [linux-wallpaperengine](https://github.com/Almamu/linux-wallpaperengine)
+- [RenderDoc](https://renderdoc.org/)
+- [NVIDIA Nsight Graphics](https://developer.nvidia.com/nsight-graphics)
 
 ### Preview
 ![](https://cdn.pling.com/img/f/b/9/f/63f1672d628422f92fd189fe55f60ee8c9f911a691d0745eeaf51d2c6fae6763b8f8.jpg)

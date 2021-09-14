@@ -257,6 +257,10 @@ Column {
                             const modelValues = comboxFilter.modelValues;
                             modelValues[index] = Number(this.checked);
                             cfg_FilterStr = Common.intArrayToStr(modelValues);
+
+                            if(picViewLoader.item.view) {
+                                picViewLoader.item.view.positionViewAtBeginning();
+                            }
                         }
                     }
                 }

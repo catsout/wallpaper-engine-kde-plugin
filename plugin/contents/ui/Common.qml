@@ -19,7 +19,7 @@ QtObject {
         ListElement { text: "web"; type:"type"; key:"web"; }
         ListElement { text: "video"; type:"type"; key:"video"; }
         function map(func) {
-            let arr = [];
+            const arr = [];
             for(let i=0;i<this.count;i++) arr.push(func(this.get(i), i));
             return arr;
         }
@@ -42,7 +42,7 @@ QtObject {
             ListElement { text: "web"; type:"type"; key:"web"; value:1 }
             ListElement { text: "video"; type:"type"; key:"video"; value:1 }
             function map(func) {
-                let arr = [];
+                const arr = [];
                 for(let i=0;i<this.count;i++) arr.push(func(this.get(i), i));
                 return arr;
             }
@@ -77,11 +77,11 @@ QtObject {
     }
 
     function readTextFile(fileUrl, callback) {
-        let xhr = new XMLHttpRequest;
+        const xhr = new XMLHttpRequest;
         xhr.open("GET", fileUrl);
         xhr.onreadystatechange = function () {
             if(xhr.readyState === XMLHttpRequest.DONE){
-                let response = xhr.responseText;
+                const response = xhr.responseText;
                 if(typeof(response) === "string")
                     callback(response);
                 else
@@ -119,7 +119,7 @@ QtObject {
     }
 
     function cbIndexOfValue(combo, value) {
-        let model = combo.model;
+        const model = combo.model;
         for(let i=0;i < model.length;i++) {
             if(model[i].value == value) {
                 return i;
@@ -129,7 +129,7 @@ QtObject {
     }
 
     function findItem(item, typename) {
-        let name = item.toString();
+        const name = item.toString();
         if(name.substring(0, typename.length) == typename) {
             return item;
         }
@@ -142,7 +142,7 @@ QtObject {
         return null;
     }
     function createVolumeFade(qobj, volume, changePlayerVolum) {
-        let timer = Qt.createQmlObject(`import QtQuick 2.0; Timer {
+        const timer = Qt.createQmlObject(`import QtQuick 2.0; Timer {
             property real volume
             property real volumeFade: 0.0
         }`, qobj);
@@ -182,4 +182,11 @@ QtObject {
     function clearArray(arr) {
         arr.length = 0; 
     }
+
+
+    function listProperty(item) {
+        for (var p in item)
+            console.log(p + ": " + item[p]);
+    }
+
 }

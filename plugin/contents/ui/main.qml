@@ -71,10 +71,10 @@ Rectangle {
     }
     function doHookMouse() {
         if(background.Window) {
-            let screenArea = Common.findItem(Window.contentItem, "MouseEventListener");
+            const screenArea = Common.findItem(Window.contentItem, "MouseEventListener");
             if(screenArea === null)
                 return false;
-            let screenGrid = Common.findItem(screenArea, "QQuickGridView");
+            const screenGrid = Common.findItem(screenArea, "QQuickGridView");
             if(screenGrid === null)
                 return false;
             console.log(screenGrid);
@@ -92,6 +92,8 @@ Rectangle {
 
     WindowModel {
         id: windowModel
+        screenGeometry: wallpaper.parent.screenGeometry
+        activity: wallpaper.parent.activity
     }
 
     WallpaperListModel {
