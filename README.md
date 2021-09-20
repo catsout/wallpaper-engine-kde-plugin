@@ -1,6 +1,5 @@
 # Wallpaper Engine for Kde
 A wallpaper plugin integrating [wallpaper engine](https://store.steampowered.com/app/431960/Wallpaper_Engine) into kde wallpaper setting.  
-It's simple and small.  
 
 ## Note
 - Known issue
@@ -63,8 +62,8 @@ sudo make install
 1. Use steam+proton or wine+steam
 2. Buy and install wallpaper engine(not run)
 3. Subscribe some wallpapers on [workshop](https://steamcommunity.com/app/431960/workshop/)(or the we app, if you can run it)  
-4. Let steam download wallpapers, and install this plugin  
-5. Select steam library dir(where *wallpaper engine* installed) in plugin  
+4. Let steam download wallpapers
+5. Install this plugin, and select steam library dir(where *wallpaper engine* installed) in plugin  
 e.g `.local/share/Steam`
 6. Enjoy  
 
