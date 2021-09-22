@@ -110,16 +110,16 @@ Item {
         sortMode: TaskManager.TasksModel.SortVirtualDesktop
         groupMode: TaskManager.TasksModel.GroupDisabled
 
-        virtualDesktop: desktop
+        virtualDesktop: wModel.desktop
         filterByVirtualDesktop: true
 
-        screenGeometry: screenGeometry
+        screenGeometry: wModel.screenGeometry
         filterByScreen: true
 
         // demandingAttentionSkipsFilters not available here, which may cause, 
         // skip activity filter, so filter activties manually
         //demandingAttentionSkipsFilters: false
-        //activity: activity
+        //activity: wModel.activity
         //filterByActivity: true
 
         onActiveTaskChanged: {
@@ -127,6 +127,8 @@ Item {
                 updateWindowsinfo();
         }
         onVirtualDesktopChanged: {
+            if(wModel.logging)
+                console.log(this.virtualDesktop, ':', this.screenGeometry)
             if(wModel.activity === activityInfo.currentActivity)
                 updateWindowsinfo();
         }
@@ -194,7 +196,7 @@ Item {
             const activities = getproperty("Activities");
             if(activities && activities.length) {
                 for(let i=0;i < activities.length;i++) {
-                    if(activities[i] === activity)
+                    if(activities[i] === wModel.activity)
                         return true;
                 }
                 return false;
