@@ -109,10 +109,12 @@ public:
 		ma_result result;
 		auto config = GenMaDeviceConfig(d);
 		result = ma_device_init(NULL, &config, &m_device);
-		assert(result == MA_SUCCESS);
-		assert(IsInited());
+		if(result != MA_SUCCESS || !IsInited()) {
+			LOG_ERROR("can't init sound device");
+			return false;
+		}
 		if(m_device.playback.format != ma_format_f32) {
-			LOG_ERROR("Wrong playback format");
+			LOG_ERROR("wrong playback format");
 			return false;
 		}
 		if (ma_device_start(&m_device) != MA_SUCCESS) {
