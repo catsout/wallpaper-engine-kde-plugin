@@ -42,7 +42,7 @@ plasmapkg2 -r wallpaper-engine-kde-plugin/plugin
 #### Dependencies
 Debian:  
 ```sh
-sudo apt install liblz4-dev qtbase5-private-dev qtbase5-dev qtdeclarative5-dev libqt5x11extras5-dev libmpv-dev  qt5-default 
+sudo apt install liblz4-dev qtbase5-private-dev qtbase5-dev qtdeclarative5-dev libqt5x11extras5-dev libmpv-dev  
 ```  
 
 Arch:
