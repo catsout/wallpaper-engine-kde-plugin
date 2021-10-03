@@ -49,6 +49,9 @@ Arch:
 ```sh
 sudo pacman -S base-devel mpv qt5-declarative
 ```
+
+Gentoo: a third party ebuild is provided in [viperML-overlay/kde-misc/wallpaper-engine-kde-plugin](https://github.com/viperML/viperML-overlay/tree/master/kde-misc/wallpaper-engine-kde-plugin), which automates the process of build, installing and updating.
+
 #### Install plugin lib
 ```sh
 cd wallpaper-engine-kde-plugin
