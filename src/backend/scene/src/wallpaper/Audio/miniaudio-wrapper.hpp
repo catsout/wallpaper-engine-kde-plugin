@@ -92,7 +92,7 @@ class Device {
 public:
 	Device() {}
 	~Device() {
-		Uninit();
+		UnInit();
 	}
 	Device(const Device&) = delete;
 	Device& operator=(const Device&) = delete;
@@ -106,9 +106,13 @@ public:
 	}
 public:
 	bool Init(const DeviceDesc& d) {
+		if(IsInited()) return true; // already inited
 		ma_result result;
 		auto config = GenMaDeviceConfig(d);
 		result = ma_device_init(NULL, &config, &m_device);
+		if(result == MA_SUCCESS) {
+			LOG_INFO("sound device inited");
+		}
 		if(result != MA_SUCCESS || !IsInited()) {
 			LOG_ERROR("can't init sound device");
 			return false;
@@ -125,8 +129,11 @@ public:
 		return true;
 	}
 	bool IsInited() const { return m_device.state != MA_STATE_UNINITIALIZED; }
-	void Uninit() {
-    	ma_device_uninit(&m_device);
+	void UnInit() {
+		if(IsInited()) {
+			LOG_INFO("uninit sound device");
+		}
+		ma_device_uninit(&m_device); // always do it
 	}
 	//bool IsStarted() const { return ma_device_is_started(&m_device); }
 	//bool IsStopped() const { return ma_device_get_state(&m_device) == MA_STATE_STOPPED; }
@@ -152,7 +159,10 @@ public:
 	}
 	float Volume() const { return m_volume; }
 	bool Muted() const { return m_muted; }
-	void SetMuted(bool v) { m_muted = v; }
+	void SetMuted(bool v) { 
+		m_muted = v;
+	}
+
 	void SetVolume(float v) { m_volume = v; };
 	void MountChannel(std::shared_ptr<Channel> chn) {
 		ChannelWrap chnw;
@@ -227,12 +237,13 @@ private:
 		bool end {false};
 		std::shared_ptr<Channel> chn;
 	};
-	ma_device m_device {};
+	ma_device m_device {}; // must init c struct
 	std::mutex m_mutex; // for operating channel vector
 	std::atomic<bool> m_running {false};
 
 	float m_volume {1.0f};
 	bool m_muted {false};
+
 	std::vector<ChannelWrap> m_channels;
 	std::vector<uint8_t> m_frameBuffer;
 };

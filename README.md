@@ -114,7 +114,6 @@ The config is set to `hwdec=auto`, and not configurable at now.
 
 ### Acknowledgments
 - [RePKG](https://github.com/notscuffed/repkg)
-- [linux-wallpaperengine](https://github.com/Almamu/linux-wallpaperengine)
 - [RenderDoc](https://renderdoc.org/)
 - [NVIDIA Nsight Graphics](https://developer.nvidia.com/nsight-graphics)
 

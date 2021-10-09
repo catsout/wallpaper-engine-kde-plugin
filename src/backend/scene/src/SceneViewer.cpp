@@ -85,15 +85,6 @@ public:
 			m_mousePos = viewer->m_mousePos;
 			m_wgl.SetMousePos(m_mousePos.x(), m_mousePos.y());
 		}
-		if(m_source != viewer->source() && !viewer->assets().isEmpty()) {
-			auto assets = QDir::toNativeSeparators(viewer->assets().toLocalFile()).toStdString();
-			m_wgl.SetAssets(assets);
-
-			m_source = viewer->source();
-			auto source = QDir::toNativeSeparators(m_source.toLocalFile()).toStdString();
-			m_wgl.Load(source);
-			m_window->resetOpenGLState();
-		}
 		if(m_paused != viewer->m_paused) {
 			m_paused = viewer->m_paused;
 			if(m_paused)
@@ -111,6 +102,18 @@ public:
 		}
 		if(viewer->fps() != m_wgl.Fps()) {
 			m_wgl.SetFps(viewer->fps());
+		}
+
+
+		// load source last
+		if(m_source != viewer->source() && !viewer->assets().isEmpty()) {
+			auto assets = QDir::toNativeSeparators(viewer->assets().toLocalFile()).toStdString();
+			m_wgl.SetAssets(assets);
+
+			m_source = viewer->source();
+			auto source = QDir::toNativeSeparators(m_source.toLocalFile()).toStdString();
+			m_wgl.LoadPkgFile(source);
+			m_window->resetOpenGLState();
 		}
 
 		viewer->m_curFps = m_wgl.CurrentFps();

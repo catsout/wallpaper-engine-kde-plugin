@@ -102,6 +102,10 @@ void SoundManager::Test(std::shared_ptr<fs::IBinaryStream> stream) {
 	auto decoder = std::make_unique<miniaudio::Decoder<BStreamWrapper>>(std::move(sw));
 }
 bool SoundManager::Init() {
+	if(Muted()) { 
+		LOG_INFO("muted, not init sound device");
+		return false;
+	}
 	return pImpl->device.Init({});
 }
 bool SoundManager::IsInited() const {
@@ -126,6 +130,12 @@ bool SoundManager::Muted() const {
 }
 void SoundManager::SetMuted(bool v) {
 	pImpl->device.SetMuted(v);
+	if(!Muted()) {
+		Init();
+	}	
+	else {
+		pImpl->device.UnInit();
+	} 
 }
 void SoundManager::SetVolume(float v) {
 	pImpl->device.SetVolume(v);

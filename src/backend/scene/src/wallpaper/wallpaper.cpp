@@ -19,6 +19,10 @@
 
 using namespace wallpaper;
 
+constexpr std::array<const char* const, 2> sceneEntries = {
+	"scene", "gifscene"
+};
+
 class WallpaperGL::impl {
 public:
 	impl() = default;
@@ -50,47 +54,58 @@ bool WallpaperGL::Init(void *get_proc_address(const char *)) {
 	return m_inited;
 }
 
-void WallpaperGL::Load(const std::string& pkg_path) {
+void WallpaperGL::Load(const std::string& pkg_path, bool isPkgFile) {
 	if(!m_inited || pkg_path == m_pkgPath) return;
 	m_loaded = false;
 	if(!pImpl->sm.IsInited()) {
-		LOG_INFO("loading sound device");
 		pImpl->sm.Init();
 		pImpl->sm.Play();
-	} else {
-		LOG_INFO("sound device loaded");
 	}
 	if(!m_pkgPath.empty()) {
 		Clear();
 	}
-	//load pkgfile
+	//mount assets dir
 	if(!pImpl->vfs.IsMounted("assets")) {
 		bool sus = pImpl->vfs.Mount("/assets",
 			fs::CreatePhysicalFs(m_assetsPath),
 			"assets"
 		);
-		if(!sus) return;
+		if(!sus) { 
+			LOG_ERROR("Mount assets dir failed");
+			return;
+		}
 	}
-	if(!pImpl->vfs.Mount("/assets", fs::WPPkgFs::CreatePkgFs(pkg_path))) {
-		LOG_ERROR("Can't load pkg file: %s", pkg_path.c_str());
-		return;
+	if(isPkgFile) {
+		//load pkgfile
+		if(!pImpl->vfs.Mount("/assets", fs::WPPkgFs::CreatePkgFs(pkg_path))) {
+			LOG_ERROR("Can't load pkg file: %s", pkg_path.c_str());
+			return;
+		}
+	} else {
+		//load pkg dir
+		if(!pImpl->vfs.Mount("/assets", fs::CreatePhysicalFs(pkg_path))) {
+			LOG_ERROR("Can't load pkg directory: %s", pkg_path.c_str());
+			return;
+		}
 	}
 
 	m_pkgPath = pkg_path;
-	std::string scene_src;
-	if(pImpl->vfs.Contains("/assets/scene.json")) {
-		auto f = pImpl->vfs.Open("/assets/scene.json");
-		if(f) scene_src = f->ReadAllStr();
+	{
+		std::string scene_src;
+		const std::string base {"/assets/"};
+		for(auto& el:sceneEntries) {
+			std::string scenePath = base + el + ".json";
+			if(pImpl->vfs.Contains(scenePath)) {
+				auto f = pImpl->vfs.Open(scenePath);
+				if(f) scene_src = f->ReadAllStr();
+			}
+		}
+		if(scene_src.empty()) {
+			LOG_ERROR("Not supported scene type");
+			return;
+		}
+		pImpl->scene = pImpl->parser.Parse(scene_src, pImpl->vfs, pImpl->sm);	
 	}
-	else if(pImpl->vfs.Contains("/assets/gifscene.json")) {
-		auto f = pImpl->vfs.Open("/assets/gifscene.json");
-		if(f) scene_src = f->ReadAllStr();
-	}
-	if(scene_src.empty()) {
-		LOG_ERROR("Not supported scene type");
-		return;
-	}
-	pImpl->scene = pImpl->parser.Parse(scene_src, pImpl->vfs, pImpl->sm);	
 	if(pImpl->scene) {
 		pImpl->gm.InitializeScene(pImpl->scene.get());
 	} else return;

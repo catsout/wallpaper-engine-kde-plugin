@@ -23,18 +23,19 @@ void framebuffer_size_callback(GLFWwindow*, int width, int height) {
 
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+		/*
 		if(pwgl->IsRunning()) {
 			pwgl->Stop();
 		} else {
 			pwgl->Start();
 		}
+		*/
 	}
 }
 
 
 void cursor_position_callback(GLFWwindow*, double xpos, double ypos) {
-	if(pwgl)
-		pwgl->SetMousePos(xpos, ypos);
+	if(pwgl) pwgl->SetMousePos(xpos, ypos);
 }
 
 void updateCallback() {
@@ -70,7 +71,7 @@ int main(int argc, char**argv)
 	wgl.SetAssets(argv[1]);
 	wgl.SetFlip(true);
     //const wallpaper::fs::file_node& x = wallpaper::WallpaperGL::GetPkgfs();
-    wgl.Load(argv[2]);
+    wgl.LoadPkgFile(argv[2]);
 	wgl.OutGraphviz("framegraph.dot");
 
 	wgl.SetUpdateCallback(updateCallback);

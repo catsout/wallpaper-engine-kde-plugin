@@ -18,7 +18,13 @@ public:
 	WallpaperGL& operator=(WallpaperGL&&) = delete;
 
 	bool Init(void *get_proc_address(const char *));
-    void Load(const std::string& pkg_path);
+
+    void LoadPkgFile(const std::string& path) {
+		Load(path, true);
+	}
+    void LoadPkgDir(const std::string& path) {
+		Load(path, false);
+	}
     void Render();//uint fbo, int width, int height);
     void Clear();
 	void SetAssets(const std::string& path);
@@ -46,6 +52,9 @@ public:
 	bool Muted() const;
 	void SetMuted(bool);
 	void SetVolume(float);
+
+private:
+    void Load(const std::string& path, bool ispkgfile=true);
 private:
 	class impl;
     std::unique_ptr<impl> pImpl;

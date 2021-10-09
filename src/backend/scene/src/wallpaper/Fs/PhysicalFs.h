@@ -3,6 +3,7 @@
 #include <filesystem>
 #include "Fs.h"
 #include "CBinaryStream.h"
+#include "../Utils/Logging.h"
 
 namespace wallpaper
 {
@@ -32,7 +33,10 @@ private:
 };
 
 inline std::unique_ptr<PhysicalFs> CreatePhysicalFs(std::string_view path) {
-	if(!std::filesystem::exists(path)) return nullptr;
+	if(!std::filesystem::exists(path)) {
+		LOG_ERROR("\"%s\" not exists", path.data());
+		return nullptr;
+	}
 	return std::make_unique<PhysicalFs>(path);
 }
 }
