@@ -25,6 +25,20 @@ target_link_libraries(${PROJECT_NAME}
 )
 target_include_directories(${PROJECT_NAME} PUBLIC src include)
 
+add_executable(${PROJECT_NAME}-qml
+	src/viewer/qmlviewer.cpp
+	src/viewer/main.qml
+	src/viewer/pkg.qrc
+	src/SceneViewer.cpp
+)
+target_link_libraries(${PROJECT_NAME}-qml
+	PUBLIC
+		Qt5::Quick
+		Qt5::Gui
+		Qt5::X11Extras
+		${PROJECT_NAME}
+)
+
 set(CMAKE_AUTOMOC OFF) 
 set(CMAKE_AUTORCC OFF) 
 set(CMAKE_AUTOUIC OFF) 

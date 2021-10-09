@@ -26,16 +26,15 @@ public:
 	SoundStream& operator=(SoundStream&&) = default;
 
 	virtual uint32_t NextPcmData(void* pData, uint32_t frameCount) = 0;
+	virtual void PassDesc(const Desc&) = 0;
 };
 std::unique_ptr<SoundStream> CreateSoundStream(std::shared_ptr<fs::IBinaryStream>, const SoundStream::Desc&);
-
-typedef std::function<bool(const SoundStream::Desc&)> MountCallbackOp;
 
 class SoundManager {
 public:
 	SoundManager();
 	~SoundManager();
-	void MountStream(std::unique_ptr<SoundStream>&&, const MountCallbackOp&);
+	void MountStream(std::unique_ptr<SoundStream>&&);
 	void UnMountAll();
 	void Test(std::shared_ptr<fs::IBinaryStream>);
 	bool Init();

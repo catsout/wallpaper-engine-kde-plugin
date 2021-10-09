@@ -26,6 +26,9 @@ public:
 	ma_uint32 NextPcmData(void* pData, ma_uint32 frameCount) override {
 		return m_ss->NextPcmData(pData, frameCount);
 	}
+	void PassDeviceDesc(const miniaudio::DeviceDesc& desc) override {
+		m_ss->PassDesc(ToSSDesc(desc));
+	}
 private:
 	miniaudio::DeviceDesc m_desc;
 	std::unique_ptr<SoundStream> m_ss;
@@ -66,6 +69,7 @@ public:
 	uint32_t NextPcmData(void* pData, uint32_t frameCount) override {
 		return m_ss->NextPcmData(pData, frameCount);
 	}
+	void PassDesc(const Desc&) override {}
 private:
 	std::unique_ptr<T> m_ss;
 };
@@ -91,10 +95,9 @@ SoundManager::SoundManager():pImpl(std::make_unique<impl>()) {
 }
 SoundManager::~SoundManager() {}
 
-void SoundManager::MountStream(std::unique_ptr<SoundStream>&& ss, const MountCallbackOp& cb) {
-	if(!IsInited()) return;
+void SoundManager::MountStream(std::unique_ptr<SoundStream>&& ss) {
+	// if(!IsInited()) return;
 	pImpl->device.MountChannel(std::make_unique<Channel_Impl>(std::move(ss)));
-	cb(ToSSDesc(pImpl->device.GetDesc()));
 }
 
 void SoundManager::Test(std::shared_ptr<fs::IBinaryStream> stream) {

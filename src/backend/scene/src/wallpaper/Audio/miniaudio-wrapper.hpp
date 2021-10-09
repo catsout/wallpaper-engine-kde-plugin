@@ -86,6 +86,7 @@ public:
 	Channel& operator=(const Channel&) = delete;
 
 	virtual ma_uint32 NextPcmData(void* pData, ma_uint32 frameCount) = 0;
+	virtual void PassDeviceDesc(const DeviceDesc&) = 0;
 };
 
 class Device {
@@ -109,21 +110,31 @@ public:
 		if(IsInited()) return true; // already inited
 		ma_result result;
 		auto config = GenMaDeviceConfig(d);
+		Stop();
 		result = ma_device_init(NULL, &config, &m_device);
 		if(result == MA_SUCCESS) {
 			LOG_INFO("sound device inited");
 		}
 		if(result != MA_SUCCESS || !IsInited()) {
 			LOG_ERROR("can't init sound device");
+			UnInit();
 			return false;
 		}
 		if(m_device.playback.format != ma_format_f32) {
 			LOG_ERROR("wrong playback format");
+			UnInit();
 			return false;
 		}
 		if (ma_device_start(&m_device) != MA_SUCCESS) {
 			LOG_ERROR("can't start sound device");
+			UnInit();
 			return false;
+		}
+		{
+			std::unique_lock<std::mutex> lock {m_mutex};
+			for(auto& el:m_channels) {
+				el.chn->PassDeviceDesc(GetDesc());
+			}
 		}
 		Start();
 		return true;
@@ -167,6 +178,7 @@ public:
 	void MountChannel(std::shared_ptr<Channel> chn) {
 		ChannelWrap chnw;
 		chnw.chn = chn;
+		chnw.chn->PassDeviceDesc(GetDesc());
 		{
 			std::unique_lock<std::mutex> lock {m_mutex};
 			m_channels.push_back(chnw);

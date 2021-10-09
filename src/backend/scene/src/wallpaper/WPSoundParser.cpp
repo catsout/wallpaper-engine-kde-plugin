@@ -53,7 +53,9 @@ public:
 		}
 		return frameReads;
 	};
-	void SetDesc(const Desc& d) { m_desc = d; }
+	void PassDesc(const Desc& d) override {
+		m_desc = d;
+	}
 	void Switch() {
 		std::string path = m_soundPaths[LoopIndex()];
 		LOG_INFO("Switch to audio file: %s", path.c_str());
@@ -82,8 +84,5 @@ void WPSoundParser::Parse(const wpscene::WPSoundObject& obj, fs::VFS& vfs, audio
 	};
 	auto ss = std::make_unique<WPSoundStream>(obj.sound, vfs, config);
 	auto ss_raw = ss.get();
-	sm.MountStream(std::move(ss), [ss_raw](const audio::SoundStream::Desc& d) {
-		ss_raw->SetDesc(d);
-		return true;
-	});
+	sm.MountStream(std::move(ss));
 }
