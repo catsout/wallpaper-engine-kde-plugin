@@ -19,11 +19,8 @@ public:
 
 	bool Init(void *get_proc_address(const char *));
 
-    void LoadPkgFile(const std::string& path) {
-		Load(path, true);
-	}
-    void LoadPkgDir(const std::string& path) {
-		Load(path, false);
+    void LoadPkg(const std::string& path, const std::string& entry) {
+		Load(path, entry);
 	}
     void Render();//uint fbo, int width, int height);
     void Clear();
@@ -54,7 +51,7 @@ public:
 	void SetVolume(float);
 
 private:
-    void Load(const std::string& path, bool ispkgfile=true);
+    void Load(const std::string& path, const std::string& entry);
 private:
 	class impl;
     std::unique_ptr<impl> pImpl;

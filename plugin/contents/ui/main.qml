@@ -6,10 +6,11 @@ Rectangle {
     id: background
     anchors.fill: parent
     color: wallpaper.configuration.BackgroundColor
-    property string steamlibrary: wallpaper.configuration.SteamLibraryPath
+    property string steamlibrary: Qt.resolvedUrl(wallpaper.configuration.SteamLibraryPath).toString()
+    property string source: Qt.resolvedUrl(wallpaper.configuration.WallpaperFilePath).toString()
+
     property string workshopid: wallpaper.configuration.WallpaperWorkShopId
     property string type: wallpaper.configuration.WallpaperType
-    property string source: wallpaper.configuration.WallpaperFilePath
 
     property int displayMode: wallpaper.configuration.DisplayMode
     property bool mute: wallpaper.configuration.MuteAudio
@@ -38,6 +39,9 @@ Rectangle {
     
     function getWorkshopPath() {
         return steamlibrary + Common.wpenginePath + '/' + workshopid;
+    }
+    function getAssetsPath() {
+        return steamlibrary + "/steamapps/common/wallpaper_engine/assets"
     }
 
     onSourceChanged: {
@@ -200,7 +204,7 @@ Rectangle {
             case 'scene':
                 if(background.hasLib) {
                     qmlsource = "backend/Scene.qml";
-                    properties = {"assets": background.steamlibrary + "/steamapps/common/wallpaper_engine/assets"};
+                    properties = {"assets": background.getAssetsPath()};
                 } else {
                     qmlsource = "backend/InfoShow.qml";
                     properties["info"] = "Plugin lib not found. To support scene, please compile and install it.";

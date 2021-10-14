@@ -183,6 +183,13 @@ QtObject {
         arr.length = 0; 
     }
 
+    function basename(path) {
+        return path.split('/').reverse()[0];
+    }
+    function dirname(path) {
+        return path.substring(0, str.lastIndexOf("/"));
+    }
+
 
     function listProperty(item) {
         for (var p in item)

@@ -6,7 +6,7 @@
 #include <QOpenGLContext>
 #include <QtGui/QOpenGLFramebufferObject>
 
-
+#include <QFileInfo>
 #include <QDir>
 #include <QtQuick/QQuickWindow>
 
@@ -111,8 +111,9 @@ public:
 			m_wgl.SetAssets(assets);
 
 			m_source = viewer->source();
-			auto source = QDir::toNativeSeparators(m_source.toLocalFile()).toStdString();
-			m_wgl.LoadPkgFile(source);
+			auto pkgdir = QDir::toNativeSeparators(m_source.adjusted(QUrl::RemoveFilename).toLocalFile()).toStdString();
+			auto entry = QFileInfo(m_source.fileName()).completeBaseName().toStdString();
+			m_wgl.LoadPkg(pkgdir, entry);
 			m_window->resetOpenGLState();
 		}
 

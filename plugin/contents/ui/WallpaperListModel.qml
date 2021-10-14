@@ -6,15 +6,15 @@ import Qt.labs.folderlistmodel 2.11
 
 Item {
     id: wpItem
-    property string workshopDir
+    property url workshopDir
     property string filterStr
     property bool enabled: true
 
     signal modelRefreshed
 
     readonly property var itemTemplate: ({
-        workshopid: "0",
-        path: "",
+        workshopid: "",
+        path: "", // need convert to qurl
         loaded: false,
         title: "unknown",
         preview: "unknown",
@@ -80,7 +80,8 @@ Item {
                     for(let i=0;i < count;i++) {
                         const v = Object.create(wpItem.itemTemplate);
                         v.workshopid = get(i,"fileName");
-                        v.path = get(i,"filePath");
+                        // use qurl to convert to file://
+                        v.path = Qt.resolvedUrl(get(i,"filePath")).toString();
                         proxyModel.push(v);
                     }
                     resolve();

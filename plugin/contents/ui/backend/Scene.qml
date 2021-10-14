@@ -5,7 +5,6 @@ import ".."
 Item{
     id: sceneItem
     anchors.fill: parent
-    property string source: background.source
     property string assets: "assets"
     property int displayMode: background.displayMode
     property var volumeFade: Common.createVolumeFade(
@@ -28,7 +27,7 @@ Item{
         anchors.fill: parent
         fps: background.fps
         muted: background.mute
-        source: ""
+        source: background.source
         assets: sceneItem.assets
         Component.onCompleted: {
             player.setAcceptMouse(true);
@@ -39,10 +38,6 @@ Item{
     Component.onCompleted: {
         background.nowBackend = "scene";
         sceneItem.displayModeChanged();
-    }
-    onSourceChanged: {
-        var source_ = sceneItem.source;
-        player.source = source_.substr(0, source_.length-5) + ".pkg";
     }
     function play() {
         volumeFade.start();

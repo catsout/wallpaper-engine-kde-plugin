@@ -16,6 +16,7 @@
 
 #include <chrono>
 #include <thread>
+#include <filesystem>
 
 using namespace wallpaper;
 
@@ -54,15 +55,15 @@ bool WallpaperGL::Init(void *get_proc_address(const char *)) {
 	return m_inited;
 }
 
-void WallpaperGL::Load(const std::string& pkg_path, bool isPkgFile) {
-	if(!m_inited || pkg_path == m_pkgPath) return;
+void WallpaperGL::Load(const std::string& pkgDir, const std::string& entry) {
+	if(!m_inited) return;
+	if(m_loaded) {
+		Clear();
+	}
 	m_loaded = false;
 	if(!pImpl->sm.IsInited()) {
 		pImpl->sm.Init();
 		pImpl->sm.Play();
-	}
-	if(!m_pkgPath.empty()) {
-		Clear();
 	}
 	//mount assets dir
 	if(!pImpl->vfs.IsMounted("assets")) {
@@ -75,26 +76,25 @@ void WallpaperGL::Load(const std::string& pkg_path, bool isPkgFile) {
 			return;
 		}
 	}
-	if(isPkgFile) {
-		//load pkgfile
-		if(!pImpl->vfs.Mount("/assets", fs::WPPkgFs::CreatePkgFs(pkg_path))) {
-			LOG_ERROR("Can't load pkg file: %s", pkg_path.c_str());
-			return;
-		}
-	} else {
+	std::filesystem::path pkgPath_fs {pkgDir};
+	pkgPath_fs /= entry + ".pkg";
+	std::string pkgPath = pkgPath_fs.native();
+    std::string pkgEntry = entry + ".json";
+	//load pkgfile
+	if(!pImpl->vfs.Mount("/assets", fs::WPPkgFs::CreatePkgFs(pkgPath))) {
+		LOG_INFO("load pkg file %s failed, fallback to use dir", pkgPath.c_str());
 		//load pkg dir
-		if(!pImpl->vfs.Mount("/assets", fs::CreatePhysicalFs(pkg_path))) {
-			LOG_ERROR("Can't load pkg directory: %s", pkg_path.c_str());
+		if(!pImpl->vfs.Mount("/assets", fs::CreatePhysicalFs(pkgDir))) {
+			LOG_ERROR("Can't load pkg directory: %s", pkgDir.c_str());
 			return;
 		}
 	}
 
-	m_pkgPath = pkg_path;
 	{
 		std::string scene_src;
 		const std::string base {"/assets/"};
-		for(auto& el:sceneEntries) {
-			std::string scenePath = base + el + ".json";
+		{
+			std::string scenePath = base + pkgEntry;
 			if(pImpl->vfs.Contains(scenePath)) {
 				auto f = pImpl->vfs.Open(scenePath);
 				if(f) scene_src = f->ReadAllStr();

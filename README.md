@@ -74,22 +74,42 @@ Or try: `kquitapp5 plasmashell && kstart5 plasmashell`
 ## Support Status
 ### Scene
 Scene wallpaper is supported by direct opengl(3.2).  
-It's almost usable.  
-#### not work
-- 3D model
-- Timeline animations
-- Puppet warp
-- Scene script  
-- Text layer  
-- Audio visualization
-- Camera shake,fade,path,~~zoom,parallax~~
-- Global bloom effect  
-- ~~Playing audio~~
-- ~~PBR light~~
-- ~~Perspective renderable~~  
-- ~~Particle System~~  
-- ~~Gif scene~~
-- ~~ColorBlendMode~~  
+Require *wallpapaer engine* installed for assets(shaders,pictures...)
+#### implemented
+- [x] Layer
+	- [x] image
+	- [x] composition / fullscreen
+	- [ ] text
+- [x] Effect
+	- [x] Mouse position
+	- [x] Parallax
+	- [x] ColorBlendMode
+	- [x] PBR light
+	- [ ] Global bloom
+- [x] Camera
+	- [x] zoom
+	- [ ] shake
+	- [ ] fade / path
+- [x] Audio
+	- [x] loop
+	- [ ] random
+	- [ ] visualization
+- [x] Particle System
+	- [x] Renderers
+	- [x] Emitters
+		- [ ] Directions
+	- [x] Initializers
+		- [ ] Turbulent Velocity Random
+	- [x] Operators
+		- [ ] Control Point Force
+		- [ ] Turbulence
+		- [ ] Vortex
+	- [ ] Control Points
+	- [ ] Children
+- [ ] 3D model
+- [ ] Timeline animations
+- [ ] Puppet warp
+- [ ] Scenescript  
 
 ### Web
 Basic web apis are supported, but the audio api dose not send data at now.  

@@ -62,7 +62,7 @@ WorkerScript.onMessage = function(msg) {
             plist.push(p);
         });
         Promise.all(plist).then(value => {
-            reply({ 'reply': msg.action, "data": data });
+            reply({ "reply": msg.action, "data": data });
         });
     }
     else if(msg.action == "filter") {
@@ -81,6 +81,6 @@ WorkerScript.onMessage = function(msg) {
                 model.append(el);
         });
         model.sync();
-        reply({ 'reply': msg.action });
+        reply({ "reply": msg.action });
     }
 }
