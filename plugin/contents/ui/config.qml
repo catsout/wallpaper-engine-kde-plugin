@@ -125,10 +125,6 @@ ColumnLayout {
                             const modelValues = comboxFilter.modelValues;
                             modelValues[index] = Number(!modelValues[index]);
                             cfg_FilterStr = Common.intArrayToStr(modelValues);
-
-                            if(picViewLoader.item.view) {
-                                picViewLoader.item.view.positionViewAtBeginning();
-                            }
                         }
                     }
                     onActivated: {
@@ -138,7 +134,7 @@ ColumnLayout {
 
             WallpaperListModel {
                 id: wpListModel
-                workshopDir: cfg_SteamLibraryPath + Common.wpenginePath
+                workshopDirs: Common.getProjectDirs(cfg_SteamLibraryPath)
                 filterStr: cfg_FilterStr
                 enabled: Boolean(cfg_SteamLibraryPath)
             }
@@ -148,17 +144,18 @@ ColumnLayout {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
 
-                asynchronous: true
+                asynchronous: false
                 sourceComponent: picViewCom
                 visible: status == Loader.Ready
 
                 Component.onCompleted: {
                     const refreshIndex = () => {
-                        if(picViewLoader.status == Loader.Ready)
-                            picViewLoader.item.setCurIndex(wpListModel.model);
+                        if(this.status == Loader.Ready) {
+                            this.item.setCurIndex(wpListModel.model);
+                        }
                     }
-                    wpListModel.modelRefreshed.connect(refreshIndex);
-                    picViewLoader.statusChanged.connect(refreshIndex);
+                    wpListModel.modelStartSync.connect(this.item.backtoBegin);
+                    wpListModel.modelRefreshed.connect(refreshIndex.bind(this));
                 }
             }
             Component { 
@@ -215,6 +212,9 @@ ColumnLayout {
                             ?"There are no wallpapers in steam library's workshop directory"
                             :"Select your steam library through the folder selecting button above"
                         opacity: 0.5
+                    }
+                    function backtoBegin() {
+                        view.positionViewAtBeginning();
                     }
 
                     function setCurIndex(model) {

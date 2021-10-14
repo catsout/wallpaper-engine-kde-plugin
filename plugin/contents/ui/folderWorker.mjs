@@ -1,39 +1,4 @@
-function readTextFile(fileUrl) {
-    return new Promise(function (resolve, reject) {
-        let request = new XMLHttpRequest;
-		// Setup listener
-		request.onreadystatechange = function () {
-			if (request.readyState !== XMLHttpRequest.DONE) return;
-
-			// Process the response
-			if (request.status >= 200 && request.status < 300) {
-				// If successful
-				resolve(request);
-			} else {
-				// If failed
-				reject(`failed load file(${request.status}): ${fileUrl}`);
-			}
-
-		};
-        request.open("GET", fileUrl);
-		request.send();
-	});
-}
-
-function parseJson(str) {
-    let obj_j;
-    try {
-        obj_j = JSON.parse(str);
-    } catch (e) {
-        if (e instanceof SyntaxError) {
-            console.log(e.message);
-            obj_j = null;
-        } else {
-          throw e;  // re-throw the error unchanged
-        }
-    } 
-    return obj_j;
-}
+import { readTextFile,parseJson } from "utils.mjs";
 
 function readCallback(text, el) {
     let project = parseJson(text);    
@@ -52,8 +17,8 @@ function readCallback(text, el) {
 WorkerScript.onMessage = function(msg) {
     let reply = WorkerScript.sendMessage;
     if(msg.action == "loadFolder") {
-        let data = msg.data;
-        let plist = [];
+        const data = msg.data;
+        const plist = [];
         data.forEach(function(el) {
 			// as no allSettled, catch any error
             let p = readTextFile(el.path + "/project.json").then(value => {
@@ -62,21 +27,20 @@ WorkerScript.onMessage = function(msg) {
             plist.push(p);
         });
         Promise.all(plist).then(value => {
-            reply({ "reply": msg.action, "data": data });
+            reply({ "reply": msg.action, "data": data, "path": msg.path });
         });
     }
     else if(msg.action == "filter") {
-        let typeFilter = (() => {
-            let obj = {};
+        const typeFilter = (() => {
+            const obj = {};
             msg.filters.map((el) => {
                 if(el.type == "type") obj[el.key] = el.value;
             });
             return (str) => obj[str];
         })();
-        const data = msg.data;
         const model = msg.model;
         model.clear();
-        data.forEach(function(el) {
+        msg.data.forEach(function(el) {
             if(typeFilter(el.type))
                 model.append(el);
         });

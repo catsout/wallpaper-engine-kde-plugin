@@ -8,6 +8,7 @@ A wallpaper plugin integrating [wallpaper engine](https://store.steampowered.com
   - Mouse long press(to enter panel edit mode) is broken on desktop  
 - Support **scene(2d)**,**video**,**web** types
 - Require *wallpapaer engine* installed by steam
+- Require qt 5.13+ for playing video(no mpv), or use mpv instead  
 - This plugin has(not required) a [lib](#plugin-lib) to be compiled, if you want any feature below  
   - scene wallpaper  
   - mpv video backend  
@@ -121,12 +122,7 @@ Some wallpaper using webgl may not work, and performance may be bad.
 #### QtMultimedia
 Default video backend of this plugin.  
 It's using GStreamer to play video.  
-To enable hwdecode:  
-- GStreamer plugin installed
-like `gstreamer1.0-vaapi` in debain
-- `GST_VAAPI_ALL_DRIVERS=1`
-this needed for vaapi  
-put it to where the xserver read.  
+[hwdecode](https://wiki.archlinux.org/title/GStreamer#Hardware_video_acceleration) for GStreamer
 
 #### Mpv
 Need to compile plugin lib.  

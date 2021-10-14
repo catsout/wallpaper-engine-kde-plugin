@@ -100,7 +100,7 @@ Rectangle {
     WallpaperListModel {
         id: wpListModel
         enabled: background.randomizeWallpaper
-        workshopDir: background.steamlibrary + Common.wpenginePath
+        workshopDirs: Common.getProjectDirs(background.steamlibrary)
         filterStr: background.filterStr
 
         function changeWallpaper(index) {

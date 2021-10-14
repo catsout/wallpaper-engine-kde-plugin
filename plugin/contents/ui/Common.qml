@@ -49,6 +49,24 @@ QtObject {
         }
     }
 
+    function getWorkshopDir(steamLibraryPath) {
+        return steamLibraryPath + "/steamapps/workshop/content/431960";
+    }
+    function getDefProjectsDir(steamLibraryPath) {
+        return steamLibraryPath + "/steamapps/common/wallpaper_engine/projects/defaultprojects";
+    }
+    function getMyProjectsDir(steamLibraryPath) {
+        return steamLibraryPath + "/steamapps/common/wallpaper_engine/projects/defaultprojects/myprojects"
+    }
+    function getProjectDirs(steamLibraryPath) {
+        return [
+            getWorkshopDir(steamLibraryPath),
+            getDefProjectsDir(steamLibraryPath),
+            getMyProjectsDir(steamLibraryPath)
+        ];
+    }
+
+
     function checklib(libName, parentItem) {
         let ok = false;
         let create = null;
@@ -76,42 +94,12 @@ QtObject {
         return checklib('Qt.labs.folderlistmodel 2.11', parentItem)
     }
 
-    function readTextFile(fileUrl, callback) {
-        const xhr = new XMLHttpRequest;
-        xhr.open("GET", fileUrl);
-        xhr.onreadystatechange = function () {
-            if(xhr.readyState === XMLHttpRequest.DONE){
-                const response = xhr.responseText;
-                if(typeof(response) === "string")
-                    callback(response);
-                else
-                    callback("");
-            }
-        }
-        xhr.send();
-    }
-
     function trimCharR(str, c) {
         let pos = 0;
         while(str.slice(pos - 1, str.length + pos) === c) {
             pos -= 1;
         }
         return str.slice(0, str.length + pos);
-    }
-
-    function parseJson(str) {
-        let obj_j;
-        try {
-            obj_j = JSON.parse(str);
-        } catch (e) {
-            if (e instanceof SyntaxError) {
-                console.log(e.message);
-                obj_j = null;
-            } else {
-              throw e;  // re-throw the error unchanged
-            }
-        } 
-        return obj_j;
     }
 
     function cbCurrentValue(combo) {
@@ -182,14 +170,6 @@ QtObject {
     function clearArray(arr) {
         arr.length = 0; 
     }
-
-    function basename(path) {
-        return path.split('/').reverse()[0];
-    }
-    function dirname(path) {
-        return path.substring(0, str.lastIndexOf("/"));
-    }
-
 
     function listProperty(item) {
         for (var p in item)
