@@ -16,6 +16,7 @@ QtObject {
     property string wpenginePath: "/steamapps/workshop/content/431960"
 
     property var filterModel: ListModel {
+        ListElement { text: "favorite"; type:"favor"; key:"favor"; }
         ListElement { text: "scene"; type:"type"; key:"scene"; }
         ListElement { text: "web"; type:"type"; key:"web"; }
         ListElement { text: "video"; type:"type"; key:"video"; }
@@ -29,13 +30,16 @@ QtObject {
             // not empty
             const result = strToIntArray(filterStr);
             if(result.length < this.count) {
-                return this.map((el) => 1);
+                return [
+                    0,1,1,1
+                ]
             } else {
                 return result;
             }
         }
     }
 
+/*
     // const
     property var filterModelComp: Component { 
         ListModel {
@@ -49,6 +53,7 @@ QtObject {
             }
         }
     }
+*/
 
     function getWorkshopDir(steamLibraryPath) {
         return steamLibraryPath + "/steamapps/workshop/content/431960";
@@ -72,13 +77,27 @@ QtObject {
 
 
     function loadCustomConf(data) {
+        const conf = {
+            favor: new Set()
+        };
         try {
-            const jsonStr = btoa(data);
-            return parseJson(jsonStr);
-        } catch(e) { return {}; }
+            const jsonStr = Qt.atob(data);
+            Object.assign(conf, Utils.parseJson(jsonStr));
+            conf.favor = new Set(conf.favor);
+            return conf;
+        } catch(e) { 
+            console.error(e);
+            return conf; 
+        }
     }
     function prepareCustomConf(conf) {
-        return atob(JSON.stringify(conf.t));
+        function setTojson(key, value) {
+            if (value instanceof Set) {
+                return [...value];
+            }
+            return value;
+        }
+        return Qt.btoa(JSON.stringify(conf, setTojson));
     }
 
 

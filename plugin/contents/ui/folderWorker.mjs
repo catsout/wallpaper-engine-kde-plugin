@@ -14,6 +14,21 @@ function readCallback(text, el) {
     }
 }
 
+function genFilter(filters) {
+    const typeF = {};
+    let onlyFavor = false;
+    filters.forEach((el) => {
+        if(el.type === "type") typeF[el.key] = el.value;
+        else if(el.type === "favor") onlyFavor = el.value;
+    });
+
+    const checkType = (el) => Boolean(typeF[el.type]);
+    const checkFavor = (el) => onlyFavor?el.favor:true;
+    return (el) => {
+        return checkType(el) && checkFavor(el);
+    }
+}
+
 WorkerScript.onMessage = function(msg) {
     let reply = WorkerScript.sendMessage;
     if(msg.action == "loadFolder") {
@@ -21,7 +36,7 @@ WorkerScript.onMessage = function(msg) {
         const plist = [];
         data.forEach(function(el) {
 			// as no allSettled, catch any error
-            let p = readTextFile(el.path + "/project.json").then(value => {
+            const p = readTextFile(el.path + "/project.json").then(value => {
                     readCallback(value.response, el);
                 }).catch(reason => console.log(reason));
             plist.push(p);
@@ -31,17 +46,11 @@ WorkerScript.onMessage = function(msg) {
         });
     }
     else if(msg.action == "filter") {
-        const typeFilter = (() => {
-            const obj = {};
-            msg.filters.map((el) => {
-                if(el.type == "type") obj[el.key] = el.value;
-            });
-            return (str) => obj[str];
-        })();
+        const filter = genFilter(msg.filters);
         const model = msg.model;
         model.clear();
         msg.data.forEach(function(el) {
-            if(typeFilter(el.type))
+            if(filter(el))
                 model.append(el);
         });
         model.sync();

@@ -36,9 +36,8 @@ ColumnLayout {
 
     property string cfg_CustomConf
     property var customConf: null
-
-    onCfg_CustomConfChanged: {
-        if(!this.customConf) {
+    Item {
+        Component.onCompleted: {
             customConf = Common.loadCustomConf(cfg_CustomConf);
         }
     }
@@ -149,6 +148,10 @@ ColumnLayout {
                 id: wpListModel
                 workshopDirs: Common.getProjectDirs(cfg_SteamLibraryPath)
                 filterStr: cfg_FilterStr
+                initItemOp: (item) => {
+                    if(!root.customConf) return;
+                    item.favor = root.customConf.favor.has(item.workshopid);
+                }
                 enabled: Boolean(cfg_SteamLibraryPath)
             }
 
@@ -182,6 +185,19 @@ ColumnLayout {
                         // path is file://, safe to concat with '/'
                         text: title
                         actions: [
+                            Kirigami.Action {
+                                icon.name: favor?"user-bookmarks-symbolic":"bookmark-add-symbolic"
+                                tooltip: favor?"Remove from favorites":"Add to favorites"
+                                onTriggered: {
+                                    if(favor) {
+                                        root.customConf.favor.delete(workshopid);
+                                    } else {
+                                        root.customConf.favor.add(workshopid);
+                                    }
+                                    view.model.assignModel(index, { favor: !favor });
+                                    root.saveCustomConf();
+                                }
+                            },
                             Kirigami.Action {
                                 icon.name: "folder-remote-symbolic"
                                 tooltip: "Open Workshop Link"

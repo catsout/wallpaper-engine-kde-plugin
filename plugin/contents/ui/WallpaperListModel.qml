@@ -10,6 +10,8 @@ Item {
     property string filterStr
     property bool enabled: true
 
+    property var initItemOp: (item) => {}
+
     signal modelStartSync
     signal modelRefreshed
 
@@ -19,10 +21,26 @@ Item {
         loaded: false,
         title: "unknown",
         preview: "unknown",
-        type: "unknown"
+        type: "unknown",
+        favor: false
     })
 
-    readonly property ListModel model: ListModel {}
+    readonly property ListModel model: ListModel {
+        function assignModel(index, value) {
+            Object.assign(this.get(index), value);
+            const workshopid = this.get(index).workshopid;
+            new Promise((resolve, reject) => {
+                const model = folderWorker.model;
+                for(let i=0;i<model.length;i++) {
+                    if(model[i].workshopid === workshopid) {
+                        Object.assign(model[i], value);
+                        resolve();
+                    }
+                }
+                reject();
+            });
+        }
+    }
 
     property var folderModels: []
 
@@ -106,6 +124,7 @@ Item {
                             v.workshopid = get(i,"fileName");
                             // use qurl to convert to file://
                             v.path = Qt.resolvedUrl(get(i,"filePath")).toString();
+                            wpItem.initItemOp(v);
                             proxyModel.push(v);
                         }
                         resolve();

@@ -30,6 +30,7 @@ Rectangle {
     property var mouseHooker
     property bool hasLib: Common.checklib_wallpaper(background)
 
+    property var customConf: Common.loadCustomConf(wallpaper.configuration.CustomConf)
 
     Component.onDestruction: {
         if(mouseHooker) {
@@ -95,6 +96,10 @@ Rectangle {
         enabled: background.randomizeWallpaper
         workshopDirs: Common.getProjectDirs(background.steamlibrary)
         filterStr: background.filterStr
+        initItemOp: (item) => {
+            if(!background.customConf) return;
+            item.favor = background.customConf.favor.has(item.workshopid);
+        }
 
         function changeWallpaper(index) {
             if(this.model.count === 0) return;
