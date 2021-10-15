@@ -66,5 +66,9 @@
       <label>FilterStr</label>
       <default></default>
     </entry>
+    <entry name="CustomConf" type="String">
+      <label>CustomConf</label>
+      <default></default>
+    </entry>
   </group>
 </kcfg>

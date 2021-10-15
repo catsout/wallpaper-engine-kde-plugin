@@ -74,7 +74,7 @@ Item {
             }.bind(wpItem));
         }
     }
-    Component.onCompleted: {
+    function refresh() {
         if(!wpItem.enabled) return;
         this.folderModels.forEach(el => el.destroy());
         this.folderModels = [];
@@ -84,6 +84,9 @@ Item {
                 requirFolder: el
             }));
         });
+    }
+    Component.onCompleted: {
+        this.refresh();
     }
     Component {
         id: folderCom

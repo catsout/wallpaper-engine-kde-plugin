@@ -36,13 +36,6 @@ Rectangle {
             mouseHooker.destroy();
         }
     }
-    
-    function getWorkshopPath() {
-        return steamlibrary + Common.wpenginePath + '/' + workshopid;
-    }
-    function getAssetsPath() {
-        return steamlibrary + "/steamapps/common/wallpaper_engine/assets"
-    }
 
     onSourceChanged: {
         if(background.nowBackend === "InfoShow")
@@ -204,7 +197,7 @@ Rectangle {
             case 'scene':
                 if(background.hasLib) {
                     qmlsource = "backend/Scene.qml";
-                    properties = {"assets": background.getAssetsPath()};
+                    properties = {"assets": Common.getAssetsPath(steamlibrary)};
                 } else {
                     qmlsource = "backend/InfoShow.qml";
                     properties["info"] = "Plugin lib not found. To support scene, please compile and install it.";

@@ -34,6 +34,19 @@ ColumnLayout {
     property alias cfg_Fps: sliderFps.value
     property alias cfg_SwitchTimer: randomSpin.value
 
+    property string cfg_CustomConf
+    property var customConf: null
+
+    onCfg_CustomConfChanged: {
+        if(!this.customConf) {
+            customConf = Common.loadCustomConf(cfg_CustomConf);
+        }
+    }
+
+    function saveCustomConf() {
+        cfg_CustomConf = Common.prepareCustomConf(this.customConf);
+    }
+
     PlasmaComponents3.TabBar {
         id: bar
         //currentTab
@@ -246,8 +259,9 @@ ColumnLayout {
                 selectMultiple : false
                 nameFilters: [ "All files (*)" ]
                 onAccepted: {
-                    var path = Common.trimCharR(wpDialog.fileUrls[0], '/');
+                    const path = Common.trimCharR(wpDialog.fileUrls[0], '/');
                     cfg_SteamLibraryPath = path;
+                    wpListModel.refresh();
                 }
             }
 

@@ -1,5 +1,6 @@
 pragma Singleton
 import QtQuick 2.0
+import "utils.mjs" as Utils
 
 QtObject {
     enum PauseMode {
@@ -64,6 +65,20 @@ QtObject {
             getDefProjectsDir(steamLibraryPath),
             getMyProjectsDir(steamLibraryPath)
         ];
+    }
+    function getAssetsPath(steamLibrary) {
+        return steamLibrary + "/steamapps/common/wallpaper_engine/assets";
+    }
+
+
+    function loadCustomConf(data) {
+        try {
+            const jsonStr = btoa(data);
+            return parseJson(jsonStr);
+        } catch(e) { return {}; }
+    }
+    function prepareCustomConf(conf) {
+        return atob(JSON.stringify(conf.t));
     }
 
 
