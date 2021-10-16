@@ -16,10 +16,43 @@ QtObject {
     property string wpenginePath: "/steamapps/workshop/content/431960"
 
     property var filterModel: ListModel {
-        ListElement { text: "favorite"; type:"favor"; key:"favor"; }
-        ListElement { text: "scene"; type:"type"; key:"scene"; }
-        ListElement { text: "web"; type:"type"; key:"web"; }
-        ListElement { text: "video"; type:"type"; key:"video"; }
+        ListElement { text: "Favorite";     type:"favor";         key:"favor";         def: 0}
+        ListElement { text: "TYPE";         type:"_nocheck";      key:"";              def: 1}
+        ListElement { text: "Scene";        type:"type";          key:"scene";         def: 1}
+        ListElement { text: "Web";          type:"type";          key:"web";           def: 1}
+        ListElement { text: "Video";        type:"type";          key:"video";         def: 1}
+        ListElement { text: "AGE";          type:"_nocheck";      key:"";              def: 1}
+        ListElement { text: "Everyone";     type:"contentrating"; key:"Everyone";      def: 1}
+        ListElement { text: "Questionable"; type:"contentrating"; key:"Questionable";  def: 1}
+        ListElement { text: "Mature";       type:"contentrating"; key:"Mature";        def: 0}
+        ListElement { text: "GENRE";        type:"_nocheck";      key:"";              def: 1}
+        ListElement { text: "Abstract";     type:"tags";          key:"Abstract";      def: 1}
+        ListElement { text: "Animal";       type:"tags";          key:"Animal";        def: 1}
+        ListElement { text: "Anime";        type:"tags";          key:"Anime";         def: 1}
+        ListElement { text: "Cartoon";      type:"tags";          key:"Cartoon";       def: 1}
+        ListElement { text: "CGI";          type:"tags";          key:"CGI";           def: 1}
+        ListElement { text: "Cyberpunk";    type:"tags";          key:"Cyberpunk";     def: 1}
+        ListElement { text: "Fantasy";      type:"tags";          key:"Fantasy";       def: 1}
+        ListElement { text: "Game";         type:"tags";          key:"Game";          def: 1}
+        ListElement { text: "Girls";        type:"tags";          key:"Girls";         def: 1}
+        ListElement { text: "Guys";         type:"tags";          key:"Guys";          def: 1}
+        ListElement { text: "Landscape";    type:"tags";          key:"Landscape";     def: 1}
+        ListElement { text: "Medieval";     type:"tags";          key:"Medieval";      def: 1}
+        ListElement { text: "Memes";        type:"tags";          key:"Memes";         def: 1}
+        ListElement { text: "MMD";          type:"tags";          key:"MMD";           def: 1}
+        ListElement { text: "Music";        type:"tags";          key:"Music";         def: 1}
+        ListElement { text: "Nature";       type:"tags";          key:"Nature";        def: 1}
+        ListElement { text: "Pixel art";    type:"tags";          key:"Pixel art";     def: 1}
+        ListElement { text: "Relaxing";     type:"tags";          key:"Relaxing";      def: 1}
+        ListElement { text: "Retro";        type:"tags";          key:"Retro";         def: 1}
+        ListElement { text: "Sci-Fi";       type:"tags";          key:"Sci-Fi";        def: 1}
+        ListElement { text: "Sports";       type:"tags";          key:"Sports";        def: 1}
+        ListElement { text: "Technology";   type:"tags";          key:"Technology";    def: 1}
+        ListElement { text: "Television";   type:"tags";          key:"Television";    def: 1}
+        ListElement { text: "Vehicle";      type:"tags";          key:"Vehicle";       def: 1}
+        ListElement { text: "Unspecified";  type:"tags";          key:"Unspecified";   def: 1}
+
+
         function map(func) {
             const arr = [];
             for(let i=0;i<this.count;i++) arr.push(func(this.get(i), i));
@@ -30,9 +63,7 @@ QtObject {
             // not empty
             const result = strToIntArray(filterStr);
             if(result.length < this.count) {
-                return [
-                    0,1,1,1
-                ]
+                return filterModel.map((el) => el.def);
             } else {
                 return result;
             }

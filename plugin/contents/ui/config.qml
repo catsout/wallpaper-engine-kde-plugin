@@ -100,14 +100,13 @@ ColumnLayout {
                     id: comboxFilter
                     anchors.verticalCenter: parent.verticalCenter
                     width: height * 1.5
+                    popup.width: font.pixelSize * 11
+                    popup.height: font.pixelSize * 25
 
                     property var modelValues: Common.filterModel.getValueArray(cfg_FilterStr)
                     model: Common.filterModel
 
-                    displayText: ""
                     indicator: PlasmaCore.IconItem {
-                        //x: comboxFilter.leftPadding
-                        //y: comboxFilter.topPadding + (comboxFilter.availableHeight - height) / 2
                         height: parent.height
                         width: height
                         source: "filter-symbolic"
@@ -118,10 +117,12 @@ ColumnLayout {
                     }
                     delegate: ItemDelegate {
                         id: combox_dg
-                        width: parent.width
+                        width: comboxFilter.popup.width
                         contentItem: RowLayout {
                             anchors.fill: parent
+                            anchors.leftMargin: 5
                             CheckBox {
+                                visible: model.type !== "_nocheck"
                                 checked: comboxFilter.modelValues[index]
                                 onToggled: combox_dg.toggle()
                             }
@@ -132,6 +133,7 @@ ColumnLayout {
                         }
                         MouseArea {
                             anchors.fill: parent
+                            enabled: model.type !== "_nocheck"
                             onClicked: parent.toggle()
                         }
                         function toggle() {
@@ -140,8 +142,7 @@ ColumnLayout {
                             cfg_FilterStr = Common.intArrayToStr(modelValues);
                         }
                     }
-                    onActivated: {
-                    }
+                    
                 }
             }
 

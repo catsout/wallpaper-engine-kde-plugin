@@ -22,6 +22,8 @@ Item {
         title: "unknown",
         preview: "",
         type: "unknown",
+        contentrating: "Everyone",
+        tags: [],
         favor: false
     })
 
