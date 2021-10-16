@@ -7,6 +7,7 @@ import org.kde.plasma.components 3.0 as PlasmaComponents3
 // for kcm gridview
 import org.kde.kcm 1.1 as KCM
 import org.kde.kirigami 2.4 as Kirigami
+import org.kde.kquickcontrolsaddons 2.0
 
 import Qt.labs.folderlistmodel 2.11
 
@@ -210,14 +211,26 @@ ColumnLayout {
                                 onTriggered: Qt.openUrlExternally(path) 
                             }
                         ]
-                        thumbnail: Image {
+                        thumbnail: Rectangle {
                             anchors.fill: parent
-                            source: preview?path + "/" + preview:""
-                            sourceSize.width: width
-                            sourceSize.height: height
-                            fillMode: Image.Stretch
-                            cache: false
-                            asynchronous: true
+                            QIconItem {
+                                anchors.centerIn: parent
+                                width: PlasmaCore.Units.iconSizes.large
+                                height: width
+                                icon: "view-preview"
+                                visible: !imgPre.visible
+                            }
+                            Image {
+                                id: imgPre
+                                anchors.fill: parent
+                                source: preview?path + "/" + preview:""
+                                sourceSize.width: parent.width
+                                sourceSize.height: parent.height
+                                fillMode: Image.Stretch
+                                cache: false
+                                asynchronous: true
+                                visible: Boolean(preview)
+                            }
                         }
                         onClicked: {
                                cfg_WallpaperFilePath = path + "/" + file;
