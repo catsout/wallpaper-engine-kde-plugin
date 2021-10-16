@@ -1,5 +1,7 @@
 #include "ParticleEmitter.h"
 #include "ParticleModify.h"
+#include "../Utils/Algorism.h"
+#include "../Utils/Logging.h"
 #include <random>
 #include <array>
 
@@ -59,6 +61,7 @@ ParticleEmittOp ParticleBoxEmitterArgs::MakeEmittOp(ParticleBoxEmitterArgs a) {
 				pos[i] = GetRandomIn(a.minDistance[i], a.maxDistance[i], (a.randomFn()-0.5f)*2.0f);
 			auto p = Particle();
 			ParticleModify::MoveTo(p, pos[0], pos[1], pos[2]);
+			ParticleModify::MoveMultiply(p, a.directions[0], a.directions[1], a.directions[2]);
 			ParticleModify::Move(p, a.orgin[0], a.orgin[1], a.orgin[2]);
 			return p;
 		};
@@ -69,16 +72,23 @@ ParticleEmittOp ParticleBoxEmitterArgs::MakeEmittOp(ParticleBoxEmitterArgs a) {
 }
 
 ParticleEmittOp ParticleSphereEmitterArgs::MakeEmittOp(ParticleSphereEmitterArgs a) {
+	using namespace Eigen;
 	double timer {0.0f};
 	return [a, timer](std::vector<Particle>& ps, std::vector<ParticleInitOp>& inis, uint32_t maxcount, float timepass) mutable {
 		timer += timepass;
 		auto GenSphere = [&]() {
 			auto p = Particle();
-			float radius = GetRandomIn(a.minDistance, a.maxDistance, a.randomFn());
-			ParticleModify::MoveTo(p, radius, 0, 0);
-			ParticleModify::RotatePos(p, 360*a.randomFn(), 360*a.randomFn(), 360*a.randomFn());
-			ParticleModify::Move(p, a.orgin[0], a.orgin[1], a.orgin[2]);
+			float r = GetRandomIn(a.minDistance, a.maxDistance, a.randomFn());
+			std::array<double, 3> sp = algorism::GenSphere(a.randomFn);
+			ParticleModify::MoveTo(p, sp[0], sp[1], sp[2]);
+			{
+				ParticleModify::SphereDirectOffset(p, Vector3f::UnitX(), std::asin(p.position[0]) - std::asin(p.position[0]*a.directions[0]));
+				ParticleModify::SphereDirectOffset(p, Vector3f::UnitY(), std::asin(p.position[1]) - std::asin(p.position[1]*a.directions[1]));
+				ParticleModify::SphereDirectOffset(p, Vector3f::UnitZ(), std::asin(p.position[2]) - std::asin(p.position[2]*a.directions[2]));
+			}
+			ParticleModify::MoveMultiply(p, r, r, r);
 			ParticleModify::MoveApplySign(p, a.sign[0], a.sign[1], a.sign[2]);
+			ParticleModify::Move(p, a.orgin[0], a.orgin[1], a.orgin[2]);
 			return p;
 		};
 		Emitt(ps, GetEmitNum(timer, a.emitSpeed), maxcount, [&]() {

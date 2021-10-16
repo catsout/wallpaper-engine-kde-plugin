@@ -358,25 +358,35 @@ ParticleOperatorOp WPParticleParser::genParticleOperatorOp(const nlohmann::json&
 	return [](Particle&, uint32_t, float, float){};
 }
 
+static void copyWPxyz(std::array<float, 3>& a, const float* b) {
+	a[0] = b[0];
+	a[1] = b[1];
+	a[2] = b[2];
+}
+static void copyWPxyz(std::array<int32_t, 3>& a, const int32_t* b) {
+	a[0] = b[0];
+	a[1] = b[1];
+	a[2] = b[2];
+}
 
 ParticleEmittOp WPParticleParser::genParticleEmittOp(const wpscene::Emitter& wpe, RandomFn rf) {
 	if(wpe.name == "boxrandom") {
 		ParticleBoxEmitterArgs box;
 		box.emitSpeed = wpe.rate;
-		std::memcpy(box.minDistance, &GetValidVec(wpe.distancemin, 3, wpe.distancemin[0])[0], 3*sizeof(float));
-		std::memcpy(box.maxDistance, &GetValidVec(wpe.distancemax, 3, wpe.distancemax[0])[0], 3*sizeof(float));
+		copyWPxyz(box.minDistance, &GetValidVec(wpe.distancemin, 3, wpe.distancemin[0])[0]);
+		copyWPxyz(box.maxDistance, &GetValidVec(wpe.distancemax, 3, wpe.distancemax[0])[0]);
+		copyWPxyz(box.directions, &wpe.directions[0]);
+		copyWPxyz(box.orgin, &wpe.origin[0]);
 		box.randomFn = rf;
-		std::memcpy(box.directions, &wpe.directions[0], 3*sizeof(float));
-		std::memcpy(box.orgin, &wpe.origin[0], 3*sizeof(float));
 		return ParticleBoxEmitterArgs::MakeEmittOp(box);
 	} else if(wpe.name == "sphererandom") {
 		ParticleSphereEmitterArgs sphere;
 		sphere.emitSpeed = wpe.rate;
 		sphere.minDistance = wpe.distancemin[0];
 		sphere.maxDistance = wpe.distancemax[0];
-		std::memcpy(sphere.directions, &wpe.directions[0], 3*sizeof(float));
-		std::memcpy(sphere.orgin, &wpe.origin[0], 3*sizeof(float));
-		std::memcpy(sphere.sign, &wpe.sign[0], 3*sizeof(int32_t));
+		copyWPxyz(sphere.directions, &wpe.directions[0]);
+		copyWPxyz(sphere.orgin, &wpe.origin[0]);
+		copyWPxyz(sphere.sign, &wpe.sign[0]);
 		sphere.randomFn = rf;
 		return ParticleSphereEmitterArgs::MakeEmittOp(sphere);
 	} else 

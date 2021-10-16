@@ -20,7 +20,7 @@ Item {
         path: "", // need convert to qurl
         loaded: false,
         title: "unknown",
-        preview: "unknown",
+        preview: "",
         type: "unknown",
         favor: false
     })
@@ -120,7 +120,7 @@ Item {
                         const count = this.count;
                         const get = this.get.bind(this);
                         for(let i=0;i < count;i++) {
-                            const v = Object.create(wpItem.itemTemplate);
+                            const v = Object.assign({}, wpItem.itemTemplate);
                             v.workshopid = get(i,"fileName");
                             // use qurl to convert to file://
                             v.path = Qt.resolvedUrl(get(i,"filePath")).toString();

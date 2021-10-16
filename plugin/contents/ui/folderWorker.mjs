@@ -1,12 +1,13 @@
 import { readTextFile,parseJson } from "utils.mjs";
 
 function readCallback(text, el) {
-    let project = parseJson(text);    
+    const project = parseJson(text);    
     if(project !== null) {
         if("title" in project)
             el.title = project.title;
-        if("preview" in project)
+        if("preview" in project && project.preview) {
             el.preview = project.preview;
+        }
         if("file" in project)
             el.file = project.file;
         if("type" in project)
@@ -30,12 +31,15 @@ function genFilter(filters) {
 }
 
 WorkerScript.onMessage = function(msg) {
-    let reply = WorkerScript.sendMessage;
+    const reply = WorkerScript.sendMessage;
     if(msg.action == "loadFolder") {
         const data = msg.data;
         const plist = [];
-        data.forEach(function(el) {
+        msg.data.forEach((el) => {
 			// as no allSettled, catch any error
+            if(el.preview === undefined) {
+                //console.log("--------------------", el.title);
+            }
             const p = readTextFile(el.path + "/project.json").then(value => {
                     readCallback(value.response, el);
                 }).catch(reason => console.log(reason));

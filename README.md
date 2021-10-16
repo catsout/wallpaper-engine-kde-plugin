@@ -98,7 +98,7 @@ Require *wallpapaer engine* installed for assets(shaders,pictures...)
 - [x] Particle System
 	- [x] Renderers
 	- [x] Emitters
-		- [ ] Directions
+		- [ ] Duration 
 	- [x] Initializers
 		- [ ] Turbulent Velocity Random
 	- [x] Operators

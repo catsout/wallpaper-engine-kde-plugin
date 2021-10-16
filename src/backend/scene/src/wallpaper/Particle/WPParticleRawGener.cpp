@@ -7,29 +7,6 @@
 using namespace wallpaper;
 using namespace Eigen;
 
-void AssignVertexTimes(float*dst, const std::array<float,2>& src, uint32_t doffset, uint32_t dsize, uint32_t num) {
-	for(uint32_t i=0;i<num;i++) {
-		std::memcpy(dst+doffset+i*dsize, src.data(), 2*sizeof(float));
-	}
-}
-void AssignVertexTimes(float*dst, const std::array<float,3>& src, uint32_t doffset, uint32_t dsize, uint32_t num) {
-	for(uint32_t i=0;i<num;i++) {
-		std::memcpy(dst+doffset+i*dsize, src.data(), 3*sizeof(float));
-	}
-}
-void AssignVertexTimes(float*dst, const std::array<float,4>& src, uint32_t doffset, uint32_t dsize, uint32_t num) {
-	for(uint32_t i=0;i<num;i++) {
-		std::memcpy(dst+doffset+i*dsize, src.data(), 4*sizeof(float));
-	}
-}
-
-void AssignVertex(float*dst, float* data, std::size_t dataSize, uint32_t doffset, uint32_t dsize, uint32_t ssize) {
-	uint32_t num = dataSize / ssize;
-	for(uint32_t i=0;i<num;i++) {
-		std::memcpy(dst+doffset+i*dsize, &data[i*ssize], ssize*sizeof(float));
-	}
-}
-
 void GenSingleGLData(const Particle& p, const SceneVertexArray& vertex, ParticleRawGenSpecOp& specOp, float* data, bool hasTexCoordVec4C1) {
 	std::size_t oneSize = vertex.OneSize();
 

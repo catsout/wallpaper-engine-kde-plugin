@@ -62,7 +62,7 @@ QtObject {
         return steamLibraryPath + "/steamapps/common/wallpaper_engine/projects/defaultprojects";
     }
     function getMyProjectsDir(steamLibraryPath) {
-        return steamLibraryPath + "/steamapps/common/wallpaper_engine/projects/defaultprojects/myprojects"
+        return steamLibraryPath + "/steamapps/common/wallpaper_engine/projects/myprojects"
     }
     function getProjectDirs(steamLibraryPath) {
         return [

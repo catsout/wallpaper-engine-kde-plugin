@@ -7,49 +7,6 @@
 using namespace wallpaper;
 using namespace Eigen;
 
-void ParticleModify::Move(Particle &p, float x, float y, float z) {
-	p.position[0] += x;
-	p.position[1] += y;
-	p.position[2] += z;
-}
-
-void ParticleModify::MoveTo(Particle &p, float x, float y, float z) {
-	p.position[0] = x;
-	p.position[1] = y;
-	p.position[2] = z;
-}
-void ParticleModify::MoveToNegZ(Particle& p) {
-	p.position[2] = -std::abs(p.position[2]);
-}
-
-void ParticleModify::MoveByTime(Particle &p, float t) {
-	Move(p, p.velocity[0] * t, p.velocity[1] * t, p.velocity[2] * t);
-}
-
-
-void ParticleModify::MoveApplySign(Particle& p, int32_t x, int32_t y, int32_t z) {
-	if(x != 0) {
-		p.position[0] = std::abs(p.position[0]) * (float)x;
-	}
-	if(y != 0) {
-		p.position[1] = std::abs(p.position[1]) * (float)y;
-	}
-	if(z != 0) {
-		p.position[2] = std::abs(p.position[2]) * (float)z;
-	}
-}
-
-
-void ParticleModify::RotatePos(Particle &p, float x, float y, float z) {
-	Affine3f trans = Affine3f::Identity();
-
-	trans.prerotate(AngleAxis<float>(y, Vector3f::UnitY())); // y
-	trans.prerotate(AngleAxis<float>(x, Vector3f::UnitX())); // x
-	trans.prerotate(AngleAxis<float>(-z, Vector3f::UnitZ())); // z
-	Vector3f pos(p.position);
-	pos = trans * pos;
-	std::memcpy(p.position, pos.data(), 3*sizeof(float));
-}
 
 void ParticleModify::InitColor(Particle &p, float r, float g, float b) {
 	p.color[0] = r;
@@ -63,13 +20,6 @@ void ParticleModify::ChangeColor(Particle &p, float r, float g, float b) {
 	p.color[2] += b;
 }
 
-void ParticleModify::ChangeLifetime(Particle &p, float l) {
-	p.lifetime += l;
-}
-void ParticleModify::InitLifetime(Particle &p, float l) {
-	p.lifetime = l;
-	p.lifetimeInit = l;
-}
 void ParticleModify::InitSize(Particle &p, float s) {
 	p.size = s;
 	p.sizeInit = s;

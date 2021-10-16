@@ -1,4 +1,7 @@
 #pragma once
+#include <functional>
+#include <cassert>
+#include <cmath>
 
 namespace  wallpaper {
 namespace  algorism {
@@ -10,6 +13,23 @@ namespace  algorism {
 		TInt pow2 {8};
 		while(pow2 < x) pow2*=2;	
 		return pow2;
+	}
+
+	inline std::array<double, 3> GenSphere(const std::function<float()>& random) {
+		double x1,x2;
+		double m;
+		while(true) {
+			x1 = 1.0f - 2.0f*random();
+			x2 = 1.0f - 2.0f*random();
+			m = x1*x1 + x2*x2;
+			if(m < 1.0f) break;
+		}
+	
+		return {
+			2.0f*x1*std::sqrt(1.0f-m),
+			2.0f*x2*std::sqrt(1.0f-m),
+			1.0f-2.0f*m
+		};
 	}
 }
 }

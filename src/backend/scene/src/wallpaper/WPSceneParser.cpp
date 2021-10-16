@@ -533,7 +533,7 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf, fs::VFS& vfs
 			WPShaderInfo shaderInfo;
 			{
 				if(!hasEffect)
-					svData.parallaxDepth = wpimgobj.parallaxDepth;
+					svData.parallaxDepth = {wpimgobj.parallaxDepth[0], wpimgobj.parallaxDepth[1]};
 
 				baseConstSvs["g_Alpha"] = {"g_Alpha", {wpimgobj.alpha}};
 				baseConstSvs["g_Color"] = {"g_Color", wpimgobj.color};
@@ -777,7 +777,7 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf, fs::VFS& vfs
 							spEffNode->CopyTrans(*spImgNode);
 							if(!isCompose)
 								spImgNode->CopyTrans(SceneNode());
-							svData.parallaxDepth = wpimgobj.parallaxDepth;
+							svData.parallaxDepth = {wpimgobj.parallaxDepth[0], wpimgobj.parallaxDepth[1]};
 							material.blenmode = imgBlendMode;
 						} else {
 							GenCardMesh(mesh, {2, 2});
@@ -809,6 +809,7 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf, fs::VFS& vfs
 
 			SceneMaterial material;
 			WPShaderValueData svData;
+			svData.parallaxDepth = {wppartobj.parallaxDepth[0], wppartobj.parallaxDepth[1]};
 			WPShaderInfo shaderInfo;
 			shaderInfo.baseConstSvs = globalBaseConstSvs;
 			shaderInfo.baseConstSvs["g_OrientationUp"] = {"g_OrientationUp", {0.0f, -1.0f, 0}};
@@ -867,6 +868,7 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf, fs::VFS& vfs
 			upScene->paritileSys.subsystems.emplace_back(std::move(particleSub));
 			mesh.AddMaterial(std::move(material));
 			spNode->AddMesh(spMesh);
+			shaderValueUpdater->SetNodeData(spNode.get(), svData);
 			upScene->sceneGraph->AppendChild(spNode);
 		} else if(indexT.first == "sound") {
 			auto& wpsoundobj = wpsoundobjs.at(indexT.second);

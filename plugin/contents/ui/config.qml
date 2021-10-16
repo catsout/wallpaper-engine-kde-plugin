@@ -212,7 +212,7 @@ ColumnLayout {
                         ]
                         thumbnail: Image {
                             anchors.fill: parent
-                            source: path + "/" + preview
+                            source: preview?path + "/" + preview:""
                             sourceSize.width: width
                             sourceSize.height: height
                             fillMode: Image.Stretch

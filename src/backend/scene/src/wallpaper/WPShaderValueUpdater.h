@@ -12,7 +12,7 @@ namespace wallpaper
 class Scene;
 
 struct WPShaderValueData {
-	std::vector<float> parallaxDepth {0.0f, 0.0f};
+	std::array<float, 2> parallaxDepth {0.0f, 0.0f};
 	// index + name
 	std::vector<std::pair<int32_t, std::string>> renderTargetResolution;
 };

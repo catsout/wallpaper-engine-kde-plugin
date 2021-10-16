@@ -28,7 +28,7 @@ public:
 class Emitter {
 public:
     bool FromJson(const nlohmann::json&);
-    std::vector<float> directions {1.0f, 0, 0};
+    std::vector<float> directions {1.0f, 1.0f, 0};
 	std::vector<float> distancemax {256.0f};
 	std::vector<float> distancemin {0.0f};
     std::vector<float> origin {0, 0, 0};
