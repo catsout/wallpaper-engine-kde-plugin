@@ -4,7 +4,9 @@
 #include <cstdint>
 #include <string>
 #include <string_view>
+#include <exception>
 #include "Logging.h"
+#include "Identity.hpp"
 
 #define STRTONUM(s, num) wallpaper::utils::StrToNum(s, num, __SHORT_FILE__, __LINE__);
 
@@ -52,18 +54,40 @@ inline std::vector<std::string> SpliteString(std::string str, char spliter) {
     return result;
 }
 
+namespace StrToArray {
+struct WrongSizeExp : public std::exception {
+  const char * what () const throw () {
+    return "Wrong size of the array";
+  }
+};
+
 template<typename T>
-bool StringToVec(const std::string& str, std::vector<T>& target) {
+bool Convert(const std::string& str, std::vector<T>& target) {
     std::vector<std::string> str_list = SpliteString(str, ' ');
 	if(target.size() < str_list.size())
 		target.resize(str_list.size());
 	auto StrConv = [](std::string str) {
 		T num {};
-		STRTONUM(str, num);
+		_StrToNum(str, num);
 		return num;
 	};
 	std::transform(str_list.begin(), str_list.end(), target.begin(), StrConv);
 	return true;
+}
+template<typename T, std::size_t N>
+bool Convert(const std::string& str, std::array<T, N>& target) {
+    std::vector<std::string> str_list = SpliteString(str, ' ');
+	if(N != str_list.size()) {
+		throw WrongSizeExp();
+	}
+	auto StrConv = [](std::string str) {
+		T num {};
+		_StrToNum(str, num);
+		return num;
+	};
+	std::transform(str_list.begin(), str_list.end(), target.begin(), StrConv);
+	return true;
+}
 }
 
 }

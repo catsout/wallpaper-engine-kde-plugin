@@ -50,12 +50,12 @@ public:
     bool FromJson(const nlohmann::json&, fs::VFS&);
     int32_t id {0};
     std::string name;
-    std::vector<float> origin {0.0f, 0.0f, 0.0f};
-    std::vector<float> scale {1.0f, 1.0f, 1.0f};
-    std::vector<float> angles {0.0f, 0.0f, 0.0f};
-    std::vector<float> size {2.0f, 2.0f};
-    std::vector<float> parallaxDepth {0.0f, 0.0f};
-    std::vector<float> color {1.0f, 1.0f, 1.0f};
+    std::array<float,3> origin {0.0f, 0.0f, 0.0f};
+    std::array<float,3> scale {1.0f, 1.0f, 1.0f};
+    std::array<float,3> angles {0.0f, 0.0f, 0.0f};
+    std::array<float,2> size {2.0f, 2.0f};
+    std::array<float,2> parallaxDepth {0.0f, 0.0f};
+    std::array<float,3> color {1.0f, 1.0f, 1.0f};
     int32_t colorBlendMode {0};
     float alpha {1.0f};
     float brightness {1.0f};

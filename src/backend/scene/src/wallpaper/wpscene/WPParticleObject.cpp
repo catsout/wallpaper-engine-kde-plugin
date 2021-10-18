@@ -41,11 +41,9 @@ bool ParticleInstanceoverride::FromJosn(const nlohmann::json& json) {
     GET_JSON_NAME_VALUE_NOWARN(json, "count", count);
     if(json.contains("color")) {
         GET_JSON_NAME_VALUE(json, "color", color);
-        if(color.size() == 1) color.resize(3, color[0]);
         overColor = true;
     } else if(json.contains("colorn")) {
         GET_JSON_NAME_VALUE(json, "colorn", colorn);
-        if(colorn.size() == 1) colorn.resize(3, colorn[0]);
         overColorn = true;
     }
     return true;

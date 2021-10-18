@@ -406,10 +406,7 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf, fs::VFS& vfs
 
 	shaderValueUpdater->SetOrtho(sc.general.orthogonalprojection.width, sc.general.orthogonalprojection.height);
 	
-	{	
-		auto& cc = sc.general.clearcolor;
-		upScene->clearColor = {cc[0], cc[1], cc[2]};
-	}
+	upScene->clearColor = sc.general.clearcolor;
 	
 	WPCameraParallax cameraParallax;
 	cameraParallax.enable = sc.general.cameraparallax;
@@ -519,9 +516,9 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf, fs::VFS& vfs
 
 			wpimgobj.origin[1] = ortho.height - wpimgobj.origin[1];
 			auto spImgNode = std::make_shared<SceneNode>(
-				Vector3f(&wpimgobj.origin[0]), 
-				Vector3f(&wpimgobj.scale[0]), 
-				Vector3f(&wpimgobj.angles[0]) 
+				Vector3f(wpimgobj.origin.data()), 
+				Vector3f(wpimgobj.scale.data()), 
+				Vector3f(wpimgobj.angles.data()) 
 			);
 			LoadAlignment(*spImgNode, wpimgobj.alignment, {wpimgobj.size[0], wpimgobj.size[1]});
 			spImgNode->ID() = wpimgobj.id;
@@ -536,7 +533,7 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf, fs::VFS& vfs
 					svData.parallaxDepth = {wpimgobj.parallaxDepth[0], wpimgobj.parallaxDepth[1]};
 
 				baseConstSvs["g_Alpha"] = {"g_Alpha", {wpimgobj.alpha}};
-				baseConstSvs["g_Color"] = {"g_Color", wpimgobj.color};
+				baseConstSvs["g_Color"] = {"g_Color", {wpimgobj.color.begin(), wpimgobj.color.end()}};
 				baseConstSvs["g_UserAlpha"] = {"g_UserAlpha", {wpimgobj.alpha}};
 				baseConstSvs["g_Brightness"] = {"g_Brightness", {wpimgobj.brightness}};
 
@@ -799,9 +796,9 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf, fs::VFS& vfs
 			wppartobj.origin[1] = ortho.height - wppartobj.origin[1];
 
 			auto spNode = std::make_shared<SceneNode>(
-				Vector3f(&wppartobj.origin[0]), 
-				Vector3f(&wppartobj.scale[0]), 
-				Vector3f(&wppartobj.angles[0]) 
+				Vector3f(wppartobj.origin.data()), 
+				Vector3f(wppartobj.scale.data()), 
+				Vector3f(wppartobj.angles.data()) 
 			);
 			if(wppartobj.particleObj.flags.perspective) {
 				spNode->SetCamera("global_perspective");

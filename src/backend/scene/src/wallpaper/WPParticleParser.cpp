@@ -23,16 +23,16 @@ static float GetRandomIn(float min, float max, float random) {
 	return min + (max - min)*random;
 }
 
-void Color(Particle& p, RandomFn& rf, cFloats min, cFloats max) {
+void Color(Particle& p, RandomFn& rf, const std::array<float,3> min, const std::array<float,3> max) {
 	float random = rf();
-	Vector3f result(3);
+	std::array<float,3> result;
 	for(int32_t i=0;i<3;i++) {
 		result[i] = GetRandomIn(min[i], max[i], random);
 	}
 	PM::InitColor(p, result[0], result[1], result[2]);
 }
 
-Vector3f GenRandomVec3(const RandomFn& rf, cFloats min, cFloats max) {
+Vector3f GenRandomVec3(const RandomFn& rf,const std::array<float,3>& min, const std::array<float,3>& max) {
 	Vector3f result(3);
 	for(int32_t i=0;i<3;i++) {
 		result[i] = GetRandomIn(min[i], max[i], rf());
@@ -55,14 +55,12 @@ struct SingleRandom {
 	};
 };
 struct VecRandom {
-	Floats min {0.0f, 0.0f, 0.0f};
-	Floats max {0.0f, 0.0f, 0.0f};
+	std::array<float,3> min {0.0f, 0.0f, 0.0f};
+	std::array<float,3> max {0.0f, 0.0f, 0.0f};
 	float exponent {1.0f};
 	static void ReadFromJson(const nlohmann::json& j, VecRandom& r) {
 		GET_JSON_NAME_VALUE_NOWARN(j, "min", r.min);
 		GET_JSON_NAME_VALUE_NOWARN(j, "max", r.max);
-		r.min = GetValidVec(r.min, 3, r.min[0]);
-		r.max = GetValidVec(r.max, 3, r.max[0]);
 	};
 };
 struct TurbulentRandom{
@@ -73,9 +71,9 @@ struct TurbulentRandom{
     float speedmax {250.0f};
     float phasemin {0.0f};
     float phasemax {0.1f};
-    Floats forward {0.0f, 1.0f, 0.0f}; // x y z
-    Floats right {0.0f, 0.0f, 1.0f};
-    Floats up {1.0f, 0.0f, 0.0f};
+    std::array<float,3> forward {0.0f, 1.0f, 0.0f}; // x y z
+    std::array<float,3> right {0.0f, 0.0f, 1.0f};
+    std::array<float,3> up {1.0f, 0.0f, 0.0f};
 	static void ReadFromJson(const nlohmann::json& j, TurbulentRandom& r) {
 		GET_JSON_NAME_VALUE_NOWARN(j, "scale", r.scale);
 		GET_JSON_NAME_VALUE_NOWARN(j, "timescale", r.timescale);
@@ -89,9 +87,10 @@ struct TurbulentRandom{
 		GET_JSON_NAME_VALUE_NOWARN(j, "up", r.up);
 	};
 };
-Floats mapVertex(cFloats v, float(*oper)(float)) {
-	Floats result; result.reserve(v.size());
-	for(const auto& x:v) result.push_back(oper(x));
+template<std::size_t N>
+std::array<float,N> mapVertex(const std::array<float,N>& v, float(*oper)(float)) {
+	std::array<float, N> result;
+	std::transform(v.begin(), v.end(), result.begin(), oper);
 	return result;
 };
 
@@ -209,8 +208,8 @@ float FadeValueChange(float life, const ValueChange& v) {
 struct VecChange {
 	float starttime {0};
 	float endtime {1.0f};
-	Floats startvalue {0.0f, 0.0f, 0.0f};
-	Floats endvalue {0.0f, 0.0f, 0.0f};
+	std::array<float,3> startvalue {0.0f, 0.0f, 0.0f};
+	std::array<float,3> endvalue {0.0f, 0.0f, 0.0f};
 	static auto ReadFromJson(const nlohmann::json& j) {
 		VecChange v;
 		GET_JSON_NAME_VALUE_NOWARN(j, "starttime", v.starttime);
@@ -224,7 +223,7 @@ struct VecChange {
 
 static const double pi = std::atan(1)*4;
 struct FrequencyValue {
-	Floats mask {1.0f, 1.0f, 1.0f};
+	std::array<float,3> mask {1.0f, 1.0f, 1.0f};
 	float frequencymin {0.0f};
 	float frequencymax {10.0f};
 	float scalemin {0.0f};
@@ -358,25 +357,14 @@ ParticleOperatorOp WPParticleParser::genParticleOperatorOp(const nlohmann::json&
 	return [](Particle&, uint32_t, float, float){};
 }
 
-static void copyWPxyz(std::array<float, 3>& a, const float* b) {
-	a[0] = b[0];
-	a[1] = b[1];
-	a[2] = b[2];
-}
-static void copyWPxyz(std::array<int32_t, 3>& a, const int32_t* b) {
-	a[0] = b[0];
-	a[1] = b[1];
-	a[2] = b[2];
-}
-
 ParticleEmittOp WPParticleParser::genParticleEmittOp(const wpscene::Emitter& wpe, RandomFn rf) {
 	if(wpe.name == "boxrandom") {
 		ParticleBoxEmitterArgs box;
 		box.emitSpeed = wpe.rate;
-		copyWPxyz(box.minDistance, &GetValidVec(wpe.distancemin, 3, wpe.distancemin[0])[0]);
-		copyWPxyz(box.maxDistance, &GetValidVec(wpe.distancemax, 3, wpe.distancemax[0])[0]);
-		copyWPxyz(box.directions, &wpe.directions[0]);
-		copyWPxyz(box.orgin, &wpe.origin[0]);
+		box.minDistance = wpe.distancemin;
+		box.maxDistance = wpe.distancemax;
+		box.directions = wpe.directions;
+		box.orgin = wpe.origin;
 		box.randomFn = rf;
 		return ParticleBoxEmitterArgs::MakeEmittOp(box);
 	} else if(wpe.name == "sphererandom") {
@@ -384,9 +372,9 @@ ParticleEmittOp WPParticleParser::genParticleEmittOp(const wpscene::Emitter& wpe
 		sphere.emitSpeed = wpe.rate;
 		sphere.minDistance = wpe.distancemin[0];
 		sphere.maxDistance = wpe.distancemax[0];
-		copyWPxyz(sphere.directions, &wpe.directions[0]);
-		copyWPxyz(sphere.orgin, &wpe.origin[0]);
-		copyWPxyz(sphere.sign, &wpe.sign[0]);
+		sphere.directions = wpe.directions;
+		sphere.orgin = wpe.origin;
+		sphere.sign = wpe.sign;
 		sphere.randomFn = rf;
 		return ParticleSphereEmitterArgs::MakeEmittOp(sphere);
 	} else 

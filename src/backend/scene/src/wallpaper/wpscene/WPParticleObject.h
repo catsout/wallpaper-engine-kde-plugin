@@ -2,6 +2,7 @@
 #include "WPJson.h"
 #include "WPMaterial.h" 
 #include <vector>
+#include <array>
 
 namespace wallpaper
 {
@@ -20,19 +21,19 @@ public:
 class Initializer {
 public:
     bool FromJson(const nlohmann::json&);
-    std::vector<float> max {0};
-    std::vector<float> min {0};
+    std::array<float,3> max {0,0,0};
+    std::array<float,3> min {0,0,0};
     std::string name;
 };
 
 class Emitter {
 public:
     bool FromJson(const nlohmann::json&);
-    std::vector<float> directions {1.0f, 1.0f, 0};
-	std::vector<float> distancemax {256.0f};
-	std::vector<float> distancemin {0.0f};
-    std::vector<float> origin {0, 0, 0};
-    std::vector<int32_t> sign {0, 0, 0};
+    std::array<float,3> directions {1.0f, 1.0f, 0};
+	std::array<float,3> distancemax {256.0f, 256.0f, 256.0f};
+	std::array<float,3> distancemin {0.0f, 0.0f, 0.0f};
+    std::array<float,3> origin {0, 0, 0};
+    std::array<int32_t,3> sign {0, 0, 0};
 	int32_t id;
 	std::string name;
 	float rate {5.0f};
@@ -71,8 +72,8 @@ public:
     float rate {1.0f};
     float speed {1.0f};
     float size {1.0f};
-    std::vector<float> color {1.0f, 1.0f, 1.0f};
-    std::vector<float> colorn {1.0f, 1.0f, 1.0f};
+    std::array<float,3> color {1.0f, 1.0f, 1.0f};
+    std::array<float,3> colorn {1.0f, 1.0f, 1.0f};
 };
 
 class WPParticleObject {
@@ -80,10 +81,10 @@ public:
     bool FromJson(const nlohmann::json&, fs::VFS&);
     int32_t id;
     std::string name;
-    std::vector<float> origin {0.0f, 0.0f, 0.0f};
-    std::vector<float> scale {1.0f, 1.0f, 1.0f};
-    std::vector<float> angles {0.0f, 0.0f, 0.0f};
-    std::vector<float> parallaxDepth {0.0f, 0.0f};
+    std::array<float,3> origin {0.0f, 0.0f, 0.0f};
+    std::array<float,3> scale {1.0f, 1.0f, 1.0f};
+    std::array<float,3> angles {0.0f, 0.0f, 0.0f};
+    std::array<float,2> parallaxDepth {0.0f, 0.0f};
     bool visible {true};
     std::string particle;
     std::string render;

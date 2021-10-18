@@ -21,15 +21,15 @@ public:
 class WPSceneCamera {
 public:
     bool FromJson(const nlohmann::json&);
-    std::vector<float> center {0.0f, 0.0f, 0.0f};
-    std::vector<float> eye {0.0f, 0.0f, 1.0f};
-    std::vector<float> up {0.0f, 1.0f, 0.0f};
+    std::array<float,3> center {0.0f, 0.0f, 0.0f};
+    std::array<float,3> eye {0.0f, 0.0f, 1.0f};
+    std::array<float,3> up {0.0f, 1.0f, 0.0f};
 };
 
 class WPSceneGeneral {
 public:
     bool FromJson(const nlohmann::json&);
-    std::vector<float> clearcolor {0.0f, 0.0f, 0.0f};
+    std::array<float,3> clearcolor {0.0f, 0.0f, 0.0f};
     bool cameraparallax {false};
     float cameraparallaxamount;
     float cameraparallaxdelay;

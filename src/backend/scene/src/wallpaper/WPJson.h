@@ -1,6 +1,7 @@
 #pragma once
 #include <nlohmann/json.hpp>
 #include <cstdint>
+#include "Utils/Identity.hpp"
 #include "Utils/String.h"
 #include "Utils/Logging.h"
 
@@ -12,14 +13,8 @@
 
 namespace wallpaper {
 
-	template <class T>
-	struct is_std_vector { static const bool value=false; };
-
-	template <class T>
-	struct is_std_vector<std::vector<T>> { static const bool value=true; };
-
 	template <typename T>
-	bool GetJsonValue(const nlohmann::json& json, typename std::enable_if<is_std_vector<T>::value, T>::type& value) {
+	bool GetJsonValue(const nlohmann::json& json, typename utils::is_std_array<T>::type& value) {
 		using Tv = typename T::value_type;
 		const auto* pjson = &json;
 		if(json.contains("value")) 
@@ -32,12 +27,12 @@ namespace wallpaper {
 		else {
 			std::string strvalue;
 			strvalue = njson.get<std::string>();
-			return utils::StringToVec<Tv>(strvalue, value);
+			return utils::StrToArray::Convert(strvalue, value);
 		}
 	}
 
 	template <typename T>
-	bool GetJsonValue(const nlohmann::json& json, typename std::enable_if<!is_std_vector<T>::value, T>::type& value) {;
+	bool GetJsonValue(const nlohmann::json& json, T& value) {;
 		if(json.contains("value")) 
 			value = json.at("value").get<T>();
 		else value = json.get<T>();
@@ -52,8 +47,14 @@ namespace wallpaper {
 			nameinfo = std::string("(key: ") + name + ")";
 		try {
 			return GetJsonValue<T>(json, value);
-		} catch(njson::type_error& e) {
+		} catch(const njson::type_error& e) {
 			WallpaperLog(LOGLEVEL_INFO, file, line, "%s %s at %s\n%s", e.what(), nameinfo.c_str(), func, json.dump(4).c_str());
+		} catch (const std::invalid_argument& e) {
+			WallpaperLog(LOGLEVEL_ERROR, file, line, "%s %s at %s", e.what(), nameinfo.c_str(), func);
+		} catch (const std::out_of_range& e) {
+			WallpaperLog(LOGLEVEL_ERROR, file, line, "%s %s at %s", e.what(), nameinfo.c_str(), func);
+		} catch (const utils::StrToArray::WrongSizeExp& e) {
+			WallpaperLog(LOGLEVEL_ERROR, file, line, "%s %s at %s", e.what(), nameinfo.c_str(), func);
 		}
 		return false; 
 	}
