@@ -11,9 +11,9 @@ namespace wallpaper {
 
 typedef std::function<void(Particle&)> ParticleInitOp;
 // particle index lifetime-percent passTime
-typedef std::function<void(Particle&, uint32_t, float, float)> ParticleOperatorOp;
+typedef std::function<void(Particle&, uint32_t, float, double)> ParticleOperatorOp;
 
-typedef std::function<void(std::vector<Particle>&, std::vector<ParticleInitOp>&, uint32_t maxcount, float timepass)> ParticleEmittOp;
+typedef std::function<void(std::vector<Particle>&, std::vector<ParticleInitOp>&, uint32_t maxcount, double timepass)> ParticleEmittOp;
 
 struct ParticleBoxEmitterArgs {
 	std::array<float,3> directions;

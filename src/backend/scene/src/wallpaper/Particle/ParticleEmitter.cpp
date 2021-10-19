@@ -53,7 +53,7 @@ Particle Spwan(GenParticleOp gen, std::vector<ParticleInitOp>& inis) {
 
 ParticleEmittOp ParticleBoxEmitterArgs::MakeEmittOp(ParticleBoxEmitterArgs a) {
 	double timer {0.0f};
-	return [a, timer](std::vector<Particle>& ps, std::vector<ParticleInitOp>& inis, uint32_t maxcount, float timepass) mutable {
+	return [a, timer](std::vector<Particle>& ps, std::vector<ParticleInitOp>& inis, uint32_t maxcount, double timepass) mutable {
 		timer += timepass;
 		auto GenBox = [&]() {
 			std::array<float, 3> pos;
@@ -74,7 +74,7 @@ ParticleEmittOp ParticleBoxEmitterArgs::MakeEmittOp(ParticleBoxEmitterArgs a) {
 ParticleEmittOp ParticleSphereEmitterArgs::MakeEmittOp(ParticleSphereEmitterArgs a) {
 	using namespace Eigen;
 	double timer {0.0f};
-	return [a, timer](std::vector<Particle>& ps, std::vector<ParticleInitOp>& inis, uint32_t maxcount, float timepass) mutable {
+	return [a, timer](std::vector<Particle>& ps, std::vector<ParticleInitOp>& inis, uint32_t maxcount, double timepass) mutable {
 		timer += timepass;
 		auto GenSphere = [&]() {
 			auto p = Particle();

@@ -2,6 +2,7 @@
 #include <functional>
 #include <cassert>
 #include <cmath>
+#include <Eigen/Dense>
 
 namespace  wallpaper {
 namespace  algorism {
@@ -30,6 +31,14 @@ namespace  algorism {
 			2.0f*x2*std::sqrt(1.0f-m),
 			1.0f-2.0f*m
 		};
+	}
+
+	inline double DragForce(double speed, double strength, double density) {
+		//return -0.5f * speed*speed * strength * density;
+		return -speed * strength * density;
+	}
+	inline Eigen::Vector3d DragForce(Eigen::Vector3d v, double strength, double density=1.0f) {
+		return v.normalized()*DragForce(v.norm(), strength, density);
 	}
 }
 }

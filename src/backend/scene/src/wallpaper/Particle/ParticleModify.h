@@ -5,30 +5,29 @@
 
 namespace wallpaper {
 
-class ParticleModify {
-public:
-	static void Move(Particle& p, float x, float y, float z) {
+namespace ParticleModify {
+	inline void Move(Particle& p, double x, double y, double z) {
 		p.position[0] += x;
 		p.position[1] += y;
 		p.position[2] += z;
 	}
-	static void MoveTo(Particle& p, float x, float y, float z) {
+	inline void MoveTo(Particle& p, double x, double y, double z) {
 		p.position[0] = x;
 		p.position[1] = y;
 		p.position[2] = z;
 	}
-	static void MoveToNegZ(Particle& p) {
+	inline void MoveToNegZ(Particle& p) {
 		p.position[2] = -std::abs(p.position[2]);
 	}
-	static void MoveByTime(Particle& p, float t) {
+	inline void MoveByTime(Particle& p, double t) {
 		Move(p, p.velocity[0] * t, p.velocity[1] * t, p.velocity[2] * t);
 	}
-	static void MoveMultiply(Particle& p, float x, float y, float z) {
+	inline void MoveMultiply(Particle& p, double x, double y, double z) {
 		p.position[0] *= x;
 		p.position[1] *= y;
 		p.position[2] *= z;
 	}
-	static void MoveApplySign(Particle& p, int32_t x, int32_t y, int32_t z) {
+	inline void MoveApplySign(Particle& p, int32_t x, int32_t y, int32_t z) {
 		if(x != 0) {
 			p.position[0] = std::abs(p.position[0]) * (float)x;
 		}
@@ -39,7 +38,7 @@ public:
 			p.position[2] = std::abs(p.position[2]) * (float)z;
 		}
 	}
-	static void SphereDirectOffset(Particle& p, Eigen::Vector3f base, float direct) {
+	inline void SphereDirectOffset(Particle& p, Eigen::Vector3f base, float direct) {
 		using namespace Eigen;
 		Vector3f pos(p.position);
 		Vector3f axis = base.cross(pos).normalized();
@@ -49,7 +48,7 @@ public:
 		std::memcpy(p.position, pos.data(), 3*sizeof(float));
 	}
 
-	static void RotatePos(Particle& p, float x, float y, float z) {
+	inline void RotatePos(Particle& p, float x, float y, float z) {
 		using namespace Eigen;
 		Affine3f trans = Affine3f::Identity();
 
@@ -61,59 +60,77 @@ public:
 		std::memcpy(p.position, pos.data(), 3*sizeof(float));
 	}
 
-	static void ChangeLifetime(Particle& p, float l) {
+	inline void ChangeLifetime(Particle& p, double l) {
 		p.lifetime += l;
 	}
-	static float inline LifetimePos(const Particle& p) {
+	inline double LifetimePos(const Particle& p) {
 		if (p.lifetime < 0)
 			return 1.0f;
 		return 1.0f - (p.lifetime / p.lifetimeInit);
 	}
-	static double LifetimePassed(const Particle&);
-	static bool inline LifetimeOk(const Particle& p) {
+	inline double LifetimePassed(const Particle &p) {
+		return p.lifetimeInit - p.lifetime;
+	}
+	inline bool LifetimeOk(const Particle& p) {
 		return p.lifetime > 0.0f;
 	}
 
-	static void ChangeColor(Particle&, float r, float g, float b);
+	void ChangeColor(Particle&, float r, float g, float b);
 
-	static void InitLifetime(Particle& p, float l) {
+	inline void InitLifetime(Particle& p, float l) {
 		p.lifetime = l;
 		p.lifetimeInit = l;
 	}
-	static void InitSize(Particle&, float);
-	static void InitAlpha(Particle&, float);
-	static void InitColor(Particle&, float r, float g, float b);
+	void InitSize(Particle&, float);
+	void InitAlpha(Particle&, float);
+	void InitColor(Particle&, float r, float g, float b);
 
-	static void InitVelocity(Particle&, float x, float y, float z);
-	static void ChangeRotation(Particle&, float x, float y, float z);
+	void InitVelocity(Particle&, float x, float y, float z);
+	void ChangeRotation(Particle&, float x, float y, float z);
 
-	static void inline ChangeVelocity(Particle& p, float x, float y, float z) {
+	inline void ChangeVelocity(Particle& p, double x, double y, double z) {
 		p.velocity[0] += x;
 		p.velocity[1] += y;
 		p.velocity[2] += z;
 	}
-	static void inline Accelerate(Particle& p, const Eigen::Vector3f& acc, float t) {
+	inline void Accelerate(Particle& p, const Eigen::Vector3d& acc, double t) {
 		ChangeVelocity(p, acc[0]*t, acc[1]*t, acc[2]*t);
 	}
 
-	static Eigen::Vector3f GetDrag(Particle&, float s);
-	static Eigen::Vector3f GetAngularDrag(Particle&, float s);
+	inline Eigen::Vector3f GetVelocity(Particle& p) {
+		return Eigen::Vector3f(p.velocity);
+	}
+	inline Eigen::Vector3f GetAngular(Particle& p) {
+		return Eigen::Vector3f(p.rotation);
+	}
 
-	static void ChangeAngularVelocity(Particle&, float x, float y, float z);
-	static void AngularAccelerate(Particle&, const Eigen::Vector3f& acc, float t);
-	static void Rotate(Particle&, float x, float y, float z);
-	static void RotateByTime(Particle&, float t);
+	inline void ChangeAngularVelocity(Particle& p, double x, double y, double z) {
+		p.angularVelocity[0] += x;
+		p.angularVelocity[1] += y;
+		p.angularVelocity[2] += z;
+	}
+	inline void AngularAccelerate(Particle& p, const Eigen::Vector3d& acc, double t) {
+		ChangeAngularVelocity(p, acc[0]*t, acc[1]*t, acc[2]*t);
+	}
+	inline void Rotate(Particle& p, double x, double y, double z) {
+		p.rotation[0] += x;
+		p.rotation[1] += y;
+		p.rotation[2] += z;
+	}
+	inline void RotateByTime(Particle& p, double t) {
+		Rotate(p, p.angularVelocity[0] * t, p.angularVelocity[1] * t, p.angularVelocity[2] * t);
+	}
 
-	static void MutiplyAlpha(Particle&, float);
-	static void MutiplySize(Particle&, float);
-	static void MutiplyColor(Particle&, float r, float g, float b);
-	static void MutiplyVelocity(Particle&, float);
+	void MutiplyAlpha(Particle&, float);
+	void MutiplySize(Particle&, float);
+	void MutiplyColor(Particle&, float r, float g, float b);
+	void MutiplyVelocity(Particle&, float);
 
-	static void MutiplyInitLifeTime(Particle&, float);
-	static void MutiplyInitAlpha(Particle&, float);
-	static void MutiplyInitSize(Particle&, float);
-	static void MutiplyInitColor(Particle&, float r, float g, float b);
+	void MutiplyInitLifeTime(Particle&, float);
+	void MutiplyInitAlpha(Particle&, float);
+	void MutiplyInitSize(Particle&, float);
+	void MutiplyInitColor(Particle&, float r, float g, float b);
 
-	static void Reset(Particle&);
+	void Reset(Particle&);
 };
 }

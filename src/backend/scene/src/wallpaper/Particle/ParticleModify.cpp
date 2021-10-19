@@ -60,44 +60,6 @@ void ParticleModify::MutiplyVelocity(Particle& p, float m) {
 	p.velocity[2] *= m;	
 }
 
-double ParticleModify::LifetimePassed(const Particle &p) {
-	return p.lifetimeInit - p.lifetime;
-}
-
-Eigen::Vector3f ParticleModify::GetDrag(Particle& p, float s) {
-	Eigen::Vector3f result {Eigen::Vector3f::Zero()};
-	if(s != 0) {
-		result = Eigen::Vector3f(p.velocity) * (-s);
-	}
-	return result;
-}
-
-Eigen::Vector3f ParticleModify::GetAngularDrag(Particle &p, float s) {
-	Eigen::Vector3f result {Eigen::Vector3f::Zero()};
-	if(s != 0) {
-		result = Eigen::Vector3f(p.velocity) * (-s);
-	}
-	return result;
-}
-
-void ParticleModify::ChangeAngularVelocity(Particle &p, float x, float y, float z) {
-	p.angularVelocity[0] += x;
-	p.angularVelocity[1] += y;
-	p.angularVelocity[2] += z;
-}
-void ParticleModify::AngularAccelerate(Particle &p, const Vector3f&acc, float t) {
-	ChangeAngularVelocity(p, acc[0]*t, acc[1]*t, acc[2]*t);
-}
-
-void ParticleModify::Rotate(Particle& p, float x, float y, float z) {
-	p.rotation[0] += x;
-	p.rotation[1] += y;
-	p.rotation[2] += z;
-}
-void ParticleModify::RotateByTime(Particle &p, float t) {
-	Rotate(p, p.angularVelocity[0] * t, p.angularVelocity[1] * t, p.angularVelocity[2] * t);
-}
-
 void ParticleModify::MutiplyInitLifeTime(Particle& p, float m) {
 	p.lifetime *= m;
 	p.lifetimeInit = p.lifetimeInit;

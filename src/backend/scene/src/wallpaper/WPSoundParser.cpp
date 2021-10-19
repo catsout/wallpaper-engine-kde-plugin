@@ -58,7 +58,7 @@ public:
 	}
 	void Switch() {
 		std::string path = m_soundPaths[LoopIndex()];
-		LOG_INFO("Switch to audio file: %s", path.c_str());
+		//LOG_INFO("Switch to audio file: %s", path.c_str());
 		m_curActive = audio::CreateSoundStream(vfs.Open("/assets/" + path), m_desc);
 	}
 	uint32_t LoopIndex() {

@@ -21,7 +21,7 @@ void ParticleSubSystem::AddOperator(ParticleOperatorOp&& op) {
 }
 
 void ParticleSubSystem::Emitt() {
-	auto frameTime = parent.scene.frameTime;
+	double frameTime = parent.scene.frameTime;
 	double particleTime = frameTime * m_rate;
 	for(auto& emittOp:m_emiters) {
 		emittOp(m_particles, m_initializers, m_maxcount, particleTime);	
