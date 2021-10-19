@@ -9,7 +9,7 @@
 
 namespace wallpaper {
 
-typedef std::function<void(Particle&)> ParticleInitOp;
+typedef std::function<void(Particle&, double)> ParticleInitOp;
 // particle index lifetime-percent passTime
 typedef std::function<void(Particle&, uint32_t, float, double)> ParticleOperatorOp;
 

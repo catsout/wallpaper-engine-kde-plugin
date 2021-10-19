@@ -45,9 +45,9 @@ uint32_t Emitt(std::vector<Particle>& particles, uint32_t num, uint32_t maxcount
 	return i + 1;
 }
 
-Particle Spwan(GenParticleOp gen, std::vector<ParticleInitOp>& inis) {
+Particle Spwan(GenParticleOp gen, std::vector<ParticleInitOp>& inis, double duration) {
 	auto particle = gen();
-	for(auto& el:inis) el(particle);
+	for(auto& el:inis) el(particle, duration);
 	return particle;
 }
 
@@ -66,7 +66,7 @@ ParticleEmittOp ParticleBoxEmitterArgs::MakeEmittOp(ParticleBoxEmitterArgs a) {
 			return p;
 		};
 		Emitt(ps, GetEmitNum(timer, a.emitSpeed), maxcount, [&]() {
-			return Spwan(GenBox, inis);
+			return Spwan(GenBox, inis, 1.0f/a.emitSpeed);
 		});
 	};
 }
@@ -92,7 +92,7 @@ ParticleEmittOp ParticleSphereEmitterArgs::MakeEmittOp(ParticleSphereEmitterArgs
 			return p;
 		};
 		Emitt(ps, GetEmitNum(timer, a.emitSpeed), maxcount, [&]() {
-			return Spwan(GenSphere, inis);
+			return Spwan(GenSphere, inis, 1.0f/a.emitSpeed);
 		});
 	};
 }

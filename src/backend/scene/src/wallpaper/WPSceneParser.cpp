@@ -812,6 +812,9 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf, fs::VFS& vfs
 			shaderInfo.baseConstSvs["g_OrientationUp"] = {"g_OrientationUp", {0.0f, -1.0f, 0}};
 			shaderInfo.baseConstSvs["g_OrientationRight"]= {"g_OrientationRight", {1.0f, 0, 0}};
 			shaderInfo.baseConstSvs["g_OrientationForward"]= {"g_OrientationForward", {0, 0, 1.0f}};
+			shaderInfo.baseConstSvs["g_ViewUp"]= {"g_ViewUp", {0, 1.0f, 0}};
+			shaderInfo.baseConstSvs["g_ViewRight"]= {"g_ViewRight", {1.0f, 0, 0}};
+
 			bool hastrail {false};
 			if(wppartobj.particleObj.renderers.size() > 0) {
 				auto wppartRenderer = wppartobj.particleObj.renderers.at(0);

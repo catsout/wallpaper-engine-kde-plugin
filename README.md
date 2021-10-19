@@ -97,13 +97,12 @@ Require *wallpapaer engine* installed for assets(shaders,pictures...)
 	- [ ] visualization
 - [x] Particle System
 	- [x] Renderers
+		- [ ] Rope
 	- [x] Emitters
 		- [ ] Duration 
 	- [x] Initializers
-		- [ ] Turbulent Velocity Random
 	- [x] Operators
 		- [ ] Control Point Force
-		- [ ] Turbulence
 		- [ ] Vortex
 	- [ ] Control Points
 	- [ ] Children

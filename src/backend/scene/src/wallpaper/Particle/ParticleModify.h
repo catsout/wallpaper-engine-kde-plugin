@@ -97,6 +97,9 @@ namespace ParticleModify {
 		ChangeVelocity(p, acc[0]*t, acc[1]*t, acc[2]*t);
 	}
 
+	inline Eigen::Vector3f GetPos(Particle& p) {
+		return Eigen::Vector3f(p.position);
+	}
 	inline Eigen::Vector3f GetVelocity(Particle& p) {
 		return Eigen::Vector3f(p.velocity);
 	}
