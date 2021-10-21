@@ -1,2 +1,4 @@
 singleton Common Common.qml
 WindowModel WindowModel.qml
+WindowListModel WindowListModel.qml
+Pyext Pyext.qml

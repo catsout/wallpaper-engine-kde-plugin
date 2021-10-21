@@ -10,6 +10,7 @@ import org.kde.kirigami 2.4 as Kirigami
 import org.kde.kquickcontrolsaddons 2.0
 
 import Qt.labs.folderlistmodel 2.11
+import "utils.mjs" as Utils
 
 ColumnLayout {
     id: root
@@ -36,10 +37,14 @@ ColumnLayout {
     property alias cfg_SwitchTimer: randomSpin.value
 
     property string cfg_CustomConf
-    property var customConf: null
-    Item {
-        Component.onCompleted: {
-            customConf = Common.loadCustomConf(cfg_CustomConf);
+    property var customConf: {
+        return Common.loadCustomConf(cfg_CustomConf);
+    }
+    property var libcheck: {
+        return {
+            wallpaper: Common.checklib_wallpaper(root),
+            folderlist: Common.checklib_folderlist(root),
+            websockets: Common.checklib_websockets(root)
         }
     }
 
@@ -56,8 +61,8 @@ ColumnLayout {
         PlasmaComponents3.TabButton {
             text: qsTr("Setting")
         }
-
     }
+
 
     StackLayout {
         Layout.fillWidth: true
@@ -139,13 +144,12 @@ ColumnLayout {
                         function toggle() {
                             const modelValues = comboxFilter.modelValues;
                             modelValues[index] = Number(!modelValues[index]);
-                            cfg_FilterStr = Common.intArrayToStr(modelValues);
+                            cfg_FilterStr = Utils.intArrayToStr(modelValues);
                         }
                     }
                     
                 }
             }
-
             WallpaperListModel {
                 id: wpListModel
                 workshopDirs: Common.getProjectDirs(cfg_SteamLibraryPath)
@@ -155,6 +159,22 @@ ColumnLayout {
                     item.favor = root.customConf.favor.has(item.workshopid);
                 }
                 enabled: Boolean(cfg_SteamLibraryPath)
+                readfile: pyext.readfile
+
+                property var pyext: null
+
+                Component.onCompleted: {
+                    if(!libcheck.websockets) return;
+                    this.pyext = Qt.createQmlObject(`import QtQuick 2.0;
+                            Pyext {}
+                    `, this);
+                    this.readfile = this.pyext.readfile;
+                }
+                Component.onDestruction: {
+                    if(this.pyext) {
+                        this.pyext.destroy();
+                    }
+                }
             }
 
             Loader {
@@ -289,7 +309,7 @@ ColumnLayout {
                 selectMultiple : false
                 nameFilters: [ "All files (*)" ]
                 onAccepted: {
-                    const path = Common.trimCharR(wpDialog.fileUrls[0], '/');
+                    const path = Utils.trimCharR(wpDialog.fileUrls[0], '/');
                     cfg_SteamLibraryPath = path;
                     wpListModel.refresh();
                 }
@@ -310,7 +330,7 @@ ColumnLayout {
                     Layout.columnSpan: 2
                     text: "Scene wallpaper may crash kde, make sure you know how to fix."
                     color: "darkorange"
-                    visible: Common.checklib_wallpaper(parent)
+                    visible: libcheck.wallpaper
                 }
                 Label {
                     Layout.alignment: Qt.AlignRight
@@ -397,7 +417,7 @@ ColumnLayout {
                     visible: useMpv.visible
                 }
                 CheckBox{
-                    visible: Common.checklib_wallpaper(parent)
+                    visible: libcheck.wallpaper
                     id: useMpv
                 }
                 

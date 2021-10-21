@@ -13,7 +13,6 @@ QtObject {
         Crop,
         Scale
     }
-    property string wpenginePath: "/steamapps/workshop/content/431960"
 
     property var filterModel: ListModel {
         ListElement { text: "Favorite";     type:"favor";         key:"favor";         def: 0}
@@ -61,7 +60,7 @@ QtObject {
 
         function getValueArray(filterStr) {
             // not empty
-            const result = strToIntArray(filterStr);
+            const result = Utils.strToIntArray(filterStr);
             if(result.length < this.count) {
                 return filterModel.map((el) => el.def);
             } else {
@@ -70,21 +69,6 @@ QtObject {
         }
     }
 
-/*
-    // const
-    property var filterModelComp: Component { 
-        ListModel {
-            ListElement { text: "scene"; type:"type"; key:"scene"; value:1 }
-            ListElement { text: "web"; type:"type"; key:"web"; value:1 }
-            ListElement { text: "video"; type:"type"; key:"video"; value:1 }
-            function map(func) {
-                const arr = [];
-                for(let i=0;i<this.count;i++) arr.push(func(this.get(i), i));
-                return arr;
-            }
-        }
-    }
-*/
 
     function getWorkshopDir(steamLibraryPath) {
         return steamLibraryPath + "/steamapps/workshop/content/431960";
@@ -159,12 +143,8 @@ QtObject {
         return checklib('Qt.labs.folderlistmodel 2.11', parentItem)
     }
 
-    function trimCharR(str, c) {
-        let pos = 0;
-        while(str.slice(pos - 1, str.length + pos) === c) {
-            pos -= 1;
-        }
-        return str.slice(0, str.length + pos);
+    function checklib_websockets(parentItem) {
+        return checklib('QtWebSockets 1.0', parentItem)
     }
 
     function cbCurrentValue(combo) {
@@ -226,19 +206,16 @@ QtObject {
         };
     }
 
-    function strToIntArray(str) {
-        return [...str].map((e) => e.charCodeAt(0) - '0'.charCodeAt(0));
-    }
-    function intArrayToStr(arr) {
-        return arr.reduce((acc, e) => acc + e.toString(), "");
-    }
-    function clearArray(arr) {
-        arr.length = 0; 
-    }
-
     function listProperty(item) {
         for (var p in item)
             console.log(p + ": " + item[p]);
     }
-
+    
+    function urlNative(url) {
+        const str = url.toString();
+        if(str.slice(0,7) === "file://") {
+            return str.slice(7);
+        }
+        return str;
+    }
 }

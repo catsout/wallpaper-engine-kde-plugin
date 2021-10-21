@@ -25,7 +25,9 @@ A wallpaper plugin integrating [wallpaper engine](https://store.steampowered.com
 ### Kde plugin
 #### Dependencies
 qt-labs-folderlistmodel  
-qml-module-qtwebchannel
+qml-module-qtwebchannel  
+qml-module-qtwebsockets  
+python3-websockets  
 #### Install kde plugin
 ```sh
 # Install

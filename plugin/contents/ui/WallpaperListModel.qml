@@ -3,6 +3,7 @@ import QtQuick.Controls 1.0
 import QtQuick.Layouts 1.2
 
 import Qt.labs.folderlistmodel 2.11
+import "utils.mjs" as Utils
 
 Item {
     id: wpItem
@@ -11,6 +12,7 @@ Item {
     property bool enabled: true
 
     property var initItemOp: (item) => {}
+    property var readfile: () => { return Promise.reject() }
 
     signal modelStartSync
     signal modelRefreshed
@@ -46,6 +48,25 @@ Item {
 
     property var folderModels: []
 
+    function loadItemFromJson(text, el) {
+        const project = Utils.parseJson(text);    
+        if(project !== null) {
+            if("title" in project)
+                el.title = project.title;
+            if("preview" in project && project.preview)
+                el.preview = project.preview;
+            if("file" in project)
+                el.file = project.file;
+            if("type" in project)
+                el.type = project.type.toLowerCase();
+            if("contentrating" in project)
+                el.contentrating = project.contentrating;
+            if("tags" in project)
+                el.tags = project.tags;
+        }
+    }
+
+
     WorkerScript {
         id: folderWorker
         source: "folderWorker.mjs"
@@ -56,15 +77,18 @@ Item {
 
         onMessage: {
             if(messageObject.reply == "loadFolder") {
-                this.folderMapModel.set(messageObject.path, messageObject.data);
-                this.model = []
-                this.folderMapModel.forEach((value, key) => {
-                    this.model.push(...value);
-                });
-                filterToList(wpItem.model, wpItem.filterStr, this.model);
+                // loadModel 
             } else if(messageObject.reply == "filter") {
                 wpItem.modelRefreshed();
             }
+        }
+        function loadModel(path, data) {
+            this.folderMapModel.set(path, data);
+            this.model = []
+            this.folderMapModel.forEach((value, key) => {
+                this.model.push(...value);
+            });
+            filterToList(wpItem.model, wpItem.filterStr, this.model);
         }
         function filterToList(listModel, filterStr, data) {
             const filterValues = Common.filterModel.getValueArray(filterStr);
@@ -131,12 +155,26 @@ Item {
                         }
                         resolve();
                     }).then((value) => {
+                        const plist = []
+                        proxyModel.forEach((el) => {
+                            // as no allSettled, catch any error
+                            const p = readfile(Common.urlNative(el.path)+"/project.json").then(value => {
+                                    loadItemFromJson(value, el);
+                                }).catch(reason => console.error(reason));
+                            plist.push(p);
+                        });
+                        const path = this.folder;
+                        Promise.all(plist).then(value => {
+                            folderWorker.loadModel(path, proxyModel);
+                        });
+                        /*
                         const msg = {
                             action: "loadFolder", 
                             data: proxyModel,
                             path: this.folder
                         };
                         sendMessage(msg);
+                        */
                     });
                 }
             }

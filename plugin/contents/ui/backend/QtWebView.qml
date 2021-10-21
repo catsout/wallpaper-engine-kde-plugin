@@ -9,6 +9,7 @@ Item {
     anchors.fill: parent
     property bool hasLib: Common.checklib_wallpaper(webItem)
     property int fps: background.fps
+    property var readfile
 
     onFpsChanged: {
         if(webobj.loaded) {
@@ -36,7 +37,7 @@ Item {
             if(!webobj.generalProperties)
                 webobj.generalProperties = {fps: 24};
             webobj.sigGeneralProperties(webobj.generalProperties);
-            Utils.readTextFile(background.getWorkshopPath() + "/project.json", function(text) { 
+            readfile(Common.urlNative(background.getWorkshopIDPath()) + "/project.json", function(text) { 
                 const json = Utils.parseJson(text);
                 webobj.userProperties = json.general.properties;
                 webobj.sigUserProperties(webobj.userProperties);

@@ -1,4 +1,4 @@
-import { readTextFile,parseJson } from "utils.mjs";
+import { parseJson } from "utils.mjs";
 
 function readCallback(text, el) {
     const project = parseJson(text);    
@@ -56,10 +56,6 @@ WorkerScript.onMessage = function(msg) {
         const data = msg.data;
         const plist = [];
         msg.data.forEach((el) => {
-			// as no allSettled, catch any error
-            if(el.preview === undefined) {
-                //console.log("--------------------", el.title);
-            }
             const p = readTextFile(el.path + "/project.json").then(value => {
                     readCallback(value.response, el);
                 }).catch(reason => console.log(reason));

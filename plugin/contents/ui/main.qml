@@ -43,6 +43,10 @@ Rectangle {
             loadBackend();
     }
 
+    function getWorkshopIDPath() {
+        return Common.getWorkshopDir(this.steamlibrary) + `/${this.workshopid}`;
+    }
+
     Timer {
         id: hookTimer
         running: true
@@ -91,6 +95,9 @@ Rectangle {
         activity: wallpaper.parent.activity
     }
 
+    Pyext {
+        id: pyext
+    }
     WallpaperListModel {
         id: wpListModel
         enabled: background.randomizeWallpaper
@@ -100,6 +107,7 @@ Rectangle {
             if(!background.customConf) return;
             item.favor = background.customConf.favor.has(item.workshopid);
         }
+        readfile: pyext.readfile
 
         function changeWallpaper(index) {
             if(this.model.count === 0) return;
@@ -197,7 +205,7 @@ Rectangle {
                 break;
             case 'web':
                 qmlsource = "backend/QtWebView.qml";
-                properties = {};
+                properties = {readfile: pyext.readfile};
                 break;
             case 'scene':
                 if(background.hasLib) {

@@ -1,3 +1,4 @@
+/*
 export function readTextFile(fileUrl) {
     return new Promise(function (resolve, reject) {
         const request = new XMLHttpRequest;
@@ -19,6 +20,7 @@ export function readTextFile(fileUrl) {
 		request.send();
 	});
 }
+*/
 
 export function parseJson(str) {
     let obj_j;
@@ -42,4 +44,21 @@ export function basename(path) {
 export function dirname(path) {
     return path.substring(0, str.lastIndexOf("/"));
 }
+
+export function trimCharR(str, c) {
+    let pos = 0;
+    while(str.slice(pos - 1, str.length + pos) === c) {
+        pos -= 1;
+    }
+    return str.slice(0, str.length + pos);
+}
+
+
+export function strToIntArray(str) {
+    return [...str].map((e) => e.charCodeAt(0) - '0'.charCodeAt(0));
+}
+export function intArrayToStr(arr) {
+    return arr.reduce((acc, e) => acc + e.toString(), "");
+}
+
 
