@@ -147,6 +147,11 @@ QtObject {
         return checklib('QtWebSockets 1.0', parentItem)
     }
 
+    function checklib_webchannel(parentItem) {
+        return checklib('QtWebChannel 1.10', parentItem)
+    }
+
+
     function cbCurrentValue(combo) {
         return combo.model[combo.currentIndex].value;
     }

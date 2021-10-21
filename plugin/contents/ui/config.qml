@@ -43,7 +43,8 @@ ColumnLayout {
     property var libcheck: ({
         wallpaper: Common.checklib_wallpaper(root),
         folderlist: Common.checklib_folderlist(root),
-        qtwebsockets: Common.checklib_websockets(root)
+        qtwebsockets: Common.checklib_websockets(root),
+        qtwebchannel: Common.checklib_webchannel(root)
     })
     property var pyext: {
         if(!libcheck.qtwebsockets) {
@@ -513,7 +514,7 @@ ColumnLayout {
                     visible: libcheck.wallpaper
                 }
                 TextEdit {
-                    Layout.preferredWidth: aboutTab.width * 0.5
+                    Layout.preferredWidth: aboutTab.width * 0.6
                     text: `
                         <p>Some scene wallpapers may crash your kde</p>
                         <p>Remove <i>WallpaperFilePath</i> line in <b>~/.config/plasma-org.kde.plasma.desktop-appletsrc</b></p>
@@ -530,7 +531,10 @@ ColumnLayout {
                     text: "lib check: "
                 }
                 ListView {
-                    height: 100
+                    Layout.alignment: Qt.AlignLeft | Qt.AlignTop
+                    width:  font.pixelSize * 20
+                    height: (contentItem.childrenRect.height+spacing) * modelraw.length
+                    clip: true
                     spacing: 3
                     model: ListModel {}
                     property var modelraw: {
@@ -542,6 +546,10 @@ ColumnLayout {
                             {
                                 ok: libcheck.folderlist,
                                 name: "qt-lab-folderlist"
+                            },
+                            {
+                                ok: libcheck.qtwebchannel,
+                                name: "qtwebchannel (qml)"
                             },
                             {
                                 ok: libcheck.qtwebsockets,
