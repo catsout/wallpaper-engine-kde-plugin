@@ -38,15 +38,48 @@ ColumnLayout {
 
     property string cfg_CustomConf
     property var customConf: {
-        return Common.loadCustomConf(cfg_CustomConf);
+        customConf = Common.loadCustomConf(cfg_CustomConf);
     }
-    property var libcheck: {
-        return {
-            wallpaper: Common.checklib_wallpaper(root),
-            folderlist: Common.checklib_folderlist(root),
-            websockets: Common.checklib_websockets(root)
+    property var libcheck: ({
+        wallpaper: Common.checklib_wallpaper(root),
+        folderlist: Common.checklib_folderlist(root),
+        qtwebsockets: Common.checklib_websockets(root)
+    })
+    property var pyext: {
+        if(!libcheck.qtwebsockets) {
+            pyext = null
+        } else {
+            pyext = Qt.createQmlObject(`
+                import QtQuick 2.0;
+                Pyext {}
+            `, this);
         }
     }
+    property var wpListModel: {
+        if(!libcheck.folderlist) { 
+            wpListModel = null;
+        } else {
+            wpListModel = Qt.createQmlObject(`
+                import QtQuick 2.0;
+                WallpaperListModel {
+                    workshopDirs: Common.getProjectDirs(cfg_SteamLibraryPath)
+                    filterStr: cfg_FilterStr
+                    initItemOp: (item) => {
+                        if(!root.customConf) return;
+                        item.favor = root.customConf.favor.has(item.workshopid);
+                    }
+                    enabled: Boolean(cfg_SteamLibraryPath)
+                    readfile: pyext.readfile
+                }
+            `, this);
+        }
+    }
+
+    Component.onDestruction: {
+        if(this.pyext) this.pyext.destroy();
+        if(this.wpListModel) this.wpListModel.destroy();
+    }
+
 
     function saveCustomConf() {
         cfg_CustomConf = Common.prepareCustomConf(this.customConf);
@@ -60,6 +93,9 @@ ColumnLayout {
         }
         PlasmaComponents3.TabButton {
             text: qsTr("Setting")
+        }
+        PlasmaComponents3.TabButton {
+            text: qsTr("About")
         }
     }
 
@@ -148,32 +184,6 @@ ColumnLayout {
                         }
                     }
                     
-                }
-            }
-            WallpaperListModel {
-                id: wpListModel
-                workshopDirs: Common.getProjectDirs(cfg_SteamLibraryPath)
-                filterStr: cfg_FilterStr
-                initItemOp: (item) => {
-                    if(!root.customConf) return;
-                    item.favor = root.customConf.favor.has(item.workshopid);
-                }
-                enabled: Boolean(cfg_SteamLibraryPath)
-                readfile: pyext.readfile
-
-                property var pyext: null
-
-                Component.onCompleted: {
-                    if(!libcheck.websockets) return;
-                    this.pyext = Qt.createQmlObject(`import QtQuick 2.0;
-                            Pyext {}
-                    `, this);
-                    this.readfile = this.pyext.readfile;
-                }
-                Component.onDestruction: {
-                    if(this.pyext) {
-                        this.pyext.destroy();
-                    }
                 }
             }
 
@@ -322,16 +332,10 @@ ColumnLayout {
  
             GridLayout {
                 id: settingGrid
-                anchors.horizontalCenter: settingTab.horizontalCenter
+                anchors.horizontalCenter: parent.horizontalCenter
                 columns: 2
 
                 property int lwidth: font.pixelSize * 12
-                Label {
-                    Layout.columnSpan: 2
-                    text: "Scene wallpaper may crash kde, make sure you know how to fix."
-                    color: "darkorange"
-                    visible: libcheck.wallpaper
-                }
                 Label {
                     Layout.alignment: Qt.AlignRight
                     text: "Pause:"
@@ -358,7 +362,6 @@ ColumnLayout {
                     Component.onCompleted: currentIndex = Common.cbIndexOfValue(pauseMode, cfg_PauseMode)
                 }
                 Label {
-
                     Layout.alignment: Qt.AlignRight
                     text: "Display:"
                 }
@@ -404,6 +407,8 @@ ColumnLayout {
                         Text { id:heightpicker; text: " every " }
                         SpinBox {
                             id: randomSpin
+                            width: font.pixelSize * 4
+                            height: heightpicker.height
                             from: 1
                             to: 120
                             stepSize: 1
@@ -493,6 +498,76 @@ ColumnLayout {
                 }
             }
             */
+        }
+        Item {
+            id: aboutTab
+ 
+            GridLayout {
+                anchors.horizontalCenter: parent.horizontalCenter
+                columns: 2
+
+                property int lwidth: font.pixelSize * 12
+                Label {
+                    Layout.alignment: Qt.AlignLeft | Qt.AlignTop
+                    text: "fix crash: "
+                    visible: libcheck.wallpaper
+                }
+                TextEdit {
+                    Layout.preferredWidth: aboutTab.width * 0.5
+                    text: `
+                        <p>Some scene wallpapers may crash your kde</p>
+                        <p>Remove <i>WallpaperFilePath</i> line in <b>~/.config/plasma-org.kde.plasma.desktop-appletsrc</b></p>
+                        <p>Then restart kde to fix</p>
+                    `
+                    readOnly: true
+                    wrapMode: Text.Wrap
+                    textFormat: Text.RichText
+                    selectByMouse: true
+                    visible: libcheck.wallpaper
+                }
+                Label {
+                    Layout.alignment: Qt.AlignLeft | Qt.AlignTop
+                    text: "lib check: "
+                }
+                ListView {
+                    height: 100
+                    spacing: 3
+                    model: ListModel {}
+                    property var modelraw: {
+                        const _model = [
+                            {
+                                ok: libcheck.wallpaper,
+                                name: "plugin lib"
+                            },
+                            {
+                                ok: libcheck.folderlist,
+                                name: "qt-lab-folderlist"
+                            },
+                            {
+                                ok: libcheck.qtwebsockets,
+                                name: "qtwebsockets (qml)"
+                            },
+                            {
+                                ok: pyext && pyext.ok,
+                                name: "python3 (python3-websockets)"
+                            }
+                        ];
+                        return _model;
+                    }
+                    onModelrawChanged: {
+                        this.model.clear();
+                        this.modelraw.forEach((el) => {
+                            this.model.append(el);
+                        });
+                    }
+                    delegate: CheckBox {
+                        text: name
+                        checked: ok
+                        enabled: false
+                    }
+                }
+                
+            }
         }
     }
     onCfg_WallpaperTypeChanged: {}

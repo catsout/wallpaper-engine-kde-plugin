@@ -128,7 +128,7 @@ QtObject {
             console.log("---check lib '"+libName+"' failed---");
             console.log(error);
         }
-        if(create != null){
+        if(create){
             ok = true;
             create.destroy(1000);
         }

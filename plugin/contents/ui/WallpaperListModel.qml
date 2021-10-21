@@ -6,13 +6,15 @@ import Qt.labs.folderlistmodel 2.11
 import "utils.mjs" as Utils
 
 Item {
-    id: wpItem
+    id: root
     property var workshopDirs
     property string filterStr
     property bool enabled: true
 
-    property var initItemOp: (item) => {}
-    property var readfile: () => { return Promise.reject() }
+    property var initItemOp: null
+    property var _initItemOp: initItemOp ?? function(){ }
+    property var readfile: null 
+    property var _readfile: readfile ?? function(){ return Promise.reject("read file func not available"); }
 
     signal modelStartSync
     signal modelRefreshed
@@ -79,7 +81,7 @@ Item {
             if(messageObject.reply == "loadFolder") {
                 // loadModel 
             } else if(messageObject.reply == "filter") {
-                wpItem.modelRefreshed();
+                root.modelRefreshed();
             }
         }
         function loadModel(path, data) {
@@ -88,7 +90,7 @@ Item {
             this.folderMapModel.forEach((value, key) => {
                 this.model.push(...value);
             });
-            filterToList(wpItem.model, wpItem.filterStr, this.model);
+            filterToList(root.model, root.filterStr, this.model);
         }
         function filterToList(listModel, filterStr, data) {
             const filterValues = Common.filterModel.getValueArray(filterStr);
@@ -107,19 +109,19 @@ Item {
             };
 
             this.sendMessage(msg);
-            wpItem.modelStartSync();
+            root.modelStartSync();
         }
 
         Component.onCompleted: {
-            wpItem.filterStrChanged.connect(function() {
+            root.filterStrChanged.connect(function() {
                 if(this.enabled) {
                     folderWorker.filterToList(this.model, this.filterStr, folderWorker.model)
                 }
-            }.bind(wpItem));
+            }.bind(root));
         }
     }
     function refresh() {
-        if(!wpItem.enabled) return;
+        if(!root.enabled) return;
         this.folderModels.forEach(el => el.destroy());
         this.folderModels = [];
         this.workshopDirs.forEach(el => {
@@ -138,7 +140,7 @@ Item {
             property url requirFolder
             onStatusChanged: {
                 if(this.folder != requirFolder) return;
-                if (wpItem.enabled && this.status === FolderListModel.Ready) {
+                if (root.enabled && this.status === FolderListModel.Ready) {
                     const proxyModel = []
                     const sendMessage = folderWorker.sendMessage.bind(folderWorker);
                     new Promise((resolve, reject) => {
@@ -146,11 +148,11 @@ Item {
                         const count = this.count;
                         const get = this.get.bind(this);
                         for(let i=0;i < count;i++) {
-                            const v = Object.assign({}, wpItem.itemTemplate);
+                            const v = Object.assign({}, root.itemTemplate);
                             v.workshopid = get(i,"fileName");
                             // use qurl to convert to file://
                             v.path = Qt.resolvedUrl(get(i,"filePath")).toString();
-                            wpItem.initItemOp(v);
+                            root._initItemOp(v);
                             proxyModel.push(v);
                         }
                         resolve();
@@ -158,7 +160,7 @@ Item {
                         const plist = []
                         proxyModel.forEach((el) => {
                             // as no allSettled, catch any error
-                            const p = readfile(Common.urlNative(el.path)+"/project.json").then(value => {
+                            const p = root._readfile(Common.urlNative(el.path)+"/project.json").then(value => {
                                     loadItemFromJson(value, el);
                                 }).catch(reason => console.error(reason));
                             plist.push(p);
