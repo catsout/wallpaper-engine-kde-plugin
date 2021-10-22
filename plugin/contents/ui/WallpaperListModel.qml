@@ -139,8 +139,12 @@ Item {
         FolderListModel {
             property url requirFolder
             onStatusChanged: {
-                if(this.folder != requirFolder) return;
+                if(this.folder != requirFolder) { 
+                    console.log(`require: ${requirFolder}, but get: ${this.folder}`);
+                    return;
+                }
                 if (root.enabled && this.status === FolderListModel.Ready) {
+                    console.log(`scan folder: ${this.folder}, found ${this.count} subdir`);
                     const proxyModel = []
                     const sendMessage = folderWorker.sendMessage.bind(folderWorker);
                     new Promise((resolve, reject) => {
@@ -154,6 +158,9 @@ Item {
                             v.path = Qt.resolvedUrl(get(i,"filePath")).toString();
                             root._initItemOp(v);
                             proxyModel.push(v);
+                            if(i === 0) {
+                                console.log(`show the first: ${v.path}`)
+                            }
                         }
                         resolve();
                     }).then((value) => {
@@ -177,7 +184,7 @@ Item {
                         };
                         sendMessage(msg);
                         */
-                    });
+                    }).catch(reason => console.log(reason));
                 }
             }
         }
