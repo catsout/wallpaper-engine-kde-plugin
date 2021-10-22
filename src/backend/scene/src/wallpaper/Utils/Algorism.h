@@ -16,6 +16,12 @@ namespace  algorism {
 		return pow2;
 	}
 
+	template<typename TInt>
+	bool IsPowOfTwo(TInt x) {
+		return (x != 0) && ((x & (x - 1)) == 0);
+	}
+
+
 	inline std::array<double, 3> GenSphere(const std::function<float()>& random) {
 		double x1,x2;
 		double m;

@@ -272,6 +272,7 @@ ImageHeader WPTexImageParser::ParseHeader(const std::string& name) {
             }
             sf.width = width / spriteWidth;
             sf.height = height / spriteHeight;
+            LOG_INFO("%d: '%f:%f' '%f:%f'", sf.imageId, width, height, sf.unk0, sf.unk1);
             sf.rate = height / width;
             header.spriteAnim.AppendFrame(sf);
         }

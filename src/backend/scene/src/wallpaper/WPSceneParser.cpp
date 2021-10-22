@@ -287,6 +287,11 @@ void LoadMaterial(fs::VFS& vfs,
 				if(wpmat.shader == "genericparticle") {
 					pWPShaderInfo->combos["SPRITESHEET"] = 1;
 					pWPShaderInfo->combos["THICKFORMAT"] = 1;
+					if(algorism::IsPowOfTwo(texh.width) && algorism::IsPowOfTwo(texh.height)) {
+						pWPShaderInfo->combos["SPRITESHEETBLENDNPOT"] = 1;
+						resolution[2] = resolution[0] - resolution[0] % (int)(f1.width * resolution[0]);
+						resolution[3] = resolution[1] - resolution[1] % (int)(f1.height * resolution[1]);
+					}
 					materialShader.constValues["g_RenderVar1"] = { "g_RenderVar1", {
 						f1.width,
 						f1.height,
@@ -827,9 +832,8 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf, fs::VFS& vfs
 					hastrail = true;
 				}
 			}
-			if(material.hasSprite && !wppartobj.particleObj.flags.spritenoframeblending) {
+			if(!wppartobj.particleObj.flags.spritenoframeblending) {
 				shaderInfo.combos["SPRITESHEETBLEND"] = 1;
-				shaderInfo.combos["SPRITESHEETBLENDNPOT"] = 1;
 			}
 
 			LoadMaterial(vfs, wppartobj.material, upScene.get(), spNode.get(), &material, &svData, &shaderInfo);
