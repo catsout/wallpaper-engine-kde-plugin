@@ -143,30 +143,33 @@ ParticleInitOp WPParticleParser::genParticleInitOp(const nlohmann::json& wpj, Ra
 			// to do
 			TurbulentRandom r;
 			TurbulentRandom::ReadFromJson(wpj, r);
-			Vector3d forward(Vector3f(r.forward.data()).cast<double>());
-			Vector3d pos = GenRandomVec3(rf, {0,0,0}, {10.0f,10.0f,10.0f});
+			Vector3f forward(r.forward.data());
+			Vector3f right(r.right.data());
+			Vector3f pos = GenRandomVec3(rf, {0,0,0}, {10.0f,10.0f,10.0f}).cast<float>();
 			return [=](Particle& p, double duration) mutable {
 				float speed = GetRandomIn(r.speedmin, r.speedmax, rf());
 				if(duration > 10.0f) {
 					pos[0] += speed;
 					duration = 0.0f;
 				}
-				Vector3d result;
+				Vector3f result;
 				do {
-					result = algorism::CurlNoise(pos);
+					result = algorism::CurlNoise(pos.cast<double>()).cast<float>();
 					pos += result*0.005f/r.timescale;
 					duration -= 0.01f;
 				} while(duration > 0.01f);
 				// limit direction
 				{
 					double c = result.dot(forward) / (result.norm()*forward.norm());
-					double a = std::acos(c) / M_PI;
-					double scale = r.scale / 2.0f;
+					float a = std::acos(c) / M_PI;
+					float scale = r.scale / 2.0f;
 					if(a > scale) {
 						auto axis = result.cross(forward).normalized();
-						result = AngleAxisd((a-a*scale)*M_PI, axis) * result;
+						result = AngleAxisf((a-a*scale)*M_PI, axis) * result;
 					} 
 				}
+				// offset
+				result = AngleAxisf(r.offset, right) * result;
 				result *= speed;
 				PM::ChangeVelocity(p, result[0], result[1], result[2]);
 			};
