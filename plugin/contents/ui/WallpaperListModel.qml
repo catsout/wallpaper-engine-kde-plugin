@@ -93,6 +93,7 @@ Item {
             filterToList(root.model, root.filterStr, this.model);
         }
         function filterToList(listModel, filterStr, data) {
+            console.log(`filtering, current filter: ${filterStr}, to filter count: ${data.length}`);
             const filterValues = Common.filterModel.getValueArray(filterStr);
 
             const msg = {
@@ -175,7 +176,7 @@ Item {
                         const path = this.folder;
                         Promise.all(plist).then(value => {
                             folderWorker.loadModel(path, proxyModel);
-                        });
+                        }).catch(reason => console.error(reason));
                         /*
                         const msg = {
                             action: "loadFolder", 
@@ -184,7 +185,7 @@ Item {
                         };
                         sendMessage(msg);
                         */
-                    }).catch(reason => console.log(reason));
+                    }).catch(reason => console.error(reason));
                 }
             }
         }
