@@ -48,6 +48,8 @@ Item {
         }
     }
 
+    property int countNoFilter: 0
+
     property var folderModels: []
 
     function loadItemFromJson(text, el) {
@@ -81,19 +83,20 @@ Item {
             if(messageObject.reply == "loadFolder") {
                 // loadModel 
             } else if(messageObject.reply == "filter") {
+                console.log(`filtered, filter: ${root.filterStr}, from ${this.model.length} to ${root.model.count}`);
+                root.countNoFilter = this.model.length;
                 root.modelRefreshed();
             }
         }
         function loadModel(path, data) {
             this.folderMapModel.set(path, data);
-            this.model = []
+            this.model = [];
             this.folderMapModel.forEach((value, key) => {
                 this.model.push(...value);
             });
             filterToList(root.model, root.filterStr, this.model);
         }
         function filterToList(listModel, filterStr, data) {
-            console.log(`filtering, current filter: ${filterStr}, to filter count: ${data.length}`);
             const filterValues = Common.filterModel.getValueArray(filterStr);
 
             const msg = {

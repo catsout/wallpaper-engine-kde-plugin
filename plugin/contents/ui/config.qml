@@ -175,10 +175,10 @@ ColumnLayout {
                         }
                         MouseArea {
                             anchors.fill: parent
-                            enabled: model.type !== "_nocheck"
                             onClicked: parent.toggle()
                         }
                         function toggle() {
+                            if(model.type === "_nocheck") return;
                             const modelValues = comboxFilter.modelValues;
                             modelValues[index] = Number(!modelValues[index]);
                             cfg_FilterStr = Utils.intArrayToStr(modelValues);
@@ -282,9 +282,13 @@ ColumnLayout {
                         wrapMode: Text.WordWrap
                         visible: picViewGrid.view.count === 0
                         level: 2
-                        text: cfg_SteamLibraryPath
-                            ?"There are no wallpapers in steam library's workshop directory"
-                            :"Select your steam library through the folder selecting button above"
+                        text: { 
+                            if(!cfg_SteamLibraryPath)
+                                return "Select your steam library through the folder selecting button above";
+                            if(wpListModel.countNoFilter > 0)
+                                return `Found ${wpListModel.countNoFilter} wallpapers, but none of them matched filters`;
+                            return `There are no wallpapers in steam library's workshop directory`;
+                        }
                         opacity: 0.5
                     }
                     function backtoBegin() {
