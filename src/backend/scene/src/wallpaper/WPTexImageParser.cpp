@@ -254,26 +254,28 @@ ImageHeader WPTexImageParser::ParseHeader(const std::string& name) {
             float spriteHeight = imageDatas.at(sf.imageId)[1];
 
             sf.frametime = file.ReadFloat();
-            float width, height;
             if (texs == 1) {
                 sf.x = file.ReadInt32() / spriteWidth;
                 sf.y = file.ReadInt32() / spriteHeight;
-                width = file.ReadInt32();
-                sf.unk0 = file.ReadInt32();
-                sf.unk1 = file.ReadInt32();
-                height = file.ReadInt32();
+                sf.xAxis[0] = file.ReadInt32();
+                sf.xAxis[1] = file.ReadInt32();
+                sf.yAxis[0] = file.ReadInt32();
+                sf.yAxis[1] = file.ReadInt32();
             } else {
                 sf.x = file.ReadFloat() / spriteWidth;
                 sf.y = file.ReadFloat() / spriteHeight;
-                width = file.ReadFloat();
-                sf.unk0 = file.ReadFloat();
-                sf.unk1 = file.ReadFloat();
-                height = file.ReadFloat();
+                sf.xAxis[0] = file.ReadFloat();
+                sf.xAxis[1] = file.ReadFloat();
+                sf.yAxis[0] = file.ReadFloat();
+                sf.yAxis[1] = file.ReadFloat();
             }
-            sf.width = width / spriteWidth;
-            sf.height = height / spriteHeight;
-            LOG_INFO("%d: '%f:%f' '%f:%f'", sf.imageId, width, height, sf.unk0, sf.unk1);
-            sf.rate = height / width;
+            sf.width = std::sqrt(std::pow(sf.xAxis[0],2) + std::pow(sf.xAxis[1],2));
+            sf.height = std::sqrt(std::pow(sf.yAxis[0],2) + std::pow(sf.yAxis[1],2));
+            sf.xAxis[0] /= spriteWidth;
+            sf.xAxis[1] /= spriteWidth;
+            sf.yAxis[0] /= spriteHeight;
+            sf.yAxis[1] /= spriteHeight;
+            sf.rate = sf.height / sf.width;
             header.spriteAnim.AppendFrame(sf);
         }
     } else {

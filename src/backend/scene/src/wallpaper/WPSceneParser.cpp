@@ -289,12 +289,12 @@ void LoadMaterial(fs::VFS& vfs,
 					pWPShaderInfo->combos["THICKFORMAT"] = 1;
 					if(algorism::IsPowOfTwo(texh.width) && algorism::IsPowOfTwo(texh.height)) {
 						pWPShaderInfo->combos["SPRITESHEETBLENDNPOT"] = 1;
-						resolution[2] = resolution[0] - resolution[0] % (int)(f1.width * resolution[0]);
-						resolution[3] = resolution[1] - resolution[1] % (int)(f1.height * resolution[1]);
+						resolution[2] = resolution[0] - resolution[0] % (int)f1.width;
+						resolution[3] = resolution[1] - resolution[1] % (int)f1.height;
 					}
 					materialShader.constValues["g_RenderVar1"] = { "g_RenderVar1", {
-						f1.width,
-						f1.height,
+						f1.xAxis[0],
+						f1.yAxis[1],
 						(float)(texh.spriteAnim.numFrames()),
 						f1.rate
 					}};

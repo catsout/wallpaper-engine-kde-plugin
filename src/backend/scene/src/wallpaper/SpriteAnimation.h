@@ -3,6 +3,7 @@
 #include <vector>
 #include <iostream>
 #include <cstdint>
+#include <array>
 
 namespace wallpaper
 {
@@ -13,11 +14,9 @@ struct SpriteFrame {
 	float y {0};
 	float width {1};
 	float height {1};
-
+	std::array<float,2> xAxis {1, 0};
+	std::array<float,2> yAxis {0, 1};
 	float rate {1}; // real h / w
-
-	float unk0 {0};
-	float unk1 {0};
 };
 
 class SpriteAnimation {

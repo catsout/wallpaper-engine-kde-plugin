@@ -137,11 +137,11 @@ void WPShaderValueUpdater::UpdateShaderValues(SceneNode* pNode, SceneShader* pSh
 				auto& ptex = m_scene->textures.at(texname);
 				if(ptex.isSprite) {
 					auto& sp = ptex.spriteAnim;
-					const auto& frame = sp.GetAnimateFrame(m_scene->frameTime);
+					const auto& f = sp.GetAnimateFrame(m_scene->frameTime);
 					auto grot = gtex + std::to_string(i) + "Rotation";
 					auto gtrans = gtex + std::to_string(i) + "Translation";
-					shadervs.push_back({grot, {frame.width, 0, 0, frame.height}});
-					shadervs.push_back({gtrans, {frame.x, frame.y}});
+					shadervs.push_back({grot, {f.xAxis[0], f.xAxis[1], f.yAxis[0], f.yAxis[1]}});
+					shadervs.push_back({gtrans, {f.x, f.y}});
 				}
 			}
 		}
