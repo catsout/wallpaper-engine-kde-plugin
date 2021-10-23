@@ -408,6 +408,13 @@ ColumnLayout {
                 Label {
                     Layout.alignment: Qt.AlignRight
                     text: "Randomize:"
+                    ToolTip.visible: randomMouse.containsMouse
+                    ToolTip.text: qsTr("randomize wallpapers showing in the Wallpaper page")
+                    MouseArea {
+                        id: randomMouse
+                        anchors.fill: parent
+                        hoverEnabled: true
+                    }
                 }
                 RowLayout {
                     spacing: 0
@@ -517,8 +524,30 @@ ColumnLayout {
             GridLayout {
                 anchors.horizontalCenter: parent.horizontalCenter
                 columns: 2
+                rowSpacing: 20
 
                 property int lwidth: font.pixelSize * 12
+                Label {
+                    Layout.alignment: Qt.AlignLeft | Qt.AlignTop
+                    text: "    usage: "
+                }
+                Text {
+                    Layout.preferredWidth: aboutTab.width * 0.6
+                    text: `
+                        <ol>
+                        <li><i>wallpaper engine</i> installed by steam</li>
+                        <li>subscribe wallpapers on workshop</li>
+                        <li>select <i>steamlibrary</i> folder in plugin
+                            <ul>
+                                <li><i>steamlibrary</i> which contains <i>steamapps<i/> folder</li>
+                                <li><i>wallpaper engine</i> installed on this <i>steamlibrary<i/></li>
+                            </ul>
+                        </li>
+                        </ol>
+                    `
+                    wrapMode: Text.Wrap
+                    textFormat: Text.RichText
+                }
                 Label {
                     Layout.alignment: Qt.AlignLeft | Qt.AlignTop
                     text: "fix crash: "
@@ -527,9 +556,10 @@ ColumnLayout {
                 TextEdit {
                     Layout.preferredWidth: aboutTab.width * 0.6
                     text: `
-                        <p>Some scene wallpapers may crash your kde</p>
-                        <p>Remove <i>WallpaperFilePath</i> line in <b>~/.config/plasma-org.kde.plasma.desktop-appletsrc</b></p>
-                        <p>Then restart kde to fix</p>
+                        <ol>
+                        <li>Remove <i>WallpaperFilePath</i> line in <b>~/.config/plasma-org.kde.plasma.desktop-appletsrc</b></li>
+                        <li>Restart kde</li>
+                        </ol>
                     `
                     readOnly: true
                     wrapMode: Text.Wrap
