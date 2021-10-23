@@ -11,6 +11,8 @@ Item {
         const sh = [
             `WKD=${file}`,
             "[ \"$XDG_DATA_HOME\" ] && WKD=$XDG_DATA_HOME/$WKD || WKD=$HOME/.local/share/$WKD",
+            "[ -f /usr/share/$WKD ] && WKD=/usr/share/$WKD",
+            "[ -f /usr/local/share/$WKD ] && WKD=/usr/local/share/$WKD",
             `exec python3 $WKD ${server.url}`
         ].join("\n");
         return sh;
