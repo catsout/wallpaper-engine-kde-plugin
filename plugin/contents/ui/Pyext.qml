@@ -9,11 +9,13 @@ Item {
     readonly property string file: "plasma/wallpapers/com.github.casout.wallpaperEngineKde/contents/pyext.py"
     readonly property string source: {
         const sh = [
-            `WKD=${file}`,
-            "[ \"$XDG_DATA_HOME\" ] && WKD=$XDG_DATA_HOME/$WKD || WKD=$HOME/.local/share/$WKD",
-            "[ -f /usr/share/$WKD ] && WKD=/usr/share/$WKD",
-            "[ -f /usr/local/share/$WKD ] && WKD=/usr/local/share/$WKD",
-            `exec python3 $WKD ${server.url}`
+            `EXT=${file}`,
+            `WKD="no_pyext_file_found"`,
+            "[ -f \"$XDG_DATA_HOME/$EXT\" ] && WKD=\"$XDG_DATA_HOME/$EXT\"", 
+            "[ -f \"$HOME/.local/share/$EXT\" ] && WKD=\"$HOME/.local/share/$EXT\"",
+            "[ -f /usr/share/$EXT ] && WKD=/usr/share/$EXT",
+            "[ -f /usr/local/share/$EXT ] && WKD=/usr/local/share/$EXT",
+            `exec python3 "$WKD" "${server.url}"`
         ].join("\n");
         return sh;
     }
