@@ -53,6 +53,7 @@ function genFilter(filters) {
 WorkerScript.onMessage = function(msg) {
     const reply = WorkerScript.sendMessage;
     if(msg.action == "loadFolder") {
+        /*
         const data = msg.data;
         const plist = [];
         msg.data.forEach((el) => {
@@ -64,6 +65,7 @@ WorkerScript.onMessage = function(msg) {
         Promise.all(plist).then(value => {
             reply({ "reply": msg.action, "data": data, "path": msg.path });
         });
+        */
     }
     else if(msg.action == "filter") {
         const filter = genFilter(msg.filters);

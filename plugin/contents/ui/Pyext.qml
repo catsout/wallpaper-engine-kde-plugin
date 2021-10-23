@@ -16,6 +16,10 @@ Item {
         return sh;
     }
     readonly property bool ok: server.socket.status == WebSocket.Open
+
+    property string _log
+    readonly property string log: _log
+
     property var commands: []
 
     function readfile(path) {
@@ -77,8 +81,8 @@ Item {
         engine: 'executable'
         connectedSources: [source]
         onNewData: {
-            console.log(data.stdout)
-            console.log(data.stderr)
+            _log += "\n" + data.stderr;
+            _log += "\n" + data.stdout;
         }
     }
 }
