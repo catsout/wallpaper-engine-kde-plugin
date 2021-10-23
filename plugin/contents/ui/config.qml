@@ -326,7 +326,7 @@ ColumnLayout {
 
             FileDialog {
                 id: wpDialog
-                title: "Select steam library dir"
+                title: "Select steamlibrary folder"
                 selectFolder: true
                 selectMultiple : false
                 nameFilters: [ "All files (*)" ]
@@ -423,7 +423,7 @@ ColumnLayout {
                     }
                     RowLayout {
                         visible: cfg_RandomizeWallpaper
-                        Text { id:heightpicker; text: " every " }
+                        Label { id:heightpicker; text: " every " }
                         SpinBox {
                             id: randomSpin
                             width: font.pixelSize * 4
@@ -432,7 +432,7 @@ ColumnLayout {
                             to: 120
                             stepSize: 1
                         }
-                        Text { text: " min" }
+                        Label { text: " min" }
                     }
                 }
                 Label {
@@ -459,7 +459,7 @@ ColumnLayout {
                 }
                 RowLayout {
                     Layout.maximumWidth: parent.lwidth
-                    Text {
+                    Label {
                         Layout.preferredWidth: font.pixelSize * 2
                         text: sliderFps.value.toString()
                     }
@@ -481,7 +481,7 @@ ColumnLayout {
                 RowLayout {
                     visible: !cfg_MuteAudio
                     Layout.maximumWidth: parent.lwidth
-                    Text {
+                    Label {
                         Layout.preferredWidth: font.pixelSize * 2
                         text: sliderVol.value.toString()
                     }
@@ -531,7 +531,7 @@ ColumnLayout {
                     Layout.alignment: Qt.AlignLeft | Qt.AlignTop
                     text: "    usage: "
                 }
-                Text {
+                Label {
                     Layout.preferredWidth: aboutTab.width * 0.6
                     text: `
                         <ol>
@@ -553,7 +553,7 @@ ColumnLayout {
                     text: "fix crash: "
                     visible: libcheck.wallpaper
                 }
-                TextEdit {
+                PlasmaComponents3.TextArea {
                     Layout.preferredWidth: aboutTab.width * 0.6
                     text: `
                         <ol>
@@ -566,6 +566,7 @@ ColumnLayout {
                     textFormat: Text.RichText
                     selectByMouse: true
                     visible: libcheck.wallpaper
+                    background: Item {}
                 }
                 Label {
                     Layout.alignment: Qt.AlignLeft | Qt.AlignTop
