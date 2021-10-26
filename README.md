@@ -2,15 +2,15 @@
 A wallpaper plugin integrating [wallpaper engine](https://store.steampowered.com/app/431960/Wallpaper_Engine) into kde wallpaper setting.  
 
 ## Note
-- Known issue
-  - Some scene wallpapers may **crash** your kde.  
-    Remove `WallpaperFilePath` line in `~/.config/plasma-org.kde.plasma.desktop-appletsrc` and restart kde to fix.  
-  - Mouse long press(to enter panel edit mode) is broken on desktop  
-- Support **scene(2d)**,**video**,**web** types
-- Require *wallpapaer engine* installed by steam
-- Require qt 5.13+ for playing video(no mpv), or use mpv instead  
-- This plugin has(not required) a [lib](#plugin-lib) to be compiled, if you want any feature below  
-  - scene wallpaper  
+- Known issues:
+  - Some scene wallpapers may **crash** your KDE.  
+    Remove `WallpaperFilePath` line in `~/.config/plasma-org.kde.plasma.desktop-appletsrc` and restart KDE to fix.  
+  - Mouse long press (to enter panel edit mode) is broken on desktop.
+- Support **scene(2d)**,**video**,**web** wallpaper types
+- Requires *Wallpaper Engine* installed on steam
+- Requires qt 5.13+ for playing video(no mpv), or mpv instead  
+- This plugin has(not required) a [lib](#plugin-lib) to be compiled, if you want any of the features below:
+  - scene wallpapers
   - mpv video backend  
   - mouse input  
 
@@ -63,26 +63,26 @@ sudo make install
 
 ## Usage
 1. Use steam+proton or wine+steam
-2. Buy and install wallpaper engine(not run)
-3. Subscribe some wallpapers on [workshop](https://steamcommunity.com/app/431960/workshop/)(or the we app, if you can run it)  
-4. Let steam download wallpapers
-5. Install this plugin, and select steam library dir(where *wallpaper engine* installed) in plugin  
+2. Buy and install Wallpaper Engine(don't run it)
+3. Subscribe to some wallpapers on [workshop](https://steamcommunity.com/app/431960/workshop/)(or the WE app, if you can run it)  
+4. Let steam download the wallpapers.
+5. Install this plugin, and select the Steam library dir(where *Wallpaper Engine* is installed) in the plugin
 e.g `.local/share/Steam`
-6. Enjoy  
+6. Enjoy!
 
-### Restart Kde
-Need to restart kde(re-login) after **updating plugin** or **reinstalling plugin lib**  
-Or try: `kquitapp5 plasmashell && kstart5 plasmashell`  
+### Restart KDE
+You need to restart KDE(re-log) after **updating the plugin** or **reinstalling the plugin lib**  
+You can also try using: `kquitapp5 plasmashell && kstart5 plasmashell`  
 
 ## Support Status
-### Scene
-Scene wallpaper is supported by direct opengl(3.2).  
-Require *wallpapaer engine* installed for assets(shaders,pictures...)
+### Scene:
+Scene wallpapers are supported by direct OpenGL(3.2).  
+Requires *Wallpaper Engine* installed for assets(shaders,pictures...)
 #### implemented
 - [x] Layer
-	- [x] image
-	- [x] composition / fullscreen
-	- [ ] text
+	- [x] Image
+	- [x] Composition / Fullscreen
+	- [ ] Text
 - [x] Effect
 	- [x] Mouse position
 	- [x] Parallax
@@ -90,13 +90,13 @@ Require *wallpapaer engine* installed for assets(shaders,pictures...)
 	- [x] PBR light
 	- [ ] Global bloom
 - [x] Camera
-	- [x] zoom
-	- [ ] shake
-	- [ ] fade / path
+	- [x] Zoom
+	- [ ] Shake
+	- [ ] Fade / Path
 - [x] Audio
-	- [x] loop
-	- [ ] random
-	- [ ] visualization
+	- [x] Loop
+	- [ ] Random
+	- [ ] Visualization
 - [x] Particle System
 	- [x] Renderers
 		- [ ] Rope
@@ -114,20 +114,20 @@ Require *wallpapaer engine* installed for assets(shaders,pictures...)
 - [ ] Scenescript  
 
 ### Web
-Basic web apis are supported, but the audio api dose not send data at now.  
+Basic web apis are supported, but the audio api does not send data at now.  
 #### no webgl
 WebEngineView in plasmashell can't init opengl.  
 Some wallpaper using webgl may not work, and performance may be bad.   
 
 ### Video HWdecode  
 #### QtMultimedia
-Default video backend of this plugin.  
+The default video backend of this plugin.  
 It's using GStreamer to play video.  
 [hwdecode](https://wiki.archlinux.org/title/GStreamer#Hardware_video_acceleration) for GStreamer
 
 #### Mpv
-Need to compile plugin lib.  
-The config is set to `hwdec=auto`, and not configurable at now.  
+Need to compile the plugin lib.  
+The config is set to `hwdec=auto`, and is not configurable for now.  
 
 ### Acknowledgments
 - [RePKG](https://github.com/notscuffed/repkg)
