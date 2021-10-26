@@ -81,7 +81,6 @@ ColumnLayout {
         if(this.wpListModel) this.wpListModel.destroy();
     }
 
-
     function saveCustomConf() {
         cfg_CustomConf = Common.prepareCustomConf(this.customConf);
     }
@@ -339,160 +338,129 @@ ColumnLayout {
 
 
         }
-        Item {
+        Kirigami.FormLayout {
             id: settingTab
- 
-            GridLayout {
-                id: settingGrid
-                anchors.horizontalCenter: parent.horizontalCenter
-                columns: 2
-
-                property int lwidth: font.pixelSize * 12
-                Label {
-                    Layout.alignment: Qt.AlignRight
-                    text: "Pause:"
-                }
-                ComboBox {
-                    id: pauseMode
-                    Layout.preferredWidth: parent.lwidth
-                    model: [
-                        {
-                            text: "Maximized Window",
-                            value: Common.PauseMode.Max
-                        },
-                        {
-                            text: "Any Window",
-                            value: Common.PauseMode.Any
-                        },
-                        {
-                            text: "Never Pause",
-                            value: Common.PauseMode.Never
-                        }
-                    ]
-                    textRole: "text"
-                    onActivated: cfg_PauseMode = Common.cbCurrentValue(pauseMode)
-                    Component.onCompleted: currentIndex = Common.cbIndexOfValue(pauseMode, cfg_PauseMode)
-                }
-                Label {
-                    Layout.alignment: Qt.AlignRight
-                    text: "Display:"
-                }
-                ComboBox {
-                    id: displayMode
-                    Layout.preferredWidth: parent.lwidth
-                    model: [
-                        {
-                            text: "Keep Aspect Ratio",
-                            value: Common.DisplayMode.Aspect
-                        },
-                        {
-                            text: "Scale and Crop",
-                            value: Common.DisplayMode.Crop
-                        },
-                        {
-                            text: "Scale to Fill",
-                            value: Common.DisplayMode.Scale
-                        },
-                    ]
-                    textRole: "text"
-                    onActivated: cfg_DisplayMode = Common.cbCurrentValue(displayMode)
-                    Component.onCompleted: currentIndex = Common.cbIndexOfValue(displayMode, cfg_DisplayMode)
-                }
-                Label {
-                    Layout.alignment: Qt.AlignRight
-                    text: "Mute Audio:"
-                }
-                CheckBox {
-                    id: muteAudio
-                }          
-                Label {
-                    Layout.alignment: Qt.AlignRight
-                    text: "Randomize:"
-                    ToolTip.visible: randomMouse.containsMouse
-                    ToolTip.text: qsTr("randomize wallpapers showing in the Wallpaper page")
-                    MouseArea {
-                        id: randomMouse
-                        anchors.fill: parent
-                        hoverEnabled: true
+            Layout.fillWidth: true
+            twinFormLayouts: parentLayout
+            ComboBox {
+                Kirigami.FormData.label: "Pause:"
+                implicitWidth: PlasmaCore.Theme.mSize(PlasmaCore.Theme.defaultFont).width * 24
+                id: pauseMode
+                model: [
+                    {
+                        text: "Maximized Window",
+                        value: Common.PauseMode.Max
+                    },
+                    {
+                        text: "Any Window",
+                        value: Common.PauseMode.Any
+                    },
+                    {
+                        text: "Never Pause",
+                        value: Common.PauseMode.Never
                     }
-                }
-                RowLayout {
-                    spacing: 0
-                    CheckBox{
-                        id: randomizeWallpaper
-                    }
-                    RowLayout {
-                        visible: cfg_RandomizeWallpaper
-                        Label { id:heightpicker; text: " every " }
-                        SpinBox {
-                            id: randomSpin
-                            width: font.pixelSize * 4
-                            height: heightpicker.height
-                            from: 1
-                            to: 120
-                            stepSize: 1
-                        }
-                        Label { text: " min" }
-                    }
-                }
-                Label {
-                    Layout.alignment: Qt.AlignRight
-                    text: "Use mpv:"
-                    visible: useMpv.visible
-                }
+                ]
+                textRole: "text"
+                onActivated: cfg_PauseMode = Common.cbCurrentValue(pauseMode)
+                Component.onCompleted: currentIndex = Common.cbIndexOfValue(pauseMode, cfg_PauseMode)
+            }
+            ComboBox {
+                id: displayMode
+                Kirigami.FormData.label: "Display:"
+                implicitWidth: PlasmaCore.Theme.mSize(PlasmaCore.Theme.defaultFont).width * 24
+                model: [
+                    {
+                        text: "Keep Aspect Ratio",
+                        value: Common.DisplayMode.Aspect
+                    },
+                    {
+                        text: "Scale and Crop",
+                        value: Common.DisplayMode.Crop
+                    },
+                    {
+                        text: "Scale to Fill",
+                        value: Common.DisplayMode.Scale
+                    },
+                ]
+                textRole: "text"
+                onActivated: cfg_DisplayMode = Common.cbCurrentValue(displayMode)
+                Component.onCompleted: currentIndex = Common.cbIndexOfValue(displayMode, cfg_DisplayMode)
+            }
+            CheckBox {
+                id: muteAudio
+                Kirigami.FormData.label: "Mute Audio:"
+            }
+            RowLayout {
+                spacing: 0
+                Kirigami.FormData.label:  "Randomize:"
                 CheckBox{
-                    visible: libcheck.wallpaper
-                    id: useMpv
-                }
-                
-                Label{
-                    id: fpsLabel
-                    Layout.alignment: Qt.AlignRight
-                    text: "Fps:" 
-                    ToolTip.visible: fpsMouse.containsMouse
-                    ToolTip.text: qsTr("Control fps on scene wallpaper")
-                    MouseArea {
-                        id: fpsMouse
-                        anchors.fill: parent
-                        hoverEnabled: true
-                    }
+                    id: randomizeWallpaper
                 }
                 RowLayout {
-                    Layout.maximumWidth: parent.lwidth
-                    Label {
-                        Layout.preferredWidth: font.pixelSize * 2
-                        text: sliderFps.value.toString()
+                    enabled: cfg_RandomizeWallpaper
+                    Label { id:heightpicker; text: " every " }
+                    SpinBox {
+                        id: randomSpin
+                        width: font.pixelSize * 4
+                        height: heightpicker.height
+                        from: 1
+                        to: 120
+                        stepSize: 1
                     }
-                    Slider {
-                        id: sliderFps
-                        Layout.fillWidth: true
-                        from: 5
-                        to: 60
-                        stepSize: 1.0
-                        snapMode: Slider.SnapOnRelease
-                    }
+                    Label { text: " min" }
                 }
-                Label{
-                    visible: !cfg_MuteAudio
-                    id: volumLabel
-                    Layout.alignment: Qt.AlignRight
-                    text: "Volume:"
+                /*
+                ToolTip.visible: randomMouse.containsMouse
+                ToolTip.text: qsTr("randomize wallpapers showing in the Wallpaper page")
+                MouseArea {
+                    id: randomMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                }*/
+            }
+            CheckBox{
+                visible: libcheck.wallpaper
+                Kirigami.FormData.label:  "Use mpv:"
+                id: useMpv
+            }
+            RowLayout {
+                Kirigami.FormData.label:  "Fps:"
+                Layout.maximumWidth: parent.lwidth
+                Label {
+                    Layout.preferredWidth: font.pixelSize * 2
+                    text: sliderFps.value.toString()
                 }
-                RowLayout {
-                    visible: !cfg_MuteAudio
-                    Layout.maximumWidth: parent.lwidth
-                    Label {
-                        Layout.preferredWidth: font.pixelSize * 2
-                        text: sliderVol.value.toString()
-                    }
-                    Slider {
-                        id: sliderVol
-                        Layout.fillWidth: true
-                        from: 0
-                        to: 100
-                        stepSize: 5.0
-                        snapMode: Slider.SnapOnRelease
-                    }
+                Slider {
+                    id: sliderFps
+                    Layout.preferredWidth: displayMode.width * 0.9
+                    from: 5
+                    to: 60
+                    stepSize: 1.0
+                    snapMode: Slider.SnapOnRelease
+                }
+                /*
+                ToolTip.visible: fpsMouse.containsMouse
+                ToolTip.text: qsTr("Control fps on scene wallpaper")
+                MouseArea {
+                    id: fpsMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                }*/
+            }
+            RowLayout {
+                Kirigami.FormData.label:  "Volume:"
+                visible: !cfg_MuteAudio
+                Label {
+                    Layout.preferredWidth: font.pixelSize * 2
+                    text: sliderVol.value.toString()
+                }
+                Slider {
+                    id: sliderVol
+                    Layout.preferredWidth: displayMode.width * 0.9
+                    from: 0
+                    to: 100
+                    stepSize: 5.0
+                    snapMode: Slider.SnapOnRelease
                 }
             }
             /*
@@ -518,105 +486,92 @@ ColumnLayout {
             }
             */
         }
-        Item {
-            id: aboutTab
- 
-            GridLayout {
-                anchors.horizontalCenter: parent.horizontalCenter
-                columns: 2
-                rowSpacing: 20
+        Kirigami.FormLayout {
+            Layout.fillWidth: true
+            twinFormLayouts: settingTab
 
-                property int lwidth: font.pixelSize * 12
-                Label {
-                    Layout.alignment: Qt.AlignLeft | Qt.AlignTop
-                    text: "Requirements: "
+            Label {
+                Layout.fillWidth: true
+                Kirigami.FormData.labelAlignment: Qt.AlignTop
+                Kirigami.FormData.label: "Requirements:"
+                text: `
+                    <ol>
+                    <li><i>Wallpaper Engine</i> installed on Steam</li>
+                    <li>Subscribe to some wallpapers on the Workshop</li>
+                    <li>Select the <i>steamlibrary</i> folder on the Wallpapers tab
+                        <ul>
+                            <li>The <i>steamlibrary</i> which contains the <i>steamapps<i/> folder</li>
+                            <li><i>Wallpaper Engine</i> needs to be installed in this folder</li>
+                        </ul>
+                    </li>
+                    </ol>
+                `
+                wrapMode: Text.Wrap
+                textFormat: Text.RichText
+            }
+            PlasmaComponents3.TextArea {
+                Layout.fillWidth: true
+                Kirigami.FormData.label: "Fix crashes:"
+                Kirigami.FormData.labelAlignment: Qt.AlignTop
+                implicitWidth: 0
+                text: `
+                    <ol>
+                    <li>Remove <i>WallpaperFilePath</i> line in <b>~/.config/plasma-org.kde.plasma.desktop-appletsrc</b></li>
+                    <li>Restart KDE</li>
+                    </ol>
+                `
+                readOnly: true
+                wrapMode: Text.Wrap
+                textFormat: Text.RichText
+                selectByMouse: true
+                visible: libcheck.wallpaper
+                background: Item {}
+            }
+            ListView {
+                Layout.fillWidth: true
+                Kirigami.FormData.label: "Lib check:"
+                Kirigami.FormData.labelAlignment: Qt.AlignTop
+                Layout.preferredHeight: 0
+                implicitHeight: (font.pixelSize * 2) * modelraw.length
+                model: ListModel {}
+                clip: false
+                property var modelraw: {
+                    const _model = [
+                        {
+                            ok: libcheck.wallpaper,
+                            name: "plugin lib"
+                        },
+                        {
+                            ok: libcheck.folderlist,
+                            name: "qt-lab-folderlist"
+                        },
+                        {
+                            ok: libcheck.qtwebchannel,
+                            name: "qtwebchannel (qml)"
+                        },
+                        {
+                            ok: libcheck.qtwebsockets,
+                            name: "qtwebsockets (qml)"
+                        },
+                        {
+                            ok: pyext && pyext.ok,
+                            name: "python3 (python3-websockets)"
+                        }
+                    ];
+                    return _model;
                 }
-                Label {
-                    Layout.preferredWidth: aboutTab.width * 0.6
-                    text: `
-                        <ol>
-                        <li><i>Wallpaper Engine</i> installed on Steam</li>
-                        <li>Subscribe to some wallpapers on the Workshop</li>
-                        <li>Select the <i>steamlibrary</i> folder on the Wallpapers tab
-                            <ul>
-                                <li>The <i>steamlibrary</i> which contains the <i>steamapps<i/> folder</li>
-                                <li><i>Wallpaper Engine</i> needs to be installed in this folder</li>
-                            </ul>
-                        </li>
-                        </ol>
-                    `
-                    wrapMode: Text.Wrap
-                    textFormat: Text.RichText
+                onModelrawChanged: {
+                    this.model.clear();
+                    this.modelraw.forEach((el) => {
+                        this.model.append(el);
+                    });
                 }
-                Label {
-                    Layout.alignment: Qt.AlignLeft | Qt.AlignTop
-                    text: "Fix crashes: "
-                    visible: libcheck.wallpaper
+                delegate: CheckBox {
+                    text: name
+                    checked: ok
+                    enabled: false
                 }
-                PlasmaComponents3.TextArea {
-                    Layout.preferredWidth: aboutTab.width * 0.6
-                    text: `
-                        <ol>
-                        <li>Remove <i>WallpaperFilePath</i> line in <b>~/.config/plasma-org.kde.plasma.desktop-appletsrc</b></li>
-                        <li>Restart KDE</li>
-                        </ol>
-                    `
-                    readOnly: true
-                    wrapMode: Text.Wrap
-                    textFormat: Text.RichText
-                    selectByMouse: true
-                    visible: libcheck.wallpaper
-                    background: Item {}
-                }
-                Label {
-                    Layout.alignment: Qt.AlignLeft | Qt.AlignTop
-                    text: "Lib check: "
-                }
-                ListView {
-                    Layout.alignment: Qt.AlignLeft | Qt.AlignTop
-                    width:  font.pixelSize * 20
-                    height: (contentItem.childrenRect.height+spacing) * modelraw.length
-                    clip: true
-                    spacing: 3
-                    model: ListModel {}
-                    property var modelraw: {
-                        const _model = [
-                            {
-                                ok: libcheck.wallpaper,
-                                name: "plugin lib"
-                            },
-                            {
-                                ok: libcheck.folderlist,
-                                name: "qt-lab-folderlist"
-                            },
-                            {
-                                ok: libcheck.qtwebchannel,
-                                name: "qtwebchannel (qml)"
-                            },
-                            {
-                                ok: libcheck.qtwebsockets,
-                                name: "qtwebsockets (qml)"
-                            },
-                            {
-                                ok: pyext && pyext.ok,
-                                name: "python3 (python3-websockets)"
-                            }
-                        ];
-                        return _model;
-                    }
-                    onModelrawChanged: {
-                        this.model.clear();
-                        this.modelraw.forEach((el) => {
-                            this.model.append(el);
-                        });
-                    }
-                    delegate: CheckBox {
-                        text: name
-                        checked: ok
-                        enabled: false
-                    }
-                }
-                
+
             }
         }
     }

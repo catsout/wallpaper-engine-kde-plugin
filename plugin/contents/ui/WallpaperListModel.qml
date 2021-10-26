@@ -71,23 +71,13 @@ Item {
     }
 
 
-    WorkerScript {
+    Item {
         id: folderWorker
-        source: "folderWorker.mjs"
 
         // array
         property var folderMapModel: new Map()
         property var model: []
 
-        onMessage: {
-            if(messageObject.reply == "loadFolder") {
-                // loadModel 
-            } else if(messageObject.reply == "filter") {
-                console.log(`filtered, filter: ${root.filterStr}, from ${this.model.length} to ${root.model.count}`);
-                root.countNoFilter = this.model.length;
-                root.modelRefreshed();
-            }
-        }
         function loadModel(path, data) {
             this.folderMapModel.set(path, data);
             this.model = [];
@@ -98,22 +88,28 @@ Item {
         }
         function filterToList(listModel, filterStr, data) {
             const filterValues = Common.filterModel.getValueArray(filterStr);
-
-            const msg = {
-                action: "filter", 
-                data: data,
-                model: listModel,
-                filters: Common.filterModel.map((el, index) => {
+            const filterstr = Common.filterModel.map((el, index) => {
                     return {
                         type: el.type,
                         key: el.key,
                         value: filterValues[index]
                     };
-                })
-            };
-
-            this.sendMessage(msg);
+                });
             root.modelStartSync();
+            new Promise((resolve, reject) => {
+                const filter = Common.filterModel.genFilter(filterstr);
+                const model = listModel;
+                model.clear();
+                data.forEach(function(el) {
+                    if(filter(el))
+                        model.append(el);
+                });
+                resolve();
+            }).then(() => {
+                console.log(`filtered, filter: ${root.filterStr}, from ${this.model.length} to ${root.model.count}`);
+                root.countNoFilter = this.model.length;
+                root.modelRefreshed();
+            });
         }
 
         Component.onCompleted: {
@@ -150,7 +146,6 @@ Item {
                 if (root.enabled && this.status === FolderListModel.Ready) {
                     console.log(`scan folder: ${this.folder}, found ${this.count} subdir`);
                     const proxyModel = []
-                    const sendMessage = folderWorker.sendMessage.bind(folderWorker);
                     new Promise((resolve, reject) => {
                         // seems qml's "for" is a function
                         const count = this.count;

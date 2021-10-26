@@ -85,8 +85,8 @@ Item {
                 sourceCode: `
                     new QWebChannel(qt.webChannelTransport, function(channel) {
                         window.wpeQml = channel.objects.wpeQml;
-                        let wpeQml = window.wpeQml;
-                        let propertyListener = window.wallpaperPropertyListener;
+                        const wpeQml = window.wpeQml;
+                        const propertyListener = window.wallpaperPropertyListener;
                         if(window.wallpaperRAed)
                             wpeQml.sigAudio.connect(window.wallpaperRAed);
                         if(propertyListener) {
@@ -96,11 +96,26 @@ Item {
                                 wpeQml.sigUserProperties.connect(propertyListener.applyUserProperties);
                         }
                         wpeQml.loaded = true;
-                    });`
+                    });
+                    document.getElementsByTagName('body')[0].ondragstart = function() { return false; }
+                    `
             }
         ]
 
         property bool paused: false
+        property bool _init: {
+            settings.fullscreenSupportEnabled = true;
+            settings.autoLoadIconsForPage = false;
+            settings.printElementBackgrounds = false;
+            settings.playbackRequiresUserGesture = false;
+            settings.pdfViewerEnabled = false;
+            settings.showScrollBars = false;
+
+            settings.localContentCanAccessRemoteUrls = true;
+            settings.allowGeolocationOnInsecureOrigins = true;
+            _init = true;
+        }
+
 
         //onContextMenuRequested: function(request) {
         //    request.accepted = true;
@@ -127,15 +142,6 @@ Item {
         }
 
         Component.onCompleted: {
-            WebEngine.settings.fullscreenSupportEnabled = true;
-            WebEngine.settings.autoLoadIconsForPage = false;
-            WebEngine.settings.printElementBackgrounds = false;
-            WebEngine.settings.playbackRequiresUserGesture = false;
-            WebEngine.settings.pdfViewerEnabled = false;
-            WebEngine.settings.showScrollBars = false;
-
-            WebEngine.settings.localContentCanAccessRemoteUrls = true
-
             background.nowBackend = "QtWebEngine";
         }
 

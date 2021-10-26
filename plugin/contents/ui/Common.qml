@@ -67,6 +67,38 @@ QtObject {
                 return result;
             }
         }
+
+        function genFilter(filters) {
+            const typeF = {};
+            const noTags = new Set();
+            let onlyFavor = false;
+            filters.forEach((el) => {
+                if(el.type === "type") 
+                    typeF[el.key] = el.value;
+                else if(el.type === "contentrating")
+                    typeF[el.key] = el.value;
+                else if(el.type === "favor") 
+                    onlyFavor = el.value;
+                else if(el.type === "tags") {
+                    if(!el.value) noTags.add(el.key)
+                }
+            });
+
+            const checkType = (el) => Boolean(typeF[el.type]);
+            const checkContentrating = (el) => Boolean(typeF[el.contentrating]);
+            const checkFavor = (el) => onlyFavor?el.favor:true;
+            const checkNoTags = (el) => {
+                for(let i=0;i < el.tags.length;i++) {
+                    if(noTags.has(el.tags[i])) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+            return (el) => {
+                return checkType(el) && checkFavor(el) && checkContentrating(el) && checkNoTags(el);
+            }
+        }
     }
 
 

@@ -14,10 +14,12 @@ Item {
         anchors.fill: parent
         Text {
             Layout.alignment: Qt.AlignCenter
-            Layout.preferredWidth: infoItem.width / 2
-            text: "Shop id: " + infoItem.wid +
-            "\nType: " + infoItem.type +
-            "\nMessage: " + infoItem.info
+            Layout.preferredWidth: infoItem.width * 0.7
+            text: [
+            `Shop id: ${infoItem.wid}`,
+            `Type: ${infoItem.type}`,
+            `Message: ${infoItem.info}`
+            ].join("\n");
             color: "yellow"
             wrapMode: Text.Wrap
             elide: Text.ElideRight 
@@ -31,6 +33,5 @@ Item {
     function play(){}
 
     function pause(){}
-    function getMouseTarget() {
-    }
+    function getMouseTarget() {}
 }

@@ -162,17 +162,47 @@ Rectangle {
         onTriggered: background.autoPause();
     }
     // main  
-    Loader { 
+    Item { 
         id: backendLoader
         anchors.fill: parent
+        property var item: null
+
+        signal loaded
+
         Component.onCompleted: {
             if(background.hasLib) {
-                backendLoader.loaded.connect(backendLoader.changeMouseTarget);
-                background.mouseHookerChanged.connect(backendLoader.changeMouseTarget);
+                this.loaded.connect(this.changeMouseTarget);
+                background.mouseHookerChanged.connect(this.changeMouseTarget);
             }
         }
+        Component.onDestruction: {
+            if(this.item) this.item.destroy();
+        }
+        function load(url, properties) {
+            const com = Qt.createComponent(url);
+            if(com.status === Component.Ready) {
+                if(this.item) this.item.destroy(100);
+                this.item = null;
+                try {
+                    this.item = com.createObject(this, properties);
+                } catch(e) {
+                    this.loadInfoShow(e);
+                    return;
+                }
+                this.loaded();
+            } else if(com.status == Component.Error) {
+                this.loadInfoShow(com.errorString());
+            }
+        }
+        function loadInfoShow(info) {
+            this.load("backend/InfoShow.qml", {
+                wid: background.workshopid,
+                type: background.type,
+                info: info
+            });
+        }
         function changeMouseTarget() {
-           if(backendLoader.status == Loader.Ready && background.mouseHooker) {
+           if(backendLoader.item && background.mouseHooker) {
                 let re = backendLoader.item.getMouseTarget();
                 if(!re)
                     re = null;
@@ -180,19 +210,14 @@ Rectangle {
            }
         }
     }
-    
+
     function loadBackend() {
         let qmlsource = "";
-        let properties = {
-            wid: background.workshopid,
-            type: background.type
-        };
+        let properties = {};
 
         // check source
         if(!background.source || background.source == "") {
-            qmlsource = "backend/InfoShow.qml";
-            properties["info"] = "Source is empty. The config may be broken.";
-            backendLoader.setSource(qmlsource, properties);
+            backendLoader.loadInfoShow("Source is empty. The config may be broken.");
             return;
         }
         // choose backend
@@ -212,17 +237,16 @@ Rectangle {
                     qmlsource = "backend/Scene.qml";
                     properties = {"assets": Common.getAssetsPath(steamlibrary)};
                 } else {
-                    qmlsource = "backend/InfoShow.qml";
-                    properties["info"] = "Plugin lib not found. To support scene, please compile and install it.";
+                    backendLoader.loadInfoShow("Plugin lib not found. To support scene, please compile and install it.");
+                    return; 
                 }
                 break;
             default:
-                qmlsource = "backend/InfoShow.qml";
-                properties["info"] = "Not supported wallpaper type";
-                break
+                backendLoader.loadInfoShow("Not supported wallpaper type");
+                return; 
         }
         console.log("load backend: "+qmlsource);
-        backendLoader.setSource(qmlsource, properties);
+        backendLoader.load(qmlsource, properties);
         sourceCallback();
     }
    
