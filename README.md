@@ -114,7 +114,7 @@ Requires *Wallpaper Engine* installed for assets(shaders,pictures...)
 - [ ] Scenescript  
 
 ### Web
-Basic web apis are supported, but the audio api does not send data at now.  
+Basic web apis are supported, but the audio api does not send data for now.  
 #### no webgl
 WebEngineView in plasmashell can't init opengl.  
 Some wallpaper using webgl may not work, and performance may be bad.   
