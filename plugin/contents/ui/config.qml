@@ -398,6 +398,13 @@ ColumnLayout {
                 }
                 RowLayout {
                     enabled: cfg_RandomizeWallpaper
+                    ToolTip.visible: randomMouse.containsMouse
+                    ToolTip.text: qsTr("randomize wallpapers showing in the Wallpaper page")
+                    MouseArea {
+                        id: randomMouse
+                        anchors.fill: parent
+                        hoverEnabled: true
+                    }
                     Label { id:heightpicker; text: " every " }
                     SpinBox {
                         id: randomSpin
@@ -409,14 +416,6 @@ ColumnLayout {
                     }
                     Label { text: " min" }
                 }
-                /*
-                ToolTip.visible: randomMouse.containsMouse
-                ToolTip.text: qsTr("randomize wallpapers showing in the Wallpaper page")
-                MouseArea {
-                    id: randomMouse
-                    anchors.fill: parent
-                    hoverEnabled: true
-                }*/
             }
             CheckBox{
                 visible: libcheck.wallpaper
@@ -429,6 +428,13 @@ ColumnLayout {
                 Label {
                     Layout.preferredWidth: font.pixelSize * 2
                     text: sliderFps.value.toString()
+                    ToolTip.visible: fpsMouse.containsMouse
+                    ToolTip.text: qsTr("Control fps on scene wallpaper")
+                    MouseArea {
+                        id: fpsMouse
+                        anchors.fill: parent
+                        hoverEnabled: true
+                    }
                 }
                 Slider {
                     id: sliderFps
@@ -438,14 +444,6 @@ ColumnLayout {
                     stepSize: 1.0
                     snapMode: Slider.SnapOnRelease
                 }
-                /*
-                ToolTip.visible: fpsMouse.containsMouse
-                ToolTip.text: qsTr("Control fps on scene wallpaper")
-                MouseArea {
-                    id: fpsMouse
-                    anchors.fill: parent
-                    hoverEnabled: true
-                }*/
             }
             RowLayout {
                 Kirigami.FormData.label:  "Volume:"
