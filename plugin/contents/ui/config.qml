@@ -90,10 +90,10 @@ ColumnLayout {
         id: bar
         //currentTab
         PlasmaComponents3.TabButton {
-            text: qsTr("Wallpaper")
+            text: qsTr("Wallpapers")
         }
         PlasmaComponents3.TabButton {
-            text: qsTr("Setting")
+            text: qsTr("Settings")
         }
         PlasmaComponents3.TabButton {
             text: qsTr("About")
@@ -382,7 +382,7 @@ ColumnLayout {
                     Layout.preferredWidth: parent.lwidth
                     model: [
                         {
-                            text: "Keep Aspect Radio",
+                            text: "Keep Aspect Ratio",
                             value: Common.DisplayMode.Aspect
                         },
                         {
@@ -529,18 +529,18 @@ ColumnLayout {
                 property int lwidth: font.pixelSize * 12
                 Label {
                     Layout.alignment: Qt.AlignLeft | Qt.AlignTop
-                    text: "    usage: "
+                    text: "Requirements: "
                 }
                 Label {
                     Layout.preferredWidth: aboutTab.width * 0.6
                     text: `
                         <ol>
-                        <li><i>wallpaper engine</i> installed by steam</li>
-                        <li>subscribe wallpapers on workshop</li>
-                        <li>select <i>steamlibrary</i> folder in plugin
+                        <li><i>Wallpaper Engine</i> installed on Steam</li>
+                        <li>Subscribe to some wallpapers on the Workshop</li>
+                        <li>Select the <i>steamlibrary</i> folder on the Wallpapers tab
                             <ul>
-                                <li><i>steamlibrary</i> which contains <i>steamapps<i/> folder</li>
-                                <li><i>wallpaper engine</i> installed on this <i>steamlibrary<i/></li>
+                                <li>The <i>steamlibrary</i> which contains the <i>steamapps<i/> folder</li>
+                                <li><i>Wallpaper Engine</i> needs to be installed in this folder</li>
                             </ul>
                         </li>
                         </ol>
@@ -550,7 +550,7 @@ ColumnLayout {
                 }
                 Label {
                     Layout.alignment: Qt.AlignLeft | Qt.AlignTop
-                    text: "fix crash: "
+                    text: "Fix crashes: "
                     visible: libcheck.wallpaper
                 }
                 PlasmaComponents3.TextArea {
@@ -558,7 +558,7 @@ ColumnLayout {
                     text: `
                         <ol>
                         <li>Remove <i>WallpaperFilePath</i> line in <b>~/.config/plasma-org.kde.plasma.desktop-appletsrc</b></li>
-                        <li>Restart kde</li>
+                        <li>Restart KDE</li>
                         </ol>
                     `
                     readOnly: true
@@ -570,7 +570,7 @@ ColumnLayout {
                 }
                 Label {
                     Layout.alignment: Qt.AlignLeft | Qt.AlignTop
-                    text: "lib check: "
+                    text: "Lib check: "
                 }
                 ListView {
                     Layout.alignment: Qt.AlignLeft | Qt.AlignTop
