@@ -12,9 +12,9 @@ Item {
     property bool enabled: true
 
     property var initItemOp: null
-    property var _initItemOp: initItemOp ?? function(){ }
+    property var _initItemOp: Boolean(initItemOp) ? initItemOp : function(){ }
     property var readfile: null 
-    property var _readfile: readfile ?? function(){ return Promise.reject("read file func not available"); }
+    property var _readfile: Boolean(readfile) ? readfile : function(){ return Promise.reject("read file func not available"); }
 
     signal modelStartSync
     signal modelRefreshed
