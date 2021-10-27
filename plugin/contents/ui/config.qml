@@ -424,7 +424,7 @@ ColumnLayout {
             }
             RowLayout {
                 Kirigami.FormData.label:  "Fps:"
-                Layout.maximumWidth: parent.lwidth
+                Layout.preferredWidth: displayMode.width
                 Label {
                     Layout.preferredWidth: font.pixelSize * 2
                     text: sliderFps.value.toString()
@@ -438,7 +438,7 @@ ColumnLayout {
                 }
                 Slider {
                     id: sliderFps
-                    Layout.preferredWidth: displayMode.width * 0.9
+                    Layout.fillWidth: true
                     from: 5
                     to: 60
                     stepSize: 1.0
@@ -448,13 +448,14 @@ ColumnLayout {
             RowLayout {
                 Kirigami.FormData.label:  "Volume:"
                 visible: !cfg_MuteAudio
+                Layout.preferredWidth: displayMode.width
                 Label {
                     Layout.preferredWidth: font.pixelSize * 2
                     text: sliderVol.value.toString()
                 }
                 Slider {
                     id: sliderVol
-                    Layout.preferredWidth: displayMode.width * 0.9
+                    Layout.fillWidth: true
                     from: 0
                     to: 100
                     stepSize: 5.0
