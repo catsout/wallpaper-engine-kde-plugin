@@ -494,8 +494,12 @@ ColumnLayout {
 
             Label {
                 Layout.fillWidth: true
-                Kirigami.FormData.labelAlignment: Qt.AlignTop
-                Kirigami.FormData.label: "Requirements:"
+                Kirigami.FormData.label: {
+                    Kirigami.FormData.label = "Requirements:";
+                    if(Kirigami.FormData.labelAlignment !== undefined) 
+                        Kirigami.FormData.labelAlignment = Qt.AlignTop;
+                }
+
                 text: `
                     <ol>
                     <li><i>Wallpaper Engine</i> installed on Steam</li>
@@ -513,8 +517,11 @@ ColumnLayout {
             }
             PlasmaComponents3.TextArea {
                 Layout.fillWidth: true
-                Kirigami.FormData.label: "Fix crashes:"
-                Kirigami.FormData.labelAlignment: Qt.AlignTop
+                Kirigami.FormData.label: {
+                    Kirigami.FormData.label = "Fix crashes:";
+                    if(Kirigami.FormData.labelAlignment !== undefined)
+                        Kirigami.FormData.labelAlignment = Qt.AlignTop;
+                }
                 implicitWidth: 0
                 text: `
                     <ol>
@@ -531,8 +538,11 @@ ColumnLayout {
             }
             ListView {
                 Layout.fillWidth: true
-                Kirigami.FormData.label: "Lib check:"
-                Kirigami.FormData.labelAlignment: Qt.AlignTop
+                Kirigami.FormData.label: {
+                    Kirigami.FormData.label = "Lib check:";
+                    if(Kirigami.FormData.labelAlignment !== undefined)
+                        Kirigami.FormData.labelAlignment = Qt.AlignTop;
+                }
                 Layout.preferredHeight: 0
                 implicitHeight: (font.pixelSize * 2) * modelraw.length
                 model: ListModel {}

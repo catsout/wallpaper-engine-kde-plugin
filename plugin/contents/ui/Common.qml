@@ -245,7 +245,7 @@ QtObject {
 
     function listProperty(item) {
         for (var p in item)
-            console.log(p + ": " + item[p]);
+            console.log(p, ":", item[p]);
     }
     
     function urlNative(url) {
