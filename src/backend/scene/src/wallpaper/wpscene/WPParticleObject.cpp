@@ -9,7 +9,7 @@ bool ParticleRender::FromJson(const nlohmann::json& json) {
     GET_JSON_NAME_VALUE(json, "name", name);
     if(name == "spritetrail") {
         GET_JSON_NAME_VALUE_NOWARN(json, "length", length);
-        GET_JSON_NAME_VALUE_NOWARN(json, "maxlengh", maxlength);
+        GET_JSON_NAME_VALUE_NOWARN(json, "maxlength", maxlength);
     }
     return true;
 }
@@ -23,6 +23,7 @@ bool Emitter::FromJson(const nlohmann::json& json) {
     GET_JSON_NAME_VALUE_NOWARN(json, "directions", directions);
     GET_JSON_NAME_VALUE_NOWARN(json, "origin", origin);
     GET_JSON_NAME_VALUE_NOWARN(json, "sign", sign);
+    GET_JSON_NAME_VALUE_NOWARN(json, "audioprocessingmode", audioprocessingmode);
     std::transform(sign.begin(), sign.end(), sign.begin(), [](int32_t v) {
         if(v != 0)
             return v / std::abs(v);

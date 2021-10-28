@@ -34,6 +34,7 @@ public:
 	std::array<float,3> distancemin {0.0f, 0.0f, 0.0f};
     std::array<float,3> origin {0, 0, 0};
     std::array<int32_t,3> sign {0, 0, 0};
+    uint32_t audioprocessingmode {0};
 	int32_t id;
 	std::string name;
 	float rate {5.0f};

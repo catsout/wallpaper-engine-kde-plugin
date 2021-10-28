@@ -349,6 +349,31 @@ void LoadAlignment(SceneNode& node, std::string_view align, Vector2f size) {
 }
 
 
+void LoadConstvalue(SceneMaterial& material, const wpscene::WPMaterial& wpmat, const WPShaderInfo& info) {
+	// load glname from alias and load to constvalue
+	for(const auto& cs:wpmat.constantshadervalues) {
+		const auto& name = cs.first;
+		const std::vector<float>& value = cs.second;
+		std::string glname;
+		if(info.alias.count(name) != 0) {
+			glname = info.alias.at(name);
+		} else {
+			for(const auto& el:info.alias) {
+				if(el.second.substr(2) == name) {
+					glname = el.second;
+					break;
+				}
+			}
+		}
+		if(glname.empty()) {
+			LOG_ERROR("ShaderValue: %s not found in glsl", name.c_str());
+		} else {
+			material.customShader.constValues[glname] = {glname, value}; 
+		}
+	}
+}
+
+
 std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf, fs::VFS& vfs, audio::SoundManager& sm) {
 	nlohmann::json json;
 	if(!PARSE_JSON(buf, json)) 
@@ -751,26 +776,7 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf, fs::VFS& vfs
 						LoadMaterial(vfs, wpmat, upScene.get(), spEffNode.get(), &material, &svData, &wpEffShaderInfo);
 
 						// load glname from alias and load to constvalue
-						for(const auto& cs:wpmat.constantshadervalues) {
-							const auto& name = cs.first;
-							const std::vector<float>& value = cs.second;
-							std::string glname;
-							if(wpEffShaderInfo.alias.count(name) != 0) {
-								glname = wpEffShaderInfo.alias.at(name);
-							} else {
-								for(const auto& el:wpEffShaderInfo.alias) {
-									if(el.second.substr(2) == name) {
-										glname = el.second;
-										break;
-									}
-								}
-							}
-							if(glname.empty()) {
-								LOG_ERROR("ShaderValue: %s not found in glsl", name.c_str());
-							} else {
-								material.customShader.constValues[glname] = {glname, value}; 
-							}
-						}
+						LoadConstvalue(material, wpmat, wpEffShaderInfo);
 						auto spMesh = std::make_shared<SceneMesh>();
 						auto& mesh = *spMesh;
 						// the last effect and last material
@@ -837,6 +843,7 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf, fs::VFS& vfs
 			}
 
 			LoadMaterial(vfs, wppartobj.material, upScene.get(), spNode.get(), &material, &svData, &shaderInfo);
+			LoadConstvalue(material, wppartobj.material, shaderInfo);
 			auto spMesh = std::make_shared<SceneMesh>(true);
 			auto& mesh = *spMesh;
 			uint32_t maxcount = wppartobj.particleObj.maxcount;
