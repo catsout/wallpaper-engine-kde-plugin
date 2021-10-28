@@ -400,12 +400,15 @@ ColumnLayout {
                     enabled: cfg_RandomizeWallpaper
                     ToolTip.visible: randomMouse.containsMouse
                     ToolTip.text: qsTr("randomize wallpapers showing in the Wallpaper page")
-                    MouseArea {
-                        id: randomMouse
-                        anchors.fill: parent
-                        hoverEnabled: true
+                    Label { 
+                        id:heightpicker
+                        text: " every " 
+                        MouseArea {
+                            id: randomMouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                        }
                     }
-                    Label { id:heightpicker; text: " every " }
                     SpinBox {
                         id: randomSpin
                         width: font.pixelSize * 4
