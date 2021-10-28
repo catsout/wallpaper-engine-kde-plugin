@@ -191,13 +191,12 @@ ParticleInitOp WPParticleParser::genOverrideInitOp(const wpscene::ParticleInstan
 		}
 	};
 }
-
-float FadeValueChange(float life, float start, float end, float startValue, float endValue) {
+double FadeValueChange(float life, float start, float end, float startValue, float endValue) noexcept {
 	if(life <= start) return startValue;
 	else if(life > end) return endValue;
 	else {
 		double pass = (life - start) / (end - start);
-		return startValue + ((endValue - startValue) * pass);
+		return algorism::lerp(pass, startValue, endValue);
 	}
 }
 
@@ -216,13 +215,8 @@ struct ValueChange {
 		return v;
 	}
 };
-float FadeValueChange(float life, const ValueChange& v) {
-	if(life <= v.starttime) return v.startvalue;
-	else if(life > v.endtime) return v.endvalue;
-	else {
-		float pass = (life - v.starttime) / (v.endtime - v.starttime);
-		return v.startvalue + ((v.endvalue - v.startvalue) * pass);
-	}
+double FadeValueChange(float life, const ValueChange& v) noexcept {
+	return FadeValueChange(life, v.starttime, v.endtime, v.startvalue, v.endvalue);
 }
 
 struct VecChange {
@@ -277,11 +271,11 @@ struct FrequencyValue {
 			fv.storage[index].phase = GetRandomIn(fv.phasemin, fv.phasemax, rf());
 		}
 	}
-	static double GetScale(const FrequencyValue& fv, uint32_t index, double timePass, double slow=5.0f) {
+	static double GetScale(const FrequencyValue& fv, uint32_t index, double timePass, double slow=4.0f) {
 		auto t = 1.0f * slow / fv.storage.at(index).frequency;
 		auto phase = fv.storage.at(index).phase;
 		auto value = std::sin(timePass * 2.0f * M_PI / t + phase) + 1.0f;
-		return value*(fv.scalemax-fv.scalemin)*0.5f + fv.scalemin;
+		return algorism::lerp(value*0.5f, fv.scalemin, fv.scalemax);
 	}
 };
 
@@ -337,7 +331,7 @@ ParticleOperatorOp WPParticleParser::genParticleOperatorOp(const nlohmann::json&
     		GET_JSON_NAME_VALUE_NOWARN(wpj, "fadeouttime", fadeouttime);
 			return [fadeintime,fadeouttime](Particle& p, uint32_t, float life, double t){
 				if(life <= fadeintime) PM::MutiplyAlpha(p, FadeValueChange(life, 0, fadeintime, 0, 1.0f));
-				else if(life > fadeouttime) PM::MutiplyAlpha(p, FadeValueChange(life, fadeouttime, 1.0f, 1.0f, 0));
+				else if(life > fadeouttime) PM::MutiplyAlpha(p, 1.0f - FadeValueChange(life, fadeouttime, 1.0f, 0, 1.0f));
 			};
 		} else if(name == "sizechange") {
 			auto vc = ValueChange::ReadFromJson(wpj);
