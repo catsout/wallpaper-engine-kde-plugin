@@ -41,6 +41,26 @@ ColumnLayout {
     property var customConf: {
         customConf = Common.loadCustomConf(cfg_CustomConf);
     }
+
+    property var iconSizes: {
+        if(PlasmaCore.Units) {
+            iconSizes = PlasmaCore.Units.iconSizes;
+        } else {
+            iconSizes = {
+                large: 48
+            }
+        }
+    }
+    property var themeWidth: {
+        if(PlasmaCore.Theme) {
+            themeWidth = PlasmaCore.Theme.mSize(theme.defaultFont).width;
+        } else if(theme) {
+            themeWidth = theme.mSize(theme.defaultFont).width;
+        } else {
+            themeWidth = font.pixelSize;
+        }
+    }
+
     property var libcheck: ({
         wallpaper: Common.checklib_wallpaper(root),
         folderlist: Common.checklib_folderlist(root),
@@ -247,7 +267,7 @@ ColumnLayout {
                             anchors.fill: parent
                             QIconItem {
                                 anchors.centerIn: parent
-                                width: PlasmaCore.Units.iconSizes.large
+                                width: root.iconSizes.large
                                 height: width
                                 icon: "view-preview"
                                 visible: !imgPre.visible
@@ -345,7 +365,7 @@ ColumnLayout {
             twinFormLayouts: parentLayout
             ComboBox {
                 Kirigami.FormData.label: "Pause:"
-                implicitWidth: PlasmaCore.Theme.mSize(PlasmaCore.Theme.defaultFont).width * 24
+                implicitWidth: themeWidth * 24
                 id: pauseMode
                 model: [
                     {
@@ -368,7 +388,7 @@ ColumnLayout {
             ComboBox {
                 id: displayMode
                 Kirigami.FormData.label: "Display:"
-                implicitWidth: PlasmaCore.Theme.mSize(PlasmaCore.Theme.defaultFont).width * 24
+                implicitWidth: themeWidth * 24
                 model: [
                     {
                         text: "Keep Aspect Ratio",
