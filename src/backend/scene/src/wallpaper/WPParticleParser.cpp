@@ -388,7 +388,7 @@ ParticleOperatorOp WPParticleParser::genParticleOperatorOp(const nlohmann::json&
 				double speed = GetRandomIn(tur.speedmin, tur.speedmax, rf());
 				double phase = GetRandomIn(tur.phasemin, tur.phasemax, rf());
 				Vector3d pos = PM::GetPos(p).cast<double>();
-				Vector3d result = speed * algorism::CurlNoise(pos/tur.timescale/10.0f);
+				Vector3d result = speed * algorism::CurlNoise(pos/tur.timescale/2.0f);
 				result[0] *= tur.mask[0]; 
 				result[1] *= tur.mask[1]; 
 				result[2] *= tur.mask[2]; 

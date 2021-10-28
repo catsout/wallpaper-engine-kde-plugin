@@ -569,6 +569,7 @@ std::unique_ptr<Scene> WPSceneParser::Parse(const std::string& buf, fs::VFS& vfs
 
 				shaderInfo.baseConstSvs = baseConstSvs;
 				LoadMaterial(vfs, wpimgobj.material, upScene.get(), spImgNode.get(), &material, &svData, &shaderInfo);
+				LoadConstvalue(material, wpimgobj.material, shaderInfo);
 			}
 			
 			for(const auto& cs:wpimgobj.material.constantshadervalues) {

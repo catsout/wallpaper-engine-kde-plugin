@@ -22,20 +22,28 @@ namespace  algorism {
 	}
 
 
-	inline std::array<double, 3> GenSphere(const std::function<float()>& random) {
+	inline std::array<double, 3> GenSphere(const std::function<float()>& random) noexcept {
 		double x1,x2;
 		double m;
-		while(true) {
+		do {
 			x1 = 1.0f - 2.0f*random();
 			x2 = 1.0f - 2.0f*random();
 			m = x1*x1 + x2*x2;
-			if(m < 1.0f) break;
-		}
-	
+		} while(m > 1.0f);
 		return {
 			2.0f*x1*std::sqrt(1.0f-m),
 			2.0f*x2*std::sqrt(1.0f-m),
 			1.0f-2.0f*m
+		};
+	}
+	inline std::array<double, 3> GenSphereHalf(const std::function<float()>& random) noexcept {
+		double z = 1.0f - 2.0f*random();
+		double r = std::sqrt(1 - std::pow(z, 2));
+		double d = 2*M_PI*(1.0f - 2.0f*random());
+		return {
+			r*std::cos(d),
+			r*std::sin(d),
+			z
 		};
 	}
 
