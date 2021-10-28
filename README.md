@@ -62,13 +62,11 @@ sudo make install
 ```
 
 ## Usage
-1. Use steam+proton or wine+steam
-2. Buy and install Wallpaper Engine(don't run it)
-3. Subscribe to some wallpapers on [workshop](https://steamcommunity.com/app/431960/workshop/)(or the WE app, if you can run it)  
-4. Let steam download the wallpapers.
-5. Install this plugin, and select the Steam library dir(where *Wallpaper Engine* is installed) in the plugin
-e.g `.local/share/Steam`
-6. Enjoy!
+1. *Wallpaper Engine* installed on Steam
+2. Subscribe to some wallpapers on the Workshop
+3. Select the *steamlibrary* folder on the Wallpapers tab of this plugin
+	- The *steamlibrary* which contains the *steamapps* folder
+	- *Wallpaper Engine* needs to be installed in this *steamlibrary*
 
 ### Restart KDE
 You need to restart KDE(re-log) after **updating the plugin** or **reinstalling the plugin lib**  
