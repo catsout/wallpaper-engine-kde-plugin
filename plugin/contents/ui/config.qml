@@ -32,6 +32,7 @@ ColumnLayout {
     property alias cfg_MuteAudio: muteAudio.checked
     property alias cfg_UseMpv: useMpv.checked
     property alias cfg_RandomizeWallpaper: randomizeWallpaper.checked
+    property alias cfg_MouseInput: mouseInput.checked
 
     property alias cfg_Fps: sliderFps.value
     property alias cfg_SwitchTimer: randomSpin.value
@@ -419,6 +420,11 @@ ColumnLayout {
                     }
                     Label { text: " min" }
                 }
+            }
+            CheckBox {
+                id: mouseInput
+                visible: libcheck.wallpaper
+                Kirigami.FormData.label: "Mouse input:"
             }
             CheckBox{
                 visible: libcheck.wallpaper

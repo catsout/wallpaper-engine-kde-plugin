@@ -16,6 +16,7 @@ Rectangle {
     property bool mute: wallpaper.configuration.MuteAudio
     property bool useMpv: wallpaper.configuration.UseMpv
     property bool randomizeWallpaper: wallpaper.configuration.RandomizeWallpaper
+    property bool mouseInput: wallpaper.configuration.MouseInput
 
     property int fps: wallpaper.configuration.Fps
     property int volume: wallpaper.configuration.Volume
@@ -47,6 +48,17 @@ Rectangle {
         return Common.getWorkshopDir(this.steamlibrary) + `/${this.workshopid}`;
     }
 
+    onMouseInputChanged: {
+        if(this.mouseInput) {
+            hookTimer.start();
+        }
+        else if(this.mouseHooker) {
+            this.mouseHooker.target = null;
+            this.mouseHooker.destroy;
+            this.mouseHooker = null;
+        }
+    }
+
     Timer {
         id: hookTimer
         running: true
@@ -55,8 +67,8 @@ Rectangle {
         property int tryTimes: 0
         onTriggered: {
             tryTimes++; 
-            if(tryTimes >= 10 || !background.hasLib)
-                return;
+            if(tryTimes >= 10 || !background.hasLib || !mouseInput) return;
+            if(background.mouseHooker) return;
             background.hookMouse();
         }
         Component.onCompleted: {
@@ -65,8 +77,11 @@ Rectangle {
     }
     signal hookMouse
     function hookMouseSlot() {
-        if(!background.doHookMouse())
+        if(!background.doHookMouse()) {
             hookTimer.start();
+        } else {
+            hookTimer.tryTimes = 0;
+        }
     }
     function doHookMouse() {
         if(background.Window) {
@@ -77,6 +92,7 @@ Rectangle {
             if(screenGrid === null)
                 return false;
             console.log(screenGrid);
+            if(background.mouseHooker) background.mouseHooker.destroy();
             background.mouseHooker = Qt.createQmlObject(`import QtQuick 2.12;
                     import com.github.catsout.wallpaperEngineKde 1.1
                     MouseGrabber {

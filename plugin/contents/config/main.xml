@@ -50,6 +50,10 @@
       <label>Use Mpv</label>
       <default>false</default>
     </entry>
+    <entry name="MouseInput" type="Bool">
+      <label>Mouse Input</label>
+      <default>true</default>
+    </entry>
     <entry name="Fps" type="Int">
       <label>Fps</label>
       <default>15</default>
