@@ -479,19 +479,16 @@ ColumnLayout {
                 Kirigami.FormData.label:  "Randomize:"
                 CheckBox{
                     id: randomizeWallpaper
+                    PlasmaCore.ToolTipArea {
+                        anchors.fill: parent
+                        subText: "randomize wallpapers showing in the Wallpaper page"
+                    }
                 }
                 RowLayout {
                     enabled: cfg_RandomizeWallpaper
-                    ToolTip.visible: randomMouse.containsMouse
-                    ToolTip.text: qsTr("randomize wallpapers showing in the Wallpaper page")
                     Label { 
                         id:heightpicker
                         text: " every " 
-                        MouseArea {
-                            id: randomMouse
-                            anchors.fill: parent
-                            hoverEnabled: true
-                        }
                     }
                     SpinBox {
                         id: randomSpin
@@ -520,13 +517,6 @@ ColumnLayout {
                 Label {
                     Layout.preferredWidth: font.pixelSize * 2
                     text: sliderFps.value.toString()
-                    ToolTip.visible: fpsMouse.containsMouse
-                    ToolTip.text: qsTr("Control fps on scene wallpaper")
-                    MouseArea {
-                        id: fpsMouse
-                        anchors.fill: parent
-                        hoverEnabled: true
-                    }
                 }
                 Slider {
                     id: sliderFps
@@ -535,6 +525,10 @@ ColumnLayout {
                     to: 60
                     stepSize: 1.0
                     snapMode: Slider.SnapOnRelease
+                    PlasmaCore.ToolTipArea {
+                        anchors.fill: parent
+                        subText: "Control fps on scene wallpaper"
+                    }
                 }
             }
             RowLayout {
