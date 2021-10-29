@@ -7,7 +7,7 @@ import "../utils.mjs" as Utils
 Item {
     id: webItem
     anchors.fill: parent
-    property bool hasLib: Common.checklib_wallpaper(webItem)
+    property bool hasLib: background.hasLib
     property int fps: background.fps
     property var readfile
 

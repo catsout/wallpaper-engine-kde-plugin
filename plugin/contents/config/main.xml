@@ -34,6 +34,10 @@
       <label>Video Pause mode</label>
       <default>0</default>
     </entry>
+	<entry name="SortMode" type="Int">
+      <label>Sort mode</label>
+      <default>0</default>
+    </entry>
 	<entry name="FilterMode" type="Int">
       <label>Filter mode</label>
       <default>0</default>

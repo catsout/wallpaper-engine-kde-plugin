@@ -9,6 +9,7 @@ Item {
     id: root
     property var workshopDirs
     property string filterStr
+    property int sortMode: Common.SortMode.Id
     property bool enabled: true
 
     property var initItemOp: null
@@ -70,6 +71,23 @@ Item {
         }
     }
 
+    function genSortCmp(mode) {
+        switch (mode) {
+          case Common.SortMode.Modified:
+            return function(a, b) {
+                return -(a.modified - b.modified);
+            }
+          case Common.SortMode.Name:
+            return function(a, b) {
+                return a.title<b.title ? -1 : 1;
+            }
+          case Common.SortMode.Id:
+          default:
+            return function(a, b) {
+                return a.workshopid<b.workshopid ? -1 : 1;
+            };
+        }
+    }
 
     Item {
         id: folderWorker
@@ -99,6 +117,7 @@ Item {
             new Promise((resolve, reject) => {
                 const filter = Common.filterModel.genFilter(filterstr);
                 const model = listModel;
+                data.sort(genSortCmp(sortMode));
                 model.clear();
                 data.forEach(function(el) {
                     if(filter(el))
@@ -113,6 +132,7 @@ Item {
         }
 
         Component.onCompleted: {
+            root.sortModeChanged.connect(root.filterStrChanged);
             root.filterStrChanged.connect(function() {
                 if(this.enabled) {
                     folderWorker.filterToList(this.model, this.filterStr, folderWorker.model)
@@ -155,6 +175,7 @@ Item {
                             v.workshopid = get(i,"fileName");
                             // use qurl to convert to file://
                             v.path = Qt.resolvedUrl(get(i,"filePath")).toString();
+                            v.modified = get(i, "fileModified");
                             root._initItemOp(v);
                             proxyModel.push(v);
                             if(i === 0) {

@@ -26,6 +26,7 @@ ColumnLayout {
     property string cfg_FilterStr
     property int  cfg_DisplayMode
     property int  cfg_PauseMode
+    property int  cfg_SortMode
     property alias cfg_Volume: sliderVol.value
     property alias cfg_FilterMode: comboxFilter.currentIndex
 
@@ -86,6 +87,7 @@ ColumnLayout {
                 WallpaperListModel {
                     workshopDirs: Common.getProjectDirs(cfg_SteamLibraryPath)
                     filterStr: cfg_FilterStr
+                    sortMode: cfg_SortMode
                     initItemOp: (item) => {
                         if(!root.customConf) return;
                         item.favor = root.customConf.favor.has(item.workshopid);
@@ -128,22 +130,19 @@ ColumnLayout {
         ColumnLayout {
             id: wpselsect
             Layout.fillWidth: true
-            Row {
+            RowLayout {
                 id: infoRow
                 Layout.alignment: Qt.AlignHCenter
                 spacing: 10
                 Label {
                     id: workshopidLabel
-                    anchors.verticalCenter: parent.verticalCenter
                     text: "Shopid: " + cfg_WallpaperWorkShopId
                 }
                 Label {
-                    anchors.verticalCenter: parent.verticalCenter
                     text: "Type: " + cfg_WallpaperType
                 }
                 Button {
                     id: wpFolderButton
-                    anchors.verticalCenter: parent.verticalCenter
                     implicitWidth: height
                     PlasmaCore.IconItem {
                         anchors.fill: parent
@@ -160,8 +159,7 @@ ColumnLayout {
                 }
                 ComboBox {
                     id: comboxFilter
-                    anchors.verticalCenter: parent.verticalCenter
-                    width: height * 1.5
+                    implicitWidth: height * 1.5
                     popup.width: font.pixelSize * 11
                     popup.height: font.pixelSize * 25
 
@@ -205,6 +203,71 @@ ColumnLayout {
                         }
                     }
                     
+                }
+                ComboBox {
+                    id: comboxSort
+                    Layout.preferredWidth: contentItem.implicitWidth + height
+                    popup.width: font.pixelSize * 18
+
+                    model: [
+                        {
+                            text: "Sort By Workshop Id",
+                            short: "Id",
+                            value: Common.SortMode.Id
+                        },
+                        {
+                            text: "Sort Alphabetically By Name",
+                            short: "Alphabetical",
+                            value: Common.SortMode.Name
+                        },
+                        {
+                            text: "Show Newest Modified First",
+                            short: "Modified",
+                            value: Common.SortMode.Modified
+                        }
+                    ]
+                    contentItem: RowLayout { 
+                        anchors.top: parent.top
+                        anchors.bottom: parent.bottom
+                        spacing: 0
+                        Item {
+                            Layout.fillHeight: true
+                            Layout.preferredWidth: height
+                            PlasmaCore.IconItem {
+                                anchors.fill: parent
+                                source: "view-sort-descending-symbolic"
+                            }
+                        }
+                        Label {
+                            Layout.fillHeight: true
+                            text: comboxSort.model[comboxSort.currentIndex].short
+                        }
+                        Item { Layout.fillWidth: true ; height: 1 }
+                    }
+                    ButtonGroup { id: sortGroup }
+                    delegate: ItemDelegate {
+                        width: comboxSort.popup.width
+                        contentItem: RowLayout {
+                            anchors.fill: parent
+                            anchors.leftMargin: 5
+                            PlasmaComponents3.RadioButton {
+                                Layout.fillWidth: true
+                                Layout.fillHeight: true
+                                text: modelData.text
+                                autoExclusive: true
+                                ButtonGroup.group: sortGroup
+                                onClicked:   {
+                                    comboxSort.currentIndex = index;
+                                    comboxSort.popup.close();
+                                    cfg_SortMode = Common.cbCurrentValue(comboxSort)
+                                }
+                                checked: {
+                                    checked = index == cfg_SortMode;
+                                }
+                            }
+                        }
+                    }
+                    Component.onCompleted: currentIndex = Common.cbIndexOfValue(this, cfg_SortMode)
                 }
             }
 
@@ -516,30 +579,32 @@ ColumnLayout {
         }
         Kirigami.FormLayout {
             Layout.fillWidth: true
-            twinFormLayouts: settingTab
-
-            Label {
+            twinFormLayouts: parentLayout
+            PlasmaComponents3.TextArea {
                 Layout.fillWidth: true
                 Kirigami.FormData.label: {
                     Kirigami.FormData.label = "Requirements:";
                     if(Kirigami.FormData.labelAlignment !== undefined) 
                         Kirigami.FormData.labelAlignment = Qt.AlignTop;
                 }
-
+                implicitWidth: 0
                 text: `
                     <ol>
                     <li><i>Wallpaper Engine</i> installed on Steam</li>
                     <li>Subscribe to some wallpapers on the Workshop</li>
-                    <li>Select the <i>steamlibrary</i> folder on the Wallpapers tab
+                    <li>Select the <i>steamlibrary</i> folder on the Wallpapers tab of this plugin
                         <ul>
                             <li>The <i>steamlibrary</i> which contains the <i>steamapps<i/> folder</li>
-                            <li><i>Wallpaper Engine</i> needs to be installed in this folder</li>
+                            <li><i>Wallpaper Engine</i> needs to be installed in this <i>steamlibrary</i></li>
                         </ul>
                     </li>
                     </ol>
                 `
                 wrapMode: Text.Wrap
                 textFormat: Text.RichText
+                readOnly: true
+                selectByMouse: false
+                background: Item {}
             }
             PlasmaComponents3.TextArea {
                 Layout.fillWidth: true
@@ -569,7 +634,6 @@ ColumnLayout {
                     if(Kirigami.FormData.labelAlignment !== undefined)
                         Kirigami.FormData.labelAlignment = Qt.AlignTop;
                 }
-                Layout.preferredHeight: 0
                 implicitHeight: (font.pixelSize * 2) * modelraw.length
                 model: ListModel {}
                 clip: false

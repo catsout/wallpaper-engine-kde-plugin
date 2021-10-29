@@ -13,6 +13,11 @@ QtObject {
         Crop,
         Scale
     }
+    enum SortMode {
+        Id,
+        Name,
+        Modified
+    }
 
     property var filterModel: ListModel {
         ListElement { text: "Favorite";     type:"favor";         key:"favor";         def: 0}
