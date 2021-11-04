@@ -8,7 +8,7 @@ import "utils.mjs" as Utils
 Item {
     id: root
     property var workshopDirs
-    property string filterStr
+    property string filterStr: ""
     property int sortMode: Common.SortMode.Id
     property bool enabled: true
 
@@ -130,15 +130,6 @@ Item {
                 root.modelRefreshed();
             });
         }
-
-        Component.onCompleted: {
-            root.sortModeChanged.connect(root.filterStrChanged);
-            root.filterStrChanged.connect(function() {
-                if(this.enabled) {
-                    folderWorker.filterToList(this.model, this.filterStr, folderWorker.model)
-                }
-            }.bind(root));
-        }
     }
     function refresh() {
         if(!root.enabled) return;
@@ -152,6 +143,13 @@ Item {
         });
     }
     Component.onCompleted: {
+        this.filterStrChanged.connect(function() {
+            if(root.enabled) {
+                folderWorker.filterToList(root.model, root.filterStr, folderWorker.model)
+            }
+        });
+        this.sortModeChanged.connect(this.filterStrChanged);
+        this.enabledChanged.connect(this.refresh.bind(this));
         this.refresh();
     }
     Component {

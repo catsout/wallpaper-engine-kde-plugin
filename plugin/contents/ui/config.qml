@@ -341,7 +341,7 @@ ColumnLayout {
                                 source: preview?path + "/" + preview:""
                                 sourceSize.width: parent.width
                                 sourceSize.height: parent.height
-                                fillMode: Image.Stretch
+                                fillMode: Image.PreserveAspectCrop//Image.Stretch
                                 cache: false
                                 asynchronous: true
                                 visible: Boolean(preview)
