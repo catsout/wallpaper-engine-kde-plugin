@@ -66,7 +66,7 @@ Rectangle {
         interval: 2000
         property int tryTimes: 0
         onTriggered: {
-            tryTimes++;
+            tryTimes++; 
             if(tryTimes >= 10 || !background.hasLib || !mouseInput) return;
             if(background.mouseHooker) return;
             background.hookMouse();
@@ -175,7 +175,7 @@ Rectangle {
     // As always autoplay for refresh lastframe, sourceChange need autoPause
     // need a time for delay, which is needed for refresh
     function sourceCallback() {
-        sourcePauseTimer.start();
+        sourcePauseTimer.start();   
     }
     Timer {
         id: sourcePauseTimer
@@ -184,8 +184,8 @@ Rectangle {
         interval: 200
         onTriggered: background.autoPause();
     }
-    // main
-    Item {
+    // main  
+    Item { 
         id: backendLoader
         anchors.fill: parent
         property var item: null
@@ -261,18 +261,18 @@ Rectangle {
                     properties = {"assets": Common.getAssetsPath(steamlibrary)};
                 } else {
                     backendLoader.loadInfoShow("Plugin lib not found. To support scene, please compile and install it.");
-                    return;
+                    return; 
                 }
                 break;
             default:
                 backendLoader.loadInfoShow("Not supported wallpaper type");
-                return;
+                return; 
         }
         console.log("load backend: "+qmlsource);
         backendLoader.load(qmlsource, properties);
         sourceCallback();
     }
-
+   
     function autoPause() {background.ok
                     ? backendLoader.item.play()
                     : backendLoader.item.pause()
@@ -280,7 +280,7 @@ Rectangle {
 
     Component.onCompleted: {
         // load first backend
-        loadBackend();
+        loadBackend(); 
 
         // background signal connect
         background.typeChanged.connect(loadBackend);
