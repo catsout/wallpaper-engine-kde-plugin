@@ -126,14 +126,7 @@ Rectangle {
         readfile: pyext.readfile
 
         function changeWallpaper(index) {
-            if(randomizeTimer.interval==1000){
-                randomizeTimer.interval=background.switchTimer * 1000 * 60; //Change back
-            }
-            if(this.model.count === 0) {
-                this.refresh();                 //Refresh
-                randomizeTimer.interval=1000;   //Wait for scan
-                return;
-            }
+            if(this.model.count === 0) return;
             const model = this.model.get(index);
             wallpaper.configuration.WallpaperWorkShopId = model.workshopid;
             wallpaper.configuration.WallpaperFilePath = model.path + "/" + model.file;
@@ -151,6 +144,16 @@ Rectangle {
         }
     }
 
+    // scan once
+    Timer {
+        id: initWallPaperTimer
+        running: true
+        interval: 10000
+        repeat: false   //run once
+        onTriggered: {
+            wpListModel.refresh();  //refresh to scan
+        }
+    }
 
     // lauch pause time to avoid freezing
     Timer {
