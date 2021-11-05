@@ -47,7 +47,9 @@ Item {
         listen: true
         property var socket: { status: WebSocket.Closed }
         property var backmsg: []
-        property var jrpc: new Jsonrpc.Jsonrpc(sendStr.bind(this), _createTimer);
+        property var jrpc: {
+            jrpc = new Jsonrpc.Jsonrpc(sendStr.bind(this), _createTimer);
+        }
 
         onClientConnected: {
             console.log("----python helper connected----")
