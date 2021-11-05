@@ -144,7 +144,6 @@ Rectangle {
         }
     }
 
-
     // lauch pause time to avoid freezing
     Timer {
         id: lauchPauseTimer

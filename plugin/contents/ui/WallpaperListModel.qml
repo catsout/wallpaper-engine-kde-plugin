@@ -214,4 +214,15 @@ Item {
             }
         }
     }
+    // scan once
+    Timer {
+        running: true
+        interval: 10000
+        repeat: false   //run once
+        onTriggered: {
+            if(wpListModel.model.count === 0)
+                wpListModel.refresh();  //refresh to scan
+        }
+    }
+
 }
