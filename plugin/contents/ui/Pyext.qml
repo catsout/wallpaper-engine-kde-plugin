@@ -53,14 +53,14 @@ Item {
             console.log("----python helper connected----")
             this.socket = webSocket;
             webSocket.onTextMessageReceived.connect((message) => {
-                this.jrpc.reserve(message);
+                server.jrpc.reserve(message);
             });
             webSocket.onStatusChanged.connect((status) => {
                 if(status != WebSocket.Open) {
-                    this.jrpc.rejectUnfinished();
+                    server.jrpc.rejectUnfinished();
                     console.log("----python helper disconnected----")
                 } else {
-                    this.dealBackmsg();
+                    server.dealBackmsg();
                 }
             });
             this.dealBackmsg();
