@@ -144,17 +144,6 @@ Rectangle {
         }
     }
 
-    // scan once
-    Timer {
-        id: initWallPaperTimer
-        running: true
-        interval: 10000
-        repeat: false   //run once
-        onTriggered: {
-            wpListModel.refresh();  //refresh to scan
-        }
-    }
-
     // lauch pause time to avoid freezing
     Timer {
         id: lauchPauseTimer
