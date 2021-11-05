@@ -150,6 +150,13 @@ Item {
         });
         this.sortModeChanged.connect(this.filterStrChanged);
         this.enabledChanged.connect(this.refresh.bind(this));
+
+        const fc = this.readfile;
+        this.readfileChanged.connect(function() {
+            if(fc === root.readfile) return;
+            root.refresh();
+            fc = root.readfile;
+        });
         this.refresh();
     }
     Component {
@@ -186,7 +193,7 @@ Item {
                         proxyModel.forEach((el) => {
                             // as no allSettled, catch any error
                             const p = root._readfile(Common.urlNative(el.path)+"/project.json").then(value => {
-                                    loadItemFromJson(value, el);
+                                    root.loadItemFromJson(value, el);
                                 }).catch(reason => console.error(reason));
                             plist.push(p);
                         });
