@@ -54,6 +54,8 @@ Jsonrpc.prototype.reserve = function(str) {
         else p.resolve(obj);
         this._pMap.delete(id);
     } else if (id === -1) {
-        console.log(error);
+        console.error(error);
+    } else {
+        console.error("received timeout result, id:", id);
     }
 }

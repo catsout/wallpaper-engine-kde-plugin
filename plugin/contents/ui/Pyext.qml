@@ -50,15 +50,17 @@ Item {
         property var jrpc: new Jsonrpc.Jsonrpc(sendStr.bind(this), _createTimer);
 
         onClientConnected: {
+            console.log("----python helper connected----")
             this.socket = webSocket;
             webSocket.onTextMessageReceived.connect((message) => {
-                this.jrpc.reserve(message);
+                server.jrpc.reserve(message);
             });
             webSocket.onStatusChanged.connect((status) => {
                 if(status != WebSocket.Open) {
-                    this.jrpc.rejectUnfinished();
+                    server.jrpc.rejectUnfinished();
+                    console.log("----python helper disconnected----")
                 } else {
-                    this.dealBackmsg();
+                    server.dealBackmsg();
                 }
             });
             this.dealBackmsg();
@@ -87,6 +89,8 @@ Item {
         onNewData: {
             _log += "\n" + data.stderr;
             _log += "\n" + data.stdout;
+            console.log(data.stderr);
+            console.log(data.stdout);
         }
     }
 }
