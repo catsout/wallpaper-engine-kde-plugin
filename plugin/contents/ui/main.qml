@@ -91,7 +91,7 @@ Rectangle {
             const screenGrid = Common.findItem(screenArea, "QQuickGridView");
             if(screenGrid === null)
                 return false;
-            console.log(screenGrid);
+            console.error(screenGrid);
             if(background.mouseHooker) background.mouseHooker.destroy();
             background.mouseHooker = Qt.createQmlObject(`import QtQuick 2.12;
                     import com.github.catsout.wallpaperEngineKde 1.1
@@ -260,7 +260,7 @@ Rectangle {
                 backendLoader.loadInfoShow("Not supported wallpaper type");
                 return; 
         }
-        console.log("load backend: "+qmlsource);
+        console.error("load backend: "+qmlsource);
         backendLoader.load(qmlsource, properties);
         sourceCallback();
     }

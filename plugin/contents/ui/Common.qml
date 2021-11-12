@@ -162,8 +162,8 @@ QtObject {
             parentItem);
 
         } catch (error) {
-            console.log("---check lib '"+libName+"' failed---");
-            console.log(error);
+            console.error("---check lib '"+libName+"' failed---");
+            console.error(error);
         }
         if(create){
             ok = true;
@@ -250,7 +250,7 @@ QtObject {
 
     function listProperty(item) {
         for (var p in item)
-            console.log(p, ":", item[p]);
+            console.error(p, ":", item[p]);
     }
     
     function urlNative(url) {

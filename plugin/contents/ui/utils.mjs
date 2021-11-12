@@ -28,7 +28,7 @@ export function parseJson(str) {
         obj_j = JSON.parse(str);
     } catch (e) {
         if (e instanceof SyntaxError) {
-            console.log(e.message);
+            console.error(e.message);
             obj_j = null;
         } else {
           throw e;  // re-throw the error unchanged

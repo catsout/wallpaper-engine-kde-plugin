@@ -52,7 +52,7 @@ Item {
         }
 
         onClientConnected: {
-            console.log("----python helper connected----")
+            console.error("----python helper connected----")
             this.socket = webSocket;
             webSocket.onTextMessageReceived.connect((message) => {
                 server.jrpc.reserve(message);
@@ -60,7 +60,7 @@ Item {
             webSocket.onStatusChanged.connect((status) => {
                 if(status != WebSocket.Open) {
                     server.jrpc.rejectUnfinished();
-                    console.log("----python helper disconnected----")
+                    console.error("----python helper disconnected----")
                 } else {
                     server.dealBackmsg();
                 }
@@ -91,8 +91,8 @@ Item {
         onNewData: {
             _log += "\n" + data.stderr;
             _log += "\n" + data.stdout;
-            console.log(data.stderr);
-            console.log(data.stdout);
+            console.error(data.stderr);
+            console.error(data.stdout);
         }
     }
 }

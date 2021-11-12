@@ -125,7 +125,7 @@ Item {
                 });
                 resolve();
             }).then(() => {
-                console.log(`filtered, filter: ${root.filterStr}, from ${this.model.length} to ${root.model.count}`);
+                console.error(`filtered, filter: ${root.filterStr}, from ${this.model.length} to ${root.model.count}`);
                 root.countNoFilter = this.model.length;
                 root.modelRefreshed();
             });
@@ -165,11 +165,11 @@ Item {
             property url requirFolder
             onStatusChanged: {
                 if(this.folder != requirFolder) { 
-                    console.log(`require: ${requirFolder}, but get: ${this.folder}`);
+                    console.error(`require: ${requirFolder}, but get: ${this.folder}`);
                     return;
                 }
                 if (root.enabled && this.status === FolderListModel.Ready) {
-                    console.log(`scan folder: ${this.folder}, found ${this.count} subdir`);
+                    console.error(`scan folder: ${this.folder}, found ${this.count} subdir`);
                     const proxyModel = []
                     new Promise((resolve, reject) => {
                         // seems qml's "for" is a function
@@ -184,7 +184,7 @@ Item {
                             root._initItemOp(v);
                             proxyModel.push(v);
                             if(i === 0) {
-                                console.log(`show the first: ${v.path}`)
+                                console.error(`show the first: ${v.path}`)
                             }
                         }
                         resolve();

@@ -128,7 +128,7 @@ Item {
         }
         onVirtualDesktopChanged: {
             if(wModel.logging)
-                console.log(this.virtualDesktop, ':', this.screenGeometry)
+                console.error(this.virtualDesktop, ':', this.screenGeometry)
             if(wModel.activity === activityInfo.currentActivity)
                 updateWindowsinfo();
         }
@@ -215,12 +215,12 @@ Item {
         if(logging) {
             const printW = (i) => {
                 const idx = tasksModel.makeModelIndex(i);
-                console.log(tasksModel.data(idx, TaskManager.AbstractTasksModel.AppName));
-                console.log(tasksModel.data(idx, TaskManager.AbstractTasksModel.Activities));
+                console.error(tasksModel.data(idx, TaskManager.AbstractTasksModel.AppName));
+                console.error(tasksModel.data(idx, TaskManager.AbstractTasksModel.Activities));
             }
-            console.log("--------Not Minimized--------");
+            console.error("--------Not Minimized--------");
             notMinWModel.forEach(printW);
-            console.log("---------Maximized----------");
+            console.error("---------Maximized----------");
             maxWModel.forEach(printW);
         }
         if(modePlay === Common.PauseMode.Any) {
