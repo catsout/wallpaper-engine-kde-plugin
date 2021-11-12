@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <functional>
 #include "../Utils/Logging.h"
+#include "../Utils/NoCopyMove.hpp"
 
 namespace wallpaper
 {
@@ -30,7 +31,7 @@ public:
 };
 std::unique_ptr<SoundStream> CreateSoundStream(std::shared_ptr<fs::IBinaryStream>, const SoundStream::Desc&);
 
-class SoundManager {
+class SoundManager : NoCopy,NoMove {
 public:
 	SoundManager();
 	~SoundManager();

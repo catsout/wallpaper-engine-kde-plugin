@@ -1,6 +1,7 @@
 #pragma once
 #include "Interface/IGraphicManager.h"
 #include "Fg/FrameGraph.h"
+#include "Utils/NoCopyMove.hpp"
 #include <unordered_map>
 #include <list>
 #include <string>

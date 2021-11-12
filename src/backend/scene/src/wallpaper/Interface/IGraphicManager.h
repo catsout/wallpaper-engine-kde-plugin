@@ -2,6 +2,7 @@
 #include "Handle.h"
 #include "Image.h"
 #include "Type.h"
+#include "Utils/NoCopyMove.hpp"
 
 namespace wallpaper
 {
@@ -27,12 +28,10 @@ struct HwRenderTargetHandle { uint32_t idx {0};
 };
 struct HwShaderHandle { uint32_t idx {0}; };
 
-class IGraphicManager {
+class IGraphicManager : NoMove,NoCopy {
 public:
 	IGraphicManager() = default;
 	virtual ~IGraphicManager() = default;
-	IGraphicManager(const IGraphicManager&) = delete;
-	IGraphicManager(IGraphicManager&&) = delete;
 
 	virtual bool Initialize() { return true; }
 	virtual bool Initialize(void *get_proc_address(const char*)) { return true; }

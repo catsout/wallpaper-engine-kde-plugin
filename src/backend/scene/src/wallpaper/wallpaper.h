@@ -7,15 +7,13 @@
 
 namespace wallpaper
 {
-class WallpaperGL
-{
+
+#include "Utils/NoCopyMove.hpp"
+
+class WallpaperGL : NoCopy,NoMove {
 public:
     WallpaperGL();
     ~WallpaperGL();
-	WallpaperGL(const WallpaperGL&) = delete;
-	WallpaperGL(WallpaperGL&&) = delete;
-	WallpaperGL& operator=(WallpaperGL&) = delete;
-	WallpaperGL& operator=(WallpaperGL&&) = delete;
 
 	bool Init(void *get_proc_address(const char *));
 

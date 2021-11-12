@@ -83,11 +83,11 @@ std::unique_ptr<SoundStream> wallpaper::audio::CreateSoundStream(std::shared_ptr
 
 
 
-class SoundManager::impl {
+class SoundManager::impl : NoCopy,NoMove {
 public:
 	impl():device() {};
-	~impl() {}
-	miniaudio::Device device;
+	~impl() = default;
+	miniaudio::Device device {};
 };
 
 SoundManager::SoundManager():pImpl(std::make_unique<impl>()) {

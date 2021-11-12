@@ -4,6 +4,7 @@
 #include <string>
 #include "Fs.h"
 #include "../Utils/Logging.h"
+#include "../Utils/NoCopyMove.hpp"
 
 namespace wallpaper
 {
@@ -15,7 +16,7 @@ namespace  fs
  * not resolve "." "..", empty dir name as this using full path match
  */
 
-class VFS {
+class VFS : NoCopy,NoMove {
 public:
 	struct MountedFs {
 		std::string name;
@@ -34,11 +35,6 @@ public:
 public:
 	VFS() = default;
 	~VFS() = default;
-	VFS(const VFS&) = delete;
-	VFS& operator=(const VFS&) = delete;
-	VFS(VFS&&) = default;
-	VFS& operator=(VFS&&) = default;
-
 
 	bool Mount(std::string_view mountpoint, std::unique_ptr<Fs> fs, std::string_view name="") {
 		if(!MountedFs::CheckMountPoint(mountpoint) || !fs) return false;

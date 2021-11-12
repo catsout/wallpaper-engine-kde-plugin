@@ -24,7 +24,7 @@ constexpr std::array<const char* const, 2> sceneEntries = {
 	"scene", "gifscene"
 };
 
-class WallpaperGL::impl {
+class WallpaperGL::impl : NoMove,NoCopy {
 public:
 	impl() = default;
 	~impl()	{ frameTimer.Stop(); }

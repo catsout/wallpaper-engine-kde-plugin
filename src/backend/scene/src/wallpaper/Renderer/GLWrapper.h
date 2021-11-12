@@ -381,7 +381,7 @@ inline void TextureFormat2GLFormat(TextureFormat texformat, GLint& internalForma
 }
 
 
-class GLWrapper{
+class GLWrapper : NoCopy,NoMove {
 public:
 	GLWrapper();
 	~GLWrapper() {

@@ -2,6 +2,7 @@
 #include "ParticleEmitter.h"
 #include "Scene/SceneMesh.h"
 #include "Interface/IParticleRawGener.h"
+#include "Utils/NoCopyMove.hpp"
 
 #include <memory>
 
@@ -14,7 +15,7 @@ enum class ParticleAnimationMode {
 
 class ParticleSystem;
 
-class ParticleSubSystem {
+class ParticleSubSystem : NoCopy,NoMove {
 public:
 	ParticleSubSystem(ParticleSystem& p, 
 		std::shared_ptr<SceneMesh> sm, 
@@ -22,8 +23,6 @@ public:
 		float rate, 
 		ParticleRawGenSpecOp specOp)
 		:parent(p),m_mesh(sm),m_maxcount(maxcount),m_rate(rate),m_genSpecOp(specOp) {};
-	ParticleSubSystem(ParticleSubSystem&) = delete;
-	ParticleSubSystem(ParticleSubSystem&&) = delete;
 
 	void Emitt();
 
@@ -45,12 +44,10 @@ private:
 };
 
 class Scene;
-class ParticleSystem {
+class ParticleSystem : NoCopy,NoMove {
 public:
 	ParticleSystem(Scene& scene):scene(scene) {};
 	~ParticleSystem() = default;
-	ParticleSystem(ParticleSystem&) = delete;
-	ParticleSystem(ParticleSystem&&) = delete;
 
 	void Emitt();
 

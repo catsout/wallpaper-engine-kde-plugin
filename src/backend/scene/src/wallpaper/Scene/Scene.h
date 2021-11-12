@@ -7,20 +7,17 @@
 #include "Interface/IShaderValueUpdater.h"
 #include "Interface/IImageParser.h"
 #include "Particle/ParticleSystem.h"
+#include "Utils/NoCopyMove.hpp"
 
 
 namespace wallpaper
 {
 
-class Scene {
+class Scene : NoCopy,NoMove {
 public:
 	Scene():paritileSys(*this),
 		sceneGraph(std::make_shared<SceneNode>()) {};
 	~Scene() = default;
-	Scene(const Scene&) = delete;
-	Scene& operator=(const Scene&) = delete;
-	Scene(Scene&&) = delete;
-	Scene& operator=(Scene&&) = delete;
 
 	std::unordered_map<std::string, SceneTexture> textures;
 	std::unordered_map<std::string, SceneRenderTarget> renderTargets;
