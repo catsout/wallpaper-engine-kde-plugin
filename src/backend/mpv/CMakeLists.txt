@@ -4,7 +4,7 @@ find_package(Qt5 COMPONENTS Gui Quick X11Extras REQUIRED)
 include_directories(${Qt5Gui_PRIVATE_INCLUDE_DIRS})
 
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(MPV QUIET mpv)
+pkg_check_modules(MPV REQUIRED mpv)
 
 set(CMAKE_AUTOMOC ON) 
 set(CMAKE_AUTORCC ON) 

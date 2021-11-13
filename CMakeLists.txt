@@ -10,7 +10,7 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     set(CMAKE_BUILD_TYPE "${DEFAULT_BUILD_TYPE}" CACHE STRING "Choose the type of build." FORCE)
 endif()
 
-find_program(QMAKE qmake)
+find_program(QMAKE NAMES qmake-qt5 qmake)
 if(${QMAKE} STREQUAL "QMAKE-NOTFOUND")
 	message(FATAL_ERROR "qmake not found, make sure you have it installed")
 endif()
