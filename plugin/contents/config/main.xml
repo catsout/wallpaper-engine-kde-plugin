@@ -64,7 +64,7 @@
     </entry>
     <entry name="SwitchTimer" type="Int">
       <label>Change timer (in minutes)</label>
-      <default>5</default>
+      <default>60</default>
     </entry>
     <entry name="Volume" type="Int">
       <label>Volume</label>
