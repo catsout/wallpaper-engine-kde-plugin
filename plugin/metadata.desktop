@@ -4,9 +4,11 @@ Name=Wallpaper Engine for Kde
 Type=Service
 Icon=preferences-desktop-wallpaper
 
-X-KDE-ServiceTypes=Plasma/Wallpaper
 X-Plasma-MainScript=ui/main.qml
+X-KDE-ServiceTypes=Plasma/Wallpaper
+X-KDE-ParentApp=org.kde.plasmashell
 X-KDE-PluginInfo-Name=com.github.casout.wallpaperEngineKde
-X-KDE-PluginInfo-EnabledByDefault=true
-X-KDE-PluginInfo-Version=3
-
+X-KDE-PluginInfo-Author=catsout
+X-KDE-PluginInfo-Category=
+X-KDE-PluginInfo-License=GPLv2+
+X-KDE-PluginInfo-Version=

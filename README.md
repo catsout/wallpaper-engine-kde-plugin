@@ -9,57 +9,52 @@ A wallpaper plugin integrating [wallpaper engine](https://store.steampowered.com
 - Support **scene(2d)**,**video**,**web** wallpaper types
 - Requires *Wallpaper Engine* installed on steam
 - Requires qt 5.13+ for playing video(no mpv), or mpv instead  
-- This plugin has(not required) a [lib](#plugin-lib) to be compiled, if you want any of the features below:
-  - scene wallpapers
-  - mpv video backend  
-  - mouse input  
-
-## Contents
-- [Install](#install)
-- [Usage](#usage)
-- [Support Status](#support-status)
-- [Acknowledgments](#acknowledgments)
-- [Preview](#preview)
 
 ## Install
-### Kde plugin
-#### Dependencies
-qt-labs-folderlistmodel  
-qml-module-qtwebchannel  
-qml-module-qtwebsockets  
-python3-websockets  
-#### Install kde plugin
-```sh
-# Install
-git clone https://github.com/catsout/wallpaper-engine-kde-plugin.git
-plasmapkg2 -i wallpaper-engine-kde-plugin/plugin
-
-# Update
-plasmapkg2 -u wallpaper-engine-kde-plugin/plugin
-
-# Uninstall
-plasmapkg2 -r wallpaper-engine-kde-plugin/plugin
-```
-
-### Plugin lib
 #### Dependencies
 Debian:  
 ```sh
-sudo apt install liblz4-dev qtbase5-private-dev qtbase5-dev qtdeclarative5-dev libqt5x11extras5-dev libmpv-dev  
+sudo apt install git cmake extra-cmake-modules libkf5package-dev libkf5plasma-dev \
+liblz4-dev libmpv-dev python3-websockets \
+qtbase5-dev qtbase5-private-dev qtdeclarative5-dev libqt5x11extras5-dev \
+qml-module-qt-labs-folderlistmodel qml-module-qtwebchannel qml-module-qtwebchannel
 ```  
 
-Arch:
+Fedora:  
 ```sh
-sudo pacman -S base-devel mpv qt5-declarative
+# Please add "RPM Fusion" repo first
+sudo dnf install git cmake extra-cmake-modules kf5-kpackage-devel kf5-plasma-devel \
+lz4-devel mpv-libs-devel python3-websockets \
+qt5-qtbase-devel qt5-qtbase-private-devel qt5-qtdeclarative-devel qt5-qtx11extras-devel \
+qt5-qtwebchannel-devel qt5-qtwebsockets-devel 
 ```
-#### Install plugin lib
+
+Arch:  
 ```sh
+sudo pacman -S git cmake extra-cmake-modules plasma-framework \
+base-devel mpv python-websockets qt5-declarative qt5-websockets qt5-webchannel
+```
+#### Build and Install
+```sh
+# Download source
+git clone https://github.com/catsout/wallpaper-engine-kde-plugin.git
 cd wallpaper-engine-kde-plugin
+
+# Configure
 mkdir build && cd build
-cmake ..
+cmake .. -DUSE_PLASMAPKG=ON
+
+# Build
 make
+
+# Install package (ignore if USE_PLASMAPKG=OFF for system wide installaiton)
+make install_pkg
+# install lib
 sudo make install
 ```
+#### Uninstall
+1. remove files that list in wallpaper-engine-kde-plugin/build/install_manifest.txt
+2. `plasmapkg2 -r ~/.local/share/plasma/wallpapers/com.github.catsout.wallpaperEngineKde`
 
 ## Usage
 1. *Wallpaper Engine* installed on Steam
@@ -69,7 +64,7 @@ sudo make install
 	- *Wallpaper Engine* needs to be installed in this *steamlibrary*
 
 ### Restart KDE
-You need to restart KDE(re-log) after **updating the plugin** or **reinstalling the plugin lib**  
+You need to restart KDE(re-login) after **reinstalling the plugin**  
 You can also try using: `kquitapp5 plasmashell && kstart5 plasmashell`  
 
 ## Support Status
