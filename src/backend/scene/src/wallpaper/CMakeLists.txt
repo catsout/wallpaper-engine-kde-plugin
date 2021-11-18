@@ -10,6 +10,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
 endif ()
 
 add_library(${PROJECT_NAME}
+	STATIC
 	wallpaper.cpp
 	Image.cpp
 	WPJson.cpp
@@ -48,11 +49,11 @@ add_library(${PROJECT_NAME}
 )
 set_property(TARGET ${PROJECT_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
 target_link_libraries(${PROJECT_NAME}
-    PUBLIC 
-		OpenGL::GL
-		${LZ4_LIBRARIES}
-		${CMAKE_THREAD_LIBS_INIT}
-		${CMAKE_DL_LIBS}
-		glad
+	PRIVATE
+	OpenGL::GL
+	${LZ4_LIBRARIES}
+	${CMAKE_THREAD_LIBS_INIT}
+	${CMAKE_DL_LIBS}
+	glad
 )
 target_include_directories(${PROJECT_NAME} PUBLIC .)

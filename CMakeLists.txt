@@ -28,7 +28,6 @@ endif()
 find_package(ECM REQUIRED NO_MODULE)
 set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} ${CMAKE_MODULE_PATH})
 include(KDEInstallDirs)
-include(KDECMakeSettings)
 find_package(KF5 ${KF5_MIN_VERSION} REQUIRED COMPONENTS
     Package
     Plasma

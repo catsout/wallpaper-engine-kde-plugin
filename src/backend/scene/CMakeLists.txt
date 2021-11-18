@@ -13,15 +13,17 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
 add_library(${PROJECT_NAME}
+	STATIC
 	src/SceneViewer.cpp
 	src/SceneViewer.h
 )
 target_link_libraries(${PROJECT_NAME}
-    PUBLIC 
-        Qt5::Quick
-        Qt5::Gui
-		Qt5::X11Extras
-		wallpaper
+	PRIVATE
+	Qt5::Quick
+	Qt5::Gui
+	Qt5::X11Extras
+	PUBLIC
+	wallpaper
 )
 target_include_directories(${PROJECT_NAME} PUBLIC src include)
 
@@ -33,10 +35,10 @@ add_executable(${PROJECT_NAME}-qml
 )
 target_link_libraries(${PROJECT_NAME}-qml
 	PUBLIC
-		Qt5::Quick
-		Qt5::Gui
-		Qt5::X11Extras
-		${PROJECT_NAME}
+	Qt5::Quick
+	Qt5::Gui
+	Qt5::X11Extras
+	${PROJECT_NAME}
 )
 
 set(CMAKE_AUTOMOC OFF) 

@@ -1,4 +1,4 @@
-find_package(Qt5 COMPONENTS Qml REQUIRED)
+find_package(Qt5 COMPONENTS Quick Qml REQUIRED)
 add_subdirectory(backend/mpv)
 add_subdirectory(backend/scene)
 
@@ -6,7 +6,8 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
-add_library(${PROJECT_NAME} SHARED
+add_library(${PROJECT_NAME}
+	SHARED
 	plugin.cpp
 	WPCommon.h
 	MouseGrabber.h
@@ -15,10 +16,11 @@ add_library(${PROJECT_NAME} SHARED
 )
 
 target_link_libraries(${PROJECT_NAME} 
-	PUBLIC 
-		Qt5::Qml 
-		mpvbackend
-		scenebackend
+	PRIVATE
+	Qt5::Quick
+	Qt5::Qml 
+	mpvbackend
+	scenebackend
 )
 
 # During plugin searching Qt will be looking for 'qmldir' file

@@ -11,15 +11,16 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON) 
 
 add_library(${PROJECT_NAME}
+	STATIC
 	mpvbackend.cpp  
 	mpvbackend.h  
 	qthelper.hpp
 )
 target_link_libraries(${PROJECT_NAME} 
-    PUBLIC 
-        Qt5::Quick
-        Qt5::Gui
-		Qt5::X11Extras
-		${MPV_LIBRARIES}
+	PRIVATE 
+    Qt5::Quick
+	Qt5::Gui
+	Qt5::X11Extras
+	${MPV_LIBRARIES}
 )
 target_include_directories(${PROJECT_NAME} PUBLIC .) #${INCLUDE_DIRECTORIES})
