@@ -8,7 +8,8 @@ A wallpaper plugin integrating [wallpaper engine](https://store.steampowered.com
   - Mouse long press (to enter panel edit mode) is broken on desktop.
 - Support **scene(2d)**,**video**,**web** wallpaper types
 - Requires *Wallpaper Engine* installed on steam
-- Requires qt 5.13+ for playing video(no mpv), or mpv instead  
+- Requires [CMake 3.16+](#dependencies)
+- Requires [qt 5.13+](#dependencies) for playing video(no mpv), or [mpv](#dependencies) instead  
 
 ## Install
 #### Dependencies
