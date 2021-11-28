@@ -110,7 +110,7 @@ ColumnLayout {
 
     PlasmaComponents3.TabBar {
         id: bar
-        implicitWidth: height * 15
+        implicitWidth: height * 7
         //currentTab
         PlasmaComponents3.TabButton {
             text: qsTr("Wallpapers")
