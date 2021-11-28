@@ -19,7 +19,7 @@ sudo apt install git cmake extra-cmake-modules gstreamer1.0-libav \
 libkf5package-dev libkf5plasma-dev \
 liblz4-dev libmpv-dev python3-websockets \
 qtbase5-dev qtbase5-private-dev qtdeclarative5-dev libqt5x11extras5-dev \
-qml-module-qt-labs-folderlistmodel qml-module-qtwebchannel qml-module-qtwebchannel
+qml-module-qt-labs-folderlistmodel qml-module-qtwebchannel qml-module-qtwebsockets
 ```  
 
 Fedora:  
