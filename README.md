@@ -15,7 +15,8 @@ A wallpaper plugin integrating [wallpaper engine](https://store.steampowered.com
 #### Dependencies
 Debian:  
 ```sh
-sudo apt install git cmake extra-cmake-modules libkf5package-dev libkf5plasma-dev \
+sudo apt install git cmake extra-cmake-modules gstreamer1.0-libav \
+libkf5package-dev libkf5plasma-dev \
 liblz4-dev libmpv-dev python3-websockets \
 qtbase5-dev qtbase5-private-dev qtdeclarative5-dev libqt5x11extras5-dev \
 qml-module-qt-labs-folderlistmodel qml-module-qtwebchannel qml-module-qtwebchannel
@@ -24,7 +25,8 @@ qml-module-qt-labs-folderlistmodel qml-module-qtwebchannel qml-module-qtwebchann
 Fedora:  
 ```sh
 # Please add "RPM Fusion" repo first
-sudo dnf install git cmake extra-cmake-modules kf5-kpackage-devel kf5-plasma-devel \
+sudo dnf install git cmake extra-cmake-modules gstreamer1-libav \
+kf5-kpackage-devel kf5-plasma-devel \
 lz4-devel mpv-libs-devel python3-websockets \
 qt5-qtbase-devel qt5-qtbase-private-devel qt5-qtdeclarative-devel qt5-qtx11extras-devel \
 qt5-qtwebchannel-devel qt5-qtwebsockets-devel 
@@ -32,7 +34,7 @@ qt5-qtwebchannel-devel qt5-qtwebsockets-devel
 
 Arch:  
 ```sh
-sudo pacman -S git cmake extra-cmake-modules plasma-framework \
+sudo pacman -S git cmake extra-cmake-modules plasma-framework gst-libav \
 base-devel mpv python-websockets qt5-declarative qt5-websockets qt5-webchannel
 ```
 #### Build and Install
