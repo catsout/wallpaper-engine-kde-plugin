@@ -110,14 +110,16 @@ ColumnLayout {
 
     PlasmaComponents3.TabBar {
         id: bar
-        //currentTab
         PlasmaComponents3.TabButton {
+            id: tabBut
             text: qsTr("Wallpapers")
         }
         PlasmaComponents3.TabButton {
+            width: tabBut.width
             text: qsTr("Settings")
         }
         PlasmaComponents3.TabButton {
+            width: tabBut.width
             text: qsTr("About")
         }
     }
