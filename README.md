@@ -15,20 +15,18 @@ A wallpaper plugin integrating [wallpaper engine](https://store.steampowered.com
 #### Dependencies
 Debian:  
 ```sh
-sudo apt install git cmake extra-cmake-modules gstreamer1.0-libav \
-libkf5package-dev libkf5plasma-dev \
+sudo apt install plasma-workspace-dev gstreamer1.0-libav \
 liblz4-dev libmpv-dev python3-websockets \
-qtbase5-dev qtbase5-private-dev qtdeclarative5-dev libqt5x11extras5-dev \
+qtbase5-private-dev libqt5x11extras5-dev \
 qml-module-qt-labs-folderlistmodel qml-module-qtwebchannel qml-module-qtwebsockets
 ```  
 
 Fedora:  
 ```sh
 # Please add "RPM Fusion" repo first
-sudo dnf install git cmake extra-cmake-modules gstreamer1-libav \
-kf5-kpackage-devel kf5-plasma-devel \
+sudo dnf install plasma-workspace-devel gstreamer1-libav \
 lz4-devel mpv-libs-devel python3-websockets \
-qt5-qtbase-devel qt5-qtbase-private-devel qt5-qtdeclarative-devel qt5-qtx11extras-devel \
+qt5-qtbase-private-devel qt5-qtx11extras-devel \
 qt5-qtwebchannel-devel qt5-qtwebsockets-devel 
 ```
 
