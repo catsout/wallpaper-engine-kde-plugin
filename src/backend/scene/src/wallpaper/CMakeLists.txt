@@ -9,6 +9,8 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
 	add_compile_definitions(DEBUG_OPENGL=1)
 endif ()
 
+add_subdirectory(Audio)
+
 add_library(${PROJECT_NAME}
 	STATIC
 	wallpaper.cpp
@@ -16,7 +18,6 @@ add_library(${PROJECT_NAME}
 	WPJson.cpp
 	WPPkgFs.cpp
 	Type.cpp
-	Audio/SoundManager.cpp
 	Utils/Logging.cpp
 	Utils/FpsCounter.cpp
 	Utils/FrameTimer.cpp
@@ -47,9 +48,13 @@ add_library(${PROJECT_NAME}
 	WPTexImageParser.cpp
 	WPSoundParser.cpp
 )
+
+set(InteralLib wpAudio)
+
 set_property(TARGET ${PROJECT_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
 target_link_libraries(${PROJECT_NAME}
 	PRIVATE
+	${InteralLib}
 	OpenGL::GL
 	${LZ4_LIBRARIES}
 	${CMAKE_THREAD_LIBS_INIT}

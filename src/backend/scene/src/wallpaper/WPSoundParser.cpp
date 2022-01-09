@@ -1,5 +1,5 @@
 #include "WPSoundParser.h"
-#include "Audio/SoundManager.h"
+#include <SoundManager.h>
 #include "Fs/VFS.h"
 #include "wpscene/WPSoundObject.h"
 #include "Utils/Logging.h"

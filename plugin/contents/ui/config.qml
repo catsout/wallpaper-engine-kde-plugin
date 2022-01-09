@@ -497,7 +497,7 @@ ColumnLayout {
                         width: font.pixelSize * 4
                         height: heightpicker.height
                         from: 1
-                        to: 120
+                        to: 60*24*30
                         stepSize: 1
                     }
                     Label { text: " min" }

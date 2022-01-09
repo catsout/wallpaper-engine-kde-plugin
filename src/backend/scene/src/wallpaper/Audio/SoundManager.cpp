@@ -1,5 +1,5 @@
 #include "SoundManager.h"
-#include "miniaudio-wrapper.hpp"
+#include "private/miniaudio-wrapper.hpp"
 #include "../Fs/IBinaryStream.h"
 #include "../Utils/Logging.h"
 

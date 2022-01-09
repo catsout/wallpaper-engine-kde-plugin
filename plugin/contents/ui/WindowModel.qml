@@ -99,10 +99,10 @@ Item {
         id: virtualDesktopInfo 
         onCurrentDesktopChanged: {
             if(activity === activityInfo.currentActivity)
-                desktop = this.currentDesktop;
+                wModel.desktop = this.currentDesktop;
         }
         Component.onCompleted: {
-            desktop = this.currentDesktop;
+            wModel.desktop = this.currentDesktop;
         }
     }
     TaskManager.TasksModel {
@@ -122,23 +122,35 @@ Item {
         //activity: wModel.activity
         //filterByActivity: true
 
-        onActiveTaskChanged: {
-            if(wModel.activity === activityInfo.currentActivity)
-                updateWindowsinfo();
-        }
+        onActiveTaskChanged: updateWindowsinfo();
         onVirtualDesktopChanged: {
             if(wModel.logging)
                 console.error(this.virtualDesktop, ':', this.screenGeometry)
-            if(wModel.activity === activityInfo.currentActivity)
-                updateWindowsinfo();
+            updateWindowsinfo();
         }
-        onDataChanged: updateWindowsinfo()
-
         function getProperty(idx, property) {
             if(TaskManager.AbstractTasksModel[property] === undefined) return undefined;
             return this.data(idx, TaskManager.AbstractTasksModel[property]);
         }
     }
+    PlasmaCore.SortFilterModel {
+        filterRole: 'IsWindow'
+        filterRegExp: 'true'
+        sourceModel: tasksModel
+        onDataChanged: updateWindowsinfo()
+        onCountChanged: updateWindowsinfo()
+    }
+
+    Timer{
+        id: triggerTimer
+        running: false
+        repeat: false
+        interval: 200
+        onTriggered: {
+            _updateWindowsinfo();
+        }
+    }
+
     /*
     filters {
         IsWindows: true
@@ -183,6 +195,9 @@ Item {
     }
 
     function updateWindowsinfo() {
+        triggerTimer.start();
+    }
+    function _updateWindowsinfo() {
         if(modePlay === Common.PauseMode.Never) {
             play();
             return;
@@ -212,6 +227,13 @@ Item {
             return getproperty("IsMaximized") === true || getproperty("IsFullScreen") === true;
         }).filterExist(notMinWModel);
 
+        if(modePlay === Common.PauseMode.Any) {
+            playBy(notMinWModel.length == 0 ? true : false);
+        }
+        else {
+            playBy(maxWModel.length == 0 ? true : false);
+        }
+
         if(logging) {
             const printW = (i) => {
                 const idx = tasksModel.makeModelIndex(i);
@@ -222,12 +244,6 @@ Item {
             notMinWModel.forEach(printW);
             console.error("---------Maximized----------");
             maxWModel.forEach(printW);
-        }
-        if(modePlay === Common.PauseMode.Any) {
-            playBy(notMinWModel.length == 0 ? true : false);
-        }
-        else {
-            playBy(maxWModel.length == 0 ? true : false);
         }
     }
 }
