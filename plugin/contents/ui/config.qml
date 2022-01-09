@@ -600,7 +600,6 @@ ColumnLayout {
                 textFormat: Text.RichText
                 readOnly: true
                 selectByMouse: false
-                background: Item {}
             }
             PlasmaComponents3.TextArea {
                 Layout.fillWidth: true
@@ -621,7 +620,25 @@ ColumnLayout {
                 textFormat: Text.RichText
                 selectByMouse: true
                 visible: libcheck.wallpaper
-                background: Item {}
+                MouseArea {
+                    anchors.fill: parent
+                    acceptedButtons: Qt.NoButton
+                    cursorShape: Qt.IBeamCursor
+                }
+            }
+            PlasmaComponents3.Label {
+                Kirigami.FormData.label: {
+                    Kirigami.FormData.label = "Readme:";
+                    if(Kirigami.FormData.labelAlignment !== undefined)
+                        Kirigami.FormData.labelAlignment = Qt.AlignTop;
+                }
+                text: '<a href="https://github.com/catsout/wallpaper-engine-kde-plugin">repo</a>'
+                onLinkActivated: Qt.openUrlExternally(link)
+                MouseArea {
+                    anchors.fill: parent
+                    acceptedButtons: Qt.NoButton
+                    cursorShape: Qt.PointingHandCursor
+                }
             }
             ListView {
                 Layout.fillWidth: true
@@ -636,24 +653,24 @@ ColumnLayout {
                 property var modelraw: {
                     const _model = [
                         {
-                            ok: libcheck.wallpaper,
-                            name: "plugin lib"
-                        },
-                        {
                             ok: libcheck.folderlist,
-                            name: "qt-lab-folderlist"
-                        },
-                        {
-                            ok: libcheck.qtwebchannel,
-                            name: "qtwebchannel (qml)"
+                            name: "*qt-lab-folderlist"
                         },
                         {
                             ok: libcheck.qtwebsockets,
-                            name: "qtwebsockets (qml)"
+                            name: "*qtwebsockets (qml)"
                         },
                         {
                             ok: pyext && pyext.ok,
-                            name: "python3 (python3-websockets)"
+                            name: "*python3-websockets"
+                        },
+                        {
+                            ok: libcheck.qtwebchannel,
+                            name: "qtwebchannel (qml) (for web)"
+                        },
+                        {
+                            ok: libcheck.wallpaper,
+                            name: "plugin lib (for scene,mpv)"
                         }
                     ];
                     return _model;
