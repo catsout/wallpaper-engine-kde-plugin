@@ -145,19 +145,23 @@ Kirigami.FormLayout {
         Kirigami.FormData.isSection: true
         Kirigami.FormData.label: "Mpv"
         Kirigami.FormData.labelAlignment: Qt.AlignLeft
+        visible: libcheck.wallpaper
     }
     CheckBox{
         Kirigami.FormData.label:  "Show stats"
         id: ckbox_mpvStats
+        visible: libcheck.wallpaper
     }
     Kirigami.Separator {
         Kirigami.FormData.isSection: true
         Kirigami.FormData.label: "Scene"
         Kirigami.FormData.labelAlignment: Qt.AlignTop
+        visible: libcheck.wallpaper
     }
     RowLayout {
         Kirigami.FormData.label:  "Fps:"
         Layout.preferredWidth: displayMode.width
+        visible: libcheck.wallpaper
         Label {
             Layout.preferredWidth: font.pixelSize * 2
             text: sliderFps.value.toString()
@@ -169,10 +173,6 @@ Kirigami.FormLayout {
             to: 60
             stepSize: 1.0
             snapMode: Slider.SnapOnRelease
-            PlasmaCore.ToolTipArea {
-                anchors.fill: parent
-                subText: "Control fps on scene wallpaper"
-            }
         }
     }
 
