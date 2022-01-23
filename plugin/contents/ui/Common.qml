@@ -18,6 +18,10 @@ QtObject {
         Name,
         Modified
     }
+    enum VideoBackend {
+        QtMultimedia,
+        Mpv
+    }
 
     property var filterModel: ListModel {
         ListElement { text: "Favorite";     type:"favor";         key:"favor";         def: 0}

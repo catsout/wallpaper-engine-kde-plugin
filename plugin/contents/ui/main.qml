@@ -11,20 +11,20 @@ Rectangle {
 
     property string workshopid: wallpaper.configuration.WallpaperWorkShopId
     property string type: wallpaper.configuration.WallpaperType
-
-    property int displayMode: wallpaper.configuration.DisplayMode
-    property bool mute: wallpaper.configuration.MuteAudio
-    property bool useMpv: wallpaper.configuration.UseMpv
-    property bool randomizeWallpaper: wallpaper.configuration.RandomizeWallpaper
-    property bool mouseInput: wallpaper.configuration.MouseInput
-
-    property int fps: wallpaper.configuration.Fps
-    property int volume: wallpaper.configuration.Volume
-    property int switchTimer: wallpaper.configuration.SwitchTimer
-
     property string filterStr: wallpaper.configuration.FilterStr
+
+    property int    displayMode: wallpaper.configuration.DisplayMode
+    property int    videoBackend: wallpaper.configuration.VideoBackend
+    property int    volume: wallpaper.configuration.Volume
+    property int    switchTimer: wallpaper.configuration.SwitchTimer
+    property int    fps: wallpaper.configuration.Fps
+
+    property bool   mute: wallpaper.configuration.MuteAudio
+    property bool   randomizeWallpaper: wallpaper.configuration.RandomizeWallpaper
+    property bool   mouseInput: wallpaper.configuration.MouseInput
+    property bool   mpvStats: wallpaper.configuration.MpvStats
     // auto pause
-    property bool ok: windowModel.playVideoWallpaper
+    property bool   ok: windowModel.playVideoWallpaper
 
     property string nowBackend: ""
 
@@ -238,7 +238,7 @@ Rectangle {
         // choose backend
         switch (background.type) {
             case 'video':
-                if(background.useMpv && background.hasLib)
+                if(background.videoBackend == Common.VideoBackend.Mpv && background.hasLib)
                     qmlsource = "backend/Mpv.qml";
                 else qmlsource = "backend/QtMultimedia.qml";
                 properties = {};
@@ -276,7 +276,7 @@ Rectangle {
 
         // background signal connect
         background.typeChanged.connect(loadBackend);
-        background.useMpvChanged.connect(loadBackend);
+        background.videoBackendChanged.connect(loadBackend);
         background.sourceChanged.connect(sourceCallback);
         background.okChanged.connect(autoPause);
 

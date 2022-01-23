@@ -6,7 +6,7 @@
   <kcfgfile name=""/>
 
   <group name="General">
-	<entry name="SteamLibraryPath" type="Path">
+    <entry name="SteamLibraryPath" type="Path">
       <label>Steam workshop path</label>
       <default></default>
     </entry>
@@ -18,7 +18,7 @@
       <label>Wallpaper file path</label>
       <default></default>
     </entry>
-	<entry name="WallpaperType" type="String">
+    <entry name="WallpaperType" type="String">
       <label>Wallpaper type</label>
       <default></default>
     </entry>
@@ -30,16 +30,20 @@
       <label>Video display mode</label>
       <default>0</default>
     </entry>
-	<entry name="PauseMode" type="Int">
+    <entry name="PauseMode" type="Int">
       <label>Video Pause mode</label>
       <default>0</default>
     </entry>
-	<entry name="SortMode" type="Int">
+    <entry name="SortMode" type="Int">
       <label>Sort mode</label>
       <default>0</default>
     </entry>
-	<entry name="FilterMode" type="Int">
+    <entry name="FilterMode" type="Int">
       <label>Filter mode</label>
+      <default>0</default>
+    </entry>
+    <entry name="VideoBackend" type="Int">
+      <label>Video Backend</label>
       <default>0</default>
     </entry>
     <entry name="MuteAudio" type="Bool">
@@ -50,8 +54,8 @@
       <label>Randomize every X minutes</label>
       <default>false</default>
     </entry>
-    <entry name="UseMpv" type="Bool">
-      <label>Use Mpv</label>
+    <entry name="MpvStats" type="Bool">
+      <label>Mpv Stats</label>
       <default>false</default>
     </entry>
     <entry name="MouseInput" type="Bool">

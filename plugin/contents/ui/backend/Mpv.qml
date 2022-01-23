@@ -6,6 +6,7 @@ Item{
     id: videoItem
     anchors.fill: parent
     property int displayMode: background.displayMode
+    property bool stats: background.mpvStats
     property var volumeFade: Common.createVolumeFade(
         videoItem, 
         Qt.binding(function() { return background.mute ? 0 : background.volume; }),
@@ -24,6 +25,10 @@ Item{
             player.setProperty("panscan", 0.0);
         }
     }
+    // it's ok for toggle, true will always cause a signal at first
+    onStatsChanged: {
+        player.command(["script-binding","stats/display-stats-toggle"]);
+    }
 
     // logfile
     // source
@@ -36,12 +41,11 @@ Item{
         source: background.source
         mute: background.mute
         volume: 0
-        //volume: videoItem.volume
     }
     Component.onCompleted:{
         background.nowBackend = "mpv";
         videoItem.displayModeChanged();
-    }   
+    }
 
     function play(){
         // stop pause time to avoid quick switch which cause keep pause 
