@@ -6,7 +6,8 @@ QtObject {
     enum PauseMode {
         Never,
         Any,
-        Max
+        Max,
+        Focus
     }
     enum DisplayMode {
         Aspect,

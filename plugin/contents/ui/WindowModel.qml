@@ -72,7 +72,7 @@ Item {
         id: playTimer
         running: false
         repeat: false
-        interval: 400
+        interval: 300
         onTriggered: {
             playVideoWallpaper = true;
         }
@@ -157,39 +157,31 @@ Item {
     }
     callback(getproperty) { return getproperty("IsWindows") === true }
     */
-    function filterTaskModel(model, filters, callback) {
-        function doCallback(idx) {
+    function genTaskModelFilter(model) {
+        function doCallback(idx, callback) {
             return callback((property) => model.getProperty(idx, property));
         }
-        function filter(idx) {
-            for(const [key, value] of Object.entries(filters)) {
-                const property = model.getProperty(idx, key);
-                if(property !== undefined && property !== value)
-                    return false;
-            };
-            if(callback) {
-                if(!doCallback(idx)) return false;
-            }
-            return true;
+        function filter(callback, inArray) {
+            const array = inArray ? inArray : Array.from(Array(model.count).keys());
+            return array.filter(el => {
+                const idx = model.makeModelIndex(el);
+                return doCallback(idx, callback);
+            });
         }
         return {
-            filter: function() {
-                const result = [];
-                for (let i = 0 ; i < model.count; i++) {
-                    const idx = tasksModel.makeModelIndex(i);
-                    if(filter(idx)) 
-                        result.push(i);
-                }
-                return result;
+            filter: function(filters, array) {
+                return filter((getProperty) => {
+                    const nfilters = filters ? filters : {};
+                    for(const [key, value] of Object.entries(nfilters)) {
+                        const property = getProperty(key);
+                        if(property !== undefined && property !== value)
+                            return false;
+                    };
+                    return true;
+                }, array);
             },
-            filterExist: function(array) {
-                const result = [];
-                array.forEach((el) => {
-                    const idx = tasksModel.makeModelIndex(el);
-                    if(filter(idx)) 
-                        result.push(el);
-                });
-                return result;
+            filterCallback: function(callback, array) {
+                return filter(callback, array);
             }
         };
     }
@@ -207,7 +199,8 @@ Item {
             SkipTaskbar: false,
             SkipPager: false
         };
-        const baseWModel = filterTaskModel(tasksModel, {}, (getproperty) => {
+        const taskFilter = genTaskModelFilter(tasksModel);
+        const baseWModel = taskFilter.filterCallback((getproperty) => {
             const activities = getproperty("Activities");
             if(activities && activities.length) {
                 for(let i=0;i < activities.length;i++) {
@@ -218,32 +211,46 @@ Item {
             }
             // true when model don't have activities info
             return true;
-        }).filterExist(filterTaskModel(tasksModel, basefilters).filter());
-        const notMinWModel = filterTaskModel(tasksModel, {IsMinimized: false}).filterExist(baseWModel);
+        }, taskFilter.filter(basefilters));
+        const notMinWModel = taskFilter.filter({IsMinimized: false}, baseWModel);
 
         // can simply skip when "activity != currentActivity", but use full filter
         //const notMinWModel = filterTaskModel(tasksModel, Object.assign({IsMinimized: false}, basefilters)).filter();
-        const maxWModel = filterTaskModel(tasksModel, {}, (getproperty) => {
+        const maxWModel = taskFilter.filterCallback((getproperty) => {
             return getproperty("IsMaximized") === true || getproperty("IsFullScreen") === true;
-        }).filterExist(notMinWModel);
+        }, notMinWModel);
 
-        if(modePlay === Common.PauseMode.Any) {
-            playBy(notMinWModel.length == 0 ? true : false);
-        }
-        else {
-            playBy(maxWModel.length == 0 ? true : false);
+        const activeModel = taskFilter.filter({IsActive: true}, notMinWModel);
+
+
+        switch (modePlay) {
+        case Common.PauseMode.Any:
+            playBy(notMinWModel.length === 0);
+            break;
+        case Common.PauseMode.Max:
+            playBy(maxWModel.length === 0);
+            break;
+        case Common.PauseMode.Focus:
+            playBy(activeModel.length === 0);
+            break;
+        default:
+            playBy(true);
         }
 
         if(logging) {
             const printW = (i) => {
                 const idx = tasksModel.makeModelIndex(i);
-                console.error(tasksModel.data(idx, TaskManager.AbstractTasksModel.AppName));
-                console.error(tasksModel.data(idx, TaskManager.AbstractTasksModel.Activities));
+                const name = tasksModel.data(idx, TaskManager.AbstractTasksModel.AppName);
+                const activity = tasksModel.data(idx, TaskManager.AbstractTasksModel.Activities);
+                console.error("--", name, activity);
             }
             console.error("--------Not Minimized--------");
             notMinWModel.forEach(printW);
             console.error("---------Maximized----------");
             maxWModel.forEach(printW);
+            console.error("-----------Active-----------");
+            activeModel.forEach(printW);
+            console.error("\n\n\n")
         }
     }
 }

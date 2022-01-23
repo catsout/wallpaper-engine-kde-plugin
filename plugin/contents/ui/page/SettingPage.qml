@@ -31,11 +31,15 @@ Kirigami.FormLayout {
                 value: Common.PauseMode.Max
             },
             {
+                text: "Focus Window",
+                value: Common.PauseMode.Focus
+            },
+            {
                 text: "Any Window",
                 value: Common.PauseMode.Any
             },
             {
-                text: "Never Pause",
+                text: "Never",
                 value: Common.PauseMode.Never
             }
         ]
