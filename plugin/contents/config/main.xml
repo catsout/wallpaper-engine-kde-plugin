@@ -70,6 +70,10 @@
       <label>Change timer (in minutes)</label>
       <default>120</default>
     </entry>
+    <entry name="ResumeTime" type="Int">
+      <label>resume time from paused (in ms)</label>
+      <default>300</default>
+    </entry>
     <entry name="Volume" type="Int">
       <label>Volume</label>
       <default>100</default>

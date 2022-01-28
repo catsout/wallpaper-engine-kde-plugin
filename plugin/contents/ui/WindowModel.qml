@@ -57,7 +57,6 @@ https://github.com/KDE/plasma-workspace/blob/master/libtaskmanager/abstracttasks
 */
 
 Item {
-
     id: wModel
     property bool playVideoWallpaper: true
     property bool logging: false
@@ -67,12 +66,13 @@ Item {
     property var screenGeometry
 
     property int modePlay: wallpaper.configuration.PauseMode
+    property int resumeTime: wallpaper.configuration.ResumeTime
 
     Timer{
         id: playTimer
         running: false
         repeat: false
-        interval: 300
+        interval: resumeTime
         onTriggered: {
             playVideoWallpaper = true;
         }
@@ -145,7 +145,7 @@ Item {
         id: triggerTimer
         running: false
         repeat: false
-        interval: 200
+        interval: 100
         onTriggered: {
             _updateWindowsinfo();
         }

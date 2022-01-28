@@ -14,6 +14,7 @@ Kirigami.FormLayout {
     property alias cfg_MpvStats: ckbox_mpvStats.checked
     property alias cfg_MuteAudio: ckbox_muteAudio.checked
     property alias cfg_MouseInput: ckbox_mouseInput.checked
+    property alias cfg_ResumeTime: resumeSpin.value
     property alias cfg_SwitchTimer: randomSpin.value
     property alias cfg_RandomizeWallpaper: ckbox_randomizeWallpaper.checked
 
@@ -88,9 +89,20 @@ Kirigami.FormLayout {
         onActivated: cfg_VideoBackend = Common.cbCurrentValue(this)
         Component.onCompleted: currentIndex = Common.cbIndexOfValue(this, cfg_VideoBackend)
     }
-    CheckBox {
-        id: ckbox_muteAudio
-        Kirigami.FormData.label: "Mute audio:"
+    RowLayout {
+        spacing: 0
+        Kirigami.FormData.label:  "Rsume time:"
+        RowLayout {
+            SpinBox {
+                id: resumeSpin
+                width: font.pixelSize * 4
+                height: heightpicker.height
+                from: 1
+                to: 60*1000
+                stepSize: 50
+            }
+            Label { text: " ms" }
+        }
     }
     RowLayout {
         spacing: 0
@@ -118,6 +130,10 @@ Kirigami.FormLayout {
             }
             Label { text: " min" }
         }
+    }
+    CheckBox {
+        id: ckbox_muteAudio
+        Kirigami.FormData.label: "Mute audio:"
     }
     CheckBox {
         id: ckbox_mouseInput

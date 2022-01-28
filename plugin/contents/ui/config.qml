@@ -25,6 +25,7 @@ ColumnLayout {
     property alias  cfg_MpvStats:           settingPage.cfg_MpvStats
     property alias  cfg_MuteAudio:          settingPage.cfg_MuteAudio
     property alias  cfg_MouseInput:         settingPage.cfg_MouseInput
+    property alias  cfg_ResumeTime:         settingPage.cfg_ResumeTime
     property alias  cfg_SwitchTimer:        settingPage.cfg_SwitchTimer
     property alias  cfg_RandomizeWallpaper: settingPage.cfg_RandomizeWallpaper
     property int    cfg_DisplayMode
