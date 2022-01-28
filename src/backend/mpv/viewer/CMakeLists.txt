@@ -3,7 +3,7 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON) 
 project(mpvbackend-viewer)
 
-find_package(Qt5 COMPONENTS Quick REQUIRED)
+find_package(Qt5 COMPONENTS Gui Quick REQUIRED)
 
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
@@ -19,4 +19,6 @@ add_executable(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME} 
     PUBLIC 
 		mpvbackend
+		Qt::Gui
+		Qt::Quick
 )

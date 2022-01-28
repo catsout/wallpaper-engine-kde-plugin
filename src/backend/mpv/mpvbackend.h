@@ -5,20 +5,19 @@
 #include <mpv/render_gl.h>
 
 #include <QtQuick/QQuickFramebufferObject>
+#include <QtCore/QLoggingCategory>
 
 #include "qthelper.hpp"
 
-class MpvRenderer;
 
+Q_DECLARE_LOGGING_CATEGORY(wekdeMpv)
 
-class MpvObjectUpdate : public QObject {
+class MpvRender;
+
+class MpvObject : public QQuickItem
+{
     Q_OBJECT
-signals:
-    void inited();
-    void update();
-};
-class MpvObject : public QQuickFramebufferObject {
-    Q_OBJECT
+    //QML_NAMED_ELEMENT(Renderer)
     Q_PROPERTY(QUrl source READ source WRITE setSource NOTIFY sourceChanged)
     Q_PROPERTY(Status status READ status NOTIFY statusChanged)
     Q_PROPERTY(bool mute READ mute WRITE setMute)
@@ -27,14 +26,11 @@ class MpvObject : public QQuickFramebufferObject {
 
     mpv_handle* mpv;
 
-    friend class MpvRenderer;
-
 public:
     static void on_update(void* ctx);
 
     explicit MpvObject(QQuickItem* parent = nullptr);
-    ~MpvObject() override;
-    Renderer* createRenderer() const override;
+    virtual ~MpvObject();
 
     enum Status {
         Stopped,
@@ -63,8 +59,10 @@ public slots:
     QVariant getProperty(const QString& name, bool* ok = nullptr) const;
     void initCallback();
 
+
+    void prepareMpv();
+    void resizeFb();
 signals:
-    void onUpdate();
     void initFinished();
     void statusChanged();
     void sourceChanged();
@@ -73,6 +71,13 @@ private:
     bool inited = false;
     QUrl m_source;
     Status m_status = Stopped;
+
+protected:
+    QSGNode *updatePaintNode(QSGNode *, UpdatePaintNodeData *);
+
+private:
+    QThread *m_renderThread;
+    MpvRender *m_mpvRender;
 };
 
 #endif

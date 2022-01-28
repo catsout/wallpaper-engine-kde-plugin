@@ -13,7 +13,7 @@ Item {
         mute: false
         volume: 1.0
         Component.onCompleted: {
-//            player.command(["script-binding","stats/display-stats-toggle"]);
+            player.command(["script-binding","stats/display-stats-toggle"]);
         }
     }
 }
