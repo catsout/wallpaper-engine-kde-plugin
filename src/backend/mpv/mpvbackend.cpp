@@ -1,16 +1,16 @@
 #include "mpvbackend.h"
 
-#include <QDir>
-#include <QGuiApplication>
-#include <QObject>
-#include <QOpenGLContext>
+
 #include <QtGlobal>
+#include <QtCore/QObject>
+#include <QtCore/QDir>
+#include <QtCore/QThread>
+
+#include <QtGui/QGuiApplication>
+#include <QtGui/QOpenGLContext>
 #include <QtGui/QOpenGLFramebufferObject>
 #include <QtGui/QOpenGLFunctions>
 #include <QtQuick/QQuickWindow>
-
-#include <QtCore/QMutex>
-#include <QtCore/QThread>
 
 #include <QtGui/QOffscreenSurface>
 #include <QtQuick/QSGSimpleTextureNode> 
@@ -77,6 +77,14 @@ namespace {
 #endif
         int code = mpv_render_context_create(mpv_gl, mpv, params);
         return code;
+    }
+
+    QSGTexture *createTextureFromGl(uint32_t handle, QSize size, QQuickWindow* window) {
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+        return window->createTextureFromNativeObject(QQuickWindow::NativeObjectTexture, &handle, 0, size);
+#else
+        return window->createTextureFromId(handle, size);
+#endif
     }
 
 }
@@ -226,7 +234,7 @@ public:
         presented = ready.exchange(presented);
         FrameBufferParameters* fbo = presented.load();
         if(fbo) {
-            QSGTexture* tex = window->createTextureFromId(fbo->gltex, fbo->size);
+            QSGTexture* tex = createTextureFromGl(fbo->gltex, fbo->size, window);
             return tex;
         }
         return nullptr;
@@ -354,8 +362,8 @@ public:
         , m_eatFrameOp(eatFrameOp)
         , m_window(window)
     {
-        // Our texture node must have a texture, so use the default 0 texture.
-        m_texture = m_window->createTextureFromId(0, QSize(1, 1));
+        // texture node must have a texture, so use the default 0 texture.
+        m_texture = createTextureFromGl(0, QSize(1, 1), window);
         setTexture(m_texture);
         setFiltering(QSGTexture::Linear);
         setOwnsTexture(false);
@@ -406,7 +414,9 @@ MpvObject::MpvObject(QQuickItem* parent)
 MpvObject::~MpvObject() {}
 
 void MpvObject::resizeFb() {
-    QSize size {this->width(), this->height()};
+    QSize size;
+    size.setWidth(this->width());
+    size.setHeight(this->height());
     QMetaObject::invokeMethod(m_mpvRender, "newSize", Qt::QueuedConnection,
         Q_ARG(QSize, size));
 }
