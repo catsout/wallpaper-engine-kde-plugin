@@ -24,7 +24,7 @@ qml-module-qtwebchannel qml-module-qtwebsockets
 Fedora:  
 ```sh
 # Please add "RPM Fusion" repo first
-sudo dnf install plasma-workspace-devel kf5-plasma-devel  gstreamer1-libav \
+sudo dnf install plasma-workspace-devel kf5-plasma-devel gstreamer1-libav \
 lz4-devel mpv-libs-devel python3-websockets qt5-qtbase-private-devel \
 qt5-qtx11extras-devel qt5-qtwebchannel-devel qt5-qtwebsockets-devel
 ```
