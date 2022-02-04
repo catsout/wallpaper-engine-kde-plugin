@@ -465,7 +465,7 @@ QSGNode *MpvObject::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
         });
 
         connect(m_mpvRender, &MpvRender::newFrame, window(), &QQuickWindow::update, Qt::QueuedConnection);
-        connect(window(), &QQuickWindow::afterRendering, node, &TextureNode::newTexture, Qt::DirectConnection);
+        connect(window(), &QQuickWindow::beforeRendering, node, &TextureNode::newTexture, Qt::DirectConnection);
 
         connect(node, &TextureNode::nodeDestroyed, m_mpvRender, &MpvRender::waitShutDown, Qt::DirectConnection);
 
