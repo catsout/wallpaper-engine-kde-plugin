@@ -65,7 +65,7 @@ sudo make install
 
 ### Restart KDE
 You need to restart KDE(re-login) after **reinstalling the plugin**  
-You can also try using: `kquitapp5 plasmashell && kstart5 plasmashell`  
+You can also try using: `kquitapp5 plasmashell && kstart5 plasmashell &>/dev/null`  
 
 ## Support Status
 ### Scene:
