@@ -15,4 +15,5 @@ build
 *.out
 .vscode
 .idea
+.cache
 cmake-build-debug

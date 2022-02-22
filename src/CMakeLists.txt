@@ -1,6 +1,6 @@
 find_package(Qt5 COMPONENTS Quick Qml REQUIRED)
-add_subdirectory(backend/mpv)
-add_subdirectory(backend/scene)
+add_subdirectory(backend_mpv)
+add_subdirectory(backend_scene)
 
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
