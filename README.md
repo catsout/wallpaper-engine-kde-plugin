@@ -38,8 +38,8 @@ base-devel mpv python-websockets qt5-declarative qt5-websockets qt5-webchannel
 Void:  
 ```sh
 sudo xbps-install -S git cmake extra-cmake-modules plasma-framework \
-gst-libav base-devel mpv qt5-declarative qt5-websockets qt5-webchannel \
-plasma-workspace-devel mpv-devel liblz4-devel
+gst-libav base-devel mpv python3-websockets qt5-declarative qt5-websockets \
+qt5-webchannel plasma-workspace-devel mpv-devel liblz4-devel
 ```
 #### Build and Install
 ```sh
