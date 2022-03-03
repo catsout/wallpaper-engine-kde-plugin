@@ -20,7 +20,7 @@ vk::Result CreateDevice(Instance& instance,
 }
 
 
-std::vector<vk::DeviceQueueCreateInfo> Device::ChooseDeviceQueue(bool present) {
+std::vector<vk::DeviceQueueCreateInfo> Device::ChooseDeviceQueue(vk::SurfaceKHR surface) {
 	std::vector<vk::DeviceQueueCreateInfo> queues;
 	auto props = m_gpu.getQueueFamilyProperties();
 	std::vector<uint32_t> graphic_indexs, present_indexs;
@@ -40,14 +40,12 @@ std::vector<vk::DeviceQueueCreateInfo> Device::ChooseDeviceQueue(bool present) {
 			.setPQueuePriorities(&defaultQueuePriority);
 		queues.push_back(info);
 	}
-	if(present) {
+	if(surface) {
 		index = 0;
 		for(auto& prop:props) {
-			/*
-			if(m_gpu.getSurfaceSupportKHR(index, vct.surface))
+			if(m_gpu.getSurfaceSupportKHR(index, surface))
 				present_indexs.push_back(index);
 			index++;
-			*/
 		};
 		m_present_queue.family_index = graphic_indexs.front();
 		if(graphic_indexs.front() != present_indexs.front()) {
@@ -63,18 +61,18 @@ std::vector<vk::DeviceQueueCreateInfo> Device::ChooseDeviceQueue(bool present) {
 	return queues;
 }
 
-vk::ResultValue<Device> Device::Create(Instance& inst, Span<const char*const> exts) {
-	vk::ResultValue<Device> rv {vk::Result::eIncomplete, {}};
-	auto& device = rv.value;
+vk::Result Device::Create(Instance& inst, Span<const char*const> exts, Device& device) {
+	vk::Result result {vk::Result::eIncomplete};
 	device.m_gpu = inst.gpu();
+	bool rq_surface = !inst.offscreen();
 	do {
-		rv.result = CreateDevice(inst, device.ChooseDeviceQueue(false), exts, &device.m_device);
-		if(rv.result != vk::Result::eSuccess) break;
+		result = CreateDevice(inst, device.ChooseDeviceQueue(inst.surface()), exts, &device.m_device);
+		if(result != vk::Result::eSuccess) break;
 		device.m_graphics_queue.handle = device.m_device.getQueue(device.m_graphics_queue.family_index, 0);
 
-		if(inst.surface()) {
-			rv.result = Swapchain::Create(device, inst.surface(), {1280, 720}, device.m_swapchain);
-			if(rv.result != vk::Result::eSuccess) {
+		if(rq_surface) {
+			result = Swapchain::Create(device, inst.surface(), {1280, 720}, device.m_swapchain);
+			if(result != vk::Result::eSuccess) {
 				LOG_ERROR("create swapchain failed");
 				break;
 			}
@@ -84,7 +82,7 @@ vk::ResultValue<Device> Device::Create(Instance& inst, Span<const char*const> ex
 			vk::CommandPoolCreateFlagBits::eTransient|
 			vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
 			device.m_graphics_queue.family_index});
-		if(rv_cmdpool.result != vk::Result::eSuccess) { rv.result = rv_cmdpool.result; break; }
+		if(rv_cmdpool.result != vk::Result::eSuccess) { result = rv_cmdpool.result; break; }
 		device.m_command_pool = rv_cmdpool.value;
 		{
 			VmaAllocatorCreateInfo allocatorInfo = {};
@@ -93,14 +91,16 @@ vk::ResultValue<Device> Device::Create(Instance& inst, Span<const char*const> ex
 			allocatorInfo.instance = inst.inst();
 			vmaCreateAllocator(&allocatorInfo, &device.m_allocator);
 		}
-		rv.result = vk::Result::eSuccess;
+		device.m_tex_cache = std::make_unique<TextureCache>(device);
+		result = vk::Result::eSuccess;
 	} while(false);
-	return rv;
+	return result;
 }
 
 void Device::Destroy() {
 	if(m_device) {
 		(void)m_device.waitIdle();
+		m_tex_cache->Destroy();
 		m_device.destroyCommandPool(m_command_pool);
 		vmaDestroyAllocator(m_allocator);
 		m_device.destroy();
@@ -129,3 +129,24 @@ void Device::DestroyRenderingResource(RenderingResources& rr) {
 	m_device.freeCommandBuffers(m_command_pool, 1, &rr.command);
 	m_device.destroyFence(rr.fence_frame);
 }
+
+Device::Device():m_tex_cache(std::make_unique<TextureCache>(*this)) {
+}
+Device::~Device() {};
+
+/*
+Device::Device(Device&& o) {
+	*this = std::move(o);
+}
+Device& Device::operator=(Device&& o) {
+	m_device = o.m_device;
+	m_gpu = o.m_gpu;
+	m_swapchain = o.m_swapchain;
+	m_allocator = o.m_allocator;
+	m_command_pool = o.m_command_pool;
+	m_graphics_queue = o.m_graphics_queue;
+	m_present_queue = o.m_present_queue;
+	m_tex_cache = std::move(o.m_tex_cache);
+	return *this;
+}
+*/

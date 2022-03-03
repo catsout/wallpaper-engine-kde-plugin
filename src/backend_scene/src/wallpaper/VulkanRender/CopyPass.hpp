@@ -15,6 +15,12 @@ public:
     };
 
     CopyPass(const Desc&);
+    virtual ~CopyPass();
+
+    void prepare(Scene&, const Device&, RenderingResources&) override {};
+    void execute(const Device&, RenderingResources&) override {};
+    void destory(const Device&) override {}
+
 private:
     Desc m_desc;
 };

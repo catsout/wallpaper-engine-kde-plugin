@@ -74,7 +74,7 @@ static VkBool32 debugUtilsMessengerCallback(
 	if (messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
 		result |= VK_TRUE;
 
-		std::printf("validation layer: %s", pCallbackData->pMessage);
+		std::printf("validation layer: %s\n", pCallbackData->pMessage);
 	}
 	return result;
 }
@@ -163,14 +163,21 @@ const vk::Instance& Instance::inst() const { return m_inst; };
 const vk::PhysicalDevice& Instance::gpu() const { return m_gpu; }
 const vk::SurfaceKHR& Instance::surface() const { return m_surface; }
 
+bool Instance::offscreen() const { return ! m_surface; }
+
 void Instance::setSurface(vk::SurfaceKHR sf) {
 	m_surface = sf;
 }
 
 void Instance::Destroy() {
 	if(m_inst) {
+		if(m_surface) {
+			m_inst.destroySurfaceKHR(m_surface);
+			LOG_INFO("Destory surface");
+		}
 		m_inst.destroyDebugUtilsMessengerEXT(m_debug_utils);
 		m_inst.destroy();
+		LOG_INFO("Destory instance");
 	}
 }
 

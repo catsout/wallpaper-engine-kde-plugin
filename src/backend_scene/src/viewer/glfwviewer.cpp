@@ -78,6 +78,8 @@ int main(int argc, char**argv)
     psw = new wallpaper::SceneWallpaper();
 	psw->init();
 	psw->initVulkan(sf_info);
+	psw->setProperty("assets", std::string(argv[1]));
+	psw->setProperty("source", std::string(argv[2]));
 
     while (!glfwWindowShouldClose(window)) {
 		glfwPollEvents();

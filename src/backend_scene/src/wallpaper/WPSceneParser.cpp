@@ -311,8 +311,8 @@ void LoadMaterial(fs::VFS& vfs,
 		//pWPShaderInfo->combos["PRELIGHTING"] = pWPShaderInfo->combos.at("LIGHTING");
 	}
 
-	svCode = WPShaderParser::PreShaderHeader(svCode, pWPShaderInfo->combos);
-	fgCode = WPShaderParser::PreShaderHeader(fgCode, pWPShaderInfo->combos);
+	svCode = WPShaderParser::PreShaderHeader(svCode, pWPShaderInfo->combos, ShaderType::VERTEX);
+	fgCode = WPShaderParser::PreShaderHeader(fgCode, pWPShaderInfo->combos, ShaderType::FRAGMENT);
 
 	shader->vertexCode = svCode;
 	shader->fragmentCode = fgCode;

@@ -10,31 +10,41 @@
 
 using namespace wallpaper;
 
-static constexpr const char* pre_shader_code = R"(#version 130
+static constexpr const char* pre_shader_code = R"(#version 140
 #define GLSL 1
 #define highp
 #define mediump
 #define lowp
-#define mul(x, y) (y * x)
-#define frac fract
+
 #define CAST2(x) (vec2(x))
 #define CAST3(x) (vec3(x))
 #define CAST4(x) (vec4(x))
 #define CAST3X3(x) (mat3(x))
-#define saturate(x) (clamp(x, 0.0, 1.0))
-#define texSample2D texture2D
-#define texSample2DLod texture2DLod
-#define texture2DLod texture2D
+
+#define texSample2D texture
+#define texSample2DLod textureLod
+#define mul(x, y) ((y) * (x))
+#define frac fract
 #define atan2 atan
+#define fmod(x, y) (x-y*trunc(x/y))
 #define ddx dFdx
+#define ddy(x) dFdy(-(x))
+#define saturate(x) (clamp(x, 0.0, 1.0))
+
 #define max(x, y) max(y, x)
+
 #define float1 float
 #define float2 vec2
 #define float3 vec3
 #define float4 vec4
 #define lerp mix
-#define ddy(x) dFdy(-(x))
+)";
 
+static constexpr const char* pre_shader_code_vert = R"(
+)";
+static constexpr const char* pre_shader_code_frag = R"(
+#define gl_FragColor glOutColor
+out vec4 glOutColor;
 )";
 
 std::string LoadGlslInclude(fs::VFS& vfs, const std::string& input) {
@@ -251,8 +261,11 @@ std::string WPShaderParser::PreShaderSrc(fs::VFS& vfs, const std::string& src, W
 	return newsrc;
 }
 
-std::string WPShaderParser::PreShaderHeader(const std::string& src, const Combos& combos) {
-	std::string header(pre_shader_code);
+std::string WPShaderParser::PreShaderHeader(const std::string& src, const Combos& combos, ShaderType type) {
+	std::string pre(pre_shader_code);
+	if(type == ShaderType::VERTEX) pre += pre_shader_code_vert;
+	if(type == ShaderType::FRAGMENT) pre += pre_shader_code_frag;
+	std::string header(pre);
 	for(const auto& c:combos) {
 		std::string cup(c.first);
 		std::transform(c.first.begin(), c.first.end(), cup.begin(), ::toupper);
@@ -260,4 +273,3 @@ std::string WPShaderParser::PreShaderHeader(const std::string& src, const Combos
 	}
 	return header + src;
 }
-

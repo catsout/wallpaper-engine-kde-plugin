@@ -46,6 +46,7 @@ add_library(${PROJECT_NAME}
 	Utils/FrameTimer.cpp
 	Utils/FpsCounter.cpp
 	Utils/Algorism.cpp	
+	Utils/Sha.cpp
 
 	VulkanRender/CopyPass.cpp
 	VulkanRender/CustomShaderPass.cpp

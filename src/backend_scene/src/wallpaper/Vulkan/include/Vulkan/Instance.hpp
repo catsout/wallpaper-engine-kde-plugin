@@ -23,6 +23,7 @@ public:
     const vk::Instance& inst() const;
     const vk::PhysicalDevice& gpu() const;
     const vk::SurfaceKHR& surface() const;
+    bool offscreen() const;
     void setSurface(vk::SurfaceKHR);
 private:
     vk::Instance m_inst;

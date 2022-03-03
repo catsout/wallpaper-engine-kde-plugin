@@ -19,6 +19,10 @@ namespace wallpaper
 			VertexType type;
 			bool padding {true};
 		};
+		struct SceneVertexAttributeOffset {
+			SceneVertexAttribute attr;
+			uint offset;
+		};
 
 		SceneVertexArray(const std::vector<SceneVertexAttribute>& attrs, const std::size_t count);
 		~SceneVertexArray();
@@ -47,6 +51,7 @@ namespace wallpaper
 		std::size_t OneSizeOf() const { return m_oneSize * sizeof(float); }
 
 		const auto& Attributes() const { return m_attributes; }
+		std::vector<SceneVertexAttributeOffset> GetAttrOffset() const;
 
 		uint32_t ID() const { return m_id; }
 		void SetID(uint32_t id) { m_id = id; }

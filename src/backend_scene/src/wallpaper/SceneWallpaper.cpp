@@ -95,7 +95,10 @@ public:
     RenderHandler(SceneWallpaper& impl):
         uper(impl),
         m_render(std::make_unique<vulkan::VulkanRender>()) {}
-    virtual ~RenderHandler() { frameTimer.Stop(); }
+    virtual ~RenderHandler() { 
+        frameTimer.Stop(); 
+        m_render->destroy();
+    }
     SceneWallpaper& uper;
 
     void onMessageReceived(const std::shared_ptr<looper::Message>& msg) override {
@@ -107,9 +110,10 @@ public:
             CASE_CMD(INIT_VULKAN)
             }
         }
-        else if(!frameTimer.NoFrame()) {
+        else if(!frameTimer.NoFrame() && m_rg) {
             LOG_INFO("render one");
             frameTimer.RenderFrame();
+            m_render->drawFrame(*m_scene);
         }
     }
 
@@ -118,6 +122,7 @@ public:
             LOG_ERROR("-----------");
             m_rg = sceneToRenderGraph(*m_scene);
             m_rg->ToGraphviz("graph.dot");
+            m_render->compileRenderGraph(*m_scene, *m_rg);
         }
     }
     MHANDLER_CMD(INIT_VULKAN) {
@@ -129,8 +134,8 @@ public:
 public:
 	FrameTimer frameTimer;
 private:
-    std::shared_ptr<Scene> m_scene;
-    std::unique_ptr<rg::RenderGraph> m_rg;
+    std::shared_ptr<Scene> m_scene {nullptr};
+    std::unique_ptr<rg::RenderGraph> m_rg {nullptr};
     std::unique_ptr<vulkan::VulkanRender> m_render;
 };
 }

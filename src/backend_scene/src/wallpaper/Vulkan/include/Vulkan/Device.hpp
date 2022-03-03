@@ -2,6 +2,8 @@
 #include "Instance.hpp"
 #include "Swapchain.hpp"
 #include "vk_mem_alloc.h"
+#include "Parameters.hpp"
+#include "TextureCache.hpp"
 
 namespace wallpaper
 {
@@ -17,40 +19,12 @@ struct RenderingResources {
 	vk::Fence fence_frame;
 };
 
-struct QueueParameters {
-	vk::Queue handle;
-	uint32_t family_index;
-
-	bool ok() const { return handle; }
-};
-
-struct ImageParameters {
-	vk::Image handle;
-	vk::ImageView view;
-	vk::Sampler sampler;
-	vk::Extent3D extent;
-	VmaAllocation allocation;
-	VmaAllocationInfo allocationInfo;
-
-	bool ok() const { return handle; }
-};
-
-
-struct ExImageParameters {
-	vk::Image handle;
-	vk::ImageView view;
-	vk::Sampler sampler;
-	vk::Extent3D extent;
-	vk::DeviceMemory mem;
-	vk::MemoryRequirements mem_reqs;
-	int fd;
-
-	bool ok() const { return handle; }
-};
-
-class Device {
+class Device : NoCopy,NoMove {
 public:
-	static vk::ResultValue<Device> Create(Instance&, Span<const char*const> exts);
+	Device();
+	~Device();
+
+	static vk::Result Create(Instance&, Span<const char*const> exts, Device&);
 
 	void Destroy();
 
@@ -59,18 +33,31 @@ public:
 
 	const auto& graphics_queue() const { return m_graphics_queue; }
 	const auto& device() const { return m_device; }
+	const auto& handle() const { return m_device; }
 	const auto& gpu() const { return m_gpu; }
+	const auto& vma_allocator() const { return m_allocator; } 
+	const auto& cmd_pool() const { return m_command_pool; }
+	const auto& out_extent() const { return m_extent; }
+	void set_out_extent(vk::Extent2D v) { m_extent = v; }
+
+	auto& tex_cache() const { return *m_tex_cache; }
 private:
-	std::vector<vk::DeviceQueueCreateInfo> ChooseDeviceQueue(bool present);
+	std::vector<vk::DeviceQueueCreateInfo> ChooseDeviceQueue(vk::SurfaceKHR={});
 
 	vk::Device m_device;
 	vk::PhysicalDevice m_gpu;
 	Swapchain m_swapchain;
-	VmaAllocator m_allocator; 
+	// c struct
+	VmaAllocator m_allocator {}; 
 	vk::CommandPool m_command_pool;
 
 	QueueParameters m_graphics_queue;
 	QueueParameters m_present_queue;
+
+	// output extent
+	vk::Extent2D m_extent {1, 1};
+
+	std::unique_ptr<TextureCache> m_tex_cache;
 };
 
 }

@@ -34,8 +34,9 @@ public:
 
     PassNode* getPassNode(NodeID) const;
     TexNode* getTexNode(NodeID) const;
+    Pass* getPass(NodeID) const;
 
-    //std::vector<NodeID> topologicalOrder() const;
+    std::vector<NodeID> topologicalOrder() const;
 
   	void ToGraphviz(std::string_view path) const {
 		m_dg.ToGraphviz(path);	

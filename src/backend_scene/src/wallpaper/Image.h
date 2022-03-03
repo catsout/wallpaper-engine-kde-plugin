@@ -8,6 +8,7 @@
 #include "Type.h"
 #include "SpriteAnimation.h"
 #include "Scene/SceneTexture.h"
+#include "Utils/NoCopyMove.hpp"
 
 namespace wallpaper
 {
@@ -25,8 +26,6 @@ struct ImageData {
 	uint32_t size;
 	ImageDataPtr data;
 	ImageData() = default;
-	ImageData(const ImageData&) = delete;
-	ImageData(ImageData&&) = default;
 };
 
 struct ImageHeader {
@@ -46,10 +45,11 @@ struct ImageHeader {
 
 };
 
-struct Image {
+struct Image : NoCopy,NoMove {
 	typedef std::vector<ImageData> Slot;
 	ImageHeader header;
 	std::vector<Slot> slots;
+	std::string key;
 };
 
 }

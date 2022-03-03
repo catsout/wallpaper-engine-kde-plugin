@@ -1,5 +1,7 @@
-#ifndef WALLPAPER_LOG
-#define WALLPAPER_LOG
+#pragma once
+
+#include "span.hpp"
+#include <string>
 
 #define __SHORT_FILE__ __FILE__
 #if 1
@@ -22,5 +24,4 @@ enum {
 
 void WallpaperLog(int level, const char *file, int line, const char *fmt, ...);
 
-#endif
-
+std::string logToTmpfileWithSha1(Span<char>, const char* fmt, ...);

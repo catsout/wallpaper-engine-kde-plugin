@@ -72,3 +72,16 @@ bool SceneVertexArray::SetVertexs(std::size_t index, std::size_t count, const fl
 	std::memcpy(m_pData + index*m_oneSize, data, count*m_oneSize*sizeof(float));
 	return true;
 }
+
+std::vector<SceneVertexArray::SceneVertexAttributeOffset> SceneVertexArray::GetAttrOffset() const {
+	std::vector<SceneVertexAttributeOffset> attr_offet;
+	uint offset {0};
+	for(const auto& attr:m_attributes) {
+		attr_offet.push_back(SceneVertexAttributeOffset{
+			.attr = attr,
+			.offset = offset
+		});
+		offset += SceneVertexArray::RealAttributeSize(attr);
+	}
+	return attr_offet;
+}

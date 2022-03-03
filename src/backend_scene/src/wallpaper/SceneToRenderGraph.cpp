@@ -110,8 +110,10 @@ static void ToGraphPass(SceneNode* node, std::string output, uint32_t imgId, Ext
     std::string passName = material->name;
 
     rgraph.addPass<vulkan::CustomShaderPass>(passName, rg::PassNode::Type::CustomShader,
-        [material, &output, &imgId, &rgraph, &scene, &extra](rg::RenderGraphBuilder& builder, vulkan::CustomShaderPass::Desc& pdesc) {
+        [material, node, &output, &imgId, &rgraph, &scene, &extra](rg::RenderGraphBuilder& builder, vulkan::CustomShaderPass::Desc& pdesc) {
             const auto& pass = builder.workPassNode();
+            pdesc.node = node;
+            pdesc.output = output;
             for(const auto& url:material->textures) {
                 rg::TexNode* input {nullptr};
                 if(url.empty()) {

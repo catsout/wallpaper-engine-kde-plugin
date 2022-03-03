@@ -1,6 +1,8 @@
 #include "RenderGraph.hpp"
-#include <cassert>
 #include "Utils/Logging.h"
+
+#include <cassert>
+#include <algorithm>
 
 using namespace wallpaper::rg;
 
@@ -18,6 +20,22 @@ TexNode* RenderGraph::getTexNode(NodeID id) const {
         return static_cast<TexNode*>(m_dg.GetNode(id));
     }
     return nullptr;
+}
+
+Pass* RenderGraph::getPass(NodeID id) const {
+    if(exists(m_map_pass, id)) {
+        return m_map_pass.at(id).get();
+    }
+    return nullptr;
+}
+
+std::vector<NodeID> RenderGraph::topologicalOrder() const {
+  std::vector<NodeID> allnodes = m_dg.TopologicalOrder();
+  std::vector<NodeID> passnodes;
+  std::copy_if(allnodes.begin(), allnodes.end(), std::back_inserter(passnodes), [this](auto item) {
+      return exists(m_set_passnode, item);
+  });
+  return passnodes;
 }
 
 void RenderGraph::markPassNode(NodeID id) {

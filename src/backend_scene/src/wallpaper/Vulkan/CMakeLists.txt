@@ -8,13 +8,17 @@ Device.cpp
 Instance.cpp
 Swapchain.cpp
 TextureCache.cpp
+Shader.cpp
+GraphicsPipeline.cpp
+StagingBufferPool.cpp
 Vma.cpp
 )
 
 target_link_libraries(${LIB_NAME}
+PUBLIC
+	glslang
 PRIVATE
-#	SPIRV
-#	glslang
+	SPIRV
 	vulkan
 	pthread
 	dl
