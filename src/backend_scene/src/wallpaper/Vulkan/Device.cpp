@@ -43,7 +43,7 @@ std::vector<vk::DeviceQueueCreateInfo> Device::ChooseDeviceQueue(vk::SurfaceKHR 
 	if(surface) {
 		index = 0;
 		for(auto& prop:props) {
-			if(m_gpu.getSurfaceSupportKHR(index, surface))
+			if(m_gpu.getSurfaceSupportKHR(index, surface).value)
 				present_indexs.push_back(index);
 			index++;
 		};
@@ -64,11 +64,14 @@ std::vector<vk::DeviceQueueCreateInfo> Device::ChooseDeviceQueue(vk::SurfaceKHR 
 vk::Result Device::Create(Instance& inst, Span<const char*const> exts, Device& device) {
 	vk::Result result {vk::Result::eIncomplete};
 	device.m_gpu = inst.gpu();
+	device.m_limits = inst.gpu().getProperties().limits;
+
 	bool rq_surface = !inst.offscreen();
 	do {
 		result = CreateDevice(inst, device.ChooseDeviceQueue(inst.surface()), exts, &device.m_device);
 		if(result != vk::Result::eSuccess) break;
 		device.m_graphics_queue.handle = device.m_device.getQueue(device.m_graphics_queue.family_index, 0);
+		device.m_present_queue.handle = device.m_device.getQueue(device.m_present_queue.family_index, 0);
 
 		if(rq_surface) {
 			result = Swapchain::Create(device, inst.surface(), {1280, 720}, device.m_swapchain);
@@ -107,28 +110,13 @@ void Device::Destroy() {
 	}
 }
 
-vk::Result Device::CreateRenderingResource(RenderingResources& rr) {
-	vk::Result result;
-	do {
-		auto rv_cmd = m_device.allocateCommandBuffers({m_command_pool, vk::CommandBufferLevel::ePrimary, 1});
-		result = rv_cmd.result;
-		if(result != vk::Result::eSuccess) break;
-		rr.command = rv_cmd.value.front();
 
-		auto rv_f = m_device.createFence({vk::FenceCreateFlagBits::eSignaled});
-		result = rv_f.result;
-		if(result != vk::Result::eSuccess) break;
-		rr.fence_frame = rv_f.value;
-		m_device.resetFences(1, &rr.fence_frame);
-	} while(false);
-	return result;
+void Device::DestroyBuffer(const BufferParameters& buf) const {
+	if(buf.handle) {
+		vmaDestroyBuffer(m_allocator, buf.handle, buf.allocation);
+	}
 }
 
-
-void Device::DestroyRenderingResource(RenderingResources& rr) {
-	m_device.freeCommandBuffers(m_command_pool, 1, &rr.command);
-	m_device.destroyFence(rr.fence_frame);
-}
 
 Device::Device():m_tex_cache(std::make_unique<TextureCache>(*this)) {
 }

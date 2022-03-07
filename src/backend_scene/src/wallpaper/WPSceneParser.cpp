@@ -3,6 +3,7 @@
 #include "Utils/String.h"
 #include "Utils/Logging.h"
 #include "Utils/Algorism.h"
+#include "Utils/ArrayHelper.hpp"
 #include "SpecTexs.h"
 
 #include "WPShaderParser.h"
@@ -48,21 +49,21 @@ void GenCardMesh(SceneMesh& mesh, const std::array<uint16_t, 2> size, const std:
 	float z = 0.0f;
 	std::vector<float> pos = {
 			left, bottom, z,
+			left,  top, z,
 			right, bottom, z,
 			right,  top, z,
-			left,  top, z,
 	};
 	std::vector<float> texCoord;
 	float tw = mapRate[0],th = mapRate[1];
 	texCoord = {
 			0.0f, 0.0f,
+			0.0f, th,
 			tw, 0.0f,
 			tw, th,
-			0.0f, th,
 	};
 	std::vector<uint32_t> indices = { 
-		0, 1, 3,
-		1, 2, 3
+		0, 1, 2,
+		1, 3, 2
 	};
 	SceneVertexArray vertex({
 		{"a_Position", VertexType::FLOAT3},
@@ -211,7 +212,23 @@ void LoadMaterial(fs::VFS& vfs,
 	}
 
 	svCode = WPShaderParser::PreShaderSrc(vfs, svCode, pWPShaderInfo, texinfos);
+	auto vertexOut = pWPShaderInfo->innerInOut;
+	pWPShaderInfo->innerInOut.clear();
+
 	fgCode = WPShaderParser::PreShaderSrc(vfs, fgCode, pWPShaderInfo, texinfos);
+	{
+		auto fragIn = pWPShaderInfo->innerInOut;
+		pWPShaderInfo->innerInOut.clear();
+
+		std::string vertOutStr;
+		for(auto& in:fragIn) {
+			if(!exists(vertexOut, in.first)) {
+				vertOutStr.append(in.second + "\n");
+			}
+		}
+		svCode.insert(0, vertOutStr);
+	}
+
 	shader->uniforms = pWPShaderInfo->svs;
 
 	for(const auto& el:wpmat.combos) {
@@ -292,19 +309,19 @@ void LoadMaterial(fs::VFS& vfs,
 						resolution[2] = resolution[0] - resolution[0] % (int)f1.width;
 						resolution[3] = resolution[1] - resolution[1] % (int)f1.height;
 					}
-					materialShader.constValues["g_RenderVar1"] = { "g_RenderVar1", {
+					materialShader.constValues["g_RenderVar1"] = std::array {
 						f1.xAxis[0],
 						f1.yAxis[1],
 						(float)(texh.spriteAnim.numFrames()),
 						f1.rate
-					}};
+					};
 				}
 			}
 		}
 		if(!resolution.empty()) {
-			const std::string gResolution = "g_Texture" + std::to_string(i) + "Resolution";
-			std::vector<float> vrl {resolution.begin(), resolution.end()};
-			materialShader.constValues[gResolution] = {gResolution, vrl};
+			const std::string gResolution = WE_GLTEX_RESOLUTION_NAMES[i];
+			
+			materialShader.constValues[gResolution] = array_cast<float>(resolution);
 		}
 	}
 	if(pWPShaderInfo->combos.count("LIGHTING") > 0) {
@@ -368,7 +385,7 @@ void LoadConstvalue(SceneMaterial& material, const wpscene::WPMaterial& wpmat, c
 		if(glname.empty()) {
 			LOG_ERROR("ShaderValue: %s not found in glsl", name.c_str());
 		} else {
-			material.customShader.constValues[glname] = {glname, value}; 
+			material.customShader.constValues[glname] = value; 
 		}
 	}
 }
@@ -405,12 +422,14 @@ std::shared_ptr<Scene> WPSceneParser::Parse(const std::string& buf, fs::VFS& vfs
 			wpscene::WPParticleObject wppartobj;
 			if(!wppartobj.FromJson(obj, vfs)) continue;
 			if(!wppartobj.visible) continue;
+			continue;
 			wppartobjs.push_back(wppartobj);
 			indexTable.push_back({"particle", wppartobjs.size() - 1});
 			//LOG_INFO(nlohmann::json(wppartobj).dump(4));
 		} else if(obj.contains("sound") && !obj.at("sound").is_null()) {
 			wpscene::WPSoundObject wpsoundobj;
 			if(!wpsoundobj.FromJson(obj)) continue;
+			continue;
 			wpsoundobjs.push_back(wpsoundobj);
 			indexTable.push_back({"sound", wpsoundobjs.size() - 1});
 		}
@@ -476,16 +495,16 @@ std::shared_ptr<Scene> WPSceneParser::Parse(const std::string& buf, fs::VFS& vfs
 	upScene->activeCamera = upScene->cameras.at("global").get();
 
 	ShaderValues globalBaseConstSvs;
-	globalBaseConstSvs["g_ViewUp"] = {"g_ViewUp", {0.0f, 1.0f, 0}};
-	globalBaseConstSvs["g_ViewRight"]= {"g_ViewRight", {1.0f, 0, 0}};
-	globalBaseConstSvs["g_ViewForward"]= {"g_ViewForward", {0, 0, -1.0f}};
-	globalBaseConstSvs["g_EyePosition"]= {"g_EyePosition", {0, 0, 0}};
-	globalBaseConstSvs["g_TexelSize"]= {"g_TexelSize", {1.0f/1920.0f, 1.0f/1080.0f}};
-	globalBaseConstSvs["g_TexelSizeHalf"]= {"g_TexelSizeHalf", {1.0f/1920.0f/2.0f, 1.0f/1080.0f/2.0f}};
+	globalBaseConstSvs["g_ViewUp"] = std::array {0.0f, 1.0f, 0.0f};
+	globalBaseConstSvs["g_ViewRight"] = std::array {1.0f, 0.0f, 0.0f};
+	globalBaseConstSvs["g_ViewForward"] = std::array {0.0f, 0.0f, -1.0f};
+	globalBaseConstSvs["g_EyePosition"] = std::array {0.0f, 0.0f, 0.0f};
+	globalBaseConstSvs["g_TexelSize"]= std::array {1.0f/1920.0f, 1.0f/1080.0f};
+	globalBaseConstSvs["g_TexelSizeHalf"]= std::array {1.0f/1920.0f/2.0f, 1.0f/1080.0f/2.0f};
 
-	globalBaseConstSvs["g_LightAmbientColor"]= {"g_LightAmbientColor", {sc.general.ambientcolor.begin(), sc.general.ambientcolor.end()}};
-	globalBaseConstSvs["g_LightsColorPremultiplied[0]"]= {"g_LightsColorPremultiplied[0]", {848496.0f, 893676.0f, 1250141.0f, 0.0f}};
-	globalBaseConstSvs["g_NormalModelMatrix"] = {"g_NormalModelMatrix", ShaderValue::ValueOf(Matrix3f::Identity())};
+	globalBaseConstSvs["g_LightAmbientColor"]= sc.general.ambientcolor;
+	globalBaseConstSvs["g_LightsColorPremultiplied[0]"] = std::array {848496.0f, 893676.0f, 1250141.0f, 0.0f};
+	globalBaseConstSvs["g_NormalModelMatrix"] = ShaderValue::fromMatrix(Matrix3f::Identity());
 
 
 	Vector3f cori{ortho.width/2.0f,ortho.height/2.0f,0},cscale{1.0f,1.0f,1.0f},cangle(Vector3f::Zero());
@@ -562,10 +581,10 @@ std::shared_ptr<Scene> WPSceneParser::Parse(const std::string& buf, fs::VFS& vfs
 				if(!hasEffect)
 					svData.parallaxDepth = {wpimgobj.parallaxDepth[0], wpimgobj.parallaxDepth[1]};
 
-				baseConstSvs["g_Alpha"] = {"g_Alpha", {wpimgobj.alpha}};
-				baseConstSvs["g_Color"] = {"g_Color", {wpimgobj.color.begin(), wpimgobj.color.end()}};
-				baseConstSvs["g_UserAlpha"] = {"g_UserAlpha", {wpimgobj.alpha}};
-				baseConstSvs["g_Brightness"] = {"g_Brightness", {wpimgobj.brightness}};
+				baseConstSvs["g_Alpha"] = wpimgobj.alpha;
+				baseConstSvs["g_Color"] = wpimgobj.color;
+				baseConstSvs["g_UserAlpha"] = wpimgobj.alpha;
+				baseConstSvs["g_Brightness"] = wpimgobj.brightness;
 
 				shaderInfo.baseConstSvs = baseConstSvs;
 				LoadMaterial(vfs, wpimgobj.material, upScene.get(), spImgNode.get(), &material, &svData, &shaderInfo);
@@ -589,7 +608,7 @@ std::shared_ptr<Scene> WPSceneParser::Parse(const std::string& buf, fs::VFS& vfs
 				if(glname.empty()) {
 					LOG_ERROR("ShaderValue: %s not found in glsl", name.c_str());
 				} else {
-					material.customShader.constValues[glname] = {glname, value}; 
+					material.customShader.constValues[glname] = value; 
 				}
 			}
 
@@ -600,8 +619,8 @@ std::shared_ptr<Scene> WPSceneParser::Parse(const std::string& buf, fs::VFS& vfs
 			{
 				// deal with pow of 2
 				std::array<float, 2> mapRate {1.0f, 1.0f};
-				if(!wpimgobj.nopadding && material.customShader.constValues.count("g_Texture0Resolution") != 0) {
-					const auto& r = material.customShader.constValues.at("g_Texture0Resolution").value;
+				if(!wpimgobj.nopadding && exists(material.customShader.constValues,"g_Texture0Resolution")) {
+					const auto& r = material.customShader.constValues.at("g_Texture0Resolution");
 					mapRate = {
 						r[2] / r[0],
 						r[3] / r[1]
@@ -764,14 +783,10 @@ std::shared_ptr<Scene> WPSceneParser::Parse(const std::string& buf, fs::VFS& vfs
 						std::string effmataddr = getAddr(spEffNode.get());
 						WPShaderInfo wpEffShaderInfo;
 						wpEffShaderInfo.baseConstSvs = baseConstSvs;
-						wpEffShaderInfo.baseConstSvs["g_EffectTextureProjectionMatrix"] = {
-							"g_EffectTextureProjectionMatrix", 
-							ShaderValue::ValueOf(Eigen::Matrix4f::Identity())
-						};
-						wpEffShaderInfo.baseConstSvs["g_EffectTextureProjectionMatrixInverse"] = {
-							"g_EffectTextureProjectionMatrixInverse", 
-							ShaderValue::ValueOf(Eigen::Matrix4f::Identity())
-						};
+						wpEffShaderInfo.baseConstSvs["g_EffectTextureProjectionMatrix"] =
+							ShaderValue::fromMatrix(Eigen::Matrix4f::Identity());
+						wpEffShaderInfo.baseConstSvs["g_EffectTextureProjectionMatrixInverse"] =
+							ShaderValue::fromMatrix(Eigen::Matrix4f::Identity());
 						SceneMaterial material;
 						WPShaderValueData svData;
 						LoadMaterial(vfs, wpmat, upScene.get(), spEffNode.get(), &material, &svData, &wpEffShaderInfo);
@@ -821,19 +836,19 @@ std::shared_ptr<Scene> WPSceneParser::Parse(const std::string& buf, fs::VFS& vfs
 			svData.parallaxDepth = {wppartobj.parallaxDepth[0], wppartobj.parallaxDepth[1]};
 			WPShaderInfo shaderInfo;
 			shaderInfo.baseConstSvs = globalBaseConstSvs;
-			shaderInfo.baseConstSvs["g_OrientationUp"] = {"g_OrientationUp", {0.0f, -1.0f, 0}};
-			shaderInfo.baseConstSvs["g_OrientationRight"]= {"g_OrientationRight", {1.0f, 0, 0}};
-			shaderInfo.baseConstSvs["g_OrientationForward"]= {"g_OrientationForward", {0, 0, 1.0f}};
-			shaderInfo.baseConstSvs["g_ViewUp"]= {"g_ViewUp", {0, 1.0f, 0}};
-			shaderInfo.baseConstSvs["g_ViewRight"]= {"g_ViewRight", {1.0f, 0, 0}};
+			shaderInfo.baseConstSvs["g_OrientationUp"] = std::array {0.0f, -1.0f, 0.0f};
+			shaderInfo.baseConstSvs["g_OrientationRight"]= std::array {1.0f, 0.0f, 0.0f};
+			shaderInfo.baseConstSvs["g_OrientationForward"]= std::array {0.0f, 0.0f, 1.0f};
+			shaderInfo.baseConstSvs["g_ViewUp"]= std::array {0.0f, 1.0f, 0.0f};
+			shaderInfo.baseConstSvs["g_ViewRight"]= std::array {1.0f, 0.0f, 0.0f};
 
 			bool hastrail {false};
 			if(wppartobj.particleObj.renderers.size() > 0) {
 				auto wppartRenderer = wppartobj.particleObj.renderers.at(0);
 				if(wppartRenderer.name == "spritetrail") {
-					shaderInfo.baseConstSvs["g_RenderVar0"]= {"g_RenderVar0", {
-						wppartRenderer.length, wppartRenderer.maxlength, 0, 0
-					}};
+					shaderInfo.baseConstSvs["g_RenderVar0"]= std::array {
+						wppartRenderer.length, wppartRenderer.maxlength, 0.0f, 0.0f
+					};
 					shaderInfo.combos["THICKFORMAT"] = 1;
 					shaderInfo.combos["TRAILRENDERER"] = 1;
 					hastrail = true;

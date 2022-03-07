@@ -5,10 +5,14 @@
 #include "Vulkan/Swapchain.hpp"
 #include "Vulkan/VulkanExSwapchain.hpp"
 
+#include "Resource.hpp"
+
 #include "RenderGraph/RenderGraph.hpp"
 
 #include "SceneWallpaperSurface.hpp"
 #include "VulkanPass.hpp"
+#include "FinPass.hpp"
+#include "Resource.hpp"
 
 #include <cstdio>
 #include <memory>
@@ -19,6 +23,7 @@ class Scene;
 
 namespace vulkan
 {
+class FinPass;
 
 class VulkanRender {
 public:
@@ -30,9 +35,21 @@ public:
 
     void drawFrame(Scene&);
     void compileRenderGraph(Scene&, rg::RenderGraph&);
+
+	vk::Result CreateRenderingResource(RenderingResources&);
+	void DestroyRenderingResource(RenderingResources&);
+
 private:
+    vk::Result initRes();
+    void drawFrameSwapchain();
+    void drawFrameOffscreen();
+
     Instance m_instance;
-    Swapchain m_swapchain;
+    std::unique_ptr<FinPass> m_finpass {nullptr};
+
+    std::unique_ptr<StagingBuffer> m_vertex_buf {nullptr};
+    std::unique_ptr<StagingBuffer> m_ubo_buf {nullptr};
+    vk::CommandBuffer m_upload_cmd;
 
     std::unique_ptr<Device> m_device;
 

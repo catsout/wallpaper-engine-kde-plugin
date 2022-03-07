@@ -10,15 +10,6 @@ namespace wallpaper
 namespace vulkan
 {
 
-struct RenderingResources {
-    vk::Framebuffer framebuffer;
-    vk::CommandBuffer command;
-
-	vk::Semaphore sem_swap_wait_image;
-	vk::Semaphore sem_swap_finish;
-	vk::Fence fence_frame;
-};
-
 class Device : NoCopy,NoMove {
 public:
 	Device();
@@ -28,24 +19,29 @@ public:
 
 	void Destroy();
 
-	vk::Result CreateRenderingResource(RenderingResources&);
-	void DestroyRenderingResource(RenderingResources&);
 
 	const auto& graphics_queue() const { return m_graphics_queue; }
+	const auto& present_queue() const { return m_present_queue; }
 	const auto& device() const { return m_device; }
 	const auto& handle() const { return m_device; }
 	const auto& gpu() const { return m_gpu; }
+	const auto& limits() const { return m_limits; }
 	const auto& vma_allocator() const { return m_allocator; } 
 	const auto& cmd_pool() const { return m_command_pool; }
+	const auto& swapchain() const { return m_swapchain; }
 	const auto& out_extent() const { return m_extent; }
 	void set_out_extent(vk::Extent2D v) { m_extent = v; }
 
 	auto& tex_cache() const { return *m_tex_cache; }
+
+	void DestroyBuffer(const BufferParameters&) const;
 private:
 	std::vector<vk::DeviceQueueCreateInfo> ChooseDeviceQueue(vk::SurfaceKHR={});
 
 	vk::Device m_device;
 	vk::PhysicalDevice m_gpu;
+	vk::PhysicalDeviceLimits m_limits;
+
 	Swapchain m_swapchain;
 	// c struct
 	VmaAllocator m_allocator {}; 

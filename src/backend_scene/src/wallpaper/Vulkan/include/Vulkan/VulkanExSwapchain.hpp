@@ -36,6 +36,8 @@ public:
     ExImageParameters& GetInprogressImage() {
         return m_handles.at((*inprogress()).id()).image;
     }
+
+    constexpr vk::Format format() const { return vk::Format::eR8G8B8A8Unorm; };
 protected:
     atomic_& presented()  override { return m_presented; };
     atomic_& ready()      override { return m_ready; };

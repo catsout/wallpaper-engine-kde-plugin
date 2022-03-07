@@ -19,8 +19,8 @@ struct QueueParameters {
 struct BufferParameters {
 	vk::Buffer handle;
 	std::size_t req_size;
-	VmaAllocation allocation;
-	VmaAllocationInfo allocationInfo;
+	VmaAllocation allocation {};
+	VmaAllocationInfo allocationInfo {};
 };
 
 struct ImageParameters {
@@ -28,15 +28,17 @@ struct ImageParameters {
 	vk::ImageView view;
 	vk::Sampler sampler;
 	vk::Extent3D extent;
-	VmaAllocation allocation;
-	VmaAllocationInfo allocationInfo;
+	VmaAllocation allocation {};
+	VmaAllocationInfo allocationInfo {};
 
 	bool ok() const { return handle; }
 };
 
 struct ImageSlots {
 	std::vector<ImageParameters> slots;
-	int active_slot {0};
+	int active {0};
+
+	auto& getActive() const { return slots[active]; }
 };
 
 struct ExImageParameters {

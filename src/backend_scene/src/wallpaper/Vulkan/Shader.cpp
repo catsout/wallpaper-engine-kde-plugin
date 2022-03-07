@@ -1,4 +1,6 @@
 #include "Shader.hpp"
+
+#include <glslang/MachineIndependent/iomapper.h>
 #include <glslang/SPIRV/GlslangToSpv.h>
 #include "Utils/Logging.h"
 #include <cstdlib>
@@ -6,6 +8,28 @@
 #include "Utils/Sha.hpp"
 
 using namespace wallpaper::vulkan;
+
+namespace wallpaper 
+{
+
+vk::ShaderStageFlags vulkan::ToVkType(EShLanguageMask mask) {
+	vk::ShaderStageFlags flags {};
+	if(mask & EShLangVertexMask)
+		flags |= vk::ShaderStageFlagBits::eVertex;
+	if(mask & EShLangFragmentMask)
+		flags |= vk::ShaderStageFlagBits::eFragment;
+
+	return flags;
+}
+vk::ShaderStageFlagBits vulkan::ToVkType_Stage(EShLanguage lan) {
+	switch (lan)
+	{
+	case EShLangVertex: return vk::ShaderStageFlagBits::eVertex;
+	case EShLangFragment: return vk::ShaderStageFlagBits::eFragment;
+	}
+	return vk::ShaderStageFlagBits::eVertex;
+}
+}
 
 int ClientInputSemanticsVersion = 100;
 
@@ -116,6 +140,7 @@ const TBuiltInResource DefaultTBuiltInResource = {
 		/* .generalConstantMatrixVectorIndexing = */ 1,
 	}};
 
+
 static glslang::EShClient getClient(glslang::EShTargetClientVersion ClientVersion) {
     switch (ClientVersion)
     {
@@ -167,10 +192,9 @@ static bool parse(const ShaderCompUnit& unit, const ShaderCompOpt& opt, EShMessa
     if(opt.auto_map_bindings)
         shader.setAutoMapBindings(true);
     if(opt.relaxed_rules_vulkan) {
-		shader.setGlobalUniformBinding(0);
+		shader.setGlobalUniformBinding(opt.global_uniform_binding);
         shader.setEnvInputVulkanRulesRelaxed();
 	}
-	
     const int default_ver = 100; // or 110
     TBuiltInResource resource = DefaultTBuiltInResource;
     if (!shader.parse(&resource, default_ver, false, emsg)) {
@@ -192,15 +216,6 @@ static void SetMessageOptions(const ShaderCompOpt& opt, EShMessages& emsg) {
         emsg = (EShMessages)(emsg | EShMsgVulkanRules);
 }
 
-static vk::ShaderStageFlags ToVkType(EShLanguageMask mask) {
-	vk::ShaderStageFlags flags {};
-	if(mask & EShLangVertexMask)
-		flags |= vk::ShaderStageFlagBits::eVertex;
-	if(mask & EShLangFragmentMask)
-		flags |= vk::ShaderStageFlagBits::eFragment;
-
-	return flags;
-}
 
 static size_t GetTypeNum(const glslang::TType* type) {
 	size_t num {1};
@@ -262,13 +277,16 @@ static bool GetReflectedInfo(glslang::TProgram& pro, ShaderReflected& ref) {
 		auto& qual = type->getQualifier();
 
 		if(!qual.hasAnyLocation()) return false;
-		ref.input_location_map[input.name] = qual.layoutLocation;
+		ShaderReflected::Input rinput;
+		rinput.location = qual.layoutLocation;
+		rinput.format = ToVkType(type->getBasicType(), GetTypeNum(type));
+		ref.input_location_map[input.name] = rinput;
 	}
 
 	return true;
 };
 
-bool wallpaper::vulkan::CompileAndLinkShaderUnits(Span<ShaderCompUnit> compUnits, const ShaderCompOpt& opt, std::vector<Uni_ShaderSpv>& spvs, ShaderReflected& reflectd) {
+bool wallpaper::vulkan::CompileAndLinkShaderUnits(Span<ShaderCompUnit> compUnits, const ShaderCompOpt& opt, std::vector<Uni_ShaderSpv>& spvs, ShaderReflected* reflectd) {
     glslang::TProgram program;
     EShMessages emsg;
     SetMessageOptions(opt, emsg);
@@ -281,12 +299,21 @@ bool wallpaper::vulkan::CompileAndLinkShaderUnits(Span<ShaderCompUnit> compUnits
         program.addShader(&shader);
     }
 
-    if (!(program.link(emsg) && 
-		program.mapIO() &&
-		GetReflectedInfo(program, reflectd))) {
-        fprintf(stderr, "glslang(link): %s\n", program.getInfoLog());   
+    if (!program.link(emsg)) {
+        LOG_ERROR("glslang(link): %s\n", program.getInfoLog());   
         return false;
     }
+
+    for(auto& unit:compUnits) { (void)program.getIntermediate(unit.stage); }
+	glslang::TIntermediate* firstIm = program.getIntermediate(compUnits[0].stage);
+    glslang::TDefaultGlslIoResolver resolver(*firstIm);
+    glslang::TGlslIoMapper ioMapper;
+
+	if(!( program.mapIO(&resolver, &ioMapper) && 
+		(reflectd == nullptr || GetReflectedInfo(program, *reflectd)) )) {
+        LOG_ERROR("glslang(mapIo): %s\n", program.getInfoLog());   
+		return false;
+	}
 
     spv::SpvBuildLogger logger;
     glslang::SpvOptions spvOptions;
@@ -297,21 +324,58 @@ bool wallpaper::vulkan::CompileAndLinkShaderUnits(Span<ShaderCompUnit> compUnits
 	static int num {0};
     for(auto& unit:compUnits) {
         Uni_ShaderSpv spv = std::make_unique<ShaderSpv>();
-        spv->stage = unit.stage;
+        spv->stage = ToVkType_Stage(unit.stage);
         auto im = program.getIntermediate(unit.stage);
         im->setOriginUpperLeft();
         glslang::GlslangToSpv(*im, spv->spirv, &logger, &spvOptions);
-		if(num == 6)
-			glslang::OutputSpvBin(spv->spirv, (std::to_string(spv->stage) + ".spv").c_str());
+		if(num == 1)
+			glslang::OutputSpvBin(spv->spirv, (std::to_string((int)spv->stage) + ".spv").c_str());
         spvs.emplace_back(std::move(spv)); 
         
         auto messages = logger.getAllMessages();
         if (messages.length() > 0)
-            printf("glslang(spv): %s\n", messages.c_str());
+            LOG_ERROR("glslang(spv): %s\n", messages.c_str());
     }
 	num++;
 
     return true;
+}
+
+vk::Format wallpaper::vulkan::ToVkType(glslang::TBasicType type, size_t size) {
+	switch (type)
+	{
+	case glslang::TBasicType::EbtFloat:
+		switch (size)
+		{
+		case 1: return vk::Format::eR32Sfloat;
+		case 2: return vk::Format::eR32G32Sfloat;
+		case 3: return vk::Format::eR32G32B32Sfloat;
+		case 4: return vk::Format::eR32G32B32A32Sfloat;
+		}
+		break;
+	case glslang::TBasicType::EbtInt:
+		switch (size)
+		{
+		case 1: return vk::Format::eR32Sint;
+		case 2: return vk::Format::eR32G32Sint;
+		case 3: return vk::Format::eR32G32B32Sint;
+		case 4: return vk::Format::eR32G32B32A32Sint;
+		}
+		break;
+	}
+	LOG_ERROR("can't covert glslang type to vulkan format");
+	return vk::Format::eUndefined;
+}
+
+size_t wallpaper::vulkan::Sizeof(glslang::TBasicType type) {
+	switch (type)
+	{
+	case glslang::TBasicType::EbtFloat:
+	case glslang::TBasicType::EbtInt:
+		return sizeof(float);
+	}
+	LOG_ERROR("can't get glslang type size");
+	return 0;
 }
 
 /*

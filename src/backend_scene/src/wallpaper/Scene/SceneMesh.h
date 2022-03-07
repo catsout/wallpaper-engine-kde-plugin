@@ -59,9 +59,9 @@ public:
 		float z = 0.0f;
 		std::vector<float> pos = {
 			 left, bottom, z,
+			 left,  top, z,
 			 right, bottom, z,
 			 right,  top, z,
-			 left,  top, z,
 		};
 		std::vector<float> texCoord;
 		float tw = 1.0f,th = 1.0f;
@@ -74,13 +74,13 @@ public:
 		}
 		texCoord = {
 			 0.0f, 0.0f,
+			 0.0f, th,
 			 tw, 0.0f,
 			 tw, th,
-			 0.0f, th,
 		};
 		std::vector<uint32_t> indices = { 
-			0, 1, 3,
-			1, 2, 3
+			0, 1, 2,
+			1, 3, 2
 		};
 		SceneVertexArray vertex({
 			{"a_Position", VertexType::FLOAT3},

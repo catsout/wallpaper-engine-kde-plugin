@@ -4,13 +4,14 @@
 
 #include "wpscene/WPUniform.h"
 #include "Fs/VFS.h"
+#include "Utils/span.hpp"
 
 #include <regex>
 #include <stack>
 
 using namespace wallpaper;
 
-static constexpr const char* pre_shader_code = R"(#version 140
+static constexpr const char* pre_shader_code = R"(#version 150
 #define GLSL 1
 #define highp
 #define mediump
@@ -41,8 +42,11 @@ static constexpr const char* pre_shader_code = R"(#version 140
 )";
 
 static constexpr const char* pre_shader_code_vert = R"(
+#define attribute in
+#define varying out
 )";
 static constexpr const char* pre_shader_code_frag = R"(
+#define varying in
 #define gl_FragColor glOutColor
 out vec4 glOutColor;
 )";
@@ -78,6 +82,7 @@ void ParseWPShader(const std::string& src, WPShaderInfo* pWPShaderInfo, const st
 	auto& wpAliasDict = pWPShaderInfo->alias;
 	auto& shadervalues = pWPShaderInfo->svs;
 	auto& defTexs = pWPShaderInfo->defTexs;
+	auto& innerInOut = pWPShaderInfo->innerInOut;
 	int32_t texcount = texinfos.size();
 
 	// pos start of line
@@ -90,11 +95,11 @@ void ParseWPShader(const std::string& src, WPShaderInfo* pWPShaderInfo, const st
 		if(line.find("attribute ") != std::string::npos || line.find("in ") != std::string::npos) {
 			update_pos = true;
 		}
-		else if(line.find("varying ") != std::string::npos || line.find("out ") != std::string::npos) {
-			update_pos = true;
-		}
 		*/
-		if(line.find("// [COMBO]") != std::string::npos) {
+		if(line.find("varying ") != std::string::npos) {
+			std::vector<std::string> defines = utils::SpliteString(line.substr(0, line.find_first_of(';')), ' ');
+			innerInOut.insert({defines.back(), line});
+		} else if(line.find("// [COMBO]") != std::string::npos) {
 			nlohmann::json combo_json;
 			if(PARSE_JSON(line.substr(line.find_first_of('{')), combo_json)) {
 				if(combo_json.contains("combo")) {
@@ -118,13 +123,13 @@ void ParseWPShader(const std::string& src, WPShaderInfo* pWPShaderInfo, const st
 						wpAliasDict[material] = defines.back();	
 
 					ShaderValue sv;	
-					sv.name = defines.back();
-					bool istex = sv.name.compare(0, 9, "g_Texture") == 0;
+					std::string name = defines.back();
+					bool istex = name.compare(0, 9, "g_Texture") == 0;
 					if(istex) {
 						wpscene::WPUniformTex wput;
 						wput.FromJson(sv_json);
 						int32_t index {0};
-						STRTONUM(sv.name.substr(9), index);
+						STRTONUM(name.substr(9), index);
 						if(!wput.default_.empty())
 							defTexs.push_back({index,wput.default_});
 						if(!wput.combo.empty()) {
@@ -146,15 +151,18 @@ void ParseWPShader(const std::string& src, WPShaderInfo* pWPShaderInfo, const st
 						if(sv_json.contains("default")){
 							auto value = sv_json.at("default");
 							ShaderValue sv;	
-							sv.name = defines.back();
-							if(value.is_string())
-								GET_JSON_VALUE(value, sv.value);
+							name = defines.back();
+							if(value.is_string()) {
+								std::vector<float> v;
+								GET_JSON_VALUE(value, v);
+								sv = Span<float>(v);
+							}
 							if(value.is_number()) {
-								sv.value.resize(1);
-								GET_JSON_VALUE(value, sv.value[0]);
+								sv.setSize(1);
+								GET_JSON_VALUE(value, sv[0]);
 							}
 								//sv.value = {value.get<float>()};
-							shadervalues[sv.name] = sv;
+							shadervalues[name] = sv;
 						}
 						if(sv_json.contains("combo")) {
 							std::string name;

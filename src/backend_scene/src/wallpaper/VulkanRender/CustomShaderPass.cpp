@@ -1,46 +1,20 @@
 #include "CustomShaderPass.hpp"
 #include "Scene/Scene.h"
+#include "Scene/SceneShader.h"
 
 #include "SpecTexs.h"
-#include "Vulkan/VertexInputState.hpp"
 #include "Vulkan/Shader.hpp"
 #include "Utils/Logging.h"
+#include "Utils/AutoDeletor.hpp"
+#include "Resource.hpp"
 
 #include <cassert>
 
 using namespace wallpaper::vulkan;
 
+
 CustomShaderPass::CustomShaderPass(const Desc& desc):m_desc(desc) {};
-CustomShaderPass::~CustomShaderPass() {
-
-}
-
-struct PipelineParameters {
-	vk::Pipeline handle;
-	vk::PipelineLayout layout;
-};
-
-static vk::ShaderModule CreateShaderModule(const vk::Device& device, ShaderSpv& spv) {
-	auto& data = spv.spirv;
-	vk::ShaderModuleCreateInfo createinfo;
-	createinfo
-		.setCodeSize(data.size() * sizeof(uint32_t))
-		.setPCode(data.data());
-	return device.createShaderModule(createinfo).value;
-}
-
-static vk::ShaderStageFlagBits ToVkType(EShLanguage esh) {
-	switch (esh)
-	{
-	case EShLangVertex:
-		return vk::ShaderStageFlagBits::eVertex;
-	case EShLangFragment:
-		return vk::ShaderStageFlagBits::eFragment;
-	default:
-		return vk::ShaderStageFlagBits::eVertex;
-	}
-}
-
+CustomShaderPass::~CustomShaderPass() {}
 
 vk::RenderPass CreateRenderPass(const vk::Device &device, vk::Format format)
 {
@@ -53,7 +27,7 @@ vk::RenderPass CreateRenderPass(const vk::Device &device, vk::Format format)
 		.setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
 		.setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
 		.setInitialLayout(vk::ImageLayout::eUndefined)
-		.setFinalLayout(vk::ImageLayout::ePresentSrcKHR);
+		.setFinalLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
 
 	vk::AttachmentReference attachment_ref;
 	attachment_ref
@@ -75,95 +49,6 @@ vk::RenderPass CreateRenderPass(const vk::Device &device, vk::Format format)
 	return device.createRenderPass(creatinfo).value;
 }
 
-vk::ResultValue<PipelineParameters> CreatePipline(const vk::Device &device, vk::RenderPass &pass,
-												Span<Uni_ShaderSpv> spvs,
-												const VertexInputState& input_state,
-												Span<vk::DescriptorSetLayout> descriptor_layouts)
-{
-	PipelineParameters pipeline;
-	glslang::InitializeProcess();
-	glslang::FinalizeProcess();
-
-	{
-		vk::PipelineLayoutCreateInfo create;
-		create.setPSetLayouts(descriptor_layouts.data());
-		create.setSetLayoutCount(descriptor_layouts.size());
-		pipeline.layout = device.createPipelineLayout(create).value;
-	}
-	{
-		std::vector<vk::PipelineShaderStageCreateInfo> shaderStages;
-		for(auto& spv:spvs) {
-			vk::PipelineShaderStageCreateInfo info;
-			info.setStage(ToVkType(spv->stage))
-				.setModule(CreateShaderModule(device, *spv))
-				.setPName("main");
-			shaderStages.push_back(info);
-		}
-
-		vk::PipelineViewportStateCreateInfo view;
-		view.setViewportCount(1)
-			.setScissorCount(1);
-
-		vk::PipelineMultisampleStateCreateInfo multisample;
-		multisample.setRasterizationSamples(vk::SampleCountFlagBits::e1)
-			.setMinSampleShading(1.0f)
-			.setSampleShadingEnable(false)
-			.setAlphaToOneEnable(false)
-			.setAlphaToCoverageEnable(false);
-
-		vk::PipelineDepthStencilStateCreateInfo depth;
-
-		vk::PipelineDynamicStateCreateInfo dynamic;
-		{
-			std::array<vk::DynamicState, 2> dynamicstats{
-				vk::DynamicState::eViewport,
-				vk::DynamicState::eScissor};
-			dynamic.setDynamicStateCount(dynamicstats.size())
-				.setPDynamicStates(dynamicstats.data());
-		}
-
-		vk::PipelineRasterizationStateCreateInfo raster;
-		raster.setCullMode(vk::CullModeFlagBits::eBack)
-			.setFrontFace(vk::FrontFace::eCounterClockwise)
-			.setDepthBiasEnable(false)
-			.setDepthClampEnable(false)
-			.setLineWidth(1.0f)
-			.setPolygonMode(vk::PolygonMode::eFill);
-
-		vk::PipelineColorBlendStateCreateInfo color;
-		vk::PipelineColorBlendAttachmentState colorattach;
-		colorattach.setBlendEnable(false)
-			.setColorWriteMask(
-				vk::ColorComponentFlagBits::eR |
-				vk::ColorComponentFlagBits::eG |
-				vk::ColorComponentFlagBits::eB |
-				vk::ColorComponentFlagBits::eA);
-		color.setAttachmentCount(1)
-			.setPAttachments(&colorattach)
-			.setLogicOp(vk::LogicOp::eCopy)
-			.setLogicOpEnable(false);
-
-		vk::GraphicsPipelineCreateInfo create;
-		create
-			.setStageCount(shaderStages.size())
-			.setPStages(shaderStages.data())
-			.setPViewportState(&view)
-			.setPDynamicState(&dynamic)
-			.setPMultisampleState(&multisample)
-			.setPDepthStencilState(&depth)
-			.setPRasterizationState(&raster)
-			.setRenderPass(pass)
-			.setLayout(pipeline.layout)
-			.setPColorBlendState(&color)
-			.setPVertexInputState(&input_state.input)
-			.setPInputAssemblyState(&input_state.input_assembly);
-		auto value = device.createGraphicsPipeline({}, create);
-		pipeline.handle = value.value;
-		vk::ResultValue<PipelineParameters> result(value.result, pipeline);
-		return result;
-	}
-}
-
 static TextureKey ToTexKey(wallpaper::SceneRenderTarget rt) {
 	return TextureKey {
 		.width = rt.width,
@@ -172,6 +57,22 @@ static TextureKey ToTexKey(wallpaper::SceneRenderTarget rt) {
 		.format = wallpaper::TextureFormat::RGBA8,
 		.sample = rt.sample
 	};
+}
+
+static void UpdateUniform(StagingBuffer* buf, 
+	const StagingBufferRef& bufref, 
+	const ShaderReflected::Block& block, 
+	std::string_view name,
+	const wallpaper::ShaderValue& value) {
+	using namespace wallpaper;
+	Span<uint8_t> value_u8 {(uint8_t*)value.data(), value.size()*sizeof(ShaderValue::value_type)};
+	auto uni = block.member_map.find(name);
+	size_t offset = uni->second.offset;
+	size_t type_size = Sizeof(uni->second.type);
+	if(type_size != value_u8.size()) {
+		;//to do
+	}
+	buf->writeToBuf(bufref, value_u8, offset);
 }
 
 void CustomShaderPass::prepare(Scene& scene, const Device& device, RenderingResources& rr) {
@@ -199,6 +100,8 @@ void CustomShaderPass::prepare(Scene& scene, const Device& device, RenderingReso
 		assert(IsSpecTex(tex_name));
 		assert(scene.renderTargets.count(tex_name) > 0);
 		auto& rt = scene.renderTargets.at(tex_name);
+		LOG_INFO("--output--");
+		LOG_INFO("%s", tex_name.c_str());
 		auto rv = device.tex_cache().Query(tex_name, ToTexKey(rt));
 		if(rv.result == vk::Result::eSuccess)
 			m_desc.vk_output = rv.value;
@@ -207,7 +110,7 @@ void CustomShaderPass::prepare(Scene& scene, const Device& device, RenderingReso
 	SceneMesh& mesh = *(m_desc.node->Mesh());
 
     std::vector<Uni_ShaderSpv> spvs;
-	std::vector<vk::DescriptorSetLayout> descriptro_layouts;
+	DescriptorSetInfo descriptor_info;
 	ShaderReflected ref;
     {
         SceneShader& shader = *(mesh.Material()->customShader.shader);
@@ -226,8 +129,9 @@ void CustomShaderPass::prepare(Scene& scene, const Device& device, RenderingReso
         if(!shader.fragmentCode.empty()) {
             units.push_back(ShaderCompUnit{.stage=EShLangFragment, .src=shader.fragmentCode});
         }
-        CompileAndLinkShaderUnits(units, opt, spvs, ref);
-		std::vector<vk::DescriptorSetLayoutBinding> bindings;
+        CompileAndLinkShaderUnits(units, opt, spvs, &ref);
+
+		auto& bindings = descriptor_info.bindings;
 		bindings.resize(ref.binding_map.size());
 		LOG_INFO("----shader------");
 		LOG_INFO("--inputs:");
@@ -236,17 +140,21 @@ void CustomShaderPass::prepare(Scene& scene, const Device& device, RenderingReso
 		}
 		LOG_INFO("--bindings:");
 		std::transform(ref.binding_map.begin(), ref.binding_map.end(), bindings.begin(), [](auto& item) {
-			LOG_INFO(item.first.c_str());
+			LOG_INFO("%d %s", item.second.binding, item.first.c_str());
 			return item.second;
 		});
-		vk::DescriptorSetLayoutCreateInfo info;
-		info.setBindingCount(bindings.size())
-			.setPBindings(bindings.data());
-		descriptro_layouts.push_back(device.handle().createDescriptorSetLayout(info).value);
+
+		for(int i=0;i<m_desc.vk_textures.size();i++) {
+			int binding {-1};
+			if(exists(ref.binding_map, WE_GLTEX_NAMES[i]))
+				binding = ref.binding_map.at(WE_GLTEX_NAMES[i]).binding;
+			m_desc.vk_tex_binding.push_back(binding);
+		}
     }
 
 	VertexInputState input_state;
 	{
+		m_desc.vertex_bufs.resize(mesh.VertexCount());
 		for(int i=0;i<mesh.VertexCount();i++) {
 			const auto& vertex = mesh.GetVertexArray(i);
 			auto attrs = vertex.GetAttrOffset();
@@ -258,9 +166,10 @@ void CustomShaderPass::prepare(Scene& scene, const Device& device, RenderingReso
 			for(auto& attr:attrs) {
 				vk::VertexInputAttributeDescription attr_desc;
 				if(!exists(ref.input_location_map, attr.attr.name)) continue;
+				auto& input = ref.input_location_map.at(attr.attr.name);
 				attr_desc.setBinding(i)
-					.setLocation(ref.input_location_map.at(attr.attr.name))
-					.setFormat(vk::Format::eR32G32Sfloat)
+					.setLocation(input.location)
+					.setFormat(input.format)
 					.setOffset(attr.offset);
 				input_state.attr_descriptions.push_back(attr_desc);
 			}
@@ -271,17 +180,177 @@ void CustomShaderPass::prepare(Scene& scene, const Device& device, RenderingReso
 
 			input_state.input_assembly.setTopology(vk::PrimitiveTopology::eTriangleStrip)
 				.setPrimitiveRestartEnable(false);
-		}	
+
+			{
+				auto& buf = m_desc.vertex_bufs[i];
+				rr.vertex_buf->allocateSubRef(vertex.DataSizeOf(), buf);
+				rr.vertex_buf->writeToBuf(buf, {(uint8_t*)vertex.Data(), buf.size});
+			}
+		}
 	}
-	auto pass = CreateRenderPass(device.handle(), vk::Format::eR8G8B8A8Unorm);
-	CreatePipline(device.handle(), pass, spvs, input_state, descriptro_layouts);
+	{
+		auto pass = CreateRenderPass(device.handle(), vk::Format::eR8G8B8A8Unorm);
+		descriptor_info.push_descriptor = true;
+		GraphicsPipeline pipeline;
+		pipeline.toDefault();
+		pipeline.setVertexInputState(input_state)
+			.setRenderPass(pass)
+			.addDescriptorSetInfo(descriptor_info);
+		for(auto& spv:spvs) pipeline.addStage(std::move(spv));
+
+		pipeline.create(device, m_desc.pipeline);
+	}
+
+	{
+		vk::FramebufferCreateInfo info;
+		info.setRenderPass(m_desc.pipeline.pass)
+			.setAttachmentCount(1)
+			.setPAttachments(&m_desc.vk_output.view)
+			.setWidth(m_desc.vk_output.extent.width)
+			.setHeight(m_desc.vk_output.extent.height)
+			.setLayers(1);
+		device.handle().createFramebuffer(&info, nullptr, &m_desc.fb);
+	}
+
+	if(!ref.blocks.empty()){
+		auto& block = ref.blocks.front();
+		rr.ubo_buf->allocateSubRef(block.size, m_desc.ubo_buf, device.limits().minUniformBufferOffsetAlignment);
+	}
+
+	{
+		auto block = ref.blocks.front();
+		auto* shader_updater = scene.shaderValueUpdater.get();
+		auto* buf = rr.ubo_buf;
+		auto* bufref = &m_desc.ubo_buf;
+		auto* node = m_desc.node;
+		m_desc.update_uniform_op = [block, shader_updater, buf, bufref, node]() {
+			auto existsOp = [&block](std::string_view name) {
+				return exists(block.member_map, name);
+			};
+			auto updateOp = [&block, buf, bufref](std::string_view name, wallpaper::ShaderValue value) {
+				UpdateUniform(buf, *bufref, block, name, value);
+			};
+			shader_updater->UpdateUniforms(node, existsOp, updateOp);
+		};
+
+		auto& constValues = mesh.Material()->customShader.constValues;
+		for(auto& v:constValues) {
+			if(exists(block.member_map, v.first)) {
+				UpdateUniform(buf, *bufref, block, v.first, v.second);
+			}
+		}
+		m_desc.update_uniform_op();
+	}
     setPrepared();
 }
 
 void CustomShaderPass::execute(const Device& device, RenderingResources& rr) {
+	m_desc.update_uniform_op();
+
+	auto& cmd = rr.command;
+	auto& outext = m_desc.vk_output.extent;
+	vk::ImageSubresourceRange base_range;
+	base_range.setAspectMask(vk::ImageAspectFlagBits::eColor)
+		.setBaseArrayLayer(0)
+		.setBaseMipLevel(0)
+		.setLayerCount(VK_REMAINING_ARRAY_LAYERS)
+		.setLevelCount(VK_REMAINING_MIP_LEVELS);
+
+	for(int i=0;i<m_desc.vk_textures.size();i++){
+		auto& slot = m_desc.vk_textures[i];
+		int binding = m_desc.vk_tex_binding[i];
+		if(binding < 0) continue;
+		if(slot.slots.empty()) continue;
+		auto& img = slot.slots[slot.active];
+		vk::DescriptorImageInfo desc_img {img.sampler, img.view, vk::ImageLayout::eShaderReadOnlyOptimal};
+		vk::WriteDescriptorSet wset;
+		wset.setDstSet({})
+			.setDstBinding(binding)
+			.setDescriptorCount(1)
+			.setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
+			.setPImageInfo(&desc_img);
+        cmd.pushDescriptorSetKHR(vk::PipelineBindPoint::eGraphics, m_desc.pipeline.layout, 0, 1, &wset);
+		vk::ImageMemoryBarrier imb_in;
+		imb_in.setImage(img.handle)
+			.setSrcAccessMask(vk::AccessFlagBits::eMemoryRead)
+			.setDstAccessMask(vk::AccessFlagBits::eShaderRead)
+			.setOldLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
+			.setNewLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
+			.setSubresourceRange(base_range);
+		cmd.pipelineBarrier(
+			vk::PipelineStageFlagBits::eVertexShader,
+			vk::PipelineStageFlagBits::eFragmentShader|vk::PipelineStageFlagBits::eColorAttachmentOutput,
+			vk::DependencyFlagBits::eByRegion,
+			0, nullptr,
+			0, nullptr,
+			1, &imb_in);
+	}
+	{
+		vk::ImageMemoryBarrier imb;
+		imb.setImage(m_desc.vk_output.handle)
+			.setSrcAccessMask(vk::AccessFlagBits::eMemoryRead)
+			.setDstAccessMask(vk::AccessFlagBits::eColorAttachmentWrite)
+			.setOldLayout(m_desc.blending? vk::ImageLayout::eShaderReadOnlyOptimal : vk::ImageLayout::eUndefined)
+			.setNewLayout(vk::ImageLayout::eColorAttachmentOptimal)
+			.setSubresourceRange(base_range);
+		cmd.pipelineBarrier(
+			vk::PipelineStageFlagBits::eColorAttachmentOutput,
+			vk::PipelineStageFlagBits::eColorAttachmentOutput,
+			vk::DependencyFlagBits::eByRegion,
+			0, nullptr,
+			0, nullptr,
+			1, &imb);
+		imb.setImage(m_desc.vk_output.handle)	
+			.setSrcAccessMask(vk::AccessFlagBits::eColorAttachmentWrite)
+			.setDstAccessMask(vk::AccessFlagBits::eMemoryRead)
+			.setOldLayout(vk::ImageLayout::eColorAttachmentOptimal)
+			.setNewLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
+			.setSubresourceRange(base_range);
+		cmd.pipelineBarrier(
+			vk::PipelineStageFlagBits::eColorAttachmentOutput,
+			vk::PipelineStageFlagBits::eBottomOfPipe,
+			vk::DependencyFlagBits::eByRegion,
+			0, nullptr,
+			0, nullptr,
+			1, &imb);
+	}
+	{
+		vk::DescriptorBufferInfo desc_buf {rr.ubo_buf->gpuBuf(), m_desc.ubo_buf.offset, m_desc.ubo_buf.size};
+		vk::WriteDescriptorSet wset;
+		wset.setDstSet({})
+			.setDstBinding(0)
+			.setDescriptorCount(1)
+			.setDescriptorType(vk::DescriptorType::eUniformBuffer)
+			.setPBufferInfo(&desc_buf);
+        cmd.pushDescriptorSetKHR(vk::PipelineBindPoint::eGraphics, m_desc.pipeline.layout, 0, 1, &wset);
+	}
+	vk::ClearValue clear_value(std::array<float, 4> {1.0f, 0.8f, 0.4f, 0.0f});
+	vk::RenderPassBeginInfo pass_begin_info;
+	pass_begin_info.setRenderPass(m_desc.pipeline.pass)
+		.setFramebuffer(m_desc.fb)
+		.setClearValueCount(1)
+		.setPClearValues(&clear_value)
+		.renderArea
+		.setExtent({outext.width, outext.height})
+		.setOffset(vk::Offset2D(0.0f, 0.0f));
+	cmd.beginRenderPass(pass_begin_info, vk::SubpassContents::eInline);
+
+	cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, m_desc.pipeline.handle);
+	vk::Viewport viewport;
+	viewport.setX(0).setY(0).setMinDepth(0).setMaxDepth(1).setWidth(outext.width).setHeight(outext.height);
+	vk::Rect2D scissor({0, 0}, {outext.width, outext.height});
+	cmd.setViewport(0, 1, &viewport);
+	cmd.setScissor(0, 1, &scissor);
+
+	for(int i=0;i < m_desc.vertex_bufs.size();i++) {
+		auto& buf = m_desc.vertex_bufs[i];
+		cmd.bindVertexBuffers(i, 1, &(rr.vertex_buf->gpuBuf()), &buf.offset);
+	}
+	cmd.draw(4, 1, 0, 0);
+
+	cmd.endRenderPass();
 
 }
 
-void CustomShaderPass::destory(const Device& device) {
-
+void CustomShaderPass::destory(const Device& device, RenderingResources& rr) {
 }

@@ -10,7 +10,8 @@ Swapchain.cpp
 TextureCache.cpp
 Shader.cpp
 GraphicsPipeline.cpp
-StagingBufferPool.cpp
+StagingBuffer.cpp
+Util.cpp
 Vma.cpp
 )
 

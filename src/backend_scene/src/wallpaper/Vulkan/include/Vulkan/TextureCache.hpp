@@ -48,6 +48,8 @@ public:
     void MarkShareReady(std::string_view key);
 private:
     vk::ResultValue<ImageParameters> CreateTex(TextureKey);
+    void allocateCmd();
+    vk::CommandBuffer m_tex_cmd;
 
     const Device& m_device;
     Map<std::string, ImageSlots> m_tex_map;

@@ -18,6 +18,8 @@ struct WPShaderInfo {
 	ShaderValues baseConstSvs;
 	WPAliasValueDict alias;
 	WPDefaultTexs defTexs;
+
+	Map<std::string, std::string> innerInOut; // name to line
 };
 
 struct WPShaderTexInfo {

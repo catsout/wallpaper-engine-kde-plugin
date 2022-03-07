@@ -217,7 +217,8 @@ static vk::Result CreateImage(const Device &device, ImageParameters& image,
 			.setTiling(vk::ImageTiling::eOptimal)
 			.setUsage(usage)
 			.setQueueFamilyIndexCount(0)
-			.setInitialLayout(vk::ImageLayout::eUndefined);
+			.setInitialLayout(vk::ImageLayout::eUndefined)
+			.setSharingMode(vk::SharingMode::eExclusive);
 		info.extent = extent;
 
 		image.extent = info.extent;
@@ -316,6 +317,46 @@ static vk::Result CopyImageData(Span<BufferParameters> in_bufs, Span<vk::Extent3
 	return result;
 }
 
+static vk::Result TransImgLayout(const vk::Queue &queue, vk::CommandBuffer &cmd, ImageParameters &image)
+{
+	vk::Result result;
+	do {
+		result = cmd.begin({vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
+		if(result != vk::Result::eSuccess) break;
+
+		vk::ImageSubresourceRange subresourceRange;
+		subresourceRange
+			.setAspectMask(vk::ImageAspectFlagBits::eColor)
+			.setBaseMipLevel(0)
+			.setBaseArrayLayer(0)
+			.setLevelCount(VK_REMAINING_MIP_LEVELS)
+			.setLayerCount(VK_REMAINING_ARRAY_LAYERS);
+
+		{
+			vk::ImageMemoryBarrier out_bar;
+			out_bar.setSrcAccessMask(vk::AccessFlagBits::eMemoryWrite)
+				.setDstAccessMask(vk::AccessFlagBits::eShaderRead)
+				.setOldLayout(vk::ImageLayout::eUndefined)
+				.setNewLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
+				.setImage(image.handle)
+				.setSubresourceRange(subresourceRange);
+			cmd.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eFragmentShader,
+								vk::DependencyFlagBits::eByRegion,
+								0, nullptr,
+								0, nullptr,
+								1, &out_bar);
+		}
+		result = cmd.end();
+		if(result != vk::Result::eSuccess) break;
+
+		vk::SubmitInfo sub_info;
+		sub_info.setCommandBufferCount(1)
+			.setPCommandBuffers(&cmd);
+		result = queue.submit(1, &sub_info, {});
+	} while(false);
+	return result;
+}
+
 
 vk::ResultValue<ImageSlots> TextureCache::CreateTex(Image& image) {
 	vk::ResultValue<ImageSlots> rv {vk::Result::eIncomplete, {}};
@@ -326,9 +367,10 @@ vk::ResultValue<ImageSlots> TextureCache::CreateTex(Image& image) {
 		return rv;
 	}
 
+	if(!m_tex_cmd) allocateCmd();
+
 	rv.value.slots.resize(image.slots.size());
-	vk::CommandPool pool = m_device.cmd_pool();
-	vk::CommandBuffer cmd = m_device.handle().allocateCommandBuffers({pool, vk::CommandBufferLevel::ePrimary, 1}).value.front();
+
 	for(int i=0; i<image.slots.size();i++) {
 		auto& image_paras = rv.value.slots[i];
 		auto& image_slot = image.slots[i];
@@ -336,17 +378,17 @@ vk::ResultValue<ImageSlots> TextureCache::CreateTex(Image& image) {
 		vk::SamplerCreateInfo sampler_info;
 		sampler_info.setMagFilter(vk::Filter::eLinear)
 			.setMinFilter(vk::Filter::eLinear)
-			.setMipmapMode(vk::SamplerMipmapMode::eNearest)
-			.setAddressModeU(vk::SamplerAddressMode::eClampToEdge)
-			.setAddressModeV(vk::SamplerAddressMode::eClampToEdge)
-			.setAddressModeW(vk::SamplerAddressMode::eClampToEdge)
+			.setMipmapMode(vk::SamplerMipmapMode::eLinear)
+			.setAddressModeU(vk::SamplerAddressMode::eRepeat)
+			.setAddressModeV(vk::SamplerAddressMode::eRepeat)
+			.setAddressModeW(vk::SamplerAddressMode::eRepeat)
 			.setAnisotropyEnable(false)
 			.setMaxAnisotropy(1.0f)
 			.setCompareEnable(false)
-			.setCompareOp(vk::CompareOp::eAlways)
+			.setCompareOp(vk::CompareOp::eNever)
 			.setMinLod(0.0f)
-			.setMaxLod(0.0f)
-			.setBorderColor(vk::BorderColor::eFloatTransparentBlack)
+			.setMaxLod(image_slot.size())
+			.setBorderColor(vk::BorderColor::eIntOpaqueBlack)
 			.setUnnormalizedCoordinates(false);
 		
 		vk::Format format = ToVkType(image.header.format);
@@ -365,7 +407,7 @@ vk::ResultValue<ImageSlots> TextureCache::CreateTex(Image& image) {
 			stage_bufs.push_back(buf);
 			extents.emplace_back(image_data.width, image_data.height, 1);
 		}
-		rv.result = CopyImageData(stage_bufs, extents, m_device.graphics_queue().handle, cmd, image_paras);
+		rv.result = CopyImageData(stage_bufs, extents, m_device.graphics_queue().handle, m_tex_cmd, image_paras);
 		AUTO_DELETER(stage, ([&stage_bufs, this]() {
 			std::for_each(stage_bufs.begin(), stage_bufs.end(), [this](auto& buf) {
 				vmaDestroyBuffer(m_device.vma_allocator(), buf.handle, buf.allocation);
@@ -376,7 +418,6 @@ vk::ResultValue<ImageSlots> TextureCache::CreateTex(Image& image) {
 		rv.result = m_device.handle().waitIdle();
 	}
 	m_tex_map[image.key] = rv.value;
-	m_device.handle().freeCommandBuffers(m_device.cmd_pool(), 1, &cmd);
 	return rv;
 }
 
@@ -419,9 +460,14 @@ static vk::SamplerCreateInfo GenSamplerInfo(TextureKey key) {
 		.setCompareOp(vk::CompareOp::eAlways)
 		.setMinLod(0.0f)
 		.setMaxLod(0.0f)
-		.setBorderColor(vk::BorderColor::eFloatTransparentBlack)
+		.setBorderColor(vk::BorderColor::eIntOpaqueBlack)
 		.setUnnormalizedCoordinates(false);
 	return sampler_info;
+}
+
+void TextureCache::allocateCmd() {
+	vk::CommandPool pool = m_device.cmd_pool();
+	m_tex_cmd = m_device.handle().allocateCommandBuffers({pool, vk::CommandBufferLevel::ePrimary, 1}).value.front();
 }
 
 vk::ResultValue<ImageParameters> TextureCache::CreateTex(TextureKey tex_key) {
@@ -435,6 +481,11 @@ vk::ResultValue<ImageParameters> TextureCache::CreateTex(TextureKey tex_key) {
 		rv.result = CreateImage(m_device, image_paras, ext, 1, format, sam_info, 	
 			vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled |
 			vk::ImageUsageFlagBits::eColorAttachment);	
+		if(rv.result != vk::Result::eSuccess) break;
+
+		if(!m_tex_cmd) allocateCmd();
+		TransImgLayout(m_device.graphics_queue().handle, m_tex_cmd, image_paras);
+		rv.result = m_device.handle().waitIdle();
 	} while(false);
 	return rv;
 }
@@ -450,6 +501,7 @@ void TextureCache::Destroy() {
 			DestroyImageParameters(m_device, image);
 		}
 	}
+	m_device.handle().freeCommandBuffers(m_device.cmd_pool(), 1, &m_tex_cmd);
 }
 
 vk::ResultValue<ImageParameters> TextureCache::Query(std::string_view key, TextureKey content_hash) {
@@ -470,11 +522,15 @@ vk::ResultValue<ImageParameters> TextureCache::Query(std::string_view key, Textu
 		query->share_ready = false;
 		query->query_keys.insert(std::string(key));
 		rv.value = query->image;
+
+		m_query_map[std::string(key)] = &(*query);
 		return rv;
 	}
 
 	m_query_texs.emplace_back(std::make_unique<QueryTex>());
 	auto& query = *m_query_texs.back();
+	m_query_map[std::string(key)] = &query;
+
 	query.index = m_query_texs.size() - 1;
 	query.content_hash = tex_hash;
 	query.query_keys.insert(std::string(key));

@@ -37,10 +37,6 @@ add_library(${PROJECT_NAME}
 	Scene/SceneCamera.cpp
 	Scene/SceneNode.cpp
 	Scene/SceneShader.cpp
-	Renderer/GLWrapper.cpp
-	Renderer/GLGraphicManager.cpp
-	Renderer/Fg/DependencyGraph.cpp
-	Renderer/Fg/FrameGraph.cpp
 
 	Utils/Logging.cpp
 	Utils/FrameTimer.cpp
@@ -50,6 +46,7 @@ add_library(${PROJECT_NAME}
 
 	VulkanRender/CopyPass.cpp
 	VulkanRender/CustomShaderPass.cpp
+	VulkanRender/FinPass.cpp
 	VulkanRender/VulkanRender.cpp
 
 	WPParticleParser.cpp

@@ -52,9 +52,13 @@ vk::ImageView CreateSwapImageView(const vk::Device &device, vk::Format format, v
 }
 
 
-vk::SwapchainKHR& Swapchain::handle() { return m_handle; }
+const vk::SwapchainKHR& Swapchain::handle() const { return m_handle; }
 vk::Format Swapchain::format() const { return m_format; };
 vk::Extent2D Swapchain::extent() const { return m_extent; };
+
+Span<ImageParameters> Swapchain::images() const {
+	return m_images;
+}
 
 vk::PresentModeKHR Swapchain::presentMode() const { return m_present_mode; };
 
@@ -109,10 +113,14 @@ vk::Result Swapchain::Create(Device& device, vk::SurfaceKHR surface, vk::Extent2
 		result = rv_images.result;
 		auto& images = rv_images.value;
 		if(result != vk::Result::eSuccess) return result;
-		std::transform(images.begin(), images.end(), std::back_inserter(swap.m_images), [&](auto image)
-					   { return ImageParameters{
-							 .handle = image,
-							 .view = CreateSwapImageView(device.device(), swap.m_format, image)}; });
+		std::transform(images.begin(), images.end(), std::back_inserter(swap.m_images), [&](auto image) { 
+			return ImageParameters{
+				.handle = image,
+				.view = CreateSwapImageView(device.device(), swap.m_format, image),
+				.sampler = {},
+				.extent = {swap.m_extent.width, swap.m_extent.height, 1}
+			}; 
+		});
 	}
 	return result;
 }

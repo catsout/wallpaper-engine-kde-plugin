@@ -1,5 +1,8 @@
 #pragma once
 
+
+#define AUTO_DELETER(name, del_func) wallpaper::AutoDeleter del_##name(del_func);
+
 namespace wallpaper
 {
 template<typename TDeleter>
@@ -10,6 +13,4 @@ struct AutoDeleter {
 	}
 	TDeleter m_del;
 };
-
-#define AUTO_DELETER(name, del_func) AutoDeleter del_##name(del_func);
 }

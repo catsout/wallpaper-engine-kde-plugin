@@ -1,25 +1,14 @@
 #include "WPShaderValueUpdater.h"
 #include "Scene/Scene.h"
 #include "SpriteAnimation.h"
+#include "SpecTexs.h"
+#include "Utils/ArrayHelper.hpp"
 
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
 #include <iostream>
 #include <chrono>
 #include <ctime>
-
-#define G_M "g_ModelMatrix"
-#define G_VP "g_ViewProjectionMatrix"
-#define G_MVP "g_ModelViewProjectionMatrix"
-
-#define G_AM "g_AltModelMatrix"
-
-#define G_MI "g_ModelMatrixInverse"
-#define G_MVPI "g_ModelViewProjectionMatrixInverse"
-
-#define G_LP "g_LightsPosition[0]"
-
-#define CONTAINS(s, v) (s.count(v) == 1)
 
 using namespace wallpaper;
 using namespace Eigen;
@@ -40,7 +29,7 @@ void WPShaderValueUpdater::MouseInput(double x, double y) {
 	m_mousePos[1] = y;
 }
 
-void WPShaderValueUpdater::UpdateShaderValues(SceneNode* pNode, SceneShader* pShader) {
+void WPShaderValueUpdater::UpdateUniforms(SceneNode* pNode, const ExistsUniformOp& existsOp, const UpdateUniformOp& updateOp) {
 	if(!pNode->Mesh()) return;
 
 	const SceneCamera* camera;
@@ -51,42 +40,39 @@ void WPShaderValueUpdater::UpdateShaderValues(SceneNode* pNode, SceneShader* pSh
 		camera = m_scene->activeCamera;
 
 	if(!camera) return;
-
-	const std::string gtex = "g_Texture";
-
 	
 	auto* material = pNode->Mesh()->Material();
 	if(!material) return;
-	auto& shadervs = material->customShader.updateValueList;	
-	const auto& valueSet = material->customShader.valueSet;
-	bool hasNodeData = CONTAINS(m_nodeDataMap, pNode);
+	//auto& shadervs = material->customShader.updateValueList;	
+	//const auto& valueSet = material->customShader.valueSet;
+
+	bool hasNodeData = exists(m_nodeDataMap, pNode);
 	if(hasNodeData) {
 		const auto& nodeData = m_nodeDataMap.at(pNode);
 		for(const auto& el:nodeData.renderTargetResolution) {
 			if(m_scene->renderTargets.count(el.second) == 0) continue;
-			std::string name = gtex + std::to_string(el.first) + "Resolution";
-			if(!CONTAINS(valueSet, name)) continue;
+			std::string_view name = WE_GLTEX_RESOLUTION_NAMES[el.first];
+			if(!existsOp(name)) continue;
 
 			const auto& rt = m_scene->renderTargets.at(el.second);
 			std::array<uint16_t,4> resolution_uint({
 				rt.width, rt.height, 
 				rt.width, rt.height
 			});
-			std::vector<float> resolution(resolution_uint.begin(), resolution_uint.end());
-			shadervs.push_back({name, resolution});
+			updateOp(name, ShaderValue(array_cast<float>(resolution_uint)));
 		}
 	}
 
-	bool reqMI = CONTAINS(valueSet, G_MI);
-	bool reqM = CONTAINS(valueSet, G_M);
-	bool reqAM = CONTAINS(valueSet, G_AM);
-	bool reqMVP = CONTAINS(valueSet, G_MVP);
-	bool reqMVPI CONTAINS(valueSet, G_MVPI);
+	bool reqMI = existsOp(G_MI);
+	bool reqM = existsOp(G_M);
+	bool reqAM = existsOp(G_AM);
+	bool reqMVP = existsOp(G_MVP);
+	bool reqMVPI = existsOp(G_MVPI);
 
 	Matrix4d viewProTrans = camera->GetViewProjectionMatrix();
 
-	if(CONTAINS(valueSet, G_VP)) {
-		shadervs.push_back({G_VP, ShaderValue::ValueOf(viewProTrans)});
+	if(existsOp(G_VP)) {
+		//shadervs.push_back({G_VP, ShaderValue::ValueOf(viewProTrans)});
 	}
 	if(reqM || reqMVP || reqMI || reqMVPI) {
 		Matrix4d modelTrans = pNode->GetLocalTrans().cast<double>();
@@ -103,32 +89,33 @@ void WPShaderValueUpdater::UpdateShaderValues(SceneNode* pNode, SceneShader* pSh
 				modelTrans = Affine3d(Translation3d(Vector3d(paraVec.x(), paraVec.y(), 0.0f))).matrix() * modelTrans;
 			}
 		}
-		if(reqM) shadervs.push_back({G_M, ShaderValue::ValueOf(modelTrans)});
-		if(reqAM) shadervs.push_back({G_AM, ShaderValue::ValueOf(modelTrans)});
-		if(reqMI) shadervs.push_back({G_MI, ShaderValue::ValueOf(modelTrans.inverse())});
+		
+		if(reqM) updateOp(G_M, ShaderValue::fromMatrix(modelTrans));
+		if(reqAM) updateOp(G_AM, ShaderValue::fromMatrix(modelTrans));
+		if(reqMI) updateOp(G_MI, ShaderValue::fromMatrix(modelTrans.inverse()));
 		if(reqMVP) {
 			Matrix4d mvpTrans = viewProTrans * modelTrans;
-			shadervs.push_back({G_MVP, ShaderValue::ValueOf(mvpTrans)});
-			if(reqMVPI) shadervs.push_back({G_MVPI, ShaderValue::ValueOf(mvpTrans.inverse())});
+			updateOp(G_MVP, ShaderValue::fromMatrix(mvpTrans));
+			if(reqMVPI) updateOp(G_MVPI, ShaderValue::fromMatrix(mvpTrans.inverse()));
 		}
 	}
 	
 	//	g_EffectTextureProjectionMatrix
 	//shadervs.push_back({"g_EffectTextureProjectionMatrixInverse", ShaderValue::ValueOf(Eigen::Matrix4f::Identity())});
-	if(CONTAINS(valueSet, "g_Time"))
-		shadervs.push_back({"g_Time", {(float)m_scene->elapsingTime}});
+	if(existsOp("g_Time"))
+		updateOp("g_Time", (float)m_scene->elapsingTime);
 
-	if(CONTAINS(valueSet, "g_DayTime"))
-		shadervs.push_back({"g_DayTime", {(float)m_dayTime}});
+	if(existsOp("g_DayTime"))
+		updateOp("g_DayTime", (float)m_dayTime);
 
-	if(CONTAINS(valueSet, "g_PointerPosition"))
-		shadervs.push_back({"g_PointerPosition", m_mousePos});
+	if(existsOp("g_PointerPosition"))
+		updateOp("g_PointerPosition", m_mousePos);
 
-	if(CONTAINS(valueSet, "g_TexelSize"))
-		shadervs.push_back({"g_TexelSize", m_texelSize});
+	if(existsOp("g_TexelSize"))
+		updateOp("g_TexelSize", m_texelSize);
 
-	if(CONTAINS(valueSet, "g_TexelSizeHalf"))
-		shadervs.push_back({"g_TexelSizeHalf", {m_texelSize[0]/2.0f, m_texelSize[1]/2.0f}});
+	if(existsOp("g_TexelSizeHalf"))
+		updateOp("g_TexelSizeHalf", std::array {m_texelSize[0]/2.0f, m_texelSize[1]/2.0f});
 
 	if(material->hasSprite) {
 		for(int32_t i=0;i<material->textures.size();i++) {
@@ -138,18 +125,18 @@ void WPShaderValueUpdater::UpdateShaderValues(SceneNode* pNode, SceneShader* pSh
 				if(ptex.isSprite) {
 					auto& sp = ptex.spriteAnim;
 					const auto& f = sp.GetAnimateFrame(m_scene->frameTime);
-					auto grot = gtex + std::to_string(i) + "Rotation";
-					auto gtrans = gtex + std::to_string(i) + "Translation";
-					shadervs.push_back({grot, {f.xAxis[0], f.xAxis[1], f.yAxis[0], f.yAxis[1]}});
-					shadervs.push_back({gtrans, {f.x, f.y}});
+					auto grot = WE_GLTEX_ROTATION_NAMES[i];
+					auto gtrans = WE_GLTEX_TRANSLATION_NAMES[i];
+					updateOp(grot, std::array {f.xAxis[0], f.xAxis[1], f.yAxis[0], f.yAxis[1]});
+					updateOp(gtrans, std::array {f.x, f.y});
 				}
 			}
 		}
 	}
-	if(CONTAINS(valueSet, G_LP)) {
+	if(existsOp(G_LP)) {
 		Vector2f ortho{m_ortho[0], m_ortho[1]};
 		Vector2f mouseVec = -(Vector2f{0.5f, 0.5f} - Vector2f(&m_mousePos[0])).cwiseProduct(ortho);
-		shadervs.push_back({G_LP, {mouseVec[0], mouseVec[1], 500.0f}});
+		//shadervs.push_back({G_LP, {mouseVec[0], mouseVec[1], 500.0f}});
 	}
 }
 

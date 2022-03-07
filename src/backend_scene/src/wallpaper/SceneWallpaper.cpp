@@ -112,8 +112,11 @@ public:
         }
         else if(!frameTimer.NoFrame() && m_rg) {
             LOG_INFO("render one");
+            m_scene->shaderValueUpdater->FrameBegin();
             frameTimer.RenderFrame();
             m_render->drawFrame(*m_scene);
+            m_scene->elapsingTime += 0.10;
+            m_scene->shaderValueUpdater->FrameEnd();
         }
     }
 

@@ -11,6 +11,7 @@ namespace vulkan
 
 class Device;
 class RenderingResources;
+class Resource;
 
 class VulkanPass : public rg::Pass {
 public:
@@ -18,7 +19,7 @@ public:
     virtual ~VulkanPass() = default;
     virtual void prepare(Scene&, const Device&, RenderingResources&) = 0;
     virtual void execute(const Device&, RenderingResources&) = 0;
-    virtual void destory(const Device&) = 0;
+    virtual void destory(const Device&, RenderingResources&) = 0;
 
     bool prepared() const { return m_prepared; }
 protected:

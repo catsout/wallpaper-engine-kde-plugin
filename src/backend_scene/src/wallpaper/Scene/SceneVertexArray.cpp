@@ -81,7 +81,7 @@ std::vector<SceneVertexArray::SceneVertexAttributeOffset> SceneVertexArray::GetA
 			.attr = attr,
 			.offset = offset
 		});
-		offset += SceneVertexArray::RealAttributeSize(attr);
+		offset += SceneVertexArray::RealAttributeSize(attr)*sizeof(float);
 	}
 	return attr_offet;
 }

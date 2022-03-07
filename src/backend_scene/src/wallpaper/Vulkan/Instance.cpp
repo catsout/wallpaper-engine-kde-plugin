@@ -8,7 +8,7 @@ using namespace wallpaper::vulkan;
 
 #define ENABLE_VK_VALID_LAYER 1
 
-constexpr std::array required_layers = {
+constexpr std::array<const char *const, 1> required_layers = {
 #if ENABLE_VK_VALID_LAYER
 	"VK_LAYER_KHRONOS_validation"
 #endif
@@ -25,6 +25,7 @@ constexpr std::array<const char *const, 0> device_exts = {
 DECLARE_EXT_PFN(vkCreateDebugUtilsMessengerEXT);
 DECLARE_EXT_PFN(vkDestroyDebugUtilsMessengerEXT);
 DECLARE_EXT_PFN(vkGetMemoryFdKHR);
+DECLARE_EXT_PFN(vkCmdPushDescriptorSetKHR);
 
 void GetExtProcFunc(vk::Instance* instance) {
 	#define X(func) \
@@ -33,6 +34,7 @@ void GetExtProcFunc(vk::Instance* instance) {
 	X(vkCreateDebugUtilsMessengerEXT);
 	X(vkDestroyDebugUtilsMessengerEXT);
 	X(vkGetMemoryFdKHR);
+	X(vkCmdPushDescriptorSetKHR);
 }
 
 #define CALL_EXT_PFN(func, ...) \
@@ -64,6 +66,17 @@ VkResult vkGetMemoryFdKHR(
 	CALL_EXT_PFN(pfn_vkGetMemoryFdKHR, device, pGetFdInfo, pFd);
 };
 
+// Provided by VK_KHR_push_descriptor
+void vkCmdPushDescriptorSetKHR(
+    VkCommandBuffer                             commandBuffer,
+    VkPipelineBindPoint                         pipelineBindPoint,
+    VkPipelineLayout                            layout,
+    uint32_t                                    set,
+    uint32_t                                    descriptorWriteCount,
+    const VkWriteDescriptorSet*                 pDescriptorWrites) {
+	CALL_EXT_PFN_VOID(pfn_vkCmdPushDescriptorSetKHR, commandBuffer, pipelineBindPoint, layout, set, descriptorWriteCount, pDescriptorWrites);
+}
+
 
 static VkBool32 debugUtilsMessengerCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT      messageSeverity,
@@ -79,7 +92,7 @@ static VkBool32 debugUtilsMessengerCallback(
 	return result;
 }
 
-vk::DebugUtilsMessengerEXT setupDebugCallback(vk::Instance* instance) {
+vk::Result setupDebugCallback(vk::Instance* instance, vk::DebugUtilsMessengerEXT& dcall) {
 	vk::DebugUtilsMessengerCreateInfoEXT createInfo;
 	createInfo
 		.setFlags({})
@@ -88,7 +101,7 @@ vk::DebugUtilsMessengerEXT setupDebugCallback(vk::Instance* instance) {
 		.setMessageSeverity(~vk::DebugUtilsMessageSeverityFlagBitsEXT())
 		.setPfnUserCallback(debugUtilsMessengerCallback)
 		.setPUserData(nullptr);
-	return instance->createDebugUtilsMessengerEXT(createInfo);
+	return instance->createDebugUtilsMessengerEXT(&createInfo, nullptr, &dcall);
 }
 
 static vk::Result CreatInstance(vk::Instance* inst, Span<const char*const> requiredExts) {
@@ -187,8 +200,8 @@ vk::ResultValue<Instance> Instance::Create(Span<const char*const> instanceExts, 
 		Instance& inst = rv.value;
 		rv.result = CreatInstance(&inst.m_inst, instanceExts);
 		if(rv.result != vk::Result::eSuccess) break;
-		else rv.result = vk::Result::eIncomplete;
-		inst.m_debug_utils = setupDebugCallback(&inst.m_inst);
+		rv.result = setupDebugCallback(&inst.m_inst, inst.m_debug_utils);
+		if(rv.result != vk::Result::eSuccess) break;
 		if(!ChoosePhysicalDevice(inst.m_inst, inst.m_gpu, uuid)) break;
 		rv.result = vk::Result::eSuccess;
 	} while(false);

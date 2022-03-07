@@ -1,8 +1,10 @@
 #pragma once
 #include "Interface/IShaderValueUpdater.h"
+#include "Utils/MapSet.hpp"
 
 #include <memory>
 #include <vector>
+#include <array>
 #include <unordered_map>
 #include <cstdint>
 
@@ -30,7 +32,7 @@ public:
 	virtual ~WPShaderValueUpdater() {}
 		
 	void FrameBegin() override;
-	void UpdateShaderValues(SceneNode*, SceneShader*) override;
+	void UpdateUniforms(SceneNode*, const ExistsUniformOp&, const UpdateUniformOp&) override;
 	void FrameEnd() override;
 	void MouseInput(double, double) override;
 	virtual void SetTexelSize(float x, float y) override;
@@ -43,9 +45,10 @@ private:
 	Scene* m_scene;	
 	WPCameraParallax m_parallax;
 	double m_dayTime {0.0f};
-	std::vector<float> m_texelSize {1.0f/1920.0f, 1.0f/1080.0f};
-	std::vector<float> m_mousePos {0.5f, 0.5f};
-	std::vector<uint32_t> m_ortho {1920, 1080};
-	std::unordered_map<void*, WPShaderValueData> m_nodeDataMap;
+	std::array<float, 2> m_texelSize {1.0f/1920.0f, 1.0f/1080.0f};
+	std::array<float, 2> m_mousePos {0.5f, 0.5f};
+	std::array<uint32_t, 2> m_ortho {1920, 1080};
+
+	Map<void*, WPShaderValueData> m_nodeDataMap;
 };
 }

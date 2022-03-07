@@ -12,8 +12,6 @@ namespace wallpaper
 
 struct SceneMaterialCustomShader {
 	std::shared_ptr<SceneShader> shader;
-	std::unordered_set<std::string> valueSet;
-	std::vector<ShaderValue> updateValueList;
 	ShaderValues constValues;
 };
 
