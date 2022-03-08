@@ -4,10 +4,14 @@
 
 using namespace wallpaper::vulkan;
 
+namespace {
+
 vk::Format GetFormat(const vk::PhysicalDevice &phy, vk::SurfaceKHR &surface)
 {
-	std::vector<vk::SurfaceFormatKHR> formats = phy.getSurfaceFormatsKHR(surface);
-	return (formats[0].format == vk::Format::eUndefined) ? vk::Format::eB8G8R8A8Unorm : formats[0].format;
+	auto rv = phy.getSurfaceFormatsKHR(surface);
+	VK_CHECK_RESULT(rv.result);
+	vk::Format format = rv.value.front().format;
+	return (format == vk::Format::eUndefined) ? vk::Format::eB8G8R8A8Unorm : format;
 }
 
 vk::Extent2D GetSwapChainExtent(vk::SurfaceCapabilitiesKHR &surface_capabilities, vk::Extent2D ext)
@@ -35,7 +39,7 @@ vk::Extent2D GetSwapChainExtent(vk::SurfaceCapabilitiesKHR &surface_capabilities
 	return surface_capabilities.currentExtent;
 }
 
-vk::ImageView CreateSwapImageView(const vk::Device &device, vk::Format format, vk::Image &image)
+bool CreateSwapImageView(const vk::Device &device, vk::Format format, vk::Image &image, vk::ImageView& view)
 {
 	vk::ImageViewCreateInfo createinfo;
 	createinfo
@@ -48,7 +52,9 @@ vk::ImageView CreateSwapImageView(const vk::Device &device, vk::Format format, v
 		.setLevelCount(1)
 		.setBaseArrayLayer(0)
 		.setLayerCount(1);
-	return device.createImageView(createinfo);
+	VK_CHECK_RESULT_BOOL_RE(device.createImageView(&createinfo, nullptr, &view));
+	return true;
+}
 }
 
 
@@ -62,11 +68,12 @@ Span<ImageParameters> Swapchain::images() const {
 
 vk::PresentModeKHR Swapchain::presentMode() const { return m_present_mode; };
 
-vk::Result Swapchain::Create(Device& device, vk::SurfaceKHR surface, vk::Extent2D extent, Swapchain& swap) {
+bool Swapchain::Create(Device& device, vk::SurfaceKHR surface, vk::Extent2D extent, Swapchain& swap) {
 	
 	swap.m_format = GetFormat(device.gpu(), surface);
 
-	vk::SurfaceCapabilitiesKHR surfaceCapabilities = device.gpu().getSurfaceCapabilitiesKHR(surface);
+	vk::SurfaceCapabilitiesKHR surfaceCapabilities;
+	VK_CHECK_RESULT_BOOL_RE(device.gpu().getSurfaceCapabilitiesKHR(surface, &surfaceCapabilities));
 
 	// triple
 	uint32_t image_count = surfaceCapabilities.minImageCount + 1;
@@ -106,21 +113,21 @@ vk::Result Swapchain::Create(Device& device, vk::SurfaceKHR surface, vk::Extent2
 		.setImageArrayLayers(1)
 		.setClipped(true)
 		.setOldSwapchain(nullptr);
-	auto result = device.device().createSwapchainKHR(&swapCreateInfo, nullptr, &swap.m_handle);
-	if(result != vk::Result::eSuccess) return result;
+	VK_CHECK_RESULT_BOOL_RE(device.device().createSwapchainKHR(&swapCreateInfo, nullptr, &swap.m_handle));
 	{
 		auto rv_images = device.device().getSwapchainImagesKHR(swap.m_handle);
-		result = rv_images.result;
+		VK_CHECK_RESULT_BOOL_RE(rv_images.result);
 		auto& images = rv_images.value;
-		if(result != vk::Result::eSuccess) return result;
 		std::transform(images.begin(), images.end(), std::back_inserter(swap.m_images), [&](auto image) { 
-			return ImageParameters{
+			ImageParameters image_paras{
 				.handle = image,
-				.view = CreateSwapImageView(device.device(), swap.m_format, image),
+				.view = {},
 				.sampler = {},
 				.extent = {swap.m_extent.width, swap.m_extent.height, 1}
 			}; 
+			CreateSwapImageView(device.device(), swap.m_format, image, image_paras.view);
+			return image_paras;
 		});
 	}
-	return result;
+	return true;
 }

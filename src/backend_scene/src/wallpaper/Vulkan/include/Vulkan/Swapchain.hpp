@@ -10,7 +10,7 @@ class ImageParameters;
 class Device;
 class Swapchain {
 public:
-    static vk::Result Create(Device&, vk::SurfaceKHR, vk::Extent2D, Swapchain&);
+    static bool Create(Device&, vk::SurfaceKHR, vk::Extent2D, Swapchain&);
     const vk::SwapchainKHR& handle() const;
     vk::Format format() const;
     vk::Extent2D extent() const;

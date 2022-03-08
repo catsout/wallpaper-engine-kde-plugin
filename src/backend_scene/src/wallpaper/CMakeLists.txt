@@ -46,6 +46,7 @@ add_library(${PROJECT_NAME}
 
 	VulkanRender/CopyPass.cpp
 	VulkanRender/CustomShaderPass.cpp
+	VulkanRender/PrePass.cpp
 	VulkanRender/FinPass.cpp
 	VulkanRender/VulkanRender.cpp
 

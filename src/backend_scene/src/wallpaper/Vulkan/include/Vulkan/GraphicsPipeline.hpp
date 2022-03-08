@@ -9,19 +9,11 @@ namespace wallpaper
 namespace vulkan
 {
 
-
 struct PipelineParameters {
 	vk::Pipeline handle;
 	vk::PipelineLayout layout;
   vk::RenderPass pass;
   std::vector<vk::DescriptorSetLayout> descriptor_layouts;
-};
-
-struct VertexInputState {
-  vk::PipelineInputAssemblyStateCreateInfo input_assembly;
-  vk::PipelineVertexInputStateCreateInfo input;
-  std::vector<vk::VertexInputBindingDescription> bind_descriptions;
-  std::vector<vk::VertexInputAttributeDescription> attr_descriptions;
 };
 
 struct DescriptorSetInfo {
@@ -37,7 +29,7 @@ public:
     ~GraphicsPipeline();
 
     void toDefault();
-    vk::Result create(const Device&, PipelineParameters&);
+    bool create(const Device&, PipelineParameters&);
 
     vk::PipelineMultisampleStateCreateInfo   multisample;
     vk::PipelineRasterizationStateCreateInfo raster;
@@ -50,14 +42,18 @@ public:
     GraphicsPipeline& setLogicOp(bool enable, vk::LogicOp);
 
     // required after default
-    GraphicsPipeline& setVertexInputState(const VertexInputState&);
     GraphicsPipeline& setRenderPass(vk::RenderPass);
     GraphicsPipeline& addDescriptorSetInfo(Span<DescriptorSetInfo>);
     GraphicsPipeline& addStage(Uni_ShaderSpv&&);
+    GraphicsPipeline& addInputAttributeDescription(Span<vk::VertexInputAttributeDescription>);
+    GraphicsPipeline& addInputBindingDescription(Span<vk::VertexInputBindingDescription>);
+    GraphicsPipeline& setTopology(vk::PrimitiveTopology);
 private:
     vk::RenderPass m_pass;
 
-    VertexInputState m_input_state;
+    vk::PipelineInputAssemblyStateCreateInfo m_input_assembly;
+    std::vector<vk::VertexInputBindingDescription> m_input_bind_descriptions;
+    std::vector<vk::VertexInputAttributeDescription> m_input_attr_descriptions;
 
     vk::PipelineViewportStateCreateInfo m_view;
     vk::PipelineColorBlendStateCreateInfo m_color;

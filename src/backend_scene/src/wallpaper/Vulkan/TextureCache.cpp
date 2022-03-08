@@ -1,6 +1,7 @@
 
 #include "TextureCache.hpp"
 #include "Device.hpp"
+#include "Util.hpp"
 
 #include "Image.h"
 #include "Utils/MapSet.hpp"
@@ -164,42 +165,6 @@ vk::ResultValue<ExImageParameters> TextureCache::CreateExTex(uint32_t width, uin
 		m_device.device(), m_device.gpu());
 }
 
-
-static vk::Result CreateStagingBuffer(VmaAllocator allocator,
-									 const void *const data, std::size_t size, BufferParameters& buffer)
-{
-	VkResult result;
-	do {
-		vk::BufferCreateInfo buffInfo;
-		buffInfo.setSize(size)
-			.setUsage(vk::BufferUsageFlagBits::eTransferSrc);
-		buffer.req_size = buffInfo.size;
-		VmaAllocationCreateInfo vmaallocInfo = {};
-		vmaallocInfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
-		result = vmaCreateBuffer(allocator, (VkBufferCreateInfo *)&buffInfo, &vmaallocInfo,
-						(VkBuffer *)&buffer.handle,
-						&buffer.allocation,
-						&buffer.allocationInfo);
-		if(result != VK_SUCCESS) break;
-		void *v_data;
-		result = vmaMapMemory(allocator, buffer.allocation, &v_data);
-		if(result != VK_SUCCESS) break;
-
-		memcpy(v_data, data, size);
-		vmaUnmapMemory(allocator, buffer.allocation);
-	} while(false);
-	return (vk::Result)result; 
-}
-
-static void DestroyImageParameters(const Device& device, ImageParameters& image) {
-	if(image.sampler)
-		device.handle().destroySampler(image.sampler);
-	if(image.view)
-		device.handle().destroyImageView(image.view);
-	if(image.handle)
-		vmaDestroyImage(device.vma_allocator(), image.handle, image.allocation);
-}
-
 static vk::Result CreateImage(const Device &device, ImageParameters& image, 
 							vk::Extent3D extent, int miplevel, vk::Format format,
 							vk::SamplerCreateInfo sampler_info,
@@ -248,7 +213,7 @@ static vk::Result CreateImage(const Device &device, ImageParameters& image,
 		result = device.handle().createSampler(&sampler_info, nullptr, &image.sampler);
 	} while(false);
 	if(result != vk::Result::eSuccess) {
-		DestroyImageParameters(device, image);
+		device.DestroyImageParameters(image);
 	}
 	return result;
 }
@@ -403,7 +368,13 @@ vk::ResultValue<ImageSlots> TextureCache::CreateTex(Image& image) {
 		for(int j=0;j<image_slot.size();j++) {
 			auto& image_data = image_slot[j];
 			BufferParameters buf;
-			rv.result = CreateStagingBuffer(m_device.vma_allocator(), image_data.data.get(), image_data.size, buf);
+			(void)CreateStagingBuffer(m_device.vma_allocator(), image_data.size, buf);
+			{
+				void *v_data;
+				(void)vmaMapMemory(m_device.vma_allocator(), buf.allocation, &v_data);
+				memcpy(v_data, image_data.data.get(), image_data.size);
+				vmaUnmapMemory(m_device.vma_allocator(), buf.allocation);
+			}
 			stage_bufs.push_back(buf);
 			extents.emplace_back(image_data.width, image_data.height, 1);
 		}
@@ -479,7 +450,9 @@ vk::ResultValue<ImageParameters> TextureCache::CreateTex(TextureKey tex_key) {
 		vk::Extent3D ext {tex_key.width, tex_key.height, 1};
 
 		rv.result = CreateImage(m_device, image_paras, ext, 1, format, sam_info, 	
-			vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled |
+			vk::ImageUsageFlagBits::eTransferSrc | 
+			vk::ImageUsageFlagBits::eTransferDst | 
+			vk::ImageUsageFlagBits::eSampled |
 			vk::ImageUsageFlagBits::eColorAttachment);	
 		if(rv.result != vk::Result::eSuccess) break;
 
@@ -498,8 +471,11 @@ void TextureCache::Destroy() {
 	for(auto& texs:m_tex_map) {
 		auto& image_slot = texs.second;
 		for(auto& image:image_slot.slots) {
-			DestroyImageParameters(m_device, image);
+			m_device.DestroyImageParameters(image);
 		}
+	}
+	for(auto& query:m_query_texs) {
+		m_device.DestroyImageParameters(query->image);
 	}
 	m_device.handle().freeCommandBuffers(m_device.cmd_pool(), 1, &m_tex_cmd);
 }

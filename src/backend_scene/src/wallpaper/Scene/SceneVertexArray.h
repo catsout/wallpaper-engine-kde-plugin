@@ -2,6 +2,7 @@
 #include <vector>
 #include <string>
 #include <cstddef>
+#include "Utils/MapSet.hpp"
 
 namespace wallpaper
 {
@@ -51,7 +52,7 @@ namespace wallpaper
 		std::size_t OneSizeOf() const { return m_oneSize * sizeof(float); }
 
 		const auto& Attributes() const { return m_attributes; }
-		std::vector<SceneVertexAttributeOffset> GetAttrOffset() const;
+		Map<std::string,SceneVertexAttributeOffset> GetAttrOffsetMap() const;
 
 		uint32_t ID() const { return m_id; }
 		void SetID(uint32_t id) { m_id = id; }

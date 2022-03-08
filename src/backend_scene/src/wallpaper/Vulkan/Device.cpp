@@ -1,6 +1,7 @@
 #include "Device.hpp"
 
 #include "Utils/Logging.h"
+#include "GraphicsPipeline.hpp"
 
 using namespace wallpaper::vulkan;
 
@@ -43,7 +44,9 @@ std::vector<vk::DeviceQueueCreateInfo> Device::ChooseDeviceQueue(vk::SurfaceKHR 
 	if(surface) {
 		index = 0;
 		for(auto& prop:props) {
-			if(m_gpu.getSurfaceSupportKHR(index, surface).value)
+			vk::Bool32 ok;
+			VK_CHECK_RESULT(m_gpu.getSurfaceSupportKHR(index, surface, &ok))
+			if(ok)
 				present_indexs.push_back(index);
 			index++;
 		};
@@ -61,50 +64,57 @@ std::vector<vk::DeviceQueueCreateInfo> Device::ChooseDeviceQueue(vk::SurfaceKHR 
 	return queues;
 }
 
-vk::Result Device::Create(Instance& inst, Span<const char*const> exts, Device& device) {
+bool Device::Create(Instance& inst, Span<const char*const> exts, Device& device) {
 	vk::Result result {vk::Result::eIncomplete};
 	device.m_gpu = inst.gpu();
 	device.m_limits = inst.gpu().getProperties().limits;
 
 	bool rq_surface = !inst.offscreen();
-	do {
-		result = CreateDevice(inst, device.ChooseDeviceQueue(inst.surface()), exts, &device.m_device);
-		if(result != vk::Result::eSuccess) break;
-		device.m_graphics_queue.handle = device.m_device.getQueue(device.m_graphics_queue.family_index, 0);
-		device.m_present_queue.handle = device.m_device.getQueue(device.m_present_queue.family_index, 0);
+	VK_CHECK_RESULT_BOOL_RE(CreateDevice(inst, device.ChooseDeviceQueue(inst.surface()), exts, &device.m_device));
+	device.m_graphics_queue.handle = device.m_device.getQueue(device.m_graphics_queue.family_index, 0);
+	device.m_present_queue.handle = device.m_device.getQueue(device.m_present_queue.family_index, 0);
 
-		if(rq_surface) {
-			result = Swapchain::Create(device, inst.surface(), {1280, 720}, device.m_swapchain);
-			if(result != vk::Result::eSuccess) {
-				LOG_ERROR("create swapchain failed");
-				break;
-			}
+	if(rq_surface) {
+		if(!Swapchain::Create(device, inst.surface(), {1280, 720}, device.m_swapchain)) {
+			LOG_ERROR("create swapchain failed");
+			return false;
 		}
+	}
+	{
+		vk::CommandPoolCreateInfo info;
+		info.setFlags(vk::CommandPoolCreateFlagBits::eTransient |
+			vk::CommandPoolCreateFlagBits::eResetCommandBuffer)
+			.setQueueFamilyIndex(device.m_graphics_queue.family_index);
+		VK_CHECK_RESULT_ACT(return false, device.m_device.createCommandPool(&info, nullptr, &device.m_command_pool));
+	}
+	{
+		VmaAllocatorCreateInfo allocatorInfo = {};
+		allocatorInfo.physicalDevice = device.m_gpu;
+		allocatorInfo.device = device.m_device;
+		allocatorInfo.instance = inst.inst();
+		VK_CHECK_RESULT_ACT(return false, (vk::Result)vmaCreateAllocator(&allocatorInfo, &device.m_allocator));
+	}
+	device.m_tex_cache = std::make_unique<TextureCache>(device);
+	return true;
+}
 
-	  	auto rv_cmdpool = device.m_device.createCommandPool({
-			vk::CommandPoolCreateFlagBits::eTransient|
-			vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
-			device.m_graphics_queue.family_index});
-		if(rv_cmdpool.result != vk::Result::eSuccess) { result = rv_cmdpool.result; break; }
-		device.m_command_pool = rv_cmdpool.value;
-		{
-			VmaAllocatorCreateInfo allocatorInfo = {};
-			allocatorInfo.physicalDevice = device.m_gpu;
-			allocatorInfo.device = device.m_device;
-			allocatorInfo.instance = inst.inst();
-			vmaCreateAllocator(&allocatorInfo, &device.m_allocator);
-		}
-		device.m_tex_cache = std::make_unique<TextureCache>(device);
-		result = vk::Result::eSuccess;
-	} while(false);
-	return result;
+vk::DeviceSize Device::GetUsage() const {
+	VmaBudget budget;
+	vmaGetHeapBudgets(m_allocator, &budget);
+	return (vk::DeviceSize)budget.usage;
 }
 
 void Device::Destroy() {
 	if(m_device) {
-		(void)m_device.waitIdle();
+		VK_CHECK_RESULT(m_device.waitIdle());
+
 		m_tex_cache->Destroy();
 		m_device.destroyCommandPool(m_command_pool);
+
+		for(auto& i:m_swapchain.images()) {
+			m_device.destroyImageView(i.view);
+		}
+		m_device.destroySwapchainKHR(m_swapchain.handle());
 		vmaDestroyAllocator(m_allocator);
 		m_device.destroy();
 	}
@@ -112,9 +122,21 @@ void Device::Destroy() {
 
 
 void Device::DestroyBuffer(const BufferParameters& buf) const {
-	if(buf.handle) {
+	if(buf.handle)
 		vmaDestroyBuffer(m_allocator, buf.handle, buf.allocation);
-	}
+}
+void Device::DestroyImageParameters(const ImageParameters& image) const {
+	m_device.destroySampler(image.sampler);
+	m_device.destroyImageView(image.view);
+	if(image.handle)
+		vmaDestroyImage(m_allocator, image.handle, image.allocation);
+}
+void Device::DestroyPipeline(const PipelineParameters& pipe) const {
+	m_device.destroyPipeline(pipe.handle);
+	m_device.destroyPipelineLayout(pipe.layout);
+	m_device.destroyRenderPass(pipe.pass);
+	for(auto& d:pipe.descriptor_layouts)
+		m_device.destroyDescriptorSetLayout(d);
 }
 
 

@@ -194,16 +194,14 @@ void Instance::Destroy() {
 	}
 }
 
-vk::ResultValue<Instance> Instance::Create(Span<const char*const> instanceExts, Span<std::uint8_t> uuid) {
-	vk::ResultValue<Instance> rv {vk::Result::eIncomplete, {}};
-	do {
-		Instance& inst = rv.value;
-		rv.result = CreatInstance(&inst.m_inst, instanceExts);
-		if(rv.result != vk::Result::eSuccess) break;
-		rv.result = setupDebugCallback(&inst.m_inst, inst.m_debug_utils);
-		if(rv.result != vk::Result::eSuccess) break;
-		if(!ChoosePhysicalDevice(inst.m_inst, inst.m_gpu, uuid)) break;
-		rv.result = vk::Result::eSuccess;
-	} while(false);
-	return rv;
+bool Instance::Create(Instance& inst, Span<const char*const> instanceExts, Span<std::uint8_t> uuid) {
+	VK_CHECK_RESULT_ACT(return false, CreatInstance(&inst.m_inst, instanceExts));
+	VK_CHECK_RESULT_ACT(return false, setupDebugCallback(&inst.m_inst, inst.m_debug_utils));
+	if(!ChoosePhysicalDevice(inst.m_inst, inst.m_gpu, uuid)) {
+		if(uuid.size() > 0) {
+			// to do
+		}
+		return false;
+	}
+	return true;
 }

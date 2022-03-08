@@ -13,9 +13,13 @@ namespace vulkan
 class Device;
 
 struct StagingBufferRef {
-    vk::DeviceSize size;
-    vk::DeviceSize offset;
+    vk::DeviceSize size {0};
+    vk::DeviceSize offset {0};
     VmaVirtualAllocation allocation {};
+
+    operator bool() const {
+        return allocation != VK_NULL_HANDLE;
+    }
 };
 
 class StagingBuffer : NoCopy,NoMove {
@@ -23,14 +27,14 @@ public:
     StagingBuffer(const Device&, vk::DeviceSize size, vk::BufferUsageFlags);
     ~StagingBuffer();
 
-    vk::Result allocate();
+    bool allocate();
     void destroy();
 
-    vk::Result allocateSubRef(vk::DeviceSize size, StagingBufferRef&, vk::DeviceSize alignment=1);
+    bool allocateSubRef(vk::DeviceSize size, StagingBufferRef&, vk::DeviceSize alignment=1);
     void unallocateSubRef(const StagingBufferRef&);
     bool writeToBuf(const StagingBufferRef&, Span<uint8_t>, size_t offset=0);
 
-    vk::Result recordUpload(vk::CommandBuffer&);
+    bool recordUpload(vk::CommandBuffer&);
 
     const vk::Buffer& gpuBuf() const;
 private:

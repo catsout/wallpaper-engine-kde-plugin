@@ -49,18 +49,13 @@ void RecordCopyBuffer(BufferParameters &dst_buf, BufferParameters &src_buf, vk::
 }
 }
 
-vk::Result StagingBuffer::allocate() {
-    vk::Result result;
-    do {
-        result = CreateStagingBuffer(m_device.vma_allocator(), m_size, m_stage_buf);
-        if(result != vk::Result::eSuccess) break;
-        result = (vk::Result)vmaMapMemory(m_device.vma_allocator(), m_stage_buf.allocation, &m_stage_raw);
-
-        VmaVirtualBlockCreateInfo blockCreateInfo = {};
-        blockCreateInfo.size = m_size;
-        result = (vk::Result)vmaCreateVirtualBlock(&blockCreateInfo, &m_virtual_block);
-    } while(false);
-    return result;
+bool StagingBuffer::allocate() {
+    if(!CreateStagingBuffer(m_device.vma_allocator(), m_size, m_stage_buf)) return false;
+    VK_CHECK_RESULT_BOOL_RE((vk::Result)vmaMapMemory(m_device.vma_allocator(), m_stage_buf.allocation, &m_stage_raw));
+    VmaVirtualBlockCreateInfo blockCreateInfo = {};
+    blockCreateInfo.size = m_size;
+    VK_CHECK_RESULT_BOOL_RE((vk::Result)vmaCreateVirtualBlock(&blockCreateInfo, &m_virtual_block));
+    return true;
 }
 void StagingBuffer::destroy() {
     if(m_stage_raw != nullptr) {
@@ -73,15 +68,15 @@ void StagingBuffer::destroy() {
     m_device.DestroyBuffer(m_gpu_buf);
 }
 
-vk::Result StagingBuffer::allocateSubRef(vk::DeviceSize size, StagingBufferRef& ref, vk::DeviceSize alignment) {
+bool StagingBuffer::allocateSubRef(vk::DeviceSize size, StagingBufferRef& ref, vk::DeviceSize alignment) {
     vk::Result result;
     VmaVirtualAllocationCreateInfo allocCreateInfo = {};
     allocCreateInfo.size = size;
     allocCreateInfo.alignment = alignment;
     
-    result = (vk::Result)vmaVirtualAllocate(m_virtual_block, &allocCreateInfo, &ref.allocation, &ref.offset);
+    VK_CHECK_RESULT_BOOL_RE((vk::Result)vmaVirtualAllocate(m_virtual_block, &allocCreateInfo, &ref.allocation, &ref.offset));
     ref.size = size;
-    return result;
+    return true;
 }
 void StagingBuffer::unallocateSubRef(const StagingBufferRef& ref) {
     vmaVirtualFree(m_virtual_block, ref.allocation);
@@ -103,22 +98,17 @@ bool StagingBuffer::writeToBuf(const StagingBufferRef& ref, Span<uint8_t> data, 
     return true;
 }
 
-vk::Result StagingBuffer::recordUpload(vk::CommandBuffer& cmd) {
-    vk::Result result {vk::Result::eSuccess};
-    do {
-        if(!m_gpu_buf.handle) {
-            result = CreateGpuBuffer(m_device.vma_allocator(), m_usage, m_stage_buf.req_size, m_gpu_buf);
-            if(result != vk::Result::eSuccess) break;
-        }
-        if(m_stage_raw != nullptr) {
-            vmaUnmapMemory(m_device.vma_allocator(), m_stage_buf.allocation);
-            m_stage_raw = nullptr;
-        }
-        result = (vk::Result)vmaFlushAllocation(m_device.vma_allocator(), m_stage_buf.allocation, 0, VK_WHOLE_SIZE);
-        if(result != vk::Result::eSuccess) break;
-        RecordCopyBuffer(m_gpu_buf, m_stage_buf, cmd);
-    } while(false);
-    return result;
+bool StagingBuffer::recordUpload(vk::CommandBuffer& cmd) {
+    if(!m_gpu_buf.handle) {
+        VK_CHECK_RESULT_BOOL_RE(CreateGpuBuffer(m_device.vma_allocator(), m_usage, m_stage_buf.req_size, m_gpu_buf));
+    }
+    if(m_stage_raw != nullptr) {
+        vmaUnmapMemory(m_device.vma_allocator(), m_stage_buf.allocation);
+        m_stage_raw = nullptr;
+    }
+    VK_CHECK_RESULT_BOOL_RE((vk::Result)vmaFlushAllocation(m_device.vma_allocator(), m_stage_buf.allocation, 0, VK_WHOLE_SIZE));
+    RecordCopyBuffer(m_gpu_buf, m_stage_buf, cmd);
+    return false;
 }
 
 const vk::Buffer& StagingBuffer::gpuBuf() const { return m_gpu_buf.handle; }

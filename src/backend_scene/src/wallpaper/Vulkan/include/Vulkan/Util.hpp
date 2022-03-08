@@ -8,6 +8,6 @@ namespace wallpaper
 namespace vulkan
 {
 
-vk::Result CreateStagingBuffer(VmaAllocator, std::size_t size, BufferParameters& buffer);
+bool CreateStagingBuffer(VmaAllocator, std::size_t size, BufferParameters& buffer);
 }
 }

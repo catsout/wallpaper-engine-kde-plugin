@@ -10,12 +10,14 @@ namespace wallpaper
 namespace vulkan
 {
 
+class PipelineParameters;
+
 class Device : NoCopy,NoMove {
 public:
 	Device();
 	~Device();
 
-	static vk::Result Create(Instance&, Span<const char*const> exts, Device&);
+	static bool Create(Instance&, Span<const char*const> exts, Device&);
 
 	void Destroy();
 
@@ -35,6 +37,10 @@ public:
 	auto& tex_cache() const { return *m_tex_cache; }
 
 	void DestroyBuffer(const BufferParameters&) const;
+	void DestroyImageParameters(const ImageParameters& image) const;
+	void DestroyPipeline(const PipelineParameters&) const;
+
+	vk::DeviceSize GetUsage() const;
 private:
 	std::vector<vk::DeviceQueueCreateInfo> ChooseDeviceQueue(vk::SurfaceKHR={});
 

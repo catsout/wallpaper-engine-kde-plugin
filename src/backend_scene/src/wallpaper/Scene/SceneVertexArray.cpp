@@ -73,15 +73,15 @@ bool SceneVertexArray::SetVertexs(std::size_t index, std::size_t count, const fl
 	return true;
 }
 
-std::vector<SceneVertexArray::SceneVertexAttributeOffset> SceneVertexArray::GetAttrOffset() const {
-	std::vector<SceneVertexAttributeOffset> attr_offet;
+Map<std::string,SceneVertexArray::SceneVertexAttributeOffset> SceneVertexArray::GetAttrOffsetMap() const {
+	Map<std::string,SceneVertexArray::SceneVertexAttributeOffset> result;
 	uint offset {0};
 	for(const auto& attr:m_attributes) {
-		attr_offet.push_back(SceneVertexAttributeOffset{
+		result[attr.name] = (SceneVertexAttributeOffset{
 			.attr = attr,
 			.offset = offset
 		});
 		offset += SceneVertexArray::RealAttributeSize(attr)*sizeof(float);
 	}
-	return attr_offet;
+	return result;
 }

@@ -123,13 +123,11 @@ void FinPass::prepare(Scene& scene, const Device& device, RenderingResources& rr
         units[1] = ShaderCompUnit{.stage=EShLangFragment, .src=std::string(frag_code)};
         CompileAndLinkShaderUnits(units, opt, spvs, nullptr);
     }
-	VertexInputState input_state;
-	{
-		m_desc.vertex_buf;
 
-		vk::VertexInputBindingDescription bind_desc;
-		bind_desc.setStride(sizeof(VertexInput)).setInputRate(vk::VertexInputRate::eVertex).setBinding(0);
-		input_state.bind_descriptions.push_back(bind_desc);
+	vk::VertexInputBindingDescription bind_description;
+	std::vector<vk::VertexInputAttributeDescription> attr_descriptions;
+	{
+		bind_description.setStride(sizeof(VertexInput)).setInputRate(vk::VertexInputRate::eVertex).setBinding(0);
 		vk::VertexInputAttributeDescription attr_pos, attr_color;
 		attr_pos.setBinding(0)
 			.setLocation(0)
@@ -140,16 +138,8 @@ void FinPass::prepare(Scene& scene, const Device& device, RenderingResources& rr
 			.setFormat(vk::Format::eR32G32Sfloat)
 			.setOffset(offsetof(VertexInput, color));
 		
-		input_state.attr_descriptions.push_back(attr_pos);
-		input_state.attr_descriptions.push_back(attr_color);
-
-		input_state.input.setPVertexBindingDescriptions(input_state.bind_descriptions.data())
-			.setPVertexAttributeDescriptions(input_state.attr_descriptions.data())
-			.setVertexBindingDescriptionCount(input_state.bind_descriptions.size())
-			.setVertexAttributeDescriptionCount(input_state.attr_descriptions.size());
-
-		input_state.input_assembly.setTopology(vk::PrimitiveTopology::eTriangleStrip)
-			.setPrimitiveRestartEnable(false);
+		attr_descriptions.push_back(attr_pos);
+		attr_descriptions.push_back(attr_color);
 
 		{
 			auto& buf = m_desc.vertex_buf;
@@ -172,9 +162,11 @@ void FinPass::prepare(Scene& scene, const Device& device, RenderingResources& rr
 		descriptor_info.push_descriptor = true;
 		GraphicsPipeline pipeline;
 		pipeline.toDefault();
-		pipeline.setVertexInputState(input_state)
-			.setRenderPass(pass)
-			.addDescriptorSetInfo(descriptor_info);
+		pipeline.setRenderPass(pass)
+			.addDescriptorSetInfo(descriptor_info)
+			.setTopology(vk::PrimitiveTopology::eTriangleStrip)
+			.addInputBindingDescription(bind_description)
+			.addInputAttributeDescription(attr_descriptions);
 		for(auto& spv:spvs) pipeline.addStage(std::move(spv));
 
 		pipeline.create(device, m_desc.pipeline);
@@ -182,6 +174,11 @@ void FinPass::prepare(Scene& scene, const Device& device, RenderingResources& rr
 	if(m_desc.present_layout == vk::ImageLayout::ePresentSrcKHR || m_desc.present_layout == vk::ImageLayout::eSharedPresentKHR)
 		m_desc.render_layout = m_desc.present_layout;
 	else m_desc.render_layout = vk::ImageLayout::eColorAttachmentOptimal;
+
+	{
+		auto& sc = scene.clearColor;
+		m_desc.clear_value = vk::ClearValue(std::array {sc[0], sc[1], sc[2], 1.0f});
+	}
 	setPrepared();
 }
 
@@ -197,6 +194,9 @@ void FinPass::execute(const Device& device, RenderingResources& rr) {
 		.setLevelCount(VK_REMAINING_MIP_LEVELS);
 
 	{
+		if(m_desc.fb) {
+			device.handle().destroyFramebuffer(m_desc.fb);
+		}
 		vk::FramebufferCreateInfo info;
 		info.setRenderPass(m_desc.pipeline.pass)
 			.setAttachmentCount(1)
@@ -204,7 +204,7 @@ void FinPass::execute(const Device& device, RenderingResources& rr) {
 			.setWidth(m_desc.vk_present.extent.width)
 			.setHeight(m_desc.vk_present.extent.height)
 			.setLayers(1);
-		device.handle().createFramebuffer(&info, nullptr, &m_desc.fb);
+	 	(void)device.handle().createFramebuffer(&info, nullptr, &m_desc.fb);
 	}
 	{
 		vk::DescriptorImageInfo desc_img {m_desc.vk_result.sampler, m_desc.vk_result.view, vk::ImageLayout::eShaderReadOnlyOptimal};
@@ -235,12 +235,11 @@ void FinPass::execute(const Device& device, RenderingResources& rr) {
 			0, nullptr,
 			1, &imb);
 	}
-	vk::ClearValue clear_value(std::array<float, 4> {1.0f, 0.8f, 0.4f, 0.0f});
 	vk::RenderPassBeginInfo pass_begin_info;
 	pass_begin_info.setRenderPass(m_desc.pipeline.pass)
 		.setFramebuffer(m_desc.fb)
 		.setClearValueCount(1)
-		.setPClearValues(&clear_value)
+		.setPClearValues(&m_desc.clear_value)
 		.renderArea
 		.setExtent({outext.width, outext.height})
 		.setOffset(vk::Offset2D(0.0f, 0.0f));
@@ -274,6 +273,7 @@ void FinPass::execute(const Device& device, RenderingResources& rr) {
 		0, nullptr,
 		1, &imb);
 }
-void FinPass::destory(const Device&, RenderingResources&) {
-
+void FinPass::destory(const Device& device, RenderingResources&) {
+	device.DestroyPipeline(m_desc.pipeline);
+	device.handle().destroyFramebuffer(m_desc.fb);
 }

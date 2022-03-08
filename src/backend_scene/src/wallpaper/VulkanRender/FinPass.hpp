@@ -27,6 +27,7 @@ public:
         ImageParameters vk_result;
         ImageParameters vk_present;
         vk::ImageLayout render_layout;
+        vk::ClearValue clear_value;
 
         StagingBufferRef vertex_buf; 
         vk::Framebuffer fb;

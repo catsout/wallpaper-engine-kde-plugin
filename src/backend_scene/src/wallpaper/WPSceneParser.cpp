@@ -185,6 +185,7 @@ void LoadMaterial(fs::VFS& vfs,
 
 	auto& shader = materialShader.shader;
 	shader = std::make_shared<SceneShader>();
+	shader->name = wpmat.shader;
 	std::string shaderPath("/assets/shaders/"+wpmat.shader);
 	std::string svCode = fs::GetFileContent(vfs, shaderPath+".vert");
 	std::string fgCode = fs::GetFileContent(vfs, shaderPath+".frag");
@@ -229,7 +230,7 @@ void LoadMaterial(fs::VFS& vfs,
 		svCode.insert(0, vertOutStr);
 	}
 
-	shader->uniforms = pWPShaderInfo->svs;
+	shader->default_uniforms = pWPShaderInfo->svs;
 
 	for(const auto& el:wpmat.combos) {
 		pWPShaderInfo->combos[el.first] = el.second; 

@@ -152,16 +152,17 @@ void ParseWPShader(const std::string& src, WPShaderInfo* pWPShaderInfo, const st
 							auto value = sv_json.at("default");
 							ShaderValue sv;	
 							name = defines.back();
+							if(name == "g_Center")
+								LOG_ERROR("find center");
 							if(value.is_string()) {
 								std::vector<float> v;
 								GET_JSON_VALUE(value, v);
 								sv = Span<float>(v);
 							}
-							if(value.is_number()) {
+							else if(value.is_number()) {
 								sv.setSize(1);
 								GET_JSON_VALUE(value, sv[0]);
 							}
-								//sv.value = {value.get<float>()};
 							shadervalues[name] = sv;
 						}
 						if(sv_json.contains("combo")) {

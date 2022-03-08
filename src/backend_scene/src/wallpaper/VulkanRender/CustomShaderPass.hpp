@@ -27,6 +27,7 @@ public:
         ImageParameters vk_output;
         std::vector<StagingBufferRef> vertex_bufs;
         StagingBufferRef ubo_buf;
+        vk::ClearValue clear_value;
 
         bool blending {false};
 

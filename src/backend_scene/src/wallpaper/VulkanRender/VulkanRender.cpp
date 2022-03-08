@@ -22,12 +22,11 @@ bool VulkanRender::init(VulkanSurfaceInfo& info) {
     std::transform(info.instanceExts.begin(), info.instanceExts.end(), std::back_insert_iterator(inst_exts), [](const auto& s){
         return s.c_str();
     });
-    auto rv = Instance::Create(inst_exts);
-    if(rv.result != vk::Result::eSuccess) {
+
+    if(!Instance::Create(m_instance, inst_exts)) {
         LOG_ERROR("init vulkan failed"); 
         return false;
     }
-    m_instance = rv.value;
     {
         VkSurfaceKHR surface;
         if(info.createSurfaceOp(m_instance.inst(), &surface) != VK_SUCCESS) {
@@ -44,24 +43,23 @@ bool VulkanRender::init(VulkanSurfaceInfo& info) {
             VK_KHR_SWAPCHAIN_EXTENSION_NAME,
             VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME
         }, *m_device);
-        if(result != vk::Result::eSuccess) {
+        if(!result) {
             LOG_ERROR("init vulkan device failed"); 
             return false;
         }
     }
 
-    initRes();
+    if(!initRes()) return false;;
     for(auto& rr:m_rendering_resources) {
-        CreateRenderingResource(rr);
+        if(!CreateRenderingResource(rr)) return false;
     }
 
     m_inited = true;
     return m_inited;
 }
 
-vk::Result VulkanRender::initRes() {
-    vk::Result res;
-    do {
+bool VulkanRender::initRes() {
+        m_prepass = std::make_unique<PrePass>(PrePass::Desc{});
         m_finpass = std::make_unique<FinPass>(FinPass::Desc{});
         if(m_with_surface) {
             m_finpass->setPresentFormat(m_device->swapchain().format());
@@ -79,24 +77,24 @@ vk::Result VulkanRender::initRes() {
         m_ubo_buf = std::make_unique<StagingBuffer>(*m_device, 4*1024*1024,
             vk::BufferUsageFlagBits::eUniformBuffer
         );
-        (void)m_vertex_buf->allocate();
-        res = m_ubo_buf->allocate();
-        if(res != vk::Result::eSuccess) break;
+        if(!m_vertex_buf->allocate()) return false;
+        if(!m_ubo_buf->allocate()) return false;
         {
             vk::CommandPool pool = m_device->cmd_pool();
             auto rv = m_device->handle().allocateCommandBuffers({pool, vk::CommandBufferLevel::ePrimary, 1});
-            res = rv.result;
-            if(res != vk::Result::eSuccess) break;
+            VK_CHECK_RESULT_BOOL_RE(rv.result);
             m_upload_cmd = rv.value.front();
         }
-    } while(false);
-    return res;
+    return true;
 }
 
 void VulkanRender::destroy() {
-    (void)m_device->handle().waitIdle();
+    VK_CHECK_RESULT(m_device->handle().waitIdle());
 
     // res
+    for(auto& p:m_passes) {
+        p->destory(*m_device, m_rendering_resources[0]);
+    }
     m_vertex_buf->destroy();
     m_ubo_buf->destroy();
     m_device->handle().freeCommandBuffers(m_device->cmd_pool(), 1u, &m_upload_cmd);
@@ -107,31 +105,26 @@ void VulkanRender::destroy() {
     m_instance.Destroy();
 }
 
-vk::Result VulkanRender::CreateRenderingResource(RenderingResources& rr) {
-	vk::Result result;
-	do {
-		auto rv_cmd = m_device->handle().allocateCommandBuffers({m_device->cmd_pool(), vk::CommandBufferLevel::ePrimary, 1});
-		result = rv_cmd.result;
-		if(result != vk::Result::eSuccess) break;
-		rr.command = rv_cmd.value.front();
+bool VulkanRender::CreateRenderingResource(RenderingResources& rr) {
+    auto rv_cmd = m_device->handle().allocateCommandBuffers({m_device->cmd_pool(), vk::CommandBufferLevel::ePrimary, 1});
+    VK_CHECK_RESULT_BOOL_RE(rv_cmd.result);
+    rr.command = rv_cmd.value.front();
 
-		auto rv_f = m_device->handle().createFence({vk::FenceCreateFlagBits::eSignaled});
-		result = rv_f.result;
-		if(result != vk::Result::eSuccess) break;
-		rr.fence_frame = rv_f.value;
-		result = m_device->handle().resetFences(1, &rr.fence_frame);
+    auto rv_f = m_device->handle().createFence({vk::FenceCreateFlagBits::eSignaled});
+    VK_CHECK_RESULT_BOOL_RE(rv_f.result);
+    rr.fence_frame = rv_f.value;
 
-        if(m_with_surface) {
-            vk::SemaphoreCreateInfo info;
-            (void)m_device->handle().createSemaphore(&info, nullptr, &rr.sem_swap_finish);
-            result = m_device->handle().createSemaphore(&info, nullptr, &rr.sem_swap_wait_image);
-            if(result != vk::Result::eSuccess) break;
-        }
+    VK_CHECK_RESULT_BOOL_RE(m_device->handle().resetFences(1, &rr.fence_frame));
 
-        rr.vertex_buf = m_vertex_buf.get();
-        rr.ubo_buf = m_ubo_buf.get();
-	} while(false);
-	return result;
+    if(m_with_surface) {
+        vk::SemaphoreCreateInfo info;
+        VK_CHECK_RESULT_BOOL_RE(m_device->handle().createSemaphore(&info, nullptr, &rr.sem_swap_finish));
+        VK_CHECK_RESULT_BOOL_RE(m_device->handle().createSemaphore(&info, nullptr, &rr.sem_swap_wait_image));
+    }
+
+    rr.vertex_buf = m_vertex_buf.get();
+    rr.ubo_buf = m_ubo_buf.get();
+	return true;
 }
 
 
@@ -146,7 +139,11 @@ void VulkanRender::DestroyRenderingResource(RenderingResources& rr) {
 
 
 void VulkanRender::drawFrame(Scene& scene) {
-    if(!m_inited) return;
+    if(!(m_inited && m_pass_loaded)) return;
+
+
+    //LOG_INFO("used ram: %fm", (m_device->GetUsage()/1024.0f)/1024.0f);
+
     if(m_instance.offscreen()) {
         drawFrameOffscreen();
     } else {
@@ -159,22 +156,25 @@ void VulkanRender::drawFrameSwapchain() {
 
     RenderingResources& rr = m_rendering_resources[0];
     resource_index = (resource_index + 1) % 3;
-    uint32_t image_index = m_device->handle().acquireNextImageKHR(m_device->swapchain().handle(), UINT32_MAX, rr.sem_swap_wait_image, {}).value;
+    uint32_t image_index = 0;
+    {
+        auto rv = m_device->handle().acquireNextImageKHR(m_device->swapchain().handle(), UINT32_MAX, rr.sem_swap_wait_image, {});
+        VK_CHECK_RESULT_VOID_RE(rv.result);
+        image_index = rv.value;
+    }
     const auto& image = m_device->swapchain().images()[image_index];
 
-    (void)m_device->handle().waitForFences(1, &rr.fence_frame, false, INT_MAX);
-    (void)m_device->handle().resetFences(1, &rr.fence_frame);
 
     m_finpass->setPresent(image);
 
-    (void)rr.command.begin({vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
+    VK_CHECK_RESULT_VOID_RE(rr.command.begin({vk::CommandBufferUsageFlagBits::eOneTimeSubmit}));
     m_ubo_buf->recordUpload(rr.command);
     for(auto* p:m_passes) {
         if(p->prepared()) {
             p->execute(*m_device, rr);
         }
     }
-    (void)rr.command.end();
+    VK_CHECK_RESULT_VOID_RE(rr.command.end());
 
     vk::PipelineStageFlags wait_dst_stage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
     vk::SubmitInfo sub_info;
@@ -185,20 +185,26 @@ void VulkanRender::drawFrameSwapchain() {
         .setSignalSemaphoreCount(1)
         .setPSignalSemaphores(&rr.sem_swap_finish)
         .setPWaitDstStageMask(&wait_dst_stage);
-    (void)m_device->present_queue().handle.submit(1, &sub_info, rr.fence_frame);
+    VK_CHECK_RESULT_VOID_RE(m_device->present_queue().handle.submit(1, &sub_info, rr.fence_frame));
     vk::PresentInfoKHR present_info;
     present_info.setSwapchainCount(1)
         .setPSwapchains(&m_device->swapchain().handle())
         .setWaitSemaphoreCount(1)
         .setPWaitSemaphores(&rr.sem_swap_finish)
         .setPImageIndices(&image_index);
-    (void)m_device->present_queue().handle.presentKHR(present_info);
+    VK_CHECK_RESULT_VOID_RE(m_device->present_queue().handle.presentKHR(present_info));
+
+    VK_CHECK_RESULT_VOID_RE(m_device->handle().waitForFences(1, &rr.fence_frame, false, INT64_MAX));
+    VK_CHECK_RESULT_VOID_RE(m_device->handle().resetFences(1, &rr.fence_frame));
 }
 void VulkanRender::drawFrameOffscreen() {
 
 }
 
 void VulkanRender::compileRenderGraph(Scene& scene, rg::RenderGraph& rg) {
+    if(!m_inited) return;
+    m_pass_loaded = false;
+
     auto nodes = rg.topologicalOrder();
     m_passes.clear();
     m_passes.resize(nodes.size());
@@ -208,6 +214,7 @@ void VulkanRender::compileRenderGraph(Scene& scene, rg::RenderGraph& rg) {
         VulkanPass* vpass = static_cast<VulkanPass*>(pass);
         return vpass;
     });
+    m_passes.insert(m_passes.begin(), m_prepass.get());
     m_passes.push_back(m_finpass.get());
     if(m_with_surface) {
         m_device->set_out_extent(m_device->swapchain().extent());
@@ -221,11 +228,20 @@ void VulkanRender::compileRenderGraph(Scene& scene, rg::RenderGraph& rg) {
     }
     for(auto& item:scene.renderTargets) {
         auto& rt = item.second;
-		if(rt.bind.screen) continue;
+		if(rt.bind.screen || !rt.bind.enable) continue;
 		auto bind_rt = scene.renderTargets.find(rt.bind.name);
-		if(bind_rt == scene.renderTargets.end()) continue;
+		if(rt.bind.name.empty() || bind_rt == scene.renderTargets.end()) {
+            LOG_ERROR("unknonw render target bind: %s", rt.bind.name.c_str());
+            continue;
+        }
 		rt.width = rt.bind.scale * bind_rt->second.width;
 		rt.height = rt.bind.scale * bind_rt->second.height;
+    }
+    for(auto& item:scene.renderTargets) {
+        auto& rt = item.second;
+		if(!item.first.empty() && rt.width*rt.height == 0) {
+            LOG_ERROR("wrong size for render target: %s", item.first.c_str());
+        }
     }
     glslang::InitializeProcess();
     for(auto* p:m_passes) {
@@ -234,14 +250,15 @@ void VulkanRender::compileRenderGraph(Scene& scene, rg::RenderGraph& rg) {
         }
     }
     glslang::FinalizeProcess();
-    (void)m_upload_cmd.begin({vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
+    VK_CHECK_RESULT_VOID_RE(m_upload_cmd.begin({vk::CommandBufferUsageFlagBits::eOneTimeSubmit}));
     m_vertex_buf->recordUpload(m_upload_cmd);
-    (void)m_upload_cmd.end();
+    VK_CHECK_RESULT_VOID_RE(m_upload_cmd.end());
     {
     	vk::SubmitInfo sub_info;
 		sub_info.setCommandBufferCount(1)
 			.setPCommandBuffers(&m_upload_cmd);
-		(void)m_device->graphics_queue().handle.submit(1, &sub_info, {});
-        (void)m_device->handle().waitIdle();
+		VK_CHECK_RESULT_VOID_RE(m_device->graphics_queue().handle.submit(1, &sub_info, {}));
+        VK_CHECK_RESULT_VOID_RE(m_device->handle().waitIdle());
     }
+    m_pass_loaded = true;
 };

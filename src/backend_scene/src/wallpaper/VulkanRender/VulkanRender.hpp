@@ -11,6 +11,7 @@
 
 #include "SceneWallpaperSurface.hpp"
 #include "VulkanPass.hpp"
+#include "PrePass.hpp"
 #include "FinPass.hpp"
 #include "Resource.hpp"
 
@@ -36,15 +37,16 @@ public:
     void drawFrame(Scene&);
     void compileRenderGraph(Scene&, rg::RenderGraph&);
 
-	vk::Result CreateRenderingResource(RenderingResources&);
+	bool CreateRenderingResource(RenderingResources&);
 	void DestroyRenderingResource(RenderingResources&);
 
 private:
-    vk::Result initRes();
+    bool initRes();
     void drawFrameSwapchain();
     void drawFrameOffscreen();
 
     Instance m_instance;
+    std::unique_ptr<PrePass> m_prepass {nullptr};
     std::unique_ptr<FinPass> m_finpass {nullptr};
 
     std::unique_ptr<StagingBuffer> m_vertex_buf {nullptr};
@@ -55,6 +57,7 @@ private:
 
     bool m_with_surface {false};
     bool m_inited       {false};
+    bool m_pass_loaded  {false};
 
     std::unique_ptr<VulkanExSwapchain> m_ex_swapchain;
     std::array<RenderingResources, 3> m_rendering_resources;

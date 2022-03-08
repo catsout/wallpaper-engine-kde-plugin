@@ -83,6 +83,8 @@ TexNode* RenderGraphBuilder::createNewTexNode(const TexNode::Desc& desc) {
 
 void RenderGraphBuilder::read(TexNode* texnode) {
     m_rg.m_dg.Connect(texnode->ID(), m_passnode_wip->ID());
+
+    // reader before all new version's writer
     auto* next = texnode->nextVer();
     if(next != nullptr && next->m_writer != nullptr) {
         m_rg.m_dg.Connect(m_passnode_wip->ID(), next->m_writer->ID());
@@ -90,13 +92,19 @@ void RenderGraphBuilder::read(TexNode* texnode) {
 }
 
 void RenderGraphBuilder::write(TexNode* node) {
+    // after all old reader
     if(node->version() > 0) {
         auto* old = node->preVer();
-        for(auto id:m_rg.m_dg.GetNodeOut(old->ID())) {
+        const auto& outs = m_rg.m_dg.GetNodeOut(old->ID());
+        // after reader
+        for(auto id:outs) {
             if(m_rg.isPassNode(id)) {
                 m_rg.m_dg.Connect(id, m_passnode_wip->ID());
             }
         }
+        // after old tex if no old reader
+        if(outs.empty())
+            m_rg.m_dg.Connect(old->ID(), m_passnode_wip->ID());
     }
     m_rg.m_dg.Connect(m_passnode_wip->ID(), node->ID());
     node->setWriter(m_passnode_wip);

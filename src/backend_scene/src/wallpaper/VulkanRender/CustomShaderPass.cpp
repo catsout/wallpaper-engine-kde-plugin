@@ -7,6 +7,7 @@
 #include "Utils/Logging.h"
 #include "Utils/AutoDeletor.hpp"
 #include "Resource.hpp"
+#include "PassCommon.hpp"
 
 #include <cassert>
 
@@ -16,18 +17,21 @@ using namespace wallpaper::vulkan;
 CustomShaderPass::CustomShaderPass(const Desc& desc):m_desc(desc) {};
 CustomShaderPass::~CustomShaderPass() {}
 
-vk::RenderPass CreateRenderPass(const vk::Device &device, vk::Format format)
+vk::RenderPass CreateRenderPass(const vk::Device &device, vk::Format format, vk::AttachmentLoadOp loadOp)
 {
 	vk::AttachmentDescription attachment;
 	attachment
 		.setFormat(format)
 		.setSamples(vk::SampleCountFlagBits::e1)
-		.setLoadOp(vk::AttachmentLoadOp::eClear)
+		.setLoadOp(loadOp)
 		.setStoreOp(vk::AttachmentStoreOp::eStore)
 		.setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
 		.setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
 		.setInitialLayout(vk::ImageLayout::eUndefined)
 		.setFinalLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
+	if(loadOp == vk::AttachmentLoadOp::eLoad) {
+		attachment.initialLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+	}
 
 	vk::AttachmentReference attachment_ref;
 	attachment_ref
@@ -40,12 +44,23 @@ vk::RenderPass CreateRenderPass(const vk::Device &device, vk::Format format)
 		.setColorAttachmentCount(1)
 		.setPColorAttachments(&attachment_ref);
 
+	vk::SubpassDependency dependency;
+	dependency
+		.setSrcSubpass(VK_SUBPASS_EXTERNAL)
+		.setDstSubpass(0)
+		.setSrcStageMask(vk::PipelineStageFlagBits::eFragmentShader)
+		.setSrcAccessMask({})
+		.setDstStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput)
+		.setDstAccessMask(vk::AccessFlagBits::eColorAttachmentRead | vk::AccessFlagBits::eColorAttachmentWrite);
+
 	vk::RenderPassCreateInfo creatinfo;
 	creatinfo
 		.setAttachmentCount(1)
 		.setPAttachments(&attachment)
 		.setSubpassCount(1)
-		.setPSubpasses(&subpass);
+		.setPSubpasses(&subpass)
+		.setDependencyCount(1)
+		.setPDependencies(&dependency);
 	return device.createRenderPass(creatinfo).value;
 }
 
@@ -76,6 +91,8 @@ static void UpdateUniform(StagingBuffer* buf,
 }
 
 void CustomShaderPass::prepare(Scene& scene, const Device& device, RenderingResources& rr) {
+
+
     m_desc.vk_textures.resize(m_desc.textures.size());
     for(int i=0;i < m_desc.textures.size();i++) {
         auto& tex_name = m_desc.textures[i];
@@ -92,6 +109,7 @@ void CustomShaderPass::prepare(Scene& scene, const Device& device, RenderingReso
 			auto image = scene.imageParser->Parse(tex_name);
 			rv = device.tex_cache().CreateTex(*image);
 		}
+		VK_CHECK_RESULT(rv.result);
 		if(rv.result == vk::Result::eSuccess)
 			m_desc.vk_textures[i] = rv.value;
     }
@@ -100,9 +118,8 @@ void CustomShaderPass::prepare(Scene& scene, const Device& device, RenderingReso
 		assert(IsSpecTex(tex_name));
 		assert(scene.renderTargets.count(tex_name) > 0);
 		auto& rt = scene.renderTargets.at(tex_name);
-		LOG_INFO("--output--");
-		LOG_INFO("%s", tex_name.c_str());
 		auto rv = device.tex_cache().Query(tex_name, ToTexKey(rt));
+		VK_CHECK_RESULT_VOID_RE(rv.result);
 		if(rv.result == vk::Result::eSuccess)
 			m_desc.vk_output = rv.value;
 	}
@@ -134,6 +151,7 @@ void CustomShaderPass::prepare(Scene& scene, const Device& device, RenderingReso
 		auto& bindings = descriptor_info.bindings;
 		bindings.resize(ref.binding_map.size());
 		LOG_INFO("----shader------");
+		LOG_INFO("%s", shader.name.c_str());
 		LOG_INFO("--inputs:");
 		for(auto& i:ref.input_location_map) {
 			LOG_INFO("%d %s", i.second, i.first.c_str());
@@ -152,35 +170,29 @@ void CustomShaderPass::prepare(Scene& scene, const Device& device, RenderingReso
 		}
     }
 
-	VertexInputState input_state;
+	std::vector<vk::VertexInputBindingDescription> bind_descriptions;
+	std::vector<vk::VertexInputAttributeDescription> attr_descriptions;
 	{
 		m_desc.vertex_bufs.resize(mesh.VertexCount());
 		for(int i=0;i<mesh.VertexCount();i++) {
 			const auto& vertex = mesh.GetVertexArray(i);
-			auto attrs = vertex.GetAttrOffset();
+			auto attrs_map = vertex.GetAttrOffsetMap();
 
 			vk::VertexInputBindingDescription bind_desc;
 			bind_desc.setStride(vertex.OneSizeOf()).setInputRate(vk::VertexInputRate::eVertex).setBinding(i);
-			input_state.bind_descriptions.push_back(bind_desc);
+			bind_descriptions.push_back(bind_desc);
+			for(auto& item:ref.input_location_map) {
+				auto& name = item.first;
+				auto& input = item.second;
+				uint offset = exists(attrs_map, name) ? attrs_map[name].offset : 0;
 
-			for(auto& attr:attrs) {
 				vk::VertexInputAttributeDescription attr_desc;
-				if(!exists(ref.input_location_map, attr.attr.name)) continue;
-				auto& input = ref.input_location_map.at(attr.attr.name);
 				attr_desc.setBinding(i)
 					.setLocation(input.location)
 					.setFormat(input.format)
-					.setOffset(attr.offset);
-				input_state.attr_descriptions.push_back(attr_desc);
+					.setOffset(offset);
+				attr_descriptions.push_back(attr_desc);
 			}
-			input_state.input.setPVertexBindingDescriptions(input_state.bind_descriptions.data())
-				.setPVertexAttributeDescriptions(input_state.attr_descriptions.data())
-				.setVertexBindingDescriptionCount(input_state.bind_descriptions.size())
-				.setVertexAttributeDescriptionCount(input_state.attr_descriptions.size());
-
-			input_state.input_assembly.setTopology(vk::PrimitiveTopology::eTriangleStrip)
-				.setPrimitiveRestartEnable(false);
-
 			{
 				auto& buf = m_desc.vertex_bufs[i];
 				rr.vertex_buf->allocateSubRef(vertex.DataSizeOf(), buf);
@@ -189,13 +201,30 @@ void CustomShaderPass::prepare(Scene& scene, const Device& device, RenderingReso
 		}
 	}
 	{
-		auto pass = CreateRenderPass(device.handle(), vk::Format::eR8G8B8A8Unorm);
+		vk::PipelineColorBlendAttachmentState color_blend;
+		{
+			vk::ColorComponentFlags colorMask =
+				vk::ColorComponentFlagBits::eR |
+				vk::ColorComponentFlagBits::eG |
+				vk::ColorComponentFlagBits::eB;
+			bool alpha = !(m_desc.node->Camera().empty() || m_desc.node->Camera().compare(0, 6, "global") == 0);
+			if(alpha) colorMask |= vk::ColorComponentFlagBits::eA;
+			color_blend.setColorWriteMask(colorMask);
+			SetBlend(mesh.Material()->blenmode, color_blend);
+			m_desc.blending = color_blend.blendEnable;
+		}
+		vk::AttachmentLoadOp loadOp {vk::AttachmentLoadOp::eDontCare};
+		if(m_desc.blending) loadOp = vk::AttachmentLoadOp::eLoad;
+		auto pass = CreateRenderPass(device.handle(), vk::Format::eR8G8B8A8Unorm, loadOp);
 		descriptor_info.push_descriptor = true;
 		GraphicsPipeline pipeline;
 		pipeline.toDefault();
-		pipeline.setVertexInputState(input_state)
-			.setRenderPass(pass)
-			.addDescriptorSetInfo(descriptor_info);
+		pipeline.setRenderPass(pass)
+			.addDescriptorSetInfo(descriptor_info)
+			.setColorBlendStates(color_blend)
+			.setTopology(vk::PrimitiveTopology::eTriangleStrip)
+			.addInputBindingDescription(bind_descriptions)
+			.addInputAttributeDescription(attr_descriptions);
 		for(auto& spv:spvs) pipeline.addStage(std::move(spv));
 
 		pipeline.create(device, m_desc.pipeline);
@@ -209,7 +238,7 @@ void CustomShaderPass::prepare(Scene& scene, const Device& device, RenderingReso
 			.setWidth(m_desc.vk_output.extent.width)
 			.setHeight(m_desc.vk_output.extent.height)
 			.setLayers(1);
-		device.handle().createFramebuffer(&info, nullptr, &m_desc.fb);
+	 	VK_CHECK_RESULT_VOID_RE(device.handle().createFramebuffer(&info, nullptr, &m_desc.fb));
 	}
 
 	if(!ref.blocks.empty()){
@@ -217,7 +246,7 @@ void CustomShaderPass::prepare(Scene& scene, const Device& device, RenderingReso
 		rr.ubo_buf->allocateSubRef(block.size, m_desc.ubo_buf, device.limits().minUniformBufferOffsetAlignment);
 	}
 
-	{
+	if(!ref.blocks.empty()) {
 		auto block = ref.blocks.front();
 		auto* shader_updater = scene.shaderValueUpdater.get();
 		auto* buf = rr.ubo_buf;
@@ -232,14 +261,25 @@ void CustomShaderPass::prepare(Scene& scene, const Device& device, RenderingReso
 			};
 			shader_updater->UpdateUniforms(node, existsOp, updateOp);
 		};
-
-		auto& constValues = mesh.Material()->customShader.constValues;
-		for(auto& v:constValues) {
-			if(exists(block.member_map, v.first)) {
-				UpdateUniform(buf, *bufref, block, v.first, v.second);
+		{
+			auto& default_values = mesh.Material()->customShader.shader->default_uniforms;
+			auto& const_values = mesh.Material()->customShader.constValues;
+			std::array values_array = {&default_values, &const_values};
+			for(auto& values:values_array) {
+				for(auto& v:*values) {
+					if(exists(block.member_map, v.first)) {
+						UpdateUniform(buf, *bufref, block, v.first, v.second);
+					} 
+				}
 			}
 		}
 		m_desc.update_uniform_op();
+	} else {
+		m_desc.update_uniform_op = [](){};
+	}
+	{
+		auto& sc = scene.clearColor;
+		m_desc.clear_value = vk::ClearValue(std::array {sc[0], sc[1], sc[2], 1.0f});
 	}
     setPrepared();
 }
@@ -270,6 +310,7 @@ void CustomShaderPass::execute(const Device& device, RenderingResources& rr) {
 			.setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
 			.setPImageInfo(&desc_img);
         cmd.pushDescriptorSetKHR(vk::PipelineBindPoint::eGraphics, m_desc.pipeline.layout, 0, 1, &wset);
+		/*
 		vk::ImageMemoryBarrier imb_in;
 		imb_in.setImage(img.handle)
 			.setSrcAccessMask(vk::AccessFlagBits::eMemoryRead)
@@ -284,37 +325,10 @@ void CustomShaderPass::execute(const Device& device, RenderingResources& rr) {
 			0, nullptr,
 			0, nullptr,
 			1, &imb_in);
+		*/
 	}
-	{
-		vk::ImageMemoryBarrier imb;
-		imb.setImage(m_desc.vk_output.handle)
-			.setSrcAccessMask(vk::AccessFlagBits::eMemoryRead)
-			.setDstAccessMask(vk::AccessFlagBits::eColorAttachmentWrite)
-			.setOldLayout(m_desc.blending? vk::ImageLayout::eShaderReadOnlyOptimal : vk::ImageLayout::eUndefined)
-			.setNewLayout(vk::ImageLayout::eColorAttachmentOptimal)
-			.setSubresourceRange(base_range);
-		cmd.pipelineBarrier(
-			vk::PipelineStageFlagBits::eColorAttachmentOutput,
-			vk::PipelineStageFlagBits::eColorAttachmentOutput,
-			vk::DependencyFlagBits::eByRegion,
-			0, nullptr,
-			0, nullptr,
-			1, &imb);
-		imb.setImage(m_desc.vk_output.handle)	
-			.setSrcAccessMask(vk::AccessFlagBits::eColorAttachmentWrite)
-			.setDstAccessMask(vk::AccessFlagBits::eMemoryRead)
-			.setOldLayout(vk::ImageLayout::eColorAttachmentOptimal)
-			.setNewLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
-			.setSubresourceRange(base_range);
-		cmd.pipelineBarrier(
-			vk::PipelineStageFlagBits::eColorAttachmentOutput,
-			vk::PipelineStageFlagBits::eBottomOfPipe,
-			vk::DependencyFlagBits::eByRegion,
-			0, nullptr,
-			0, nullptr,
-			1, &imb);
-	}
-	{
+
+	if(m_desc.ubo_buf){
 		vk::DescriptorBufferInfo desc_buf {rr.ubo_buf->gpuBuf(), m_desc.ubo_buf.offset, m_desc.ubo_buf.size};
 		vk::WriteDescriptorSet wset;
 		wset.setDstSet({})
@@ -324,12 +338,33 @@ void CustomShaderPass::execute(const Device& device, RenderingResources& rr) {
 			.setPBufferInfo(&desc_buf);
         cmd.pushDescriptorSetKHR(vk::PipelineBindPoint::eGraphics, m_desc.pipeline.layout, 0, 1, &wset);
 	}
-	vk::ClearValue clear_value(std::array<float, 4> {1.0f, 0.8f, 0.4f, 0.0f});
+	
+	/*{
+		vk::ImageMemoryBarrier imb;
+		imb.setImage(m_desc.vk_output.handle)
+			.setSrcAccessMask(vk::AccessFlagBits::eMemoryRead)
+			.setDstAccessMask(vk::AccessFlagBits::eColorAttachmentWrite)
+			.setOldLayout(vk::ImageLayout::eUndefined)
+			.setNewLayout(vk::ImageLayout::eColorAttachmentOptimal)
+			.setSubresourceRange(base_range);
+		if(m_desc.blending) {
+			imb.oldLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+			imb.dstAccessMask |= vk::AccessFlagBits::eColorAttachmentRead;
+		}
+		cmd.pipelineBarrier(
+			vk::PipelineStageFlagBits::eFragmentShader,
+			vk::PipelineStageFlagBits::eColorAttachmentOutput,
+			vk::DependencyFlagBits::eByRegion,
+			0, nullptr,
+			0, nullptr,
+			1, &imb);
+	}*/
+
 	vk::RenderPassBeginInfo pass_begin_info;
 	pass_begin_info.setRenderPass(m_desc.pipeline.pass)
 		.setFramebuffer(m_desc.fb)
 		.setClearValueCount(1)
-		.setPClearValues(&clear_value)
+		.setPClearValues(&m_desc.clear_value)
 		.renderArea
 		.setExtent({outext.width, outext.height})
 		.setOffset(vk::Offset2D(0.0f, 0.0f));
@@ -349,8 +384,9 @@ void CustomShaderPass::execute(const Device& device, RenderingResources& rr) {
 	cmd.draw(4, 1, 0, 0);
 
 	cmd.endRenderPass();
-
 }
 
 void CustomShaderPass::destory(const Device& device, RenderingResources& rr) {
+	device.DestroyPipeline(m_desc.pipeline);
+	device.handle().destroyFramebuffer(m_desc.fb);
 }

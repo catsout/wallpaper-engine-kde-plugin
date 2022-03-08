@@ -52,7 +52,8 @@ void WPShaderValueUpdater::UpdateUniforms(SceneNode* pNode, const ExistsUniformO
 		for(const auto& el:nodeData.renderTargetResolution) {
 			if(m_scene->renderTargets.count(el.second) == 0) continue;
 			std::string_view name = WE_GLTEX_RESOLUTION_NAMES[el.first];
-			if(!existsOp(name)) continue;
+			if(!existsOp(name))
+				continue;
 
 			const auto& rt = m_scene->renderTargets.at(el.second);
 			std::array<uint16_t,4> resolution_uint({

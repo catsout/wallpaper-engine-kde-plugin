@@ -30,27 +30,34 @@ void CopyPass::prepare(Scene& scene, const Device& device, RenderingResources& r
 
 		vk::ResultValue<ImageSlots> rv {vk::Result::eSuccess, {}};
         if(IsSpecTex(tex_name)) {
-			if(scene.renderTargets.count(tex_name) == 0) continue;
-			auto& rt = scene.renderTargets.at(tex_name);
+            // always use src name
+			if(scene.renderTargets.count(m_desc.src) == 0) continue;
+			auto& rt = scene.renderTargets.at(m_desc.src);
+            scene.renderTargets[m_desc.dst] = rt;
 			auto rv_paras = device.tex_cache().Query(tex_name, ToTexKey(rt));
 			rv.result = rv_paras.result;
 			rv.value = ImageSlots{{rv_paras.value}, 0};
 		} else {
-			auto image = scene.imageParser->Parse(tex_name);
-			rv = device.tex_cache().CreateTex(*image);
+            LOG_ERROR("copy image source");
+            return;
 		}
 		if(rv.result != vk::Result::eSuccess) {
             return;
-        }  
+        }
 		*vk_textures[i] = rv.value;
     }
 
-    prepared();
+    setPrepared();
 };
 void CopyPass::execute(const Device& device, RenderingResources& rr) {
     auto& cmd = rr.command;
     auto& src = m_desc.vk_src.getActive();
     auto& dst = m_desc.vk_dst.getActive();
+
+    if(!(src.handle && dst.handle)) {
+        assert(src.handle && dst.handle);
+        return;
+    }
 
     vk::ImageSubresourceRange srang;
     srang
@@ -68,12 +75,12 @@ void CopyPass::execute(const Device& device, RenderingResources& rr) {
         .setAspectMask(srang.aspectMask)
         .setBaseArrayLayer(0)
         .setLayerCount(1)
-        .setMipLevel(1);
+        .setMipLevel(0);
     copy.dstSubresource
         .setAspectMask(srang.aspectMask)
         .setBaseArrayLayer(0)
         .setLayerCount(1)
-        .setMipLevel(1);
+        .setMipLevel(0);
     {
         std::array<vk::ImageMemoryBarrier, 2> imbs;
         imbs[0].setSrcAccessMask(vk::AccessFlagBits::eMemoryRead)
@@ -91,7 +98,7 @@ void CopyPass::execute(const Device& device, RenderingResources& rr) {
                             vk::DependencyFlagBits::eByRegion,
                             0, nullptr,
                             0, nullptr,
-                            1, imbs.data());
+                            2, imbs.data());
     }
     cmd.copyImage(
         m_desc.vk_src.getActive().handle,
@@ -103,13 +110,15 @@ void CopyPass::execute(const Device& device, RenderingResources& rr) {
     );
     {
         std::array<vk::ImageMemoryBarrier, 2> imbs;
-        imbs[0].setDstAccessMask(vk::AccessFlagBits::eMemoryRead)
+        imbs[0]
             .setSrcAccessMask(vk::AccessFlagBits::eTransferRead)
-            .setNewLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
+            .setDstAccessMask(vk::AccessFlagBits::eMemoryRead)
             .setOldLayout(vk::ImageLayout::eTransferSrcOptimal)
+            .setNewLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
             .setImage(src.handle)
             .setSubresourceRange(srang);
-     	imbs[1].setSrcAccessMask(vk::AccessFlagBits::eTransferWrite)
+     	imbs[1]
+            .setSrcAccessMask(vk::AccessFlagBits::eTransferWrite)
             .setDstAccessMask(vk::AccessFlagBits::eShaderRead)
             .setOldLayout(vk::ImageLayout::eTransferDstOptimal)
             .setNewLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
@@ -119,7 +128,7 @@ void CopyPass::execute(const Device& device, RenderingResources& rr) {
                             vk::DependencyFlagBits::eByRegion,
                             0, nullptr,
                             0, nullptr,
-                            1, imbs.data());
+                            2, imbs.data());
     }
 };
 void CopyPass::destory(const Device&, RenderingResources&) {

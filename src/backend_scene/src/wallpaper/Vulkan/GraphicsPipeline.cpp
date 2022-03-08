@@ -65,6 +65,10 @@ void GraphicsPipeline::toDefault() {
         vk::DynamicState::eViewport,
         vk::DynamicState::eScissor
     };
+
+    m_input_assembly = vk::PipelineInputAssemblyStateCreateInfo{};
+    m_input_assembly.setTopology(vk::PrimitiveTopology::eTriangleStrip)
+        .setPrimitiveRestartEnable(false);
 }
 
 
@@ -87,11 +91,6 @@ GraphicsPipeline& GraphicsPipeline::setLogicOp(bool enable, vk::LogicOp op) {
     return *this;
 }
 
-GraphicsPipeline& GraphicsPipeline::setVertexInputState(const VertexInputState& in) {
-    m_input_state = in;
-    return *this;
-}
-
 GraphicsPipeline& GraphicsPipeline::setRenderPass(vk::RenderPass pass) {
     m_pass = pass;
     return *this;
@@ -110,7 +109,24 @@ GraphicsPipeline& GraphicsPipeline::addDescriptorSetInfo(Span<DescriptorSetInfo>
     return *this;
 }
 
-vk::Result GraphicsPipeline::create(const Device& device, PipelineParameters& pipeline) {
+GraphicsPipeline& GraphicsPipeline::addInputAttributeDescription(Span<vk::VertexInputAttributeDescription> attrs) {
+    for(auto& a:attrs) {
+        m_input_attr_descriptions.push_back(a);
+    }
+    return *this;
+}
+GraphicsPipeline& GraphicsPipeline::addInputBindingDescription(Span<vk::VertexInputBindingDescription> binds) {
+    for(auto& b:binds) {
+        m_input_bind_descriptions.push_back(b);
+    }
+    return *this;
+}
+GraphicsPipeline& GraphicsPipeline::setTopology(vk::PrimitiveTopology topology) {
+    m_input_assembly.setTopology(topology);
+    return *this;
+}
+
+bool GraphicsPipeline::create(const Device& device, PipelineParameters& pipeline) {
     vk::PipelineDynamicStateCreateInfo dynamic_info {};
     dynamic_info.setDynamicStateCount(m_dynamic_states.size())
         .setPDynamicStates(m_dynamic_states.data());
@@ -146,6 +162,12 @@ vk::Result GraphicsPipeline::create(const Device& device, PipelineParameters& pi
         }
 	}));
 
+    vk::PipelineVertexInputStateCreateInfo input;
+    input.setPVertexBindingDescriptions(m_input_bind_descriptions.data())
+        .setPVertexAttributeDescriptions(m_input_attr_descriptions.data())
+        .setVertexBindingDescriptionCount(m_input_bind_descriptions.size())
+        .setVertexAttributeDescriptionCount(m_input_attr_descriptions.size());
+
     vk::GraphicsPipelineCreateInfo create;
     create
         .setStageCount(shaderStages.size())
@@ -158,10 +180,11 @@ vk::Result GraphicsPipeline::create(const Device& device, PipelineParameters& pi
         .setRenderPass(m_pass)
         .setLayout(pipeline.layout)
         .setPColorBlendState(&m_color)
-        .setPVertexInputState(&m_input_state.input)
-        .setPInputAssemblyState(&m_input_state.input_assembly); 
+        .setPVertexInputState(&input)
+        .setPInputAssemblyState(&m_input_assembly); 
     auto rv = device.handle().createGraphicsPipeline({}, create);
+    VK_CHECK_RESULT_BOOL_RE(rv.result);
     pipeline.handle = rv.value;
     pipeline.pass = m_pass;
-    return rv.result;
+    return true;
 }
