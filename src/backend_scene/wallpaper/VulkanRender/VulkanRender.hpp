@@ -14,6 +14,7 @@
 #include "PrePass.hpp"
 #include "FinPass.hpp"
 #include "Resource.hpp"
+#include "Type.h"
 
 #include <cstdio>
 #include <memory>
@@ -37,6 +38,7 @@ public:
 
     void clearLastRenderGraph();
     void compileRenderGraph(Scene&, rg::RenderGraph&);
+    void UpdateCameraFillMode(Scene&, wallpaper::FillMode);
 
 	bool CreateRenderingResource(RenderingResources&);
 	void DestroyRenderingResource(RenderingResources&);

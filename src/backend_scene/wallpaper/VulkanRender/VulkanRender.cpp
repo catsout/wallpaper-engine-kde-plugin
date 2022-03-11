@@ -3,11 +3,13 @@
 #include "Utils/Logging.h"
 #include "RenderGraph/RenderGraph.hpp"
 #include "Scene/Scene.h"
+#include "Utils/Algorism.h"
 
 #include <glslang/Public/ShaderLang.h>
 
 #include <cassert>
 #include <vector>
+#include <cstdint>
 
 
 #if ENABLE_RENDERDOC_API
@@ -322,6 +324,56 @@ void VulkanRender::setRenderTargetSize(Scene& scene, rg::RenderGraph& rg) {
     }
 }
 
+void VulkanRender::UpdateCameraFillMode(wallpaper::Scene& scene, wallpaper::FillMode fillmode) {
+    using namespace wallpaper;
+    auto width = m_device->out_extent().width;
+    auto height = m_device->out_extent().height;
+
+    if(width == 0) return;
+	double sw = scene.ortho[0],sh = scene.ortho[1];
+	double fboAspect = width/(double)height, sAspect = sw/sh;
+	auto& gCam = *scene.cameras.at("global");
+	auto& gPerCam = *scene.cameras.at("global_perspective");
+	// assum cam 
+	switch (fillmode)
+	{
+	case FillMode::STRETCH:
+		gCam.SetWidth(sw);
+		gCam.SetHeight(sh);
+		gPerCam.SetAspect(sAspect);
+		gPerCam.SetFov(algorism::CalculatePersperctiveFov(1000.0f, gCam.Height()));
+		break;
+	case FillMode::ASPECTFIT:
+		if(fboAspect < sAspect) {
+			// scale height
+			gCam.SetWidth(sw);
+			gCam.SetHeight(sw / fboAspect);
+		} else {
+			gCam.SetWidth(sh * fboAspect);
+			gCam.SetHeight(sh);
+		}
+		gPerCam.SetAspect(fboAspect);
+		gPerCam.SetFov(algorism::CalculatePersperctiveFov(1000.0f, gCam.Height()));
+		break;
+	case FillMode::ASPECTCROP:
+	default:
+		if(fboAspect > sAspect) {
+			// scale height
+			gCam.SetWidth(sw);
+			gCam.SetHeight(sw / fboAspect);
+		} else {
+			gCam.SetWidth(sh * fboAspect);
+			gCam.SetHeight(sh);
+		}
+		gPerCam.SetAspect(fboAspect);
+		gPerCam.SetFov(algorism::CalculatePersperctiveFov(1000.0f, gCam.Height()));
+		break;
+	}
+	gCam.Update();
+	gPerCam.Update();
+	scene.UpdateLinkedCamera("global");
+}
+
 
 void VulkanRender::clearLastRenderGraph() {
     for(auto& p:m_passes) {
@@ -380,50 +432,3 @@ void VulkanRender::compileRenderGraph(Scene& scene, rg::RenderGraph& rg) {
     m_pass_loaded = true;
 };
 
-/*
-void UpdateCameraForFbo(Scene& scene, uint32_t fbow, uint32_t fboh, FillMode fillmode) {
-	if(fboh == 0) return;
-	double sw = scene.ortho[0],sh = scene.ortho[1];
-	double fboAspect = fbow/(double)fboh, sAspect = sw/sh;
-	auto& gCam = *scene.cameras.at("global");
-	auto& gPerCam = *scene.cameras.at("global_perspective");
-	// assum cam 
-	switch (fillmode)
-	{
-	case FillMode::STRETCH:
-		gCam.SetWidth(sw);
-		gCam.SetHeight(sh);
-		gPerCam.SetAspect(sAspect);
-		gPerCam.SetFov(algorism::CalculatePersperctiveFov(1000.0f, gCam.Height()));
-		break;
-	case FillMode::ASPECTFIT:
-		if(fboAspect < sAspect) {
-			// scale height
-			gCam.SetWidth(sw);
-			gCam.SetHeight(sw / fboAspect);
-		} else {
-			gCam.SetWidth(sh * fboAspect);
-			gCam.SetHeight(sh);
-		}
-		gPerCam.SetAspect(fboAspect);
-		gPerCam.SetFov(algorism::CalculatePersperctiveFov(1000.0f, gCam.Height()));
-		break;
-	case FillMode::ASPECTCROP:
-	default:
-		if(fboAspect > sAspect) {
-			// scale height
-			gCam.SetWidth(sw);
-			gCam.SetHeight(sw / fboAspect);
-		} else {
-			gCam.SetWidth(sh * fboAspect);
-			gCam.SetHeight(sh);
-		}
-		gPerCam.SetAspect(fboAspect);
-		gPerCam.SetFov(algorism::CalculatePersperctiveFov(1000.0f, gCam.Height()));
-		break;
-	}
-	gCam.Update();
-	gPerCam.Update();
-	scene.UpdateLinkedCamera("global");
-}
-*/

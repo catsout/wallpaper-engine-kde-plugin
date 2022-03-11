@@ -102,6 +102,7 @@ public:
     enum class CMD {
         CMD_INIT_VULKAN,
         CMD_SET_SCENE,
+        CMD_SET_FILLMODE,
         CMD_STOP,
         CMD_DRAW,
         CMD_NO
@@ -122,6 +123,7 @@ public:
             switch(cmd) {
             CASE_CMD(DRAW)
             CASE_CMD(STOP)
+            CASE_CMD(SET_FILLMODE)
             CASE_CMD(SET_SCENE)
             CASE_CMD(INIT_VULKAN)
             }
@@ -159,12 +161,22 @@ private:
         }
         frame_timer.FrameEnd();
     }
+    MHANDLER_CMD(SET_FILLMODE) {
+        int32_t value;
+        if(msg->findInt32("value", &value)) {
+            m_fillmode = (FillMode)value;
+            if(m_scene && renderInited()) {
+                m_render->UpdateCameraFillMode(*m_scene, m_fillmode);
+            }
+        }
+    }
     MHANDLER_CMD(SET_SCENE) {
         if(msg->findObject("scene", &m_scene)) {
             decltype(m_rg) old_rg = std::move(m_rg);
             m_rg = sceneToRenderGraph(*m_scene);
             m_rg->ToGraphviz("graph.dot");
             m_render->compileRenderGraph(*m_scene, *m_rg);
+            m_render->UpdateCameraFillMode(*m_scene, m_fillmode);
         }
     }
     MHANDLER_CMD(INIT_VULKAN) {
@@ -186,6 +198,7 @@ private:
     std::shared_ptr<Scene> m_scene {nullptr};
     std::unique_ptr<rg::RenderGraph> m_rg {nullptr};
     std::unique_ptr<vulkan::VulkanRender> m_render;
+    FillMode m_fillmode {FillMode::ASPECTCROP};
 };
 }
 
@@ -293,6 +306,14 @@ MHANDLER_CMD_IMPL(MainHandler, SET_PROPERTY) {
             msg->findInt32("value", &fps);
             if(fps >= 5) {
                 uper.pImpl->render_handler->frame_timer.SetRequiredFps((uint8_t)fps);
+            }
+        } else if(property == "fillmode") {
+            int32_t value;
+            if(msg->findInt32("value", &value)) {
+                auto nmsg = looper::Message::create(0, uper.pImpl->render_handler);
+                addMsgCmd(*nmsg, RenderHandler::CMD::CMD_SET_FILLMODE);
+                nmsg->setInt32("value", value);
+                nmsg->post();
             }
         }
     }

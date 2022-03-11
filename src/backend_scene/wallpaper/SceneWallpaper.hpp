@@ -1,6 +1,7 @@
 #pragma once
 #include <memory>
 #include <string_view>
+#include "Type.h"
 #include "Utils/span.hpp"
 #include "Swapchain/ExSwapchain.hpp"
 

@@ -23,6 +23,7 @@
 #include "glExtra.hpp"
 #include "SceneWallpaper.hpp"
 #include "SceneWallpaperSurface.hpp"
+#include "Type.h"
 #include <cstdio>
 #include <unistd.h>
 
@@ -47,6 +48,19 @@ namespace {
 #else
         return window->createTextureFromId(handle, size);
 #endif
+    }
+
+    wallpaper::FillMode ToWPFillMode(int fillMode) {
+        switch ((SceneObject::FillMode)fillMode)
+        {
+        case SceneObject::FillMode::STRETCH:
+            return wallpaper::FillMode::STRETCH;
+        case SceneObject::FillMode::ASPECTFIT:
+            return wallpaper::FillMode::ASPECTFIT;
+        case SceneObject::FillMode::ASPECTCROP:
+        default:
+            return wallpaper::FillMode::ASPECTCROP;
+        }
     }
 
 }
@@ -232,7 +246,7 @@ void SceneObject::setFps(int value) {
 void SceneObject::setFillMode(int value) {
 	if(m_fillMode == value) return;
 	m_fillMode = value;
-    SET_PROPERTY(Int32, "fillmode", value);
+    SET_PROPERTY(Int32, "fillmode", (int32_t)ToWPFillMode(value));
 	Q_EMIT fillModeChanged();
 }
 void SceneObject::setVolume(float value) {
