@@ -46,6 +46,7 @@ public:
 	// debug
 	bool vulkanValid() const;
 	void enableVulkanValid();
+	void enableGenGraphviz();
 
 
 	Q_INVOKABLE void setAcceptMouse(bool);

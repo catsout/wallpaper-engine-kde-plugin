@@ -209,6 +209,7 @@ QSGNode *SceneObject::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
 #define SET_PROPERTY(type, name, value)   \
 m_scene->setProperty##type(name, value);  
 
+
 void SceneObject::setScenePropertyQurl(std::string_view name, QUrl value) {
     auto str_value = QDir::toNativeSeparators(value.toLocalFile()).toStdString();
     SET_PROPERTY(String, name, str_value);
@@ -227,26 +228,26 @@ bool SceneObject::muted() const { return m_muted; }
 void SceneObject::setSource(const QUrl& source) {
 	if(source == m_source) return;
 	m_source = source;
-    setScenePropertyQurl("source", m_source);
+    setScenePropertyQurl(wallpaper::PROPERTY_SOURCE, m_source);
 	Q_EMIT sourceChanged();
 }
 
 void SceneObject::setAssets(const QUrl& assets) {
 	if(m_assets == assets) return;
 	m_assets = assets;
-    setScenePropertyQurl("assets", m_assets);
+    setScenePropertyQurl(wallpaper::PROPERTY_ASSETS, m_assets);
 }
 
 void SceneObject::setFps(int value) {
 	if(m_fps == value) return;
 	m_fps = value;
-    SET_PROPERTY(Int32, "fps", value);
+    SET_PROPERTY(Int32, wallpaper::PROPERTY_FPS, value);
 	Q_EMIT fpsChanged();
 }
 void SceneObject::setFillMode(int value) {
 	if(m_fillMode == value) return;
 	m_fillMode = value;
-    SET_PROPERTY(Int32, "fillmode", (int32_t)ToWPFillMode(value));
+    SET_PROPERTY(Int32, wallpaper::PROPERTY_FILLMODE, (int32_t)ToWPFillMode(value));
 	Q_EMIT fillModeChanged();
 }
 void SceneObject::setVolume(float value) {
@@ -274,6 +275,9 @@ bool SceneObject::vulkanValid() const {
 }
 void SceneObject::enableVulkanValid() {
     m_enable_valid = true;
+}
+void SceneObject::enableGenGraphviz() {
+    SET_PROPERTY(Bool, wallpaper::PROPERTY_GRAPHIVZ, true);
 }
 
 void SceneObject::setAcceptMouse(bool value) {

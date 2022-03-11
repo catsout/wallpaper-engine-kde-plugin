@@ -18,7 +18,6 @@ add_subdirectory(RenderGraph)
 
 add_library(${PROJECT_NAME}
 	STATIC
-	Image.cpp
 	WPJson.cpp
 	WPPkgFs.cpp
 	Type.cpp

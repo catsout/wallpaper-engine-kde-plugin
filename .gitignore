@@ -11,6 +11,7 @@ CTestTestfile.cmake
 _deps
 *.tar
 build
+build-release
 *.swp
 *.out
 .vscode

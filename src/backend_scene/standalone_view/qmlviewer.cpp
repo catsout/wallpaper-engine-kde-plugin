@@ -4,14 +4,15 @@
 #include <QtQuick/QQuickView>
 #include <iostream>
 #include <string>
+#include "arg.hpp"
 
 
 int main(int argc, char **argv)
 {
-	if(argc != 3) {
-		std::cerr << "usage: "+ std::string(argv[0]) +" <assets dir> <pkg file>\n";
-		return 1;
-	}
+	argparse::ArgumentParser program("scene-viewer");
+	setAndParseArg(program, argc, argv);
+	
+
 	QCoreApplication::setAttribute(Qt::AA_DisableHighDpiScaling);
     QGuiApplication app(argc, argv);
 
@@ -22,10 +23,12 @@ int main(int argc, char **argv)
     view.show();
 	QObject *obj = view.rootObject();
 	scenebackend::SceneObject *sv = obj->findChild<scenebackend::SceneObject *>();
-	sv->enableVulkanValid();
-	sv->setProperty("assets", QUrl::fromLocalFile(argv[1]));
-	sv->setProperty("source", QUrl::fromLocalFile(argv[2]));
-	//sv->setAcceptMouse(true);
-	//sv->setAcceptHover(true);
+	if(program.get<bool>(OPT_VALID_LAYER))
+		sv->enableVulkanValid();
+	if(program.get<bool>(OPT_GRAPHVIZ))
+		sv->enableGenGraphviz();
+	sv->setProperty("assets", QUrl::fromLocalFile(program.get<std::string>(ARG_ASSETS).c_str()));
+	sv->setProperty("source", QUrl::fromLocalFile(program.get<std::string>(ARG_SCENE).c_str()));
+
     return QGuiApplication::exec();
 }

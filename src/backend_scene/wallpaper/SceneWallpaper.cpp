@@ -20,6 +20,7 @@
 
 #include "VulkanRender/VulkanRender.hpp"
 #include "Vulkan/VulkanExSwapchain.hpp"
+#include <atomic>
 
 
 using namespace wallpaper;
@@ -76,6 +77,7 @@ public:
     }
 
     void sendCmdLoadScene();
+    bool isGenGraphviz() const { return m_gen_graphviz; }
 
 private:
     void loadScene();
@@ -86,6 +88,7 @@ private:
 private:
     std::string m_assets;
     std::string m_source;
+    bool m_gen_graphviz {false};
 
     /*
     fs::VFS vfs;
@@ -174,7 +177,8 @@ private:
         if(msg->findObject("scene", &m_scene)) {
             decltype(m_rg) old_rg = std::move(m_rg);
             m_rg = sceneToRenderGraph(*m_scene);
-            m_rg->ToGraphviz("graph.dot");
+            if(uper.pImpl->main_handler->isGenGraphviz())
+                m_rg->ToGraphviz("graph.dot");
             m_render->compileRenderGraph(*m_scene, *m_rg);
             m_render->UpdateCameraFillMode(*m_scene, m_fillmode);
         }
@@ -294,20 +298,20 @@ MHANDLER_CMD_IMPL(MainHandler, LOAD_SCENE) {
 MHANDLER_CMD_IMPL(MainHandler, SET_PROPERTY) {
     std::string property;
     if(msg->findString("property", &property)) {
-        if(property == "source") {
+        if(property == PROPERTY_SOURCE) {
             msg->findString("value", &m_source);
             LOG_INFO("source: %s", m_source.c_str());
             CALL_MHANDLER_CMD(LOAD_SCENE, msg);
-        } else if(property == "assets") {
+        } else if(property == PROPERTY_ASSETS) {
             msg->findString("value", &m_assets);
             CALL_MHANDLER_CMD(LOAD_SCENE, msg);
-        } else if(property == "fps") {
+        } else if(property == PROPERTY_FPS) {
             int32_t fps {15};
             msg->findInt32("value", &fps);
             if(fps >= 5) {
                 uper.pImpl->render_handler->frame_timer.SetRequiredFps((uint8_t)fps);
             }
-        } else if(property == "fillmode") {
+        } else if(property == PROPERTY_FILLMODE) {
             int32_t value;
             if(msg->findInt32("value", &value)) {
                 auto nmsg = looper::Message::create(0, uper.pImpl->render_handler);
@@ -315,6 +319,8 @@ MHANDLER_CMD_IMPL(MainHandler, SET_PROPERTY) {
                 nmsg->setInt32("value", value);
                 nmsg->post();
             }
+        } else if(property == PROPERTY_GRAPHIVZ) {
+            msg->findBool("value", &m_gen_graphviz);
         }
     }
 }

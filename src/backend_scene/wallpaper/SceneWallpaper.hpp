@@ -8,6 +8,12 @@
 namespace wallpaper
 {
 
+constexpr std::string_view PROPERTY_SOURCE   = "source";
+constexpr std::string_view PROPERTY_ASSETS   = "assets";
+constexpr std::string_view PROPERTY_FPS      = "fps";
+constexpr std::string_view PROPERTY_FILLMODE = "fillmode";
+constexpr std::string_view PROPERTY_GRAPHIVZ = "graphivz";
+
 #include "Utils/NoCopyMove.hpp"
 class MainHandler;
 class RenderHandler;

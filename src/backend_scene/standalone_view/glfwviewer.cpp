@@ -5,6 +5,7 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #include <atomic>
+#include "arg.hpp"
 #include "SceneWallpaper.hpp"
 #include "SceneWallpaperSurface.hpp"
 
@@ -42,17 +43,16 @@ void updateCallback() {
 
 int main(int argc, char**argv)
 {
-	if(argc != 3) {
-		std::cerr << "usage: "+ std::string(argv[0]) +" <assets dir> <pkg file>\n";
-		return 1;
-	}
+
+	argparse::ArgumentParser program("scene-viewer");
+	setAndParseArg(program, argc, argv);
 
 	glfwInit();
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "WP", nullptr, nullptr);
 
 	wallpaper::RenderInitInfo info;
-	info.enable_valid_layer = true;
+	info.enable_valid_layer = program.get<bool>(OPT_VALID_LAYER);
 	info.width = SCR_WIDTH;
 	info.height = SCR_HEIGHT;
 
@@ -83,8 +83,9 @@ int main(int argc, char**argv)
     psw = new wallpaper::SceneWallpaper();
 	psw->init();
 	psw->initVulkan(info);
-	psw->setPropertyString("assets", std::string(argv[1]));
-	psw->setPropertyString("source", std::string(argv[2]));
+	psw->setPropertyString(wallpaper::PROPERTY_ASSETS, program.get<std::string>(ARG_ASSETS));
+	psw->setPropertyString(wallpaper::PROPERTY_SOURCE, program.get<std::string>(ARG_SCENE));
+	psw->setPropertyBool(wallpaper::PROPERTY_GRAPHIVZ, program.get<bool>(OPT_GRAPHVIZ));
 
     while (!glfwWindowShouldClose(window)) {
 		glfwPollEvents();

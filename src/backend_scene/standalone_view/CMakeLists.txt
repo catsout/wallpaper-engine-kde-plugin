@@ -14,12 +14,13 @@ option(BUILD_QML "Build qml scene viewer" ${BUILD_QML})
 
 find_package(PkgConfig REQUIRED)
 
+include_directories(../third_party)
+
 if(BUILD_QML)
     add_subdirectory(.. scenebackend)
 else()
-    include_directories(../third_party)
-    add_subdirectory(../third_party)
-    add_subdirectory(../wallpaper)
+    add_subdirectory(../third_party third_party)
+    add_subdirectory(../wallpaper wallpaper)
 endif()
 
 pkg_check_modules(GLFW REQUIRED glfw3)
