@@ -54,6 +54,7 @@ private:
 };
 
 using ShaderValues = Map<std::string, ShaderValue>;
+using ShaderValueMap = ShaderValues;
 
 struct ShaderAttribute {
 public:

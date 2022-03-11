@@ -11,7 +11,7 @@ constexpr const char* level_names[] = {
 };
 constexpr const char* level_fmt[] = {
 	"%-5s",
-	"%-5s %s:%d"
+	"%-5s %s:%d "
 };
 
 void WallpaperLog(int level, const char *file, int line, const char *fmt, ...) {

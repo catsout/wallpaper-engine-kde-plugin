@@ -26,7 +26,7 @@ void PrePass::prepare(Scene& scene, const Device& device, RenderingResources& rr
 		auto tex_name = std::string(m_desc.result);
 		if(scene.renderTargets.count(tex_name) == 0) return;
 		auto& rt = scene.renderTargets.at(tex_name);
-		auto rv_paras = device.tex_cache().Query(tex_name, ToTexKey(rt));
+		auto rv_paras = device.tex_cache().Query(tex_name, ToTexKey(rt), !rt.allowReuse);
 		m_desc.vk_result = rv_paras.value;
 	}
 	{
@@ -79,4 +79,6 @@ void PrePass::execute(const Device& device, RenderingResources& rr) {
 		1, &imb);
 }
 void PrePass::destory(const Device& device, RenderingResources&) {
+	setPrepared(false);
+	clearReleaseTexs();
 }

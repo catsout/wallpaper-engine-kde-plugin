@@ -62,7 +62,6 @@ public:
     SceneWallpaper& uper;
 public:
     void onMessageReceived(const std::shared_ptr<looper::Message>& msg) override {
-        
         int32_t cmd_int = (int32_t)CMD::CMD_NO;
         if(msg->findInt32("cmd", &cmd_int)) {
             CMD cmd = static_cast<CMD>(cmd_int);
@@ -103,6 +102,7 @@ public:
     enum class CMD {
         CMD_INIT_VULKAN,
         CMD_SET_SCENE,
+        CMD_STOP,
         CMD_DRAW,
         CMD_NO
     };
@@ -121,6 +121,7 @@ public:
             CMD cmd = static_cast<CMD>(cmd_int);
             switch(cmd) {
             CASE_CMD(DRAW)
+            CASE_CMD(STOP)
             CASE_CMD(SET_SCENE)
             CASE_CMD(INIT_VULKAN)
             }
@@ -136,22 +137,31 @@ public:
     }
 
 private:
+    MHANDLER_CMD(STOP) {
+        bool stop {false};
+        if(msg->findBool("value", &stop)) {
+            if(stop) frame_timer.Stop();
+            else frame_timer.Run();
+        }
+    }
     MHANDLER_CMD(DRAW) {
         frame_timer.FrameBegin();
         if(m_rg) {
             //LOG_INFO("frame info, fps: %.1f, frametime: %.1f", 1.0f, 1000.0f*m_scene->frameTime);
             m_scene->shaderValueUpdater->FrameBegin();
+
             m_render->drawFrame(*m_scene);
 
             m_scene->PassFrameTime(frame_timer.IdeaTime());
 
             m_scene->shaderValueUpdater->FrameEnd();
-            fps_counter.RegisterFrame();
+            //fps_counter.RegisterFrame();
         }
         frame_timer.FrameEnd();
     }
     MHANDLER_CMD(SET_SCENE) {
         if(msg->findObject("scene", &m_scene)) {
+            decltype(m_rg) old_rg = std::move(m_rg);
             m_rg = sceneToRenderGraph(*m_scene);
             m_rg->ToGraphviz("graph.dot");
             m_render->compileRenderGraph(*m_scene, *m_rg);
@@ -159,11 +169,12 @@ private:
     }
     MHANDLER_CMD(INIT_VULKAN) {
         std::shared_ptr<RenderInitInfo> info;
-        msg->findObject("info", &info);
-        m_render->init(*info);
+        if(msg->findObject("info", &info)) {
+            m_render->init(*info);
 
-        // inited, callback to laod scene
-        uper.pImpl->main_handler->sendCmdLoadScene();
+            // inited, callback to laod scene
+            uper.pImpl->main_handler->sendCmdLoadScene();
+        }
     }
 
 
@@ -206,6 +217,7 @@ bool SceneWallpaper::init() {
         auto& frameTimer = pImpl->render_handler->frame_timer;
         auto msg = looper::Message::create(0, pImpl->render_handler);
         addMsgCmd(*msg, RenderHandler::CMD::CMD_DRAW);
+
         frameTimer.SetCallback([msg]() {
             msg->post();
         });
@@ -229,7 +241,17 @@ void SceneWallpaper::initVulkanEx(Span<uint8_t> uuid) {
     m_exswap_mode = true;
 }
 
-void SceneWallpaper::draw() {
+void SceneWallpaper::play() {
+    auto msg = looper::Message::create(0, pImpl->render_handler);
+    addMsgCmd(*msg, RenderHandler::CMD::CMD_STOP);
+    msg->setBool("value", false);
+    msg->post();
+}
+void SceneWallpaper::pause() {
+    auto msg = looper::Message::create(0, pImpl->render_handler);
+    addMsgCmd(*msg, RenderHandler::CMD::CMD_STOP);
+    msg->setBool("value", true);
+    msg->post();
 }
 
 #define BASIC_TYPE(NAME,TYPENAME)                                        \

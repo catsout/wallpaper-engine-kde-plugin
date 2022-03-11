@@ -26,6 +26,7 @@
 #include <cstdio>
 #include <unistd.h>
 
+using namespace scenebackend;
 
 Q_LOGGING_CATEGORY(wekdeScene, "wekde.scene")
 
@@ -52,14 +53,17 @@ namespace {
 
 using sp_scene_t = std::shared_ptr<wallpaper::SceneWallpaper>;
 
+namespace scenebackend
+{
 
 class TextureNode : public QObject, public QSGSimpleTextureNode {
     Q_OBJECT
 public:
     typedef std::function<QSGTexture*(QQuickWindow*)> EatFrameOp;
-    TextureNode(QQuickWindow *window, sp_scene_t scene, EatFrameOp eatFrameOp)
+    TextureNode(QQuickWindow *window, sp_scene_t scene, bool valid, EatFrameOp eatFrameOp)
         : m_texture(nullptr)
         , m_scene(scene)
+        , m_enable_valid(valid)
         , m_eatFrameOp(eatFrameOp)
         , m_window(window)
     {
@@ -80,6 +84,7 @@ public:
         }
         delete m_init_texture;
         emit nodeDestroyed();
+        _Q_INFO("Destroy texnode", "");
     }
 
     // only at qt render thread
@@ -90,7 +95,7 @@ public:
     // after gl, can run at any thread
     void initVulkan(uint16_t w, uint16_t h) {
         wallpaper::RenderInitInfo info;
-        info.enable_valid_layer = true;
+        info.enable_valid_layer = m_enable_valid;
         info.offscreen = true;
         info.uuid = m_glex.uuid();
         info.width = w;
@@ -133,6 +138,7 @@ public slots:
 
 private:
     sp_scene_t m_scene;
+    bool m_enable_valid;
 
     QSGTexture *m_init_texture;
     QSGTexture *m_texture;
@@ -140,7 +146,6 @@ private:
     QQuickWindow *m_window;
     GlExtra m_glex;
 
-    std::unordered_map<int, uint> gltexs_map;
     struct ExTex {
         int fd;
         uint gltex;
@@ -149,6 +154,8 @@ private:
     std::unordered_map<int, ExTex> texs_map;
 };
 
+}
+
 SceneObject::SceneObject(QQuickItem* parent)
     :QQuickItem(parent),
      m_scene(std::make_shared<wallpaper::SceneWallpaper>()) {
@@ -156,7 +163,9 @@ SceneObject::SceneObject(QQuickItem* parent)
     m_scene->init();
 }
 
-SceneObject::~SceneObject() {}
+SceneObject::~SceneObject() {
+    _Q_INFO("Destroy sceneobject", "");
+}
 
 void SceneObject::resizeFb() {
     QSize size;
@@ -168,7 +177,7 @@ QSGNode *SceneObject::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
 {
     TextureNode *node = static_cast<TextureNode *>(oldNode);
     if (!node) {
-        node = new TextureNode(window(), m_scene,[this](QQuickWindow * window) {
+        node = new TextureNode(window(), m_scene, m_enable_valid, [this](QQuickWindow * window) {
             return (QSGTexture*)nullptr;
         });
         node->initGl();
@@ -238,5 +247,30 @@ void SceneObject::setMuted(bool value) {
     SET_PROPERTY(Bool, "muted", value);
 }
 
+void SceneObject::play() {
+    m_scene->play();
+}
+void SceneObject::pause() {
+    m_scene->pause();
+}
+
+
+bool SceneObject::vulkanValid() const {
+    return m_enable_valid;
+}
+void SceneObject::enableVulkanValid() {
+    m_enable_valid = true;
+}
+
+void SceneObject::setAcceptMouse(bool value) {
+	if(value)
+		setAcceptedMouseButtons(Qt::LeftButton);
+	else
+		setAcceptedMouseButtons(Qt::NoButton);
+}
+
+void SceneObject::setAcceptHover(bool value) {
+	setAcceptHoverEvents(value);
+}
 
 #include "SceneBackend.moc"

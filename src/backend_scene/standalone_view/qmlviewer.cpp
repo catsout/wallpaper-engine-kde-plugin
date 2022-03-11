@@ -15,13 +15,14 @@ int main(int argc, char **argv)
 	QCoreApplication::setAttribute(Qt::AA_DisableHighDpiScaling);
     QGuiApplication app(argc, argv);
 
-	qmlRegisterType<SceneObject>("scenetest", 1, 0, "SceneViewer");
+	qmlRegisterType<scenebackend::SceneObject>("scenetest", 1, 0, "SceneViewer");
     QQuickView view;
     view.setResizeMode(QQuickView::SizeRootObjectToView);
     view.setSource(QUrl("qrc:///pkg/main.qml"));
     view.show();
 	QObject *obj = view.rootObject();
-	SceneObject *sv = obj->findChild<SceneObject *>();
+	scenebackend::SceneObject *sv = obj->findChild<scenebackend::SceneObject *>();
+	sv->enableVulkanValid();
 	sv->setProperty("assets", QUrl::fromLocalFile(argv[1]));
 	sv->setProperty("source", QUrl::fromLocalFile(argv[2]));
 	//sv->setAcceptMouse(true);

@@ -34,6 +34,8 @@ public:
     void destroy();
 
     void drawFrame(Scene&);
+
+    void clearLastRenderGraph();
     void compileRenderGraph(Scene&, rg::RenderGraph&);
 
 	bool CreateRenderingResource(RenderingResources&);

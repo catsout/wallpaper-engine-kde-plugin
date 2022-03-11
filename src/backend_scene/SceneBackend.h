@@ -8,6 +8,9 @@
 
 Q_DECLARE_LOGGING_CATEGORY(wekdeScene)
 
+namespace scenebackend
+{
+
 class SceneObject : public QQuickItem
 {
     Q_OBJECT
@@ -40,8 +43,19 @@ public:
 	void setVolume(float);
 	void setMuted(bool);
 
+	// debug
+	bool vulkanValid() const;
+	void enableVulkanValid();
+
+
+	Q_INVOKABLE void setAcceptMouse(bool);
+	Q_INVOKABLE void setAcceptHover(bool);
+
 public slots:
     void resizeFb();
+	void play();
+	void pause();
+
 signals:
 	void sourceChanged();
     void fpsChanged();
@@ -64,9 +78,12 @@ public:
 
 private:
     void setScenePropertyQurl(std::string_view, QUrl);
-    bool inited = false;
+    bool m_inited {false};
+	bool m_enable_valid {false};
     std::shared_ptr<wallpaper::SceneWallpaper> m_scene {nullptr};
 
 protected:
     QSGNode *updatePaintNode(QSGNode *, UpdatePaintNodeData *);
 };
+
+}

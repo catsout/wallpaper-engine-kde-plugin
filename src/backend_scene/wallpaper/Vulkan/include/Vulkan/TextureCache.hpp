@@ -41,11 +41,12 @@ public:
     ~TextureCache();
 
     void Destroy();
+    void Clear();
 
     vk::ResultValue<ExImageParameters> CreateExTex(uint32_t witdh, uint32_t height, vk::Format);
     vk::ResultValue<ImageSlots> CreateTex(Image&);
 
-    vk::ResultValue<ImageParameters> Query(std::string_view key, TextureKey content_hash);
+    vk::ResultValue<ImageParameters> Query(std::string_view key, TextureKey content_hash, bool persist=false);
     void MarkShareReady(std::string_view key);
 private:
     vk::ResultValue<ImageParameters> CreateTex(TextureKey);
@@ -58,6 +59,7 @@ private:
     struct QueryTex {
         int index {0};
         bool share_ready {false};
+        bool persist {false};
         TexHash content_hash;
         ImageParameters image;
         Set<std::string> query_keys;

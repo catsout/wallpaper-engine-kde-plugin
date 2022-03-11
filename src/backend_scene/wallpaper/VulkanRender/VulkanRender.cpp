@@ -9,6 +9,7 @@
 #include <cassert>
 #include <vector>
 
+
 #if ENABLE_RENDERDOC_API
 #include "RenderDoc.h"
 #endif
@@ -54,8 +55,10 @@ bool VulkanRender::init(RenderInitInfo info) {
 
     std::vector<InstanceLayer> inst_layers;
     // valid layer
-    if(info.enable_valid_layer)
+    if(info.enable_valid_layer) {
         inst_layers.push_back({true, VALIDATION_LAYER_NAME});
+        LOG_INFO("vulkan valid layer \"%s\" enabled", VALIDATION_LAYER_NAME.data());
+    }
 
     if(!Instance::Create(m_instance, inst_exts, inst_layers, info.uuid)) {
         LOG_ERROR("init vulkan failed"); 
@@ -63,10 +66,10 @@ bool VulkanRender::init(RenderInitInfo info) {
     }
     if(!info.offscreen){
         VkSurfaceKHR surface;
-        if(info.surface_info.createSurfaceOp(m_instance.inst(), &surface) != VK_SUCCESS) {
+        VK_CHECK_RESULT_ACT({
             LOG_ERROR("create vulkan surface failed"); 
             return false;
-        }
+        }, (vk::Result)info.surface_info.createSurfaceOp(m_instance.inst(), &surface));
         m_instance.setSurface(vk::SurfaceKHR(surface));
         m_with_surface = true;
     }
@@ -134,24 +137,27 @@ bool VulkanRender::initRes() {
 }
 
 void VulkanRender::destroy() {
-    VK_CHECK_RESULT(m_device->handle().waitIdle());
+    if(!m_inited) return;
+    if(m_device && m_device->handle()) {
+        VK_CHECK_RESULT(m_device->handle().waitIdle());
 
-    // res
-    for(auto& p:m_passes) {
-        p->destory(*m_device, m_rendering_resources[0]);
-    }
-    m_vertex_buf->destroy();
-    m_ubo_buf->destroy();
-    m_device->handle().freeCommandBuffers(m_device->cmd_pool(), 1u, &m_upload_cmd);
-    for(auto& rr:m_rendering_resources) {
-        DestroyRenderingResource(rr);
-    }
-    if(m_ex_swapchain) {
-        for(auto& exh:m_ex_swapchain->handles()) {
-            m_device->DestroyExImageParameters(exh.image);
+        // res
+        for(auto& p:m_passes) {
+            p->destory(*m_device, m_rendering_resources[0]);
         }
+        m_vertex_buf->destroy();
+        m_ubo_buf->destroy();
+        m_device->handle().freeCommandBuffers(m_device->cmd_pool(), 1u, &m_upload_cmd);
+        for(auto& rr:m_rendering_resources) {
+            DestroyRenderingResource(rr);
+        }
+        if(m_ex_swapchain) {
+            for(auto& exh:m_ex_swapchain->handles()) {
+                m_device->DestroyExImageParameters(exh.image);
+            }
+        }
+        m_device->Destroy();
     }
-    m_device->Destroy();
     m_instance.Destroy();
 }
 
@@ -316,9 +322,19 @@ void VulkanRender::setRenderTargetSize(Scene& scene, rg::RenderGraph& rg) {
     }
 }
 
+
+void VulkanRender::clearLastRenderGraph() {
+    for(auto& p:m_passes) {
+        p->destory(*m_device, m_rendering_resources[0]);
+    }
+    m_passes.clear();
+    m_device->tex_cache().Clear();
+}
+
 void VulkanRender::compileRenderGraph(Scene& scene, rg::RenderGraph& rg) {
     if(!m_inited) return;
     m_pass_loaded = false;
+    clearLastRenderGraph();
 
     auto nodes = rg.topologicalOrder();
     auto node_release_texs = rg.getLastReadTexs(nodes);
@@ -363,3 +379,51 @@ void VulkanRender::compileRenderGraph(Scene& scene, rg::RenderGraph& rg) {
     }
     m_pass_loaded = true;
 };
+
+/*
+void UpdateCameraForFbo(Scene& scene, uint32_t fbow, uint32_t fboh, FillMode fillmode) {
+	if(fboh == 0) return;
+	double sw = scene.ortho[0],sh = scene.ortho[1];
+	double fboAspect = fbow/(double)fboh, sAspect = sw/sh;
+	auto& gCam = *scene.cameras.at("global");
+	auto& gPerCam = *scene.cameras.at("global_perspective");
+	// assum cam 
+	switch (fillmode)
+	{
+	case FillMode::STRETCH:
+		gCam.SetWidth(sw);
+		gCam.SetHeight(sh);
+		gPerCam.SetAspect(sAspect);
+		gPerCam.SetFov(algorism::CalculatePersperctiveFov(1000.0f, gCam.Height()));
+		break;
+	case FillMode::ASPECTFIT:
+		if(fboAspect < sAspect) {
+			// scale height
+			gCam.SetWidth(sw);
+			gCam.SetHeight(sw / fboAspect);
+		} else {
+			gCam.SetWidth(sh * fboAspect);
+			gCam.SetHeight(sh);
+		}
+		gPerCam.SetAspect(fboAspect);
+		gPerCam.SetFov(algorism::CalculatePersperctiveFov(1000.0f, gCam.Height()));
+		break;
+	case FillMode::ASPECTCROP:
+	default:
+		if(fboAspect > sAspect) {
+			// scale height
+			gCam.SetWidth(sw);
+			gCam.SetHeight(sw / fboAspect);
+		} else {
+			gCam.SetWidth(sh * fboAspect);
+			gCam.SetHeight(sh);
+		}
+		gPerCam.SetAspect(fboAspect);
+		gPerCam.SetFov(algorism::CalculatePersperctiveFov(1000.0f, gCam.Height()));
+		break;
+	}
+	gCam.Update();
+	gPerCam.Update();
+	scene.UpdateLinkedCamera("global");
+}
+*/

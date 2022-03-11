@@ -4,6 +4,7 @@
 #include "Utils/Logging.h"
 #include "Utils/Algorism.h"
 #include "Utils/ArrayHelper.hpp"
+#include "Utils/Visitors.hpp"
 #include "SpecTexs.h"
 
 #include "WPShaderParser.h"
@@ -29,6 +30,7 @@
 #include <cmath>
 #include <functional>
 #include <regex>
+#include <variant>
 #include <Eigen/Dense>
 
 using namespace wallpaper;
@@ -391,6 +393,486 @@ void LoadConstvalue(SceneMaterial& material, const wpscene::WPMaterial& wpmat, c
 	}
 }
 
+struct ParseContext {
+	RandomFn randomFn;
+	std::shared_ptr<Scene> scene;
+	WPShaderValueUpdater* shader_updater;
+	uint16_t ortho_w;
+	uint16_t ortho_h;
+	fs::VFS* vfs;
+	
+	ShaderValueMap global_base_uniforms;
+	std::shared_ptr<SceneNode> effect_camera_node;
+	std::shared_ptr<SceneNode> global_camera_node;
+	std::shared_ptr<SceneNode> global_perspective_camera_node;
+};
+
+using WPObjectVar = std::variant<
+	wpscene::WPImageObject,
+	wpscene::WPParticleObject,
+	wpscene::WPSoundObject
+>;
+
+void ParseCamera(ParseContext& context, wpscene::WPSceneGeneral& general) {
+	auto& scene = *context.scene;
+	// effect camera 
+	scene.cameras["effect"] = std::make_shared<SceneCamera>(2, 2, -1.0f, 1.0f);
+	scene.cameras.at("effect")->AttatchNode(context.effect_camera_node);
+	context.effect_camera_node = std::make_shared<SceneNode>(); // at 0,0,0
+	scene.sceneGraph->AppendChild(context.effect_camera_node);
+
+	// global camera
+	scene.cameras["global"] = std::make_shared<SceneCamera>(
+		int32_t(context.ortho_w / general.zoom), 
+		int32_t(context.ortho_h / general.zoom), 
+		-5000.0f, 5000.0f
+	);
+	scene.activeCamera = scene.cameras.at("global").get();
+	Vector3f cori{context.ortho_w/2.0f,context.ortho_h/2.0f,0},cscale{1.0f,1.0f,1.0f},cangle(Vector3f::Zero());
+
+	context.global_camera_node = std::make_shared<SceneNode>(cori, cscale, cangle);
+	scene.activeCamera->AttatchNode(context.global_camera_node);
+	scene.sceneGraph->AppendChild(context.global_camera_node);
+
+	scene.cameras["global_perspective"] = std::make_shared<SceneCamera>(
+		context.ortho_w/(float)context.ortho_h,
+		general.nearz,
+		general.farz,
+		algorism::CalculatePersperctiveFov(1000.0f, context.ortho_h)
+	);
+
+	Vector3f cperori = cori; cperori[2] = 1000.0f;
+	context.global_perspective_camera_node = std::make_shared<SceneNode>(cperori, cscale, cangle);
+	scene.cameras["global_perspective"]->AttatchNode(context.global_perspective_camera_node);
+	scene.sceneGraph->AppendChild(context.global_perspective_camera_node);
+}
+
+void InitContext(ParseContext& context, fs::VFS& vfs, wpscene::WPScene& sc) {
+	context.scene = std::make_shared<Scene>();
+	context.vfs = &vfs;
+	auto& scene = *context.scene;
+	scene.imageParser = std::make_unique<WPTexImageParser>(&vfs);
+	scene.paritileSys.gener = std::make_unique<WPParticleRawGener>();
+	scene.shaderValueUpdater = std::make_unique<WPShaderValueUpdater>(&scene);
+	context.shader_updater = static_cast<WPShaderValueUpdater*>(scene.shaderValueUpdater.get());
+
+	scene.clearColor = sc.general.clearcolor;
+	scene.ortho[0] = sc.general.orthogonalprojection.width;
+	scene.ortho[1] = sc.general.orthogonalprojection.height;
+	context.shader_updater->SetOrtho(scene.ortho[0], scene.ortho[1]);
+	context.ortho_w = scene.ortho[0];
+	context.ortho_h = scene.ortho[1];
+
+	{
+		auto& gb = context.global_base_uniforms;
+		gb["g_ViewUp"] = std::array {0.0f, 1.0f, 0.0f};
+		gb["g_ViewRight"] = std::array {1.0f, 0.0f, 0.0f};
+		gb["g_ViewForward"] = std::array {0.0f, 0.0f, -1.0f};
+		gb["g_EyePosition"] = std::array {0.0f, 0.0f, 0.0f};
+		gb["g_TexelSize"]= std::array {1.0f/1920.0f, 1.0f/1080.0f};
+		gb["g_TexelSizeHalf"]= std::array {1.0f/1920.0f/2.0f, 1.0f/1080.0f/2.0f};
+
+		gb["g_LightAmbientColor"]= sc.general.ambientcolor;
+		gb["g_LightsColorPremultiplied[0]"] = std::array {848496.0f, 893676.0f, 1250141.0f, 0.0f};
+		gb["g_NormalModelMatrix"] = ShaderValue::fromMatrix(Matrix3f::Identity());
+	}
+
+	{	
+		WPCameraParallax cam_para;
+		cam_para.enable = sc.general.cameraparallax;
+		cam_para.amount = sc.general.cameraparallaxamount;
+		cam_para.delay = sc.general.cameraparallaxdelay;
+		cam_para.mouseinfluence = sc.general.cameraparallaxmouseinfluence;
+		context.shader_updater->SetCameraParallax(cam_para);
+	}
+
+	{
+		auto ur = std::make_shared<std::uniform_real_distribution<float>>(0.0f, 1.0f);
+		auto randomSeed = std::make_shared<std::default_random_engine>();
+		context.randomFn = [randomSeed, ur]() { return (*ur)(*randomSeed); };
+	}
+
+}
+
+void ParseImageObj(ParseContext& context, wpscene::WPImageObject& img_obj) {
+	auto& wpimgobj = img_obj;
+	if(!wpimgobj.visible)
+		return;
+
+	auto& vfs = *context.vfs;
+
+	// coloBlendMode load passthrough manaully
+	if(wpimgobj.colorBlendMode != 0) {
+		wpscene::WPImageEffect colorEffect;
+		wpscene::WPMaterial colorMat;
+		nlohmann::json json;
+		if(!PARSE_JSON(fs::GetFileContent(vfs, "/assets/materials/util/effectpassthrough.json"), json)) 
+			return;
+		colorMat.FromJson(json);
+		colorMat.combos["BONECOUNT"] = 1;
+		colorMat.combos["BLENDMODE"] = wpimgobj.colorBlendMode;
+		colorMat.blending = "disabled";
+		colorEffect.materials.push_back(colorMat);
+		wpimgobj.effects.push_back(colorEffect);
+	}	
+
+	int32_t count_eff = 0;
+	for(const auto& wpeffobj:wpimgobj.effects) {
+		if(wpeffobj.visible)
+			count_eff++;
+	}
+	bool hasEffect = count_eff > 0;
+	// skip no effect fullscreen layer
+	if(!hasEffect && wpimgobj.fullscreen)
+		return;
+
+	bool isCompose = (wpimgobj.image == "models/util/composelayer.json");
+	// skip no effect compose layer
+	// it's not the correct behaviour, but do it for now
+	if(!hasEffect && isCompose)
+		return;
+
+	wpimgobj.origin[1] = context.ortho_h - wpimgobj.origin[1];
+	auto spImgNode = std::make_shared<SceneNode>(
+		Vector3f(wpimgobj.origin.data()), 
+		Vector3f(wpimgobj.scale.data()), 
+		Vector3f(wpimgobj.angles.data()) 
+	);
+	LoadAlignment(*spImgNode, wpimgobj.alignment, {wpimgobj.size[0], wpimgobj.size[1]});
+	spImgNode->ID() = wpimgobj.id;
+
+	SceneMaterial material;
+	WPShaderValueData svData;
+
+	ShaderValueMap baseConstSvs = context.global_base_uniforms;
+	WPShaderInfo shaderInfo;
+	{
+		if(!hasEffect)
+			svData.parallaxDepth = {wpimgobj.parallaxDepth[0], wpimgobj.parallaxDepth[1]};
+
+		baseConstSvs["g_Alpha"] = wpimgobj.alpha;
+		baseConstSvs["g_Color"] = wpimgobj.color;
+		baseConstSvs["g_UserAlpha"] = wpimgobj.alpha;
+		baseConstSvs["g_Brightness"] = wpimgobj.brightness;
+
+		shaderInfo.baseConstSvs = baseConstSvs;
+		LoadMaterial(vfs, wpimgobj.material, context.scene.get(), spImgNode.get(), &material, &svData, &shaderInfo);
+		LoadConstvalue(material, wpimgobj.material, shaderInfo);
+	}
+	
+	for(const auto& cs:wpimgobj.material.constantshadervalues) {
+		const auto& name = cs.first;
+		const std::vector<float>& value = cs.second;
+		std::string glname;
+		if(shaderInfo.alias.count(name) != 0) {
+			glname = shaderInfo.alias.at(name);
+		} else {
+			for(const auto& el:shaderInfo.alias) {
+				if(el.second.substr(2) == name) {
+					glname = el.second;
+					break;
+				}
+			}
+		}
+		if(glname.empty()) {
+			LOG_ERROR("ShaderValue: %s not found in glsl", name.c_str());
+		} else {
+			material.customShader.constValues[glname] = value; 
+		}
+	}
+
+	// mesh
+	auto spMesh = std::make_shared<SceneMesh>();
+	auto& mesh = *spMesh;
+
+	{
+		// deal with pow of 2
+		std::array<float, 2> mapRate {1.0f, 1.0f};
+		if(!wpimgobj.nopadding && exists(material.customShader.constValues,"g_Texture0Resolution")) {
+			const auto& r = material.customShader.constValues.at("g_Texture0Resolution");
+			mapRate = {
+				r[2] / r[0],
+				r[3] / r[1]
+			};
+		}
+		GenCardMesh(mesh, {(uint16_t)wpimgobj.size[0], (uint16_t)wpimgobj.size[1]}, mapRate);
+	}
+
+	// material blendmode for last step to use
+	auto imgBlendMode = material.blenmode;
+	// disable img material blend, as it's the first effect node now
+	if(hasEffect) {
+		material.blenmode = BlendMode::Normal;
+	}
+	mesh.AddMaterial(std::move(material));
+	spImgNode->AddMesh(spMesh);
+
+	context.shader_updater->SetNodeData(spImgNode.get(), svData);
+	if(hasEffect) {
+		auto& scene = *context.scene;
+		// currently use addr for unique
+		std::string nodeAddr = getAddr(spImgNode.get());
+		// set camera to attatch effect
+		if(isCompose) {
+			scene.cameras[nodeAddr] = std::make_shared<SceneCamera>(
+				(int32_t)scene.activeCamera->Width(), 
+				(int32_t)scene.activeCamera->Height(),
+				-1.0f, 1.0f
+			);
+			scene.cameras.at(nodeAddr)->AttatchNode(scene.activeCamera->GetAttachedNode());
+			if(scene.linkedCameras.count("global") == 0)
+				scene.linkedCameras["global"] = {};
+			scene.linkedCameras.at("global").push_back(nodeAddr);
+		}
+		else {
+			// applly scale to crop
+			int32_t w = wpimgobj.size[0];
+			int32_t h = wpimgobj.size[1];
+			scene.cameras[nodeAddr] = std::make_shared<SceneCamera>(w, h, -1.0f, 1.0f);
+			scene.cameras.at(nodeAddr)->AttatchNode(context.effect_camera_node);
+		}
+		spImgNode->SetCamera(nodeAddr);
+		// set image effect
+		auto imgEffectLayer = std::make_shared<SceneImageEffectLayer>(spImgNode.get(), wpimgobj.size[0], wpimgobj.size[1]);
+		scene.cameras.at(nodeAddr)->AttatchImgEffect(imgEffectLayer);
+		// set renderTarget for ping-pong operate
+		std::string effectRTs[2];
+		effectRTs[0] = "_rt_" + nodeAddr;
+		effectRTs[1] = "_rt_" + nodeAddr + "1";
+		scene.renderTargets[effectRTs[0]] = {
+			.width = (uint16_t)wpimgobj.size[0], 
+			.height = (uint16_t)wpimgobj.size[1], 
+			.allowReuse = true
+		};
+		scene.renderTargets[effectRTs[1]] = scene.renderTargets.at(effectRTs[0]);
+		if(wpimgobj.fullscreen) {
+			scene.renderTargets[effectRTs[0]].bind = {
+				.enable = true,
+				.screen = true
+			};
+			scene.renderTargets[effectRTs[1]].bind = {
+				.enable = true,
+				.screen = true
+			};
+		}
+		imgEffectLayer->SetFirstTarget(effectRTs[0]);
+		int32_t i_eff = -1;
+		for(const auto& wpeffobj:wpimgobj.effects) {
+			i_eff++;
+			if(!wpeffobj.visible) {
+				i_eff--;
+				continue;
+			}
+			std::shared_ptr<SceneImageEffect> imgEffect = std::make_shared<SceneImageEffect>();
+			imgEffectLayer->AddEffect(imgEffect);
+
+			const std::string& inRT = effectRTs[(i_eff)%2];
+			std::string outRT;
+			if(i_eff + 1 == count_eff) {
+				outRT = SpecTex_Default;
+			} else {
+				outRT = effectRTs[(i_eff+1)%2];
+			}
+
+			// fbo name map and effect command
+			std::string effaddr = getAddr(imgEffectLayer.get());
+			std::unordered_map<std::string, std::string> fboMap;
+			{
+				fboMap["previous"] = inRT;
+				for(int32_t i=0;i < wpeffobj.fbos.size();i++) {
+					const auto& wpfbo = wpeffobj.fbos.at(i);
+					std::string rtname = wpfbo.name +"_"+ effaddr;
+					if(wpimgobj.fullscreen) {
+						scene.renderTargets[rtname] = {2, 2, true};
+						scene.renderTargets[rtname].bind = {
+							.enable = true,
+							.screen = true,
+							.scale = 1.0f/wpfbo.scale
+						};
+					} else {
+						// i+2 for not override object's rt
+						scene.renderTargets[rtname] = {
+							.width = (uint16_t)(wpimgobj.size[0]/wpfbo.scale),
+							.height = (uint16_t)(wpimgobj.size[1]/wpfbo.scale), 
+							.allowReuse = true
+						};
+					}
+					fboMap[wpfbo.name] = rtname;
+				}
+			}
+			// load effect commands
+			{
+				for(const auto& el:wpeffobj.commands) {
+					if(el.command != "copy") {
+						LOG_ERROR("Unknown effect command: %s", el.command.c_str());
+						continue;
+					}
+					if(fboMap.count(el.target) + fboMap.count(el.source) < 2) {
+						LOG_ERROR("Unknown effect command dst or src: %s %s", el.target.c_str(), el.source.c_str());
+						continue;
+					}
+					imgEffect->commands.push_back({
+						.cmd = SceneImageEffect::CmdType::Copy,
+						.dst = fboMap[el.target],
+						.src = fboMap[el.source]
+					});
+				}
+			}
+
+			for(int32_t i_mat=0;i_mat < wpeffobj.materials.size();i_mat++) {
+				wpscene::WPMaterial wpmat = wpeffobj.materials.at(i_mat);
+				std::string matOutRT = outRT;
+				if(wpeffobj.passes.size() > i_mat) {
+					const auto& wppass = wpeffobj.passes.at(i_mat);
+					wpmat.MergePass(wppass);
+					// Set rendertarget, in and out
+					for(const auto& el:wppass.bind) {
+						if(fboMap.count(el.name) == 0) {
+							LOG_ERROR("fbo %s not found", el.name.c_str());
+							continue;
+						}
+						if(wpmat.textures.size() <= el.index)
+							wpmat.textures.resize(el.index+1);
+						wpmat.textures[el.index] = fboMap[el.name];
+					}
+					if(!wppass.target.empty()) {
+						if(fboMap.count(wppass.target) == 0) {
+							LOG_ERROR("fbo %s not found",wppass.target.c_str());
+						}
+						else {
+							matOutRT = fboMap.at(wppass.target);
+						}
+					}
+				}
+				if(wpmat.textures.size() == 0)
+					wpmat.textures.resize(1);
+				if(wpmat.textures.at(0).empty()) {
+					wpmat.textures[0] = inRT;
+				}
+				auto spEffNode = std::make_shared<SceneNode>();
+				std::string effmataddr = getAddr(spEffNode.get());
+				WPShaderInfo wpEffShaderInfo;
+				wpEffShaderInfo.baseConstSvs = baseConstSvs;
+				wpEffShaderInfo.baseConstSvs["g_EffectTextureProjectionMatrix"] =
+					ShaderValue::fromMatrix(Eigen::Matrix4f::Identity());
+				wpEffShaderInfo.baseConstSvs["g_EffectTextureProjectionMatrixInverse"] =
+					ShaderValue::fromMatrix(Eigen::Matrix4f::Identity());
+				SceneMaterial material;
+				WPShaderValueData svData;
+				LoadMaterial(vfs, wpmat, context.scene.get(), spEffNode.get(), &material, &svData, &wpEffShaderInfo);
+
+				// load glname from alias and load to constvalue
+				LoadConstvalue(material, wpmat, wpEffShaderInfo);
+				auto spMesh = std::make_shared<SceneMesh>();
+				auto& mesh = *spMesh;
+				// the last effect and last material
+				if((i_eff + 1 == count_eff && i_mat + 1 == wpeffobj.materials.size()) && !wpimgobj.fullscreen) {
+					GenCardMesh(mesh, {(uint16_t)wpimgobj.size[0], (uint16_t)wpimgobj.size[1]});
+					spEffNode->CopyTrans(*spImgNode);
+					if(!isCompose)
+						spImgNode->CopyTrans(SceneNode());
+					svData.parallaxDepth = {wpimgobj.parallaxDepth[0], wpimgobj.parallaxDepth[1]};
+					material.blenmode = imgBlendMode;
+				} else {
+					GenCardMesh(mesh, {2, 2});
+					// disable blend for effect node, as it seems blend manually
+					material.blenmode = BlendMode::Normal;
+					spEffNode->SetCamera("effect");
+				}
+				mesh.AddMaterial(std::move(material));
+				spEffNode->AddMesh(spMesh);
+
+				context.shader_updater->SetNodeData(spEffNode.get(), svData);
+				imgEffect->nodes.push_back({matOutRT, spEffNode});
+			}
+		}
+	}
+	context.scene->sceneGraph->AppendChild(spImgNode);
+
+}
+
+void ParseParticleObj(ParseContext& context, wpscene::WPParticleObject& particle) {
+	auto& wppartobj = particle;
+	auto& vfs = *context.vfs;
+
+	wppartobj.origin[1] = context.ortho_h - wppartobj.origin[1];
+
+	auto spNode = std::make_shared<SceneNode>(
+		Vector3f(wppartobj.origin.data()), 
+		Vector3f(wppartobj.scale.data()), 
+		Vector3f(wppartobj.angles.data()) 
+	);
+	if(wppartobj.particleObj.flags.perspective) {
+		spNode->SetCamera("global_perspective");
+	}
+
+	SceneMaterial material;
+	WPShaderValueData svData;
+	svData.parallaxDepth = {wppartobj.parallaxDepth[0], wppartobj.parallaxDepth[1]};
+	WPShaderInfo shaderInfo;
+	shaderInfo.baseConstSvs = context.global_base_uniforms;
+	shaderInfo.baseConstSvs["g_OrientationUp"] = std::array {0.0f, -1.0f, 0.0f};
+	shaderInfo.baseConstSvs["g_OrientationRight"]= std::array {1.0f, 0.0f, 0.0f};
+	shaderInfo.baseConstSvs["g_OrientationForward"]= std::array {0.0f, 0.0f, 1.0f};
+	shaderInfo.baseConstSvs["g_ViewUp"]= std::array {0.0f, 1.0f, 0.0f};
+	shaderInfo.baseConstSvs["g_ViewRight"]= std::array {1.0f, 0.0f, 0.0f};
+
+	bool hastrail {false};
+	if(wppartobj.particleObj.renderers.size() > 0) {
+		auto wppartRenderer = wppartobj.particleObj.renderers.at(0);
+		if(wppartRenderer.name == "spritetrail") {
+			shaderInfo.baseConstSvs["g_RenderVar0"]= std::array {
+				wppartRenderer.length, wppartRenderer.maxlength, 0.0f, 0.0f
+			};
+			shaderInfo.combos["THICKFORMAT"] = 1;
+			shaderInfo.combos["TRAILRENDERER"] = 1;
+			hastrail = true;
+		}
+	}
+	if(!wppartobj.particleObj.flags.spritenoframeblending) {
+		shaderInfo.combos["SPRITESHEETBLEND"] = 1;
+	}
+
+	LoadMaterial(vfs, wppartobj.material, context.scene.get(), spNode.get(), &material, &svData, &shaderInfo);
+	LoadConstvalue(material, wppartobj.material, shaderInfo);
+	auto spMesh = std::make_shared<SceneMesh>(true);
+	auto& mesh = *spMesh;
+	uint32_t maxcount = wppartobj.particleObj.maxcount;
+	auto animationmode = ToAnimMode(wppartobj.particleObj.animationmode);
+	auto sequencemultiplier = wppartobj.particleObj.sequencemultiplier;
+	bool hasSprite = material.hasSprite;
+	maxcount = maxcount > 4000 ? 4000 : maxcount;
+	SetParticleMesh(mesh, wppartobj.particleObj, maxcount, material.hasSprite || hastrail);
+	const auto& wpemitter = wppartobj.particleObj.emitters[0];
+	auto particleSub = std::make_unique<ParticleSubSystem>(
+		context.scene->paritileSys, 
+		spMesh, 
+		maxcount,
+		wppartobj.instanceoverride.rate,
+		[=](const Particle& p, const ParticleRawGenSpec& spec) {
+			auto& lifetime = *(spec.lifetime);
+			if(lifetime < 0.0f) return;
+			switch(animationmode) {
+			case ParticleAnimationMode::RANDOMONE:
+				lifetime = std::floor(p.lifetimeInit);
+				break;
+			case ParticleAnimationMode::SEQUENCE:
+				lifetime = (1.0f - (p.lifetime / p.lifetimeInit)) * sequencemultiplier;
+				break;
+			}
+		}
+	);
+
+	LoadEmitter(*particleSub, wppartobj.particleObj, wppartobj.instanceoverride.count, context.randomFn);
+	LoadInitializer(*particleSub, wppartobj.particleObj, wppartobj.instanceoverride, context.randomFn);
+	LoadOperator(*particleSub, wppartobj.particleObj, context.randomFn);
+
+	context.scene->paritileSys.subsystems.emplace_back(std::move(particleSub));
+	mesh.AddMaterial(std::move(material));
+	spNode->AddMesh(spMesh);
+	context.shader_updater->SetNodeData(spNode.get(), svData);
+	context.scene->sceneGraph->AppendChild(spNode);
+}
 
 std::shared_ptr<Scene> WPSceneParser::Parse(const std::string& buf, fs::VFS& vfs, audio::SoundManager& sm) {
 	nlohmann::json json;
@@ -400,23 +882,18 @@ std::shared_ptr<Scene> WPSceneParser::Parse(const std::string& buf, fs::VFS& vfs
 	sc.FromJson(json);
 //	LOG_INFO(nlohmann::json(sc).dump(4));
 
-	// randomFn
-	auto ur = std::make_shared<std::uniform_real_distribution<float>>(0.0f, 1.0f);
-	auto randomSeed = std::make_shared<std::default_random_engine>();
-	RandomFn randomFn = [randomSeed, ur]() { return (*ur)(*randomSeed); };
+	ParseContext context;
 
-	std::vector<wpscene::WPImageObject> wpimgobjs;
-	std::vector<wpscene::WPParticleObject> wppartobjs;
-	std::vector<wpscene::WPSoundObject> wpsoundobjs;
-	std::vector<std::pair<std::string, uint32_t>> indexTable;
+	std::vector<WPObjectVar> wp_objs;
 
     for(auto& obj:json.at("objects")) {
 		if(obj.contains("image") && !obj.at("image").is_null()) {
 			wpscene::WPImageObject wpimgobj;
 			if(!wpimgobj.FromJson(obj, vfs)) continue;
 			if(!wpimgobj.visible) continue;
-			wpimgobjs.push_back(wpimgobj);
-			indexTable.push_back({"image", wpimgobjs.size() - 1});
+			wp_objs.push_back(wpimgobj);
+			//wpimgobjs.push_back(wpimgobj);
+			//indexTable.push_back({"image", wpimgobjs.size() - 1});
 			//LOG_INFO(nlohmann::json(wpimgobj).dump(4));
 		} else if(obj.contains("particle") && !obj.at("particle").is_null()) {
 			//continue;
@@ -424,55 +901,38 @@ std::shared_ptr<Scene> WPSceneParser::Parse(const std::string& buf, fs::VFS& vfs
 			if(!wppartobj.FromJson(obj, vfs)) continue;
 			if(!wppartobj.visible) continue;
 			continue;
-			wppartobjs.push_back(wppartobj);
-			indexTable.push_back({"particle", wppartobjs.size() - 1});
-			//LOG_INFO(nlohmann::json(wppartobj).dump(4));
+			wp_objs.push_back(wppartobj);
 		} else if(obj.contains("sound") && !obj.at("sound").is_null()) {
 			wpscene::WPSoundObject wpsoundobj;
 			if(!wpsoundobj.FromJson(obj)) continue;
 			continue;
-			wpsoundobjs.push_back(wpsoundobj);
-			indexTable.push_back({"sound", wpsoundobjs.size() - 1});
+			wp_objs.push_back(wpsoundobj);
 		}
 	}
+
 	if(sc.general.orthogonalprojection.auto_) {
 		uint32_t w = 0, h = 0;
-		for(auto& obj:wpimgobjs) {
-			uint32_t size = obj.size.at(0) * obj.size.at(1);
+		for(auto& obj:wp_objs) {
+			auto* img = std::get_if<wpscene::WPImageObject>(&obj);
+			if(img == nullptr)
+				continue;
+			uint32_t size = img->size.at(0) * img->size.at(1);
 			if(size > w*h) {
-				w = obj.size.at(0);
-				h = obj.size.at(1);
+				w = img->size.at(0);
+				h = img->size.at(1);
 			}
 		}
 		sc.general.orthogonalprojection.width = w;
 		sc.general.orthogonalprojection.height = h;
 	}
 
+	InitContext(context, vfs, sc);
+	ParseCamera(context, sc.general);
 
-	auto upScene = std::make_shared<Scene>();
-	upScene->imageParser = std::make_unique<WPTexImageParser>(&vfs);
-	upScene->paritileSys.gener = std::make_unique<WPParticleRawGener>();
-	auto shaderValueUpdater = std::make_unique<WPShaderValueUpdater>(upScene.get());
-
-	shaderValueUpdater->SetOrtho(sc.general.orthogonalprojection.width, sc.general.orthogonalprojection.height);
-	
-	upScene->clearColor = sc.general.clearcolor;
-	
-	WPCameraParallax cameraParallax;
-	cameraParallax.enable = sc.general.cameraparallax;
-	cameraParallax.amount = sc.general.cameraparallaxamount;
-	cameraParallax.delay = sc.general.cameraparallaxdelay;
-	cameraParallax.mouseinfluence = sc.general.cameraparallaxmouseinfluence;
-	shaderValueUpdater->SetCameraParallax(cameraParallax);
-
-	const auto& ortho = sc.general.orthogonalprojection; 
-	upScene->ortho[0] = (uint32_t)ortho.width;
-	upScene->ortho[1] = (uint32_t)ortho.height;
 	{
-		std::string def {SpecTex_Default};
-		upScene->renderTargets[def] = {
-			.width = (uint16_t)ortho.width, 
-			.height = (uint16_t)ortho.height,
+		context.scene->renderTargets[std::string(SpecTex_Default)] = {
+			.width = context.ortho_w, 
+			.height = context.ortho_w,
 			.bind = {
 				.enable = true,
 				.screen = true
@@ -480,430 +940,23 @@ std::shared_ptr<Scene> WPSceneParser::Parse(const std::string& buf, fs::VFS& vfs
 		};
 	}
 
-	// effect camera 
-	upScene->cameras["effect"] = std::make_shared<SceneCamera>(2, 2, -1.0f, 1.0f);
-	auto spEffCamNode = std::make_shared<SceneNode>(); // at 0,0,0
-	upScene->cameras.at("effect")->AttatchNode(spEffCamNode);
-	upScene->sceneGraph->AppendChild(spEffCamNode);
-
-	// global camera
-	upScene->cameras["global"] = std::make_shared<SceneCamera>(
-		int32_t(ortho.width / sc.general.zoom), 
-		int32_t(ortho.height / sc.general.zoom), 
-		-5000.0f, 5000.0f
-	);
-
-	upScene->activeCamera = upScene->cameras.at("global").get();
-
-	ShaderValues globalBaseConstSvs;
-	globalBaseConstSvs["g_ViewUp"] = std::array {0.0f, 1.0f, 0.0f};
-	globalBaseConstSvs["g_ViewRight"] = std::array {1.0f, 0.0f, 0.0f};
-	globalBaseConstSvs["g_ViewForward"] = std::array {0.0f, 0.0f, -1.0f};
-	globalBaseConstSvs["g_EyePosition"] = std::array {0.0f, 0.0f, 0.0f};
-	globalBaseConstSvs["g_TexelSize"]= std::array {1.0f/1920.0f, 1.0f/1080.0f};
-	globalBaseConstSvs["g_TexelSizeHalf"]= std::array {1.0f/1920.0f/2.0f, 1.0f/1080.0f/2.0f};
-
-	globalBaseConstSvs["g_LightAmbientColor"]= sc.general.ambientcolor;
-	globalBaseConstSvs["g_LightsColorPremultiplied[0]"] = std::array {848496.0f, 893676.0f, 1250141.0f, 0.0f};
-	globalBaseConstSvs["g_NormalModelMatrix"] = ShaderValue::fromMatrix(Matrix3f::Identity());
 
 
-	Vector3f cori{ortho.width/2.0f,ortho.height/2.0f,0},cscale{1.0f,1.0f,1.0f},cangle(Vector3f::Zero());
-	auto spCamNode = std::make_shared<SceneNode>(cori, cscale, cangle);
-	upScene->activeCamera->AttatchNode(spCamNode);
-	upScene->sceneGraph->AppendChild(spCamNode);
 
-	// perspective cam
-	upScene->cameras["global_perspective"] = std::make_shared<SceneCamera>(
-		ortho.width/(float)ortho.height,
-		sc.general.nearz,
-		sc.general.farz,
-		algorism::CalculatePersperctiveFov(1000.0f, ortho.height)
-	);
-	{
-		Vector3f cperori = cori; cperori[2] = 1000.0f;
-		auto spPerCamNode = std::make_shared<SceneNode>(cperori, cscale, cangle);
-		upScene->cameras["global_perspective"]->AttatchNode(spPerCamNode);
-		upScene->sceneGraph->AppendChild(spPerCamNode);
+	for(WPObjectVar& obj:wp_objs) {
+		std::visit(visitor::overload {
+			[&context](wpscene::WPImageObject& obj) {
+				ParseImageObj(context, obj);
+			},
+			[&context](wpscene::WPParticleObject& obj) {
+				//ParseParticleObj(context, obj);
+			},
+			[&context, &sm](wpscene::WPSoundObject& obj) {
+				WPSoundParser::Parse(obj, *context.vfs, sm);
+			}
+		}, obj);
 	}
 
-    for(const auto& indexT:indexTable) {
-		if(indexT.first == "image") {	
-			auto& wpimgobj = wpimgobjs.at(indexT.second);
-			if(!wpimgobj.visible)
-				continue;
-
-			// coloBlendMode load passthrough manaully
-			if(wpimgobj.colorBlendMode != 0) {
-				wpscene::WPImageEffect colorEffect;
-				wpscene::WPMaterial colorMat;
-				nlohmann::json json;
-				if(!PARSE_JSON(fs::GetFileContent(vfs, "/assets/materials/util/effectpassthrough.json"), json)) 
-					return nullptr;
-				colorMat.FromJson(json);
-				colorMat.combos["BONECOUNT"] = 1;
-				colorMat.combos["BLENDMODE"] = wpimgobj.colorBlendMode;
-				colorMat.blending = "disabled";
-				colorEffect.materials.push_back(colorMat);
-				wpimgobj.effects.push_back(colorEffect);
-			}	
-
-			int32_t count_eff = 0;
-			for(const auto& wpeffobj:wpimgobj.effects) {
-				if(wpeffobj.visible)
-					count_eff++;
-			}
-			bool hasEffect = count_eff > 0;
-			// skip no effect fullscreen layer
-			if(!hasEffect && wpimgobj.fullscreen)
-				continue;
-
-			bool isCompose = (wpimgobj.image == "models/util/composelayer.json");
-			// skip no effect compose layer
-			// it's not the correct behaviour, but do it for now
-			if(!hasEffect && isCompose)
-				continue;
-
-			wpimgobj.origin[1] = ortho.height - wpimgobj.origin[1];
-			auto spImgNode = std::make_shared<SceneNode>(
-				Vector3f(wpimgobj.origin.data()), 
-				Vector3f(wpimgobj.scale.data()), 
-				Vector3f(wpimgobj.angles.data()) 
-			);
-			LoadAlignment(*spImgNode, wpimgobj.alignment, {wpimgobj.size[0], wpimgobj.size[1]});
-			spImgNode->ID() = wpimgobj.id;
-
-			SceneMaterial material;
-			WPShaderValueData svData;
-
-			ShaderValues baseConstSvs = globalBaseConstSvs;
-			WPShaderInfo shaderInfo;
-			{
-				if(!hasEffect)
-					svData.parallaxDepth = {wpimgobj.parallaxDepth[0], wpimgobj.parallaxDepth[1]};
-
-				baseConstSvs["g_Alpha"] = wpimgobj.alpha;
-				baseConstSvs["g_Color"] = wpimgobj.color;
-				baseConstSvs["g_UserAlpha"] = wpimgobj.alpha;
-				baseConstSvs["g_Brightness"] = wpimgobj.brightness;
-
-				shaderInfo.baseConstSvs = baseConstSvs;
-				LoadMaterial(vfs, wpimgobj.material, upScene.get(), spImgNode.get(), &material, &svData, &shaderInfo);
-				LoadConstvalue(material, wpimgobj.material, shaderInfo);
-			}
-			
-			for(const auto& cs:wpimgobj.material.constantshadervalues) {
-				const auto& name = cs.first;
-				const std::vector<float>& value = cs.second;
-				std::string glname;
-				if(shaderInfo.alias.count(name) != 0) {
-					glname = shaderInfo.alias.at(name);
-				} else {
-					for(const auto& el:shaderInfo.alias) {
-						if(el.second.substr(2) == name) {
-							glname = el.second;
-							break;
-						}
-					}
-				}
-				if(glname.empty()) {
-					LOG_ERROR("ShaderValue: %s not found in glsl", name.c_str());
-				} else {
-					material.customShader.constValues[glname] = value; 
-				}
-			}
-
-			// mesh
-			auto spMesh = std::make_shared<SceneMesh>();
-			auto& mesh = *spMesh;
-
-			{
-				// deal with pow of 2
-				std::array<float, 2> mapRate {1.0f, 1.0f};
-				if(!wpimgobj.nopadding && exists(material.customShader.constValues,"g_Texture0Resolution")) {
-					const auto& r = material.customShader.constValues.at("g_Texture0Resolution");
-					mapRate = {
-						r[2] / r[0],
-						r[3] / r[1]
-					};
-				}
-				GenCardMesh(mesh, {(uint16_t)wpimgobj.size[0], (uint16_t)wpimgobj.size[1]}, mapRate);
-			}
-
-			// material blendmode for last step to use
-			auto imgBlendMode = material.blenmode;
-			// disable img material blend, as it's the first effect node now
-			if(hasEffect) {
-				material.blenmode = BlendMode::Normal;
-			}
-			mesh.AddMaterial(std::move(material));
-			spImgNode->AddMesh(spMesh);
-
-			shaderValueUpdater->SetNodeData(spImgNode.get(), svData);
-			if(hasEffect) {
-				// currently use addr for unique
-				std::string nodeAddr = getAddr(spImgNode.get());
-				// set camera to attatch effect
-				if(isCompose) {
-					upScene->cameras[nodeAddr] = std::make_shared<SceneCamera>(
-						(int32_t)upScene->activeCamera->Width(), 
-						(int32_t)upScene->activeCamera->Height(),
-						-1.0f, 1.0f
-					);
-					upScene->cameras.at(nodeAddr)->AttatchNode(upScene->activeCamera->GetAttachedNode());
-					if(upScene->linkedCameras.count("global") == 0)
-						upScene->linkedCameras["global"] = {};
-					upScene->linkedCameras.at("global").push_back(nodeAddr);
-				}
-				else {
-					// applly scale to crop
-					int32_t w = wpimgobj.size[0];
-					int32_t h = wpimgobj.size[1];
-					upScene->cameras[nodeAddr] = std::make_shared<SceneCamera>(w, h, -1.0f, 1.0f);
-					upScene->cameras.at(nodeAddr)->AttatchNode(spEffCamNode);
-				}
-				spImgNode->SetCamera(nodeAddr);
-				// set image effect
-				auto imgEffectLayer = std::make_shared<SceneImageEffectLayer>(spImgNode.get(), wpimgobj.size[0], wpimgobj.size[1]);
-				upScene->cameras.at(nodeAddr)->AttatchImgEffect(imgEffectLayer);
-				// set renderTarget for ping-pong operate
-				std::string effectRTs[2];
-				effectRTs[0] = "_rt_" + nodeAddr;
-				effectRTs[1] = "_rt_" + nodeAddr + "1";
-				upScene->renderTargets[effectRTs[0]] = {
-					.width = (uint16_t)wpimgobj.size[0], 
-					.height = (uint16_t)wpimgobj.size[1], 
-					.allowReuse = true
-				};
-				upScene->renderTargets[effectRTs[1]] = upScene->renderTargets.at(effectRTs[0]);
-				if(wpimgobj.fullscreen) {
-					upScene->renderTargets[effectRTs[0]].bind = {
-						.enable = true,
-						.screen = true
-					};
-					upScene->renderTargets[effectRTs[1]].bind = {
-						.enable = true,
-						.screen = true
-					};
-				}
-				imgEffectLayer->SetFirstTarget(effectRTs[0]);
-				int32_t i_eff = -1;
-				for(const auto& wpeffobj:wpimgobj.effects) {
-					i_eff++;
-					if(!wpeffobj.visible) {
-						i_eff--;
-						continue;
-					}
-					std::shared_ptr<SceneImageEffect> imgEffect = std::make_shared<SceneImageEffect>();
-					imgEffectLayer->AddEffect(imgEffect);
-
-					const std::string& inRT = effectRTs[(i_eff)%2];
-					std::string outRT;
-					if(i_eff + 1 == count_eff) {
-						outRT = SpecTex_Default;
-					} else {
-						outRT = effectRTs[(i_eff+1)%2];
-					}
-
-					// fbo name map and effect command
-					std::string effaddr = getAddr(imgEffectLayer.get());
-					std::unordered_map<std::string, std::string> fboMap;
-					{
-						fboMap["previous"] = inRT;
-						for(int32_t i=0;i < wpeffobj.fbos.size();i++) {
-							const auto& wpfbo = wpeffobj.fbos.at(i);
-							std::string rtname = wpfbo.name +"_"+ effaddr;
-							if(wpimgobj.fullscreen) {
-								upScene->renderTargets[rtname] = {2, 2, true};
-								upScene->renderTargets[rtname].bind = {
-									.enable = true,
-									.screen = true,
-									.scale = 1.0f/wpfbo.scale
-								};
-							} else {
-								// i+2 for not override object's rt
-								upScene->renderTargets[rtname] = {
-									.width = (uint16_t)(wpimgobj.size[0]/wpfbo.scale),
-									.height = (uint16_t)(wpimgobj.size[1]/wpfbo.scale), 
-									.allowReuse = true
-								};
-							}
-							fboMap[wpfbo.name] = rtname;
-						}
-					}
-					// load effect commands
-					{
-						for(const auto& el:wpeffobj.commands) {
-							if(el.command != "copy") {
-								LOG_ERROR("Unknown effect command: %s", el.command.c_str());
-								continue;
-							}
-							if(fboMap.count(el.target) + fboMap.count(el.source) < 2) {
-								LOG_ERROR("Unknown effect command dst or src: %s %s", el.target.c_str(), el.source.c_str());
-								continue;
-							}
-							imgEffect->commands.push_back({
-								.cmd = SceneImageEffect::CmdType::Copy,
-								.dst = fboMap[el.target],
-								.src = fboMap[el.source]
-							});
-						}
-					}
-
-					for(int32_t i_mat=0;i_mat < wpeffobj.materials.size();i_mat++) {
-						wpscene::WPMaterial wpmat = wpeffobj.materials.at(i_mat);
-						std::string matOutRT = outRT;
-						if(wpeffobj.passes.size() > i_mat) {
-							const auto& wppass = wpeffobj.passes.at(i_mat);
-							wpmat.MergePass(wppass);
-							// Set rendertarget, in and out
-							for(const auto& el:wppass.bind) {
-								if(fboMap.count(el.name) == 0) {
-									LOG_ERROR("fbo %s not found", el.name.c_str());
-									continue;
-								}
-								if(wpmat.textures.size() <= el.index)
-									wpmat.textures.resize(el.index+1);
-								wpmat.textures[el.index] = fboMap[el.name];
-							}
-							if(!wppass.target.empty()) {
-								if(fboMap.count(wppass.target) == 0) {
-									LOG_ERROR("fbo %s not found",wppass.target.c_str());
-								}
-								else {
-									matOutRT = fboMap.at(wppass.target);
-								}
-							}
-						}
-						if(wpmat.textures.size() == 0)
-							wpmat.textures.resize(1);
-						if(wpmat.textures.at(0).empty()) {
-							wpmat.textures[0] = inRT;
-						}
-						auto spEffNode = std::make_shared<SceneNode>();
-						std::string effmataddr = getAddr(spEffNode.get());
-						WPShaderInfo wpEffShaderInfo;
-						wpEffShaderInfo.baseConstSvs = baseConstSvs;
-						wpEffShaderInfo.baseConstSvs["g_EffectTextureProjectionMatrix"] =
-							ShaderValue::fromMatrix(Eigen::Matrix4f::Identity());
-						wpEffShaderInfo.baseConstSvs["g_EffectTextureProjectionMatrixInverse"] =
-							ShaderValue::fromMatrix(Eigen::Matrix4f::Identity());
-						SceneMaterial material;
-						WPShaderValueData svData;
-						LoadMaterial(vfs, wpmat, upScene.get(), spEffNode.get(), &material, &svData, &wpEffShaderInfo);
-
-						// load glname from alias and load to constvalue
-						LoadConstvalue(material, wpmat, wpEffShaderInfo);
-						auto spMesh = std::make_shared<SceneMesh>();
-						auto& mesh = *spMesh;
-						// the last effect and last material
-						if((i_eff + 1 == count_eff && i_mat + 1 == wpeffobj.materials.size()) && !wpimgobj.fullscreen) {
-							GenCardMesh(mesh, {(uint16_t)wpimgobj.size[0], (uint16_t)wpimgobj.size[1]});
-							spEffNode->CopyTrans(*spImgNode);
-							if(!isCompose)
-								spImgNode->CopyTrans(SceneNode());
-							svData.parallaxDepth = {wpimgobj.parallaxDepth[0], wpimgobj.parallaxDepth[1]};
-							material.blenmode = imgBlendMode;
-						} else {
-							GenCardMesh(mesh, {2, 2});
-							// disable blend for effect node, as it seems blend manually
-							material.blenmode = BlendMode::Normal;
-							spEffNode->SetCamera("effect");
-						}
-						mesh.AddMaterial(std::move(material));
-						spEffNode->AddMesh(spMesh);
-
-						shaderValueUpdater->SetNodeData(spEffNode.get(), svData);
-						imgEffect->nodes.push_back({matOutRT, spEffNode});
-					}
-				}
-			}
-			upScene->sceneGraph->AppendChild(spImgNode);
-		} else if(indexT.first == "particle") {
-			auto& wppartobj = wppartobjs.at(indexT.second);
-			wppartobj.origin[1] = ortho.height - wppartobj.origin[1];
-
-			auto spNode = std::make_shared<SceneNode>(
-				Vector3f(wppartobj.origin.data()), 
-				Vector3f(wppartobj.scale.data()), 
-				Vector3f(wppartobj.angles.data()) 
-			);
-			if(wppartobj.particleObj.flags.perspective) {
-				spNode->SetCamera("global_perspective");
-			}
-
-			SceneMaterial material;
-			WPShaderValueData svData;
-			svData.parallaxDepth = {wppartobj.parallaxDepth[0], wppartobj.parallaxDepth[1]};
-			WPShaderInfo shaderInfo;
-			shaderInfo.baseConstSvs = globalBaseConstSvs;
-			shaderInfo.baseConstSvs["g_OrientationUp"] = std::array {0.0f, -1.0f, 0.0f};
-			shaderInfo.baseConstSvs["g_OrientationRight"]= std::array {1.0f, 0.0f, 0.0f};
-			shaderInfo.baseConstSvs["g_OrientationForward"]= std::array {0.0f, 0.0f, 1.0f};
-			shaderInfo.baseConstSvs["g_ViewUp"]= std::array {0.0f, 1.0f, 0.0f};
-			shaderInfo.baseConstSvs["g_ViewRight"]= std::array {1.0f, 0.0f, 0.0f};
-
-			bool hastrail {false};
-			if(wppartobj.particleObj.renderers.size() > 0) {
-				auto wppartRenderer = wppartobj.particleObj.renderers.at(0);
-				if(wppartRenderer.name == "spritetrail") {
-					shaderInfo.baseConstSvs["g_RenderVar0"]= std::array {
-						wppartRenderer.length, wppartRenderer.maxlength, 0.0f, 0.0f
-					};
-					shaderInfo.combos["THICKFORMAT"] = 1;
-					shaderInfo.combos["TRAILRENDERER"] = 1;
-					hastrail = true;
-				}
-			}
-			if(!wppartobj.particleObj.flags.spritenoframeblending) {
-				shaderInfo.combos["SPRITESHEETBLEND"] = 1;
-			}
-
-			LoadMaterial(vfs, wppartobj.material, upScene.get(), spNode.get(), &material, &svData, &shaderInfo);
-			LoadConstvalue(material, wppartobj.material, shaderInfo);
-			auto spMesh = std::make_shared<SceneMesh>(true);
-			auto& mesh = *spMesh;
-			uint32_t maxcount = wppartobj.particleObj.maxcount;
-			auto animationmode = ToAnimMode(wppartobj.particleObj.animationmode);
-			auto sequencemultiplier = wppartobj.particleObj.sequencemultiplier;
-			bool hasSprite = material.hasSprite;
-			maxcount = maxcount > 4000 ? 4000 : maxcount;
-			SetParticleMesh(mesh, wppartobj.particleObj, maxcount, material.hasSprite || hastrail);
-			const auto& wpemitter = wppartobj.particleObj.emitters[0];
-			auto particleSub = std::make_unique<ParticleSubSystem>(
-				upScene->paritileSys, 
-				spMesh, 
-				maxcount,
-				wppartobj.instanceoverride.rate,
-				[=](const Particle& p, const ParticleRawGenSpec& spec) {
-					auto& lifetime = *(spec.lifetime);
-					if(lifetime < 0.0f) return;
-					switch(animationmode) {
-					case ParticleAnimationMode::RANDOMONE:
-						lifetime = std::floor(p.lifetimeInit);
-						break;
-					case ParticleAnimationMode::SEQUENCE:
-						lifetime = (1.0f - (p.lifetime / p.lifetimeInit)) * sequencemultiplier;
-						break;
-					}
-				}
-			);
-
-			LoadEmitter(*particleSub, wppartobj.particleObj, wppartobj.instanceoverride.count, randomFn);
-			LoadInitializer(*particleSub, wppartobj.particleObj, wppartobj.instanceoverride, randomFn);
-			LoadOperator(*particleSub, wppartobj.particleObj, randomFn);
-
-			upScene->paritileSys.subsystems.emplace_back(std::move(particleSub));
-			mesh.AddMaterial(std::move(material));
-			spNode->AddMesh(spMesh);
-			shaderValueUpdater->SetNodeData(spNode.get(), svData);
-			upScene->sceneGraph->AppendChild(spNode);
-		} else if(indexT.first == "sound") {
-			auto& wpsoundobj = wpsoundobjs.at(indexT.second);
-			WPSoundParser::Parse(wpsoundobj, vfs, sm);
-		}
-	
-	}
-	upScene->shaderValueUpdater = std::move(shaderValueUpdater);
-	return upScene;	
+	//context.scene->shaderValueUpdater = std::move(shaderValueUpdater);
+	return context.scene;
 }

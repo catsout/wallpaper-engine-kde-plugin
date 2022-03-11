@@ -38,7 +38,7 @@ public:
 
 	SceneCamera* activeCamera;
 
-	uint32_t ortho[2] {1920, 1080}; // w, h
+	uint16_t ortho[2] {1920, 1080}; // w, h
 	std::array<float, 3> clearColor {1.0f, 1.0f, 1.0f};
 
 	double elapsingTime {0.0f}, frameTime {0.0f};

@@ -31,8 +31,9 @@ public:
     }
     bool prepared() const { return m_prepared; }
     Span<std::string> releaseTexs() const { return m_release_texs; }
+    void clearReleaseTexs() { m_release_texs.clear(); }
 protected:
-    void setPrepared() { m_prepared = true; }
+    void setPrepared(bool v=true) { m_prepared = v; }
 private:
     bool m_prepared {false};
     std::vector<std::string> m_release_texs;

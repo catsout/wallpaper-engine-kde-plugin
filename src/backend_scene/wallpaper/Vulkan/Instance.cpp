@@ -216,7 +216,7 @@ void Instance::Destroy() {
 			LOG_INFO("Destory surface");
 		}
 		m_inst.destroyDebugUtilsMessengerEXT(m_debug_utils);
-		m_inst.destroy();
+		//m_inst.destroy();
 		LOG_INFO("Destory instance");
 	}
 }

@@ -57,6 +57,8 @@ bool StagingBuffer::allocate() {
     VK_CHECK_RESULT_BOOL_RE((vk::Result)vmaCreateVirtualBlock(&blockCreateInfo, &m_virtual_block));
     return true;
 }
+
+
 void StagingBuffer::destroy() {
     if(m_stage_raw != nullptr) {
         vmaUnmapMemory(m_device.vma_allocator(), m_stage_buf.allocation);

@@ -108,7 +108,7 @@ void CustomShaderPass::prepare(Scene& scene, const Device& device, RenderingReso
         if(IsSpecTex(tex_name)) {
 			if(scene.renderTargets.count(tex_name) == 0) continue;
 			auto& rt = scene.renderTargets.at(tex_name);
-			auto rv_paras = device.tex_cache().Query(tex_name, ToTexKey(rt));
+			auto rv_paras = device.tex_cache().Query(tex_name, ToTexKey(rt), !rt.allowReuse);
 			rv.result = rv_paras.result;
 			rv.value = ImageSlots{{rv_paras.value}, 0};
 		} else {
@@ -124,7 +124,7 @@ void CustomShaderPass::prepare(Scene& scene, const Device& device, RenderingReso
 		assert(IsSpecTex(tex_name));
 		assert(scene.renderTargets.count(tex_name) > 0);
 		auto& rt = scene.renderTargets.at(tex_name);
-		auto rv = device.tex_cache().Query(tex_name, ToTexKey(rt));
+		auto rv = device.tex_cache().Query(tex_name, ToTexKey(rt), !rt.allowReuse);
 		VK_CHECK_RESULT_VOID_RE(rv.result);
 		if(rv.result == vk::Result::eSuccess)
 			m_desc.vk_output = rv.value;
@@ -359,6 +359,10 @@ void CustomShaderPass::execute(const Device& device, RenderingResources& rr) {
 }
 
 void CustomShaderPass::destory(const Device& device, RenderingResources& rr) {
+	for(auto& buf:m_desc.vertex_bufs) {
+		rr.vertex_buf->unallocateSubRef(buf);
+	}
+	rr.ubo_buf->unallocateSubRef(m_desc.ubo_buf);
 	device.DestroyPipeline(m_desc.pipeline);
 	device.handle().destroyFramebuffer(m_desc.fb);
 }

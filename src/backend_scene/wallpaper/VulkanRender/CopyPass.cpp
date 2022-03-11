@@ -34,7 +34,7 @@ void CopyPass::prepare(Scene& scene, const Device& device, RenderingResources& r
 			if(scene.renderTargets.count(m_desc.src) == 0) continue;
 			auto& rt = scene.renderTargets.at(m_desc.src);
             scene.renderTargets[m_desc.dst] = rt;
-			auto rv_paras = device.tex_cache().Query(tex_name, ToTexKey(rt));
+			auto rv_paras = device.tex_cache().Query(tex_name, ToTexKey(rt), !rt.allowReuse);
 			rv.result = rv_paras.result;
 			rv.value = ImageSlots{{rv_paras.value}, 0};
 		} else {

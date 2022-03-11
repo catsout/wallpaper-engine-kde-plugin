@@ -483,25 +483,34 @@ TextureCache::TextureCache(const Device& device):m_device(device) {}
 
 TextureCache::~TextureCache() {};
 
-void TextureCache::Destroy() {
+
+void TextureCache::Clear() {
 	for(auto& texs:m_tex_map) {
 		auto& image_slot = texs.second;
 		for(auto& image:image_slot.slots) {
 			m_device.DestroyImageParameters(image);
 		}
 	}
+	m_tex_map.clear();
 	for(auto& query:m_query_texs) {
 		m_device.DestroyImageParameters(query->image);
 	}
+	m_query_texs.clear();
+	m_query_map.clear();
+}
+
+void TextureCache::Destroy() {
+	Clear();
 	m_device.handle().freeCommandBuffers(m_device.cmd_pool(), 1, &m_tex_cmd);
 }
 
-vk::ResultValue<ImageParameters> TextureCache::Query(std::string_view key, TextureKey content_hash) {
+vk::ResultValue<ImageParameters> TextureCache::Query(std::string_view key, TextureKey content_hash, bool persist) {
 	vk::ResultValue<ImageParameters> rv {vk::Result::eSuccess, {}};
 	if(exists(m_query_map, key)) {
 		auto& query = *(m_query_map.find(key)->second);
 
 		query.share_ready = false;
+		query.persist = persist;
 		rv.value = query.image;
 		return rv;
 	};
@@ -512,6 +521,7 @@ vk::ResultValue<ImageParameters> TextureCache::Query(std::string_view key, Textu
 		if(query->content_hash != tex_hash) continue;
 
 		query->share_ready = false;
+		query->persist = persist;
 		query->query_keys.insert(std::string(key));
 		rv.value = query->image;
 
@@ -529,12 +539,15 @@ vk::ResultValue<ImageParameters> TextureCache::Query(std::string_view key, Textu
 	auto rv_image = CreateTex(content_hash);
 	rv.result = rv_image.result;
 	query.image = rv_image.value;
+	query.persist = persist;
 	rv.value = query.image;
 	return rv;
 }
 
 void TextureCache::MarkShareReady(std::string_view key) {
 	if(exists(m_query_map, key)) {
-		m_query_map.find(key)->second->share_ready = true;
+		auto& query = m_query_map.find(key)->second;
+		if(query->persist) return;
+		query->share_ready = true;
 	}
 }

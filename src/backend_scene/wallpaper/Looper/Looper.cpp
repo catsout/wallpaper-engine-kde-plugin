@@ -66,12 +66,15 @@ void Looper::stop() {
    	if(thd.joinable()) {
 		thd.join();
 	}
+    LOG_INFO("%s looper stopped", name().data());
 }
 
 
 void Looper::post(const std::shared_ptr<Message>& msg) {
-    Lock lock(m_mutex);
-    m_msg_queue.insert(m_msg_queue.end(), {msg});
+    {
+        Lock lock(m_mutex);
+        m_msg_queue.insert(m_msg_queue.end(), {msg});
+    }
     m_condition.notify_one();
 }
 

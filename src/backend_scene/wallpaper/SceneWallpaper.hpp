@@ -21,7 +21,9 @@ public:
 
     void initVulkan(const RenderInitInfo&);
     void initVulkanEx(Span<uint8_t> uuid);
-    void draw();
+
+    void play();
+    void pause();
 
     void setPropertyBool(std::string_view, bool);
     void setPropertyInt32(std::string_view, int32_t);
