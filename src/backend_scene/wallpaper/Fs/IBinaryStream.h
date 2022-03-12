@@ -1,38 +1,62 @@
 #pragma once
 #include <cstdint>
+#include "Bswap.hpp"
+#include "Utils/NoCopyMove.hpp"
 
 namespace wallpaper
 {
 namespace fs
 {
 
-class IBinaryStream {
+class IBinaryStream : NoCopy,NoMove {
+public:
+    enum class ByteOrder {
+        BigEndian, LittleEndian
+    };
+
+    constexpr static ByteOrder sys_byte_order {
+#ifdef WP_BIG_ENDIAN
+        ByteOrder::BigEndian
+#else
+        ByteOrder::LittleEndian
+#endif
+    };
+private:
+    template<typename T>
+    T _ReadInt() {
+        T x {0};
+        if(Read(reinterpret_cast<char*>(&x), sizeof(x)) != sizeof(x)) {
+            x = T{0};
+        } else {
+            if(!m_noswap) {
+                x = bswap<T>(x);
+            }
+        }
+        return x;
+    }
 public:
 	IBinaryStream() = default;
 	virtual ~IBinaryStream() = default;
-	IBinaryStream(const IBinaryStream&) = delete;
-	IBinaryStream& operator=(const IBinaryStream&) = delete;
-	IBinaryStream(IBinaryStream&&) = default;
-	IBinaryStream& operator=(IBinaryStream&&) = default;
 
+    void SetByteOrder(ByteOrder order) {
+        m_byte_order = order;
+        m_noswap = order == sys_byte_order;
+    }
 
     float ReadFloat() {
-        float x;
+        float x {0};
         Read(reinterpret_cast<char *>(&x), sizeof(x));
 		return x;
     }
 
-    int32_t ReadInt32() {
-        int32_t x;
-        Read(reinterpret_cast<char *>(&x), sizeof(x));
-		return x;
-    }
+    int64_t ReadInt64() { return _ReadInt<int64_t>(); }
+    uint64_t ReadUint64() { return _ReadInt<uint64_t>(); }
 
-	uint32_t ReadUint32() {
-        uint32_t x;
-        Read(reinterpret_cast<char *>(&x), sizeof(x));
-		return x;
-	}
+    int32_t ReadInt32() { return _ReadInt<int32_t>(); }
+    uint32_t ReadUint32() { return _ReadInt<uint32_t>(); }
+
+    int16_t ReadInt16() { return _ReadInt<int16_t>(); }
+    uint16_t ReadUint16() { return _ReadInt<uint16_t>(); }
 
     std::string ReadAllStr() {
         std::string str;
@@ -55,6 +79,10 @@ public:
     virtual bool SeekCur(long offset) = 0;
     virtual bool SeekEnd(long offset) = 0;
     virtual std::size_t Size() const = 0;
+private:
+    constexpr static ByteOrder default_byte_order {ByteOrder::LittleEndian};
+    ByteOrder m_byte_order {default_byte_order};
+    bool m_noswap {sys_byte_order == default_byte_order};
 };
 
 }

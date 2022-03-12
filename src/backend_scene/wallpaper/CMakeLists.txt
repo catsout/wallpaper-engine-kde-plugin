@@ -9,6 +9,13 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
 	add_compile_definitions(DEBUG_OPENGL=1)
 endif ()
 
+include(TestBigEndian)
+TEST_BIG_ENDIAN(ENDIAN)
+if (ENDIAN)
+	add_compile_definitions(WP_BIG_ENDIAN)
+endif ()
+
+
 include_directories(.)
 
 add_subdirectory(Audio)
