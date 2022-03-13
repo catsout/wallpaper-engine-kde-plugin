@@ -9,6 +9,12 @@
 
 using namespace wallpaper::vulkan;
 
+#define _VK_FORMAT_1(s, sign, type, x)          vk::Format::e##x ##s ##sign ##type;
+#define _VK_FORMAT_2(s, sign, type, x, y)       vk::Format::e##x ##s ##y ##s ##sign ##type;
+#define _VK_FORMAT_3(s, sign, type, x, y, z)    vk::Format::e##x ##s ##y ##s ##z ##s ##sign ##type;
+#define _VK_FORMAT_4(s, sign, type, x, y, z, w) vk::Format::e##x ##s ##y ##s ##z ##s ##w ##s ##sign ##type;
+
+
 namespace wallpaper 
 {
 
@@ -339,30 +345,28 @@ bool wallpaper::vulkan::CompileAndLinkShaderUnits(Span<ShaderCompUnit> compUnits
 }
 
 vk::Format wallpaper::vulkan::ToVkType(glslang::TBasicType type, size_t size) {
+#define FORMAT_SWITCH(in, s, sign, type)                        \
+		switch (in) {                                           \
+		case 1: return _VK_FORMAT_1(s, sign, type, R);          \
+		case 2: return _VK_FORMAT_2(s, sign, type, R, G);       \
+		case 3: return _VK_FORMAT_3(s, sign, type, R, G, B);    \
+		case 4: return _VK_FORMAT_4(s, sign, type, R, G, B, A); \
+		}                                                       \
+		break;
+
 	switch (type)
 	{
 	case glslang::TBasicType::EbtFloat:
-		switch (size)
-		{
-		case 1: return vk::Format::eR32Sfloat;
-		case 2: return vk::Format::eR32G32Sfloat;
-		case 3: return vk::Format::eR32G32B32Sfloat;
-		case 4: return vk::Format::eR32G32B32A32Sfloat;
-		}
-		break;
+		FORMAT_SWITCH(size, 32, S, float);
 	case glslang::TBasicType::EbtInt:
-		switch (size)
-		{
-		case 1: return vk::Format::eR32Sint;
-		case 2: return vk::Format::eR32G32Sint;
-		case 3: return vk::Format::eR32G32B32Sint;
-		case 4: return vk::Format::eR32G32B32A32Sint;
-		}
-		break;
+		FORMAT_SWITCH(size, 32, S, int);
+	case glslang::TBasicType::EbtUint:
+		FORMAT_SWITCH(size, 32, U, int);
 	}
-	LOG_ERROR("can't covert glslang type \"%s\" to vulkan format", glslang::TType::getBasicString(type));
+	LOG_ERROR("can't covert glslang type \"%s\" of size %d to vulkan format", glslang::TType::getBasicString(type), size);
 	assert(false);
 	return vk::Format::eUndefined;
+#undef FORMAT_SWITCH
 }
 
 size_t wallpaper::vulkan::Sizeof(glslang::TBasicType type) {

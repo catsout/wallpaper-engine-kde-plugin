@@ -1,7 +1,7 @@
 #include <QQmlExtensionPlugin>
 #include <QQmlEngine>
 #include <array>
-#include "mpvbackend.h"
+#include "MpvBackend.hpp"
 #include "SceneBackend.h"
 #include "MouseGrabber.h"
 #include "WPCommon.h"

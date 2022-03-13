@@ -66,6 +66,8 @@ public:
     std::string alignment {"center"};
     WPMaterial material;
     std::vector<WPImageEffect> effects;
+
+    std::string puppet;
 };
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(WPEffectFbo, name, scale);

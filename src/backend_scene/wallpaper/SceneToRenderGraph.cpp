@@ -63,6 +63,18 @@ static void TraverseNode(const std::function<void(SceneNode*)>& func, SceneNode*
 		TraverseNode(func, child.get());
 }
 
+static void CheckAndSetSprite(Scene& scene, vulkan::CustomShaderPass::Desc& desc, Span<std::string> texs) {
+    for(uint i=0;i<texs.size();i++) {
+        auto& tex = texs[i];
+        if(!tex.empty() && !IsSpecTex(tex) && scene.textures.count(tex) != 0) {
+            const auto& stex = scene.textures.at(tex);
+            if(stex.isSprite) {
+                desc.sprites_map[i] = stex.spriteAnim;
+            }
+        }
+    }
+}
+
 struct ExtraInfo {
     Map<size_t, rg::TexNode*> idMap;
     rg::RenderGraph* rgraph;
@@ -114,6 +126,7 @@ static void ToGraphPass(SceneNode* node, std::string output, uint32_t imgId, Ext
             const auto& pass = builder.workPassNode();
             pdesc.node = node;
             pdesc.output = output;
+            CheckAndSetSprite(scene, pdesc, material->textures);
             for(const auto& url:material->textures) {
                 rg::TexNode* input {nullptr};
                 if(url.empty()) {

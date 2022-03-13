@@ -29,7 +29,7 @@ void WPShaderValueUpdater::MouseInput(double x, double y) {
 	m_mousePos[1] = y;
 }
 
-void WPShaderValueUpdater::UpdateUniforms(SceneNode* pNode, const ExistsUniformOp& existsOp, const UpdateUniformOp& updateOp) {
+void WPShaderValueUpdater::UpdateUniforms(SceneNode* pNode, sprite_map_t& sprites, const ExistsUniformOp& existsOp, const UpdateUniformOp& updateOp) {
 	if(!pNode->Mesh()) return;
 
 	const SceneCamera* camera;
@@ -103,37 +103,29 @@ void WPShaderValueUpdater::UpdateUniforms(SceneNode* pNode, const ExistsUniformO
 	
 	//	g_EffectTextureProjectionMatrix
 	//shadervs.push_back({"g_EffectTextureProjectionMatrixInverse", ShaderValue::ValueOf(Eigen::Matrix4f::Identity())});
-	if(existsOp("g_Time"))
-		updateOp("g_Time", (float)m_scene->elapsingTime);
+	if(existsOp(G_TIME))
+		updateOp(G_TIME, (float)m_scene->elapsingTime);
 
-	if(existsOp("g_DayTime"))
-		updateOp("g_DayTime", (float)m_dayTime);
+	if(existsOp(G_DAYTIME))
+		updateOp(G_DAYTIME, (float)m_dayTime);
 
-	if(existsOp("g_PointerPosition"))
-		updateOp("g_PointerPosition", m_mousePos);
+	if(existsOp(G_POINTERPOSITION))
+		updateOp(G_POINTERPOSITION, m_mousePos);
 
-	if(existsOp("g_TexelSize"))
-		updateOp("g_TexelSize", m_texelSize);
+	if(existsOp(G_TEXELSIZE))
+		updateOp(G_TEXELSIZE, m_texelSize);
 
-	if(existsOp("g_TexelSizeHalf"))
-		updateOp("g_TexelSizeHalf", std::array {m_texelSize[0]/2.0f, m_texelSize[1]/2.0f});
-
-	if(material->hasSprite) {
-		for(int32_t i=0;i<material->textures.size();i++) {
-			const auto& texname = material->textures.at(i);
-			if(m_scene->textures.count(texname) != 0) {
-				auto& ptex = m_scene->textures.at(texname);
-				if(ptex.isSprite) {
-					auto& sp = ptex.spriteAnim;
-					const auto& f = sp.GetAnimateFrame(m_scene->frameTime);
-					auto grot = WE_GLTEX_ROTATION_NAMES[i];
-					auto gtrans = WE_GLTEX_TRANSLATION_NAMES[i];
-					updateOp(grot, std::array {f.xAxis[0], f.xAxis[1], f.yAxis[0], f.yAxis[1]});
-					updateOp(gtrans, std::array {f.x, f.y});
-				}
-			}
-		}
+	if(existsOp(G_TEXELSIZEHALF))
+		updateOp(G_TEXELSIZEHALF, std::array {m_texelSize[0]/2.0f, m_texelSize[1]/2.0f});
+	
+	for(auto& [i, sp]:sprites) {
+		const auto& f = sp.GetAnimateFrame(m_scene->frameTime);
+		auto grot = WE_GLTEX_ROTATION_NAMES[i];
+		auto gtrans = WE_GLTEX_TRANSLATION_NAMES[i];
+		updateOp(grot, std::array {f.xAxis[0], f.xAxis[1], f.yAxis[0], f.yAxis[1]});
+		updateOp(gtrans, std::array {f.x, f.y});
 	}
+
 	if(existsOp(G_LP)) {
 		Vector2f ortho{m_ortho[0], m_ortho[1]};
 		Vector2f mouseVec = -(Vector2f{0.5f, 0.5f} - Vector2f(&m_mousePos[0])).cwiseProduct(ortho);

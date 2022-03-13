@@ -32,6 +32,12 @@ constexpr std::string_view G_MI   { "g_ModelMatrixInverse" };
 constexpr std::string_view G_MVPI { "g_ModelViewProjectionMatrixInverse" };
 constexpr std::string_view G_LP   { "g_LightsPosition[0]" };
 
+constexpr std::string_view G_TIME            { "g_Time" };
+constexpr std::string_view G_DAYTIME         { "g_DayTime" };
+constexpr std::string_view G_POINTERPOSITION { "g_PointerPosition" };
+constexpr std::string_view G_TEXELSIZE       { "g_TexelSize" };
+constexpr std::string_view G_TEXELSIZEHALF   { "g_TexelSizeHalf" };
+
 constexpr std::string_view SpecTex_Default { "_rt_default" };
 constexpr std::string_view SpecTex_Link { "_rt_link_" };
 

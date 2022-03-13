@@ -1,4 +1,4 @@
-#include "mpvbackend.h"
+#include "MpvBackend.hpp"
 
 
 #include <QtGlobal>
@@ -478,4 +478,4 @@ QSGNode *MpvObject::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
     return node;
 }
 
-#include "mpvbackend.moc"
+#include "MpvBackend.moc"

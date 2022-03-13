@@ -7,6 +7,7 @@
 #include <array>
 #include <unordered_map>
 #include <cstdint>
+#include "SpriteAnimation.h"
 
 namespace wallpaper
 {
@@ -32,7 +33,7 @@ public:
 	virtual ~WPShaderValueUpdater() {}
 		
 	void FrameBegin() override;
-	void UpdateUniforms(SceneNode*, const ExistsUniformOp&, const UpdateUniformOp&) override;
+	void UpdateUniforms(SceneNode*, sprite_map_t&, const ExistsUniformOp&, const UpdateUniformOp&) override;
 	void FrameEnd() override;
 	void MouseInput(double, double) override;
 	virtual void SetTexelSize(float x, float y) override;

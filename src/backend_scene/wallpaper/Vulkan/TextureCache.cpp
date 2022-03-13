@@ -398,6 +398,10 @@ vk::ResultValue<ImageSlots> TextureCache::CreateTex(Image& image) {
 	for(int i=0; i<image.slots.size();i++) {
 		auto& image_paras = rv.value.slots[i];
 		auto& image_slot = image.slots[i];
+		auto mipmap_levels = image_slot.mipmaps.size();
+
+		// check data
+		if(!image_slot) return rv;
 
 		vk::SamplerCreateInfo sampler_info;
 		sampler_info
@@ -412,21 +416,21 @@ vk::ResultValue<ImageSlots> TextureCache::CreateTex(Image& image) {
 			.setCompareEnable(false)
 			.setCompareOp(vk::CompareOp::eNever)
 			.setMinLod(0.0f)
-			.setMaxLod(image_slot.size())
+			.setMaxLod(mipmap_levels)
 			.setBorderColor(vk::BorderColor::eIntOpaqueBlack)
 			.setUnnormalizedCoordinates(false);
 		
 		vk::Format format = ToVkType(image.header.format);
-		vk::Extent3D ext {image.header.width, image.header.height, 1};
+		vk::Extent3D ext {image_slot.width, image_slot.height, 1};
 		
-		rv.result = CreateImage(m_device, image_paras, ext, image_slot.size(), format, sampler_info, 	
+		rv.result = CreateImage(m_device, image_paras, ext, mipmap_levels, format, sampler_info, 	
 			vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled);	
 		VK_CHECK_RESULT_ACT(break, rv.result);
 
 		std::vector<BufferParameters> stage_bufs;
 		std::vector<vk::Extent3D> extents;
-		for(int j=0;j<image_slot.size();j++) {
-			auto& image_data = image_slot[j];
+		for(int j=0;j<image_slot.mipmaps.size();j++) {
+			auto& image_data = image_slot.mipmaps[j];
 			BufferParameters buf;
 			(void)CreateStagingBuffer(m_device.vma_allocator(), image_data.size, buf);
 			{

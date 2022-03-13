@@ -38,7 +38,7 @@ void CopyPass::prepare(Scene& scene, const Device& device, RenderingResources& r
 			rv.result = rv_paras.result;
 			rv.value = ImageSlots{{rv_paras.value}, 0};
 		} else {
-            LOG_ERROR("copy image source");
+            LOG_ERROR("can't copy image source");
             return;
 		}
 		if(rv.result != vk::Result::eSuccess) {

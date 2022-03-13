@@ -29,10 +29,15 @@ struct ImageData {
 };
 
 struct ImageHeader {
+	// these two size is not for tex, just come from we
+	// using Slot's size for tex
 	uint16_t width;
 	uint16_t height;
 	uint16_t mapWidth;
 	uint16_t mapHeight;
+
+	bool mipmap_pow2 {false};
+
 	ImageType type {ImageType::UNKNOWN};
 	TextureFormat format;
 	uint32_t count;
@@ -42,11 +47,19 @@ struct ImageHeader {
 	SpriteAnimation spriteAnim;
 	// for specific property
 	std::unordered_map<std::string, ImageExtra> extraHeader;
-
 };
 
+// slot is one singal image
 struct Image : NoCopy,NoMove {
-	typedef std::vector<ImageData> Slot;
+	struct Slot {
+		uint16_t width;
+		uint16_t height;
+		std::vector<ImageData> mipmaps;
+
+		operator bool() {
+			return width*height*mipmaps.size() > 0;
+		}
+	};
 	ImageHeader header;
 	std::vector<Slot> slots;
 	std::string key;

@@ -11,15 +11,21 @@ namespace vulkan
 {
 
 class Device;
+class StagingBuffer;
 
-struct StagingBufferRef {
+class StagingBufferRef {
+public:
     vk::DeviceSize size {0};
     vk::DeviceSize offset {0};
-    VmaVirtualAllocation allocation {};
 
     operator bool() const {
-        return allocation != VK_NULL_HANDLE;
+        return m_allocation != VK_NULL_HANDLE;
     }
+
+private:
+    friend class StagingBuffer;
+    VmaVirtualAllocation m_allocation {};
+    size_t m_virtual_index {0};
 };
 
 class StagingBuffer : NoCopy,NoMove {
@@ -38,14 +44,26 @@ public:
 
     const vk::Buffer& gpuBuf() const;
 private:
+    struct VirtualBlock {
+        VmaVirtualBlock handle  {};
+        bool            enabled {false};
+        size_t          index   {0};
+        vk::DeviceSize  offset  {0};
+        vk::DeviceSize  size    {0};
+    };
+
     vk::Result mapStageBuf();
+    VirtualBlock* newVirtualBlock(vk::DeviceSize);
+    bool increaseBuf(vk::DeviceSize);
+
+
     const Device& m_device;
-    vk::DeviceSize m_size;
+    vk::DeviceSize m_size_step;
 
     vk::BufferUsageFlags m_usage;
 
     void* m_stage_raw {nullptr};
-    VmaVirtualBlock m_virtual_block {};
+    std::vector<VirtualBlock> m_virtual_blocks {};
 
     BufferParameters m_stage_buf;
     BufferParameters m_gpu_buf;

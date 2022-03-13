@@ -104,7 +104,7 @@ void CustomShaderPass::prepare(Scene& scene, const Device& device, RenderingReso
         auto& tex_name = m_desc.textures[i];
 		if(tex_name.empty()) continue;
 
-		vk::ResultValue<ImageSlots> rv {vk::Result::eSuccess, {}};
+		vk::ResultValue<ImageSlots> rv {vk::Result::eIncomplete, {}};
         if(IsSpecTex(tex_name)) {
 			if(scene.renderTargets.count(tex_name) == 0) continue;
 			auto& rt = scene.renderTargets.at(tex_name);
@@ -113,7 +113,11 @@ void CustomShaderPass::prepare(Scene& scene, const Device& device, RenderingReso
 			rv.value = ImageSlots{{rv_paras.value}, 0};
 		} else {
 			auto image = scene.imageParser->Parse(tex_name);
-			rv = device.tex_cache().CreateTex(*image);
+			if(image) {
+				rv = device.tex_cache().CreateTex(*image);
+			} else {
+				LOG_ERROR("parse tex \"%s\" failed", tex_name.c_str());
+			}
 		}
 		VK_CHECK_RESULT(rv.result);
 		if(rv.result == vk::Result::eSuccess)
@@ -152,7 +156,9 @@ void CustomShaderPass::prepare(Scene& scene, const Device& device, RenderingReso
         if(!shader.fragmentCode.empty()) {
             units.push_back(ShaderCompUnit{.stage=EShLangFragment, .src=shader.fragmentCode});
         }
-        CompileAndLinkShaderUnits(units, opt, spvs, &ref);
+        if(!CompileAndLinkShaderUnits(units, opt, spvs, &ref)) {
+			return;
+		}
 
 		auto& bindings = descriptor_info.bindings;
 		bindings.resize(ref.binding_map.size());
@@ -176,6 +182,7 @@ void CustomShaderPass::prepare(Scene& scene, const Device& device, RenderingReso
 		}
     }
 
+	m_desc.draw_count = 0;
 	std::vector<vk::VertexInputBindingDescription> bind_descriptions;
 	std::vector<vk::VertexInputAttributeDescription> attr_descriptions;
 	{
@@ -204,6 +211,7 @@ void CustomShaderPass::prepare(Scene& scene, const Device& device, RenderingReso
 				rr.vertex_buf->allocateSubRef(vertex.DataSizeOf(), buf);
 				rr.vertex_buf->writeToBuf(buf, {(uint8_t*)vertex.Data(), buf.size});
 			}
+			m_desc.draw_count += vertex.DataSize() / vertex.OneSize();
 		}
 	}
 	{
@@ -258,14 +266,24 @@ void CustomShaderPass::prepare(Scene& scene, const Device& device, RenderingReso
 		auto* buf = rr.ubo_buf;
 		auto* bufref = &m_desc.ubo_buf;
 		auto* node = m_desc.node;
-		m_desc.update_uniform_op = [block, shader_updater, buf, bufref, node]() {
+		auto* sprites = &m_desc.sprites_map;
+		auto* vk_textures = &m_desc.vk_textures;
+		m_desc.update_uniform_op = [block, shader_updater, buf, bufref, node, sprites, vk_textures]() {
 			auto existsOp = [&block](std::string_view name) {
 				return exists(block.member_map, name);
 			};
 			auto updateOp = [&block, buf, bufref](std::string_view name, wallpaper::ShaderValue value) {
 				UpdateUniform(buf, *bufref, block, name, value);
 			};
-			shader_updater->UpdateUniforms(node, existsOp, updateOp);
+
+			shader_updater->UpdateUniforms(node, *sprites, existsOp, updateOp);
+			// update image slot for sprites
+			{
+				for(auto& [i, sp]:*sprites) {
+					if(i >= vk_textures->size()) continue;
+					vk_textures->at(i).active = sp.GetCurFrame().imageId;
+				}
+			}
 		};
 		{
 			auto& default_values = mesh.Material()->customShader.shader->default_uniforms;
@@ -310,7 +328,7 @@ void CustomShaderPass::execute(const Device& device, RenderingResources& rr) {
 		int binding = m_desc.vk_tex_binding[i];
 		if(binding < 0) continue;
 		if(slot.slots.empty()) continue;
-		auto& img = slot.slots[slot.active];
+		auto& img = slot.getActive();
 		vk::DescriptorImageInfo desc_img {img.sampler, img.view, vk::ImageLayout::eShaderReadOnlyOptimal};
 		vk::WriteDescriptorSet wset;
 		wset.setDstSet({})
@@ -319,6 +337,20 @@ void CustomShaderPass::execute(const Device& device, RenderingResources& rr) {
 			.setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
 			.setPImageInfo(&desc_img);
         cmd.pushDescriptorSetKHR(vk::PipelineBindPoint::eGraphics, m_desc.pipeline.layout, 0, 1, &wset);
+		vk::ImageMemoryBarrier imb;
+		imb.setSrcAccessMask(vk::AccessFlagBits::eMemoryRead)
+			.setDstAccessMask(vk::AccessFlagBits::eShaderRead)
+			.setOldLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
+			.setNewLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
+			.setImage(img.handle)
+			.setSubresourceRange(base_range);
+		cmd.pipelineBarrier(
+			vk::PipelineStageFlagBits::eFragmentShader,
+			vk::PipelineStageFlagBits::eFragmentShader,
+			vk::DependencyFlagBits::eByRegion,
+			0, nullptr,
+			0, nullptr,
+			1, &imb);
 	}
 
 	if(m_desc.ubo_buf){
@@ -353,7 +385,7 @@ void CustomShaderPass::execute(const Device& device, RenderingResources& rr) {
 		auto& buf = m_desc.vertex_bufs[i];
 		cmd.bindVertexBuffers(i, 1, &(rr.vertex_buf->gpuBuf()), &buf.offset);
 	}
-	cmd.draw(4, 1, 0, 0);
+	cmd.draw(m_desc.draw_count, 1, 0, 0);
 
 	cmd.endRenderPass();
 }

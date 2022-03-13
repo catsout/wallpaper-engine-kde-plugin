@@ -38,7 +38,10 @@ struct ImageSlots {
 	std::vector<ImageParameters> slots;
 	int active {0};
 
-	auto& getActive() const { return slots[active]; }
+	auto& getActive() const { 
+		if(active >= slots.size()) return slots[0];
+		return slots[active]; 
+	}
 };
 
 struct ExImageParameters {

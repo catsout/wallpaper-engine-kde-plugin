@@ -12,6 +12,7 @@
 #include "Particle/WPParticleRawGener.h"
 #include "WPParticleParser.h"
 #include "WPSoundParser.h"
+#include "WPMdlParser.hpp"
 
 
 #include "WPShaderValueUpdater.h"
@@ -286,10 +287,18 @@ void LoadMaterial(fs::VFS& vfs,
 				else if (texh.format == TextureFormat::RG8)
 					fgCode = "#define TEX0FORMAT FORMAT_RG88\n" + fgCode;
 			}
-			resolution = {
-				texh.width,texh.height, 
-				texh.mapWidth,texh.mapHeight
-			};
+			if(texh.mipmap_pow2) {
+				resolution = {
+					texh.width, texh.height, 
+					texh.mapWidth,texh.mapHeight
+				};
+			} else {
+				resolution = {
+					texh.mapWidth,texh.mapHeight, 
+					texh.mapWidth,texh.mapHeight
+				};
+			}
+
 
 			if(pScene->textures.count(name) == 0) {
 				SceneTexture stex;
@@ -417,8 +426,8 @@ void ParseCamera(ParseContext& context, wpscene::WPSceneGeneral& general) {
 	auto& scene = *context.scene;
 	// effect camera 
 	scene.cameras["effect"] = std::make_shared<SceneCamera>(2, 2, -1.0f, 1.0f);
-	scene.cameras.at("effect")->AttatchNode(context.effect_camera_node);
 	context.effect_camera_node = std::make_shared<SceneNode>(); // at 0,0,0
+	scene.cameras.at("effect")->AttatchNode(context.effect_camera_node);
 	scene.sceneGraph->AppendChild(context.effect_camera_node);
 
 	// global camera
@@ -581,6 +590,13 @@ void ParseImageObj(ParseContext& context, wpscene::WPImageObject& img_obj) {
 		}
 	}
 
+	if(!img_obj.puppet.empty())	{
+    	auto pfile = vfs.Open("/assets/" + img_obj.puppet);
+		WPMdl mdl;
+    	if (pfile && WPMdlParser::Parse(*pfile, mdl)) {
+		}
+	}
+
 	// mesh
 	auto spMesh = std::make_shared<SceneMesh>();
 	auto& mesh = *spMesh;
@@ -588,8 +604,8 @@ void ParseImageObj(ParseContext& context, wpscene::WPImageObject& img_obj) {
 	{
 		// deal with pow of 2
 		std::array<float, 2> mapRate {1.0f, 1.0f};
-		if(!wpimgobj.nopadding && exists(material.customShader.constValues,"g_Texture0Resolution")) {
-			const auto& r = material.customShader.constValues.at("g_Texture0Resolution");
+		if(!wpimgobj.nopadding && exists(material.customShader.constValues, WE_GLTEX_RESOLUTION_NAMES[0])) {
+			const auto& r = material.customShader.constValues.at(WE_GLTEX_RESOLUTION_NAMES[0]);
 			mapRate = {
 				r[2] / r[0],
 				r[3] / r[1]
@@ -941,8 +957,6 @@ std::shared_ptr<Scene> WPSceneParser::Parse(const std::string& buf, fs::VFS& vfs
 	}
 
 
-
-
 	for(WPObjectVar& obj:wp_objs) {
 		std::visit(visitor::overload {
 			[&context](wpscene::WPImageObject& obj) {
@@ -956,7 +970,5 @@ std::shared_ptr<Scene> WPSceneParser::Parse(const std::string& buf, fs::VFS& vfs
 			}
 		}, obj);
 	}
-
-	//context.scene->shaderValueUpdater = std::move(shaderValueUpdater);
 	return context.scene;
 }

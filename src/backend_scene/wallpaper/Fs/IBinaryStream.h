@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include <string>
 #include "Bswap.hpp"
 #include "Utils/NoCopyMove.hpp"
 
@@ -57,6 +58,16 @@ public:
 
     int16_t ReadInt16() { return _ReadInt<int16_t>(); }
     uint16_t ReadUint16() { return _ReadInt<uint16_t>(); }
+
+    std::string ReadStr() {
+        std::string str;
+        char c;
+        while(Read(&c, 1)) {
+            if(c == '\0') break;
+            str.push_back(c);
+        }
+        return str;
+    }
 
     std::string ReadAllStr() {
         std::string str;

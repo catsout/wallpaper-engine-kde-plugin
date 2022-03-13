@@ -9,15 +9,13 @@ namespace  algorism {
 	float CalculatePersperctiveDistance(float fov, float height);
 	float CalculatePersperctiveFov(float distence, float height);
 
-	template<typename TInt>
-	TInt PowOfTwo(TInt x) {
-		TInt pow2 {8};
+	constexpr uint32_t PowOfTwo(uint32_t x) {
+		uint32_t pow2 {8};
 		while(pow2 < x) pow2*=2;	
 		return pow2;
 	}
 
-	template<typename TInt>
-	bool IsPowOfTwo(TInt x) {
+	constexpr bool IsPowOfTwo(uint32_t x) {
 		return (x != 0) && ((x & (x - 1)) == 0);
 	}
 

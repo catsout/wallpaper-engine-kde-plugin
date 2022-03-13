@@ -141,6 +141,8 @@ bool WPImageObject::FromJson(const nlohmann::json& json, fs::VFS& vfs) {
     GET_JSON_NAME_VALUE_NOWARN(json, "color", color);
     GET_JSON_NAME_VALUE_NOWARN(json, "alpha", alpha);
     GET_JSON_NAME_VALUE_NOWARN(json, "brightness", brightness);
+
+	GET_JSON_NAME_VALUE_NOWARN(jImage, "puppet", puppet);	
     if(jImage.contains("material")) {
         std::string matPath;
 		GET_JSON_NAME_VALUE(jImage, "material", matPath);	

@@ -5,8 +5,12 @@
 
 using namespace wallpaper::vulkan;
 
+#define CHECK_REF(ref, act) if(!ref) {    \
+    LOG_ERROR("stage ref not available, index %d", ref.m_virtual_index); \
+    {act;}                                \
+}
 
-StagingBuffer::StagingBuffer(const Device& d, vk::DeviceSize size, vk::BufferUsageFlags usage):m_device(d),m_size(size),m_usage(usage) {}
+StagingBuffer::StagingBuffer(const Device& d, vk::DeviceSize size, vk::BufferUsageFlags usage):m_device(d),m_size_step(size),m_usage(usage) {}
 StagingBuffer::~StagingBuffer() {
 }
 
@@ -49,13 +53,64 @@ void RecordCopyBuffer(BufferParameters &dst_buf, BufferParameters &src_buf, vk::
 }
 }
 
-bool StagingBuffer::allocate() {
-    if(!CreateStagingBuffer(m_device.vma_allocator(), m_size, m_stage_buf)) return false;
-    VK_CHECK_RESULT_BOOL_RE((vk::Result)vmaMapMemory(m_device.vma_allocator(), m_stage_buf.allocation, &m_stage_raw));
+StagingBuffer::VirtualBlock* StagingBuffer::newVirtualBlock(vk::DeviceSize nsize) {
+    auto it = std::find_if(m_virtual_blocks.begin(), m_virtual_blocks.end(), [nsize](auto& b) { 
+        return !b.enabled && nsize <= b.size; 
+    });
+    if(it == std::end(m_virtual_blocks)) {
+        vk::DeviceSize offset = m_virtual_blocks.empty() 
+            ? 0 
+            : m_virtual_blocks.back().offset + m_virtual_blocks.back().size;
+
+        m_virtual_blocks.push_back({});
+        it = m_virtual_blocks.end() - 1;
+        it->size = nsize > m_size_step ? nsize : m_size_step;
+        it->index = std::distance(m_virtual_blocks.begin(), it);
+        it->offset = offset;
+    }
+    auto& block = *it;
+
     VmaVirtualBlockCreateInfo blockCreateInfo = {};
-    blockCreateInfo.size = m_size;
-    VK_CHECK_RESULT_BOOL_RE((vk::Result)vmaCreateVirtualBlock(&blockCreateInfo, &m_virtual_block));
+    blockCreateInfo.size = block.size;
+
+    VK_CHECK_RESULT_ACT(return nullptr, (vk::Result)vmaCreateVirtualBlock(&blockCreateInfo, &block.handle));
+    block.enabled = true;
+
+    LOG_INFO("new buffer block, size: %d, index: %d", block.size, block.index);
+    return &block;
+}
+bool StagingBuffer::increaseBuf(vk::DeviceSize nsize) {
+    if(m_stage_raw == nullptr) {
+        VK_CHECK_RESULT_BOOL_RE(mapStageBuf());
+    }
+    auto newsize = m_stage_buf.req_size + nsize;
+    // do double copy
+    std::vector<uint8_t> tmp;
+    tmp.resize(newsize);
+    memcpy(tmp.data(), m_stage_raw, m_stage_buf.req_size);
+
+    m_stage_raw = nullptr;
+    vmaUnmapMemory(m_device.vma_allocator(), m_stage_buf.allocation);
+    m_device.DestroyBuffer(m_stage_buf);
+
+    if(!CreateStagingBuffer(m_device.vma_allocator(), newsize, m_stage_buf)) return false;
+    VK_CHECK_RESULT_BOOL_RE(mapStageBuf());
+    memcpy(m_stage_raw, tmp.data(), newsize);
+
+    m_device.DestroyBuffer(m_gpu_buf);
+    m_gpu_buf.handle = nullptr;
+
+    LOG_INFO("increase buffer size: %d", nsize);
     return true;
+}
+
+
+bool StagingBuffer::allocate() {
+    if(!CreateStagingBuffer(m_device.vma_allocator(), m_size_step, m_stage_buf)) return false;
+    VK_CHECK_RESULT_BOOL_RE((vk::Result)vmaMapMemory(m_device.vma_allocator(), m_stage_buf.allocation, &m_stage_raw));
+
+    auto* block = newVirtualBlock(m_size_step);
+    return block != nullptr;
 }
 
 
@@ -63,8 +118,13 @@ void StagingBuffer::destroy() {
     if(m_stage_raw != nullptr) {
         vmaUnmapMemory(m_device.vma_allocator(), m_stage_buf.allocation);
     }
-    vmaClearVirtualBlock(m_virtual_block);
-    vmaDestroyVirtualBlock(m_virtual_block);
+    for(auto& block:m_virtual_blocks) {
+        if(block.enabled) {
+            vmaClearVirtualBlock(block.handle);
+            vmaDestroyVirtualBlock(block.handle);
+        }
+    }
+    m_virtual_blocks.clear();
 
     m_device.DestroyBuffer(m_stage_buf);
     m_device.DestroyBuffer(m_gpu_buf);
@@ -75,13 +135,59 @@ bool StagingBuffer::allocateSubRef(vk::DeviceSize size, StagingBufferRef& ref, v
     VmaVirtualAllocationCreateInfo allocCreateInfo = {};
     allocCreateInfo.size = size;
     allocCreateInfo.alignment = alignment;
-    
-    VK_CHECK_RESULT_BOOL_RE((vk::Result)vmaVirtualAllocate(m_virtual_block, &allocCreateInfo, &ref.allocation, &ref.offset));
-    ref.size = size;
+
+    VmaVirtualAllocation allocation;
+    vk::DeviceSize offset;
+
+    auto setRef = [&offset, &allocation, size](StagingBufferRef& ref, VirtualBlock& block) {
+        ref.size = size;
+        ref.offset = offset + block.offset;
+
+        ref.m_allocation = allocation;
+        ref.m_virtual_index = block.index;
+    };
+
+    for(auto& block:m_virtual_blocks) {
+        if(!block.enabled || block.size < size) continue;
+
+        auto res = (vk::Result)vmaVirtualAllocate(block.handle, &allocCreateInfo, &allocation, &offset);
+        if(res == vk::Result::eSuccess) {
+            setRef(ref, block);
+            return true;
+        }
+    }
+
+    auto old_block_num = m_virtual_blocks.size();
+    auto* p_block = newVirtualBlock(size); 
+    if(p_block == nullptr) return false;
+
+    auto& block = *p_block;
+    if(old_block_num < m_virtual_blocks.size()) {
+        if(!increaseBuf(block.size)) { 
+            auto& block = m_virtual_blocks.back();
+            vmaClearVirtualBlock(block.handle);
+            vmaDestroyVirtualBlock(block.handle);
+            m_virtual_blocks.pop_back();
+            return false;
+        }
+    }
+    VK_CHECK_RESULT_BOOL_RE((vk::Result)vmaVirtualAllocate(block.handle, &allocCreateInfo, &allocation, &offset));
+    setRef(ref, block);
     return true;
 }
 void StagingBuffer::unallocateSubRef(const StagingBufferRef& ref) {
-    vmaVirtualFree(m_virtual_block, ref.allocation);
+    CHECK_REF(ref, ;);
+    if(ref.m_virtual_index < m_virtual_blocks.size()) {
+        auto& block = m_virtual_blocks[ref.m_virtual_index];
+        vmaVirtualFree(block.handle, ref.m_allocation);
+        if(vmaIsVirtualBlockEmpty(block.handle)) {
+            vmaDestroyVirtualBlock(block.handle);
+            block.handle = VK_NULL_HANDLE;
+            block.enabled = false;
+        }
+    } else {
+        LOG_ERROR("unallocate stagingbuffer failed: wrong index %d", ref.m_virtual_index);
+    }
 }
 
 
@@ -90,7 +196,8 @@ vk::Result StagingBuffer::mapStageBuf() {
 }
 
 bool StagingBuffer::writeToBuf(const StagingBufferRef& ref, Span<uint8_t> data, size_t offset) {
-    if(ref.allocation == VK_NULL_HANDLE) return false;
+    CHECK_REF(ref, return false);
+
     if(m_stage_raw == nullptr) {
         mapStageBuf();
     }
@@ -110,7 +217,7 @@ bool StagingBuffer::recordUpload(vk::CommandBuffer& cmd) {
     }
     VK_CHECK_RESULT_BOOL_RE((vk::Result)vmaFlushAllocation(m_device.vma_allocator(), m_stage_buf.allocation, 0, VK_WHOLE_SIZE));
     RecordCopyBuffer(m_gpu_buf, m_stage_buf, cmd);
-    return false;
+    return true;
 }
 
 const vk::Buffer& StagingBuffer::gpuBuf() const { return m_gpu_buf.handle; }

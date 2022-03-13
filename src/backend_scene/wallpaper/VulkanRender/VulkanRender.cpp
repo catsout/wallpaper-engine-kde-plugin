@@ -114,10 +114,10 @@ bool VulkanRender::initRes() {
     m_testpass->setPresentLayout(vk::ImageLayout::ePresentSrcKHR);
     */
 
-    m_vertex_buf = std::make_unique<StagingBuffer>(*m_device, 1024*1024,
+    m_vertex_buf = std::make_unique<StagingBuffer>(*m_device, 2*1024*1024,
         vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eIndexBuffer
     );
-    m_ubo_buf = std::make_unique<StagingBuffer>(*m_device, 4*1024*1024,
+    m_ubo_buf = std::make_unique<StagingBuffer>(*m_device, 2*1024*1024,
         vk::BufferUsageFlagBits::eUniformBuffer
     );
     if(!m_vertex_buf->allocate()) return false;

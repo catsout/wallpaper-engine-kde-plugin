@@ -62,6 +62,7 @@ add_library(${PROJECT_NAME}
 	WPShaderValueUpdater.cpp
 	WPTexImageParser.cpp
 	WPSoundParser.cpp
+	WPMdlParser.cpp
 
 	SceneWallpaper.cpp	
 	SceneToRenderGraph.cpp
