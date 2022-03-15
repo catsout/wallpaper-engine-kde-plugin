@@ -33,7 +33,7 @@ std::vector<NodeID> RenderGraph::topologicalOrder() const {
   std::vector<NodeID> allnodes = m_dg.TopologicalOrder();
   std::vector<NodeID> passnodes;
   std::copy_if(allnodes.begin(), allnodes.end(), std::back_inserter(passnodes), [this](auto item) {
-      return exists(m_set_passnode, item);
+      return exists(m_set_passnode, item) && !exists(m_set_vitrual_passnode, item);
   });
   return passnodes;
 }
@@ -52,6 +52,12 @@ void  RenderGraphBuilder::setWorkPassNode(PassNode* node) {
     m_passnode_wip = node;
 }
 
+void RenderGraphBuilder::markSelfWrite(TexNode* tex) {
+    if(tex->version() > 0) return;
+    m_rg.addPass<VirtualPass>("virtual pass", PassNode::Type::Virtual, [tex](RenderGraphBuilder& builder, auto&) {
+        builder.write(tex);
+    });
+}
 
 TexNode* RenderGraphBuilder::createTexNode(const TexNode::Desc& desc, bool write) {
     TexNode* node {nullptr};

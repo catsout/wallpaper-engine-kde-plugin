@@ -22,6 +22,7 @@ public:
     void write(TexNode*);
     const PassNode& workPassNode() const;
     void setWorkPassNode(PassNode*);
+    void markSelfWrite(TexNode*);
 private:
     TexNode* createNewTexNode(const TexNode::Desc&);
 
@@ -45,6 +46,15 @@ public:
 		m_dg.ToGraphviz(path);	
 	};
 
+    template <typename CB>
+    bool afterBuild(NodeID pass_node_id, CB&& callback) {
+        auto* pass_node = getPassNode(pass_node_id);
+        if(pass_node == nullptr) return false;
+        RenderGraphBuilder builder(*this);
+        builder.setWorkPassNode(pass_node);
+        return callback(builder, *m_map_pass[pass_node_id]);
+    };
+
     template <typename TPass, typename CB>
     PassNode* addPass(std::string_view name, PassNode::Type type, CB&& callback) {
         using Desc = typename TPass::Desc;
@@ -59,6 +69,8 @@ public:
             callback(builder, desc);
             m_map_pass[node->ID()] = std::make_shared<TPass>(desc);
         }
+        if(type == PassNode::Type::Virtual)
+            m_set_vitrual_passnode.insert(node->ID());
         return node;
     }
 private:
@@ -68,6 +80,7 @@ private:
 
     DependencyGraph m_dg;
     Set<NodeID> m_set_passnode;
+    Set<NodeID> m_set_vitrual_passnode;
 
     Map<std::string, NodeID> m_key_texnode;
 

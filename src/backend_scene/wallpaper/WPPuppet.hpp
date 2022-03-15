@@ -11,7 +11,7 @@ namespace wallpaper
 class WPPuppet { 
 public:
     enum class PlayMode {
-        Loop, Mirror
+        Loop, Mirror, Single
     };
     struct Bone {
         Eigen::Affine3f transform { Eigen::Affine3f::Identity() };

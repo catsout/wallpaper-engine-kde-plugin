@@ -415,3 +415,9 @@ void CustomShaderPass::destory(const Device& device, RenderingResources& rr) {
 	device.DestroyPipeline(m_desc.pipeline);
 	device.handle().destroyFramebuffer(m_desc.fb);
 }
+
+void CustomShaderPass::setDescTex(uint index, std::string_view tex_key) {
+	assert(index < m_desc.textures.size());
+	if(index >= m_desc.textures.size()) return;
+	m_desc.textures[index] = tex_key;
+}

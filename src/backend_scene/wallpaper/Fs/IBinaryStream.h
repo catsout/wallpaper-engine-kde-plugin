@@ -59,6 +59,9 @@ public:
     int16_t ReadInt16() { return _ReadInt<int16_t>(); }
     uint16_t ReadUint16() { return _ReadInt<uint16_t>(); }
 
+    int8_t ReadInt8() { return _ReadInt<int8_t>(); }
+    uint8_t ReadUint8() { return _ReadInt<uint8_t>(); }
+
     std::string ReadStr() {
         std::string str;
         char c;

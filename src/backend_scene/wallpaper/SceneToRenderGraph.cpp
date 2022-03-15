@@ -35,13 +35,15 @@ static void addCopyPass(RenderGraph& rgraph, const TexNode::Desc& in, const TexN
     });
 }
 
-static TexNode* addCopyPass(RenderGraph& rgraph, TexNode* in) {
+static TexNode* addCopyPass(RenderGraph& rgraph, TexNode* in, TexNode::Desc* out_desc=nullptr) {
     TexNode* copy {nullptr};
     rgraph.addPass<vulkan::CopyPass>("copy", PassNode::Type::Copy,
-        [&copy, in](RenderGraphBuilder& builder, vulkan::CopyPass::Desc& pdesc) {
-            auto desc = in->genDesc();
-            desc.key += "_copy";
-            desc.name += "_copy";
+        [&copy, in, out_desc](RenderGraphBuilder& builder, vulkan::CopyPass::Desc& pdesc) {
+            auto desc = out_desc == nullptr ? in->genDesc() : *out_desc;
+            if(out_desc == nullptr) {
+                desc.key += "_" + std::to_string(in->version()) + "_copy";
+                desc.name += "_" + std::to_string(in->version()) + "_copy";
+            }
             copy = builder.createTexNode(desc, true);
             doCopy(builder, pdesc, in, copy);
         });
@@ -75,13 +77,20 @@ static void CheckAndSetSprite(Scene& scene, vulkan::CustomShaderPass::Desc& desc
     }
 }
 
+struct DelayLinkInfo {
+    rg::NodeID id;
+    rg::NodeID link_id;
+    size_t tex_index;
+};
+
 struct ExtraInfo {
-    Map<size_t, rg::TexNode*> idMap;
+    Map<size_t, rg::TexNode*> id_link_map;
+    std::vector<DelayLinkInfo> link_info;
     rg::RenderGraph* rgraph;
     Scene* scene;
 };
 
-static void ToGraphPass(SceneNode* node, std::string output, uint32_t imgId, ExtraInfo& extra) {
+static void ToGraphPass(SceneNode* node, std::string_view output, uint32_t imgId, ExtraInfo& extra) {
     auto& rgraph = *extra.rgraph;
     auto& scene = *extra.scene;
 
@@ -95,7 +104,6 @@ static void ToGraphPass(SceneNode* node, std::string output, uint32_t imgId, Ext
 			int nodePos = 0;
 			for(auto& n:eff->nodes) {
 				if(cmdItor != cmdEnd && nodePos == cmdItor->afterpos) {
-					//AddCopyCmdPasses(cmdItor->dst, cmdItor->src);
                     rg::addCopyPass(rgraph, rg::createTexDesc(cmdItor->dst), rg::createTexDesc(cmdItor->src));
 					cmdItor++;
 				}
@@ -129,9 +137,19 @@ static void ToGraphPass(SceneNode* node, std::string output, uint32_t imgId, Ext
             pdesc.node = node;
             pdesc.output = output;
             CheckAndSetSprite(scene, pdesc, material->textures);
-            for(const auto& url:material->textures) {
+            for(uint i=0;i<material->textures.size();i++) {
+                const auto& url = material->textures[i];
                 rg::TexNode* input {nullptr};
                 if(url.empty()) {
+                    pdesc.textures.emplace_back("");
+                    continue;
+                } else if(IsSpecLinkTex(url)) {
+                    auto id = ParseLinkTex(url);
+                    extra.link_info.push_back(DelayLinkInfo {
+                        .id = pass.ID(),
+                        .link_id = id,
+                        .tex_index = i
+                    });
                     pdesc.textures.emplace_back("");
                     continue;
                 } else {
@@ -145,26 +163,22 @@ static void ToGraphPass(SceneNode* node, std::string output, uint32_t imgId, Ext
                 }
 
                 if(url == output) {
+                    builder.markSelfWrite(input);
                     input = rg::addCopyPass(rgraph, input);
-                } else if(IsSpecLinkTex(url)) {
-                    auto id = ParseLinkTex(url);
-                    if(extra.idMap.count(id)) {
-                        //rg::addCopyPass(rgraph, extra.idMap.at(id), input);
-                    }
-                }
+                } 
                 builder.read(input);
                 pdesc.textures.emplace_back(input->key());
             }
 
             rg::TexNode* output_node {nullptr};
             output_node = builder.createTexNode(rg::TexNode::Desc {
-                .name = output,
-                .key = output,
+                .name = output.data(),
+                .key = output.data(),
                 .type = rg::TexNode::TexType::Temp
             }, true);
             builder.write(output_node);
       		if(output == SpecTex_Default) {
-				extra.idMap[imgId] = output_node;
+				extra.id_link_map[imgId] = output_node;
 			}
         });
 
@@ -175,13 +189,34 @@ static void ToGraphPass(SceneNode* node, std::string output, uint32_t imgId, Ext
 
 
 std::unique_ptr<rg::RenderGraph> wallpaper::sceneToRenderGraph(Scene& scene) {
-    using namespace std::placeholders;
-
     std::unique_ptr<rg::RenderGraph> rgraph = std::make_unique<rg::RenderGraph>();
     ExtraInfo extra {
         .rgraph = rgraph.get(),
         .scene = &scene
     };
-    TraverseNode(std::bind(&ToGraphPass, _1, std::string(SpecTex_Default), 0, extra), scene.sceneGraph.get()); 
+    TraverseNode([&extra](SceneNode* node) {
+        ToGraphPass(node, SpecTex_Default, node->ID(), extra);
+    }, scene.sceneGraph.get()); 
+
+    for(auto& info:extra.link_info) {
+        if(!exists(extra.id_link_map, info.link_id)) {
+            LOG_ERROR("link tex %d not found", info.link_id);
+            continue;
+        }
+        rgraph->afterBuild(info.id,[&rgraph, &extra, &info](rg::RenderGraphBuilder& builder, rg::Pass& rgpass) {
+            auto& pass = static_cast<vulkan::CustomShaderPass&>(rgpass);
+
+            auto* link_tex_node = extra.id_link_map.at(info.link_id);
+            auto copy_desc = link_tex_node->genDesc();
+            copy_desc.key = GenLinkTex(info.link_id);
+            copy_desc.name = copy_desc.key;
+
+            auto new_in = rg::addCopyPass(*rgraph, link_tex_node, &copy_desc);
+            builder.read(new_in);
+            pass.setDescTex(info.tex_index, new_in->key());
+            return true;
+        });
+    }
+
     return rgraph;
 }

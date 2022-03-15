@@ -65,20 +65,6 @@ void WPShaderValueUpdater::UpdateUniforms(SceneNode* pNode, sprite_map_t& sprite
 		if(nodeData.puppet && existsOp(G_BONES)) {
 			auto data = nodeData.puppet->genFrame(nodeData.puppet_layers, m_scene->frameTime);
 			updateOp(G_BONES, Span<float>{data[0].data(), data.size()*16});
-			/*
-			nodeData.std140_bones.resize(nodeData.bones.size());
-			std::transform(nodeData.bones.begin(), nodeData.bones.end(), nodeData.std140_bones.begin(), [](auto& mat) {
-				typename decltype(nodeData.std140_bones)::value_type arr_16;
-				size_t offset = 0;
-				for(auto col:mat.colwise()) {
-					std::copy(col.begin(), col.end(), arr_16.begin() + offset);
-					offset += 4;
-				}
-				return arr_16;
-			});
-			auto& data = nodeData.std140_bones;
-			updateOp(G_BONES, Span<float>{data[0].data(), data.size()*16});
-			*/
 		}
 	}
 

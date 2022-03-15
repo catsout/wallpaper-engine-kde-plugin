@@ -51,36 +51,26 @@ void GenCardMesh(SceneMesh& mesh, const std::array<uint16_t, 2> size, const std:
 	float bottom = -(size[1]/2.0f);
 	float top = size[1]/2.0f;
 	float z = 0.0f;
-	std::vector<float> pos = {
+	const std::array pos = {
 			left, bottom, z,
 			left,  top, z,
 			right, bottom, z,
 			right,  top, z,
 	};
-	std::vector<float> texCoord;
 	float tw = mapRate[0],th = mapRate[1];
-	texCoord = {
+	const std::array texCoord = {
 			0.0f, th,
 			0.0f, 0.0f,
 			tw, th,
 			tw, 0.0f,
 	};
-
-	/*
-	std::vector<uint32_t> indices = { 
-		0, 1, 2,
-		1, 3, 2
-	};
-	*/
-
 	SceneVertexArray vertex({
-		{"a_Position", VertexType::FLOAT3},
-		{"a_TexCoord", VertexType::FLOAT2},
+		{WE_IN_POSITION.data(), VertexType::FLOAT3},
+		{WE_IN_TEXCOORD.data(), VertexType::FLOAT2},
 	}, 4);
-	vertex.SetVertex("a_Position", pos);
-	vertex.SetVertex("a_TexCoord", texCoord);
+	vertex.SetVertex(WE_IN_POSITION, pos);
+	vertex.SetVertex(WE_IN_TEXCOORD, texCoord);
 	mesh.AddVertexArray(std::move(vertex));
-	//mesh.AddIndexArray(SceneIndexArray(indices));
 }
 
 void SetParticleMesh(SceneMesh& mesh, const wpscene::Particle& particle, uint32_t count, bool sprite=false) {
@@ -157,7 +147,8 @@ void ParseSpecTexName(std::string& name, const wpscene::WPMaterial& wpmat, const
 			}
 			*/
 		}
-		else if(name.find("_rt_imageLayerComposite_") != std::string::npos) {
+		else if(sstart_with(name, WE_IMAGE_LAYER_COMPOSITE_PREFIX)) {
+			LOG_INFO("link tex \"%s\"", name.c_str());
 			int wpid {-1};
 			std::regex reImgId {R"(_rt_imageLayerComposite_([0-9]+))"};
 			std::smatch match;
@@ -168,6 +159,9 @@ void ParseSpecTexName(std::string& name, const wpscene::WPMaterial& wpmat, const
 		}
 		else if(name == "_rt_MipMappedFrameBuffer") {
 			name = "";
+		} else if(sstart_with(name, WE_EFFECT_PPONG_PREFIX)) {}
+		else {
+			LOG_ERROR("unknown tex \"%s\"", name.c_str());
 		}
 	}
 }

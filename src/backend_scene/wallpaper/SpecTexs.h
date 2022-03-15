@@ -25,6 +25,9 @@ constexpr std::array WE_GLTEX_TRANSLATION_NAMES {
 #undef BASE_GLTEX_NAMES
 
 constexpr std::string_view WE_SPEC_PREFIX {"_rt_"};
+constexpr std::string_view WE_IMAGE_LAYER_COMPOSITE_PREFIX {"_rt_imageLayerComposite_"};
+
+constexpr std::string_view WE_EFFECT_PPONG_PREFIX   {"_rt_effect_pingpong_"};
 constexpr std::string_view WE_EFFECT_PPONG_PREFIX_A   {"_rt_effect_pingpong_a_"};
 constexpr std::string_view WE_EFFECT_PPONG_PREFIX_B   {"_rt_effect_pingpong_b_"};
 

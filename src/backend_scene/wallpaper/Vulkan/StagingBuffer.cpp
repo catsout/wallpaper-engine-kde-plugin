@@ -180,7 +180,7 @@ void StagingBuffer::unallocateSubRef(const StagingBufferRef& ref) {
     if(ref.m_virtual_index < m_virtual_blocks.size()) {
         auto& block = m_virtual_blocks[ref.m_virtual_index];
         vmaVirtualFree(block.handle, ref.m_allocation);
-        if(vmaIsVirtualBlockEmpty(block.handle)) {
+        if(block.enabled && vmaIsVirtualBlockEmpty(block.handle)) {
             vmaDestroyVirtualBlock(block.handle);
             block.handle = VK_NULL_HANDLE;
             block.enabled = false;

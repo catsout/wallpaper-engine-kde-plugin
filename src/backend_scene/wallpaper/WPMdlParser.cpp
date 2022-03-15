@@ -15,6 +15,7 @@ namespace {
 WPPuppet::PlayMode ToPlayMode(std::string_view m) {
     if(m == "loop" || m.empty()) return WPPuppet::PlayMode::Loop;
     if(m == "mirror") return WPPuppet::PlayMode::Mirror;
+    if(m == "single") return WPPuppet::PlayMode::Single;
 
     LOG_ERROR("unknown puppet animation play mode \"%s\"", m.data());
     assert(m == "loop");
@@ -93,7 +94,8 @@ bool WPMdlParser::Parse(std::string_view path, fs::VFS& vfs, WPMdl& mdl) {
     bones.resize(bones_num);
     for(uint i=0;i<bones_num;i++) {
         auto& bone = bones[i];
-        int32_t unk1 = f.ReadUint16();
+        std::string unk_extra = f.ReadStr();
+        f.ReadUint8();
         int32_t unk2 = f.ReadInt32();
 
         bone.parent = f.ReadUint32();
@@ -156,7 +158,12 @@ bool WPMdlParser::Parse(std::string_view path, fs::VFS& vfs, WPMdl& mdl) {
                     for(auto& v:frame.scale) v = f.ReadFloat();
                 }
             }
-            f.ReadInt32();
+            uint32_t unk_extra_uint = f.ReadUint32();
+            for(uint i=0;i<unk_extra_uint;i++) {
+                f.ReadFloat();
+                // data is like: {"$$hashKey":"object:2110","frame":1,"name":"random_anim"}
+                std::string unk_extra = f.ReadStr();
+            }
         }
     }
     mdl.puppet->prepared();
