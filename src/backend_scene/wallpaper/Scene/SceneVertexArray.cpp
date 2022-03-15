@@ -5,9 +5,22 @@
 using namespace wallpaper;
 
 uint8_t SceneVertexArray::TypeCount(VertexType t) {
-	uint8_t type = (uint8_t)t;
-	uint8_t first = (uint8_t)VertexType::FLOAT1;
-	return (type - first + 1);
+	switch (t)
+	{
+	case VertexType::FLOAT1:
+	case VertexType::UINT1:
+		return 1;
+	case VertexType::FLOAT2:
+	case VertexType::UINT2:
+		return 2;
+	case VertexType::FLOAT3:
+	case VertexType::UINT3:
+		return 3;
+	case VertexType::FLOAT4:
+	case VertexType::UINT4:
+		return 4;
+	}
+	return 1;
 }
 
 uint8_t SceneVertexArray::RealAttributeSize(const SceneVertexArray::SceneVertexAttribute& attr) {

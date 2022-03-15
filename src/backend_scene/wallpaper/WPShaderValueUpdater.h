@@ -8,6 +8,8 @@
 #include <unordered_map>
 #include <cstdint>
 #include "SpriteAnimation.h"
+#include "WPPuppet.hpp"
+#include <Eigen/Dense>
 
 namespace wallpaper
 {
@@ -18,6 +20,9 @@ struct WPShaderValueData {
 	std::array<float, 2> parallaxDepth {0.0f, 0.0f};
 	// index + name
 	std::vector<std::pair<int32_t, std::string>> renderTargetResolution;
+
+	std::vector<WPPuppet::AnimationLayer> puppet_layers;
+	std::shared_ptr<WPPuppet> puppet;
 };
 
 struct WPCameraParallax {

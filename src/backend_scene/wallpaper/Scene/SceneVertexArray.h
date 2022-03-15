@@ -3,15 +3,10 @@
 #include <string>
 #include <cstddef>
 #include "Utils/MapSet.hpp"
+#include "Type.h"
 
 namespace wallpaper
 {
-	enum class VertexType {
-		FLOAT1,
-		FLOAT2,
-		FLOAT3,
-		FLOAT4
-	};
 
 	class SceneVertexArray {
 	public:

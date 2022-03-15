@@ -33,13 +33,17 @@ Matrix4d inline Ortho(double left, double right, double bottom, double top, doub
 	trans.pretranslate(Vector3d(
 		-(left+right)/2.0f,
 		-(top+bottom)/2.0f,
-		(nearz+farz)/2.0f
+		-(nearz+farz)/2.0f
 	));
 	trans.prescale(Vector3d(
 		2.0f/(right-left),
 		2.0f/(top-bottom),
 		-2.0f/(farz-nearz)
 	));
+	trans.prescale(Vector3d(
+		1.0f, 1.0f, 0.5f
+	));
+	trans.pretranslate(Vector3d(0.0f, 0.0f, 0.5f));
 	return trans.matrix();
 }
 

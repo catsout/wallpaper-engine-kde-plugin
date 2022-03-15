@@ -2,13 +2,14 @@
 #include <vector>
 #include <cstdint>
 #include <cstddef>
+#include "Utils/span.hpp"
 
 namespace wallpaper
 {
 	class SceneIndexArray {
 	public:
 		SceneIndexArray(std::size_t indexCount);
-		SceneIndexArray(const std::vector<uint32_t>& data);
+		SceneIndexArray(Span<uint32_t> data);
 
 		SceneIndexArray(SceneIndexArray&& other):m_pData(other.m_pData),
 												m_size(other.m_size),

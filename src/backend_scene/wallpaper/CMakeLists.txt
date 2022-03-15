@@ -43,6 +43,7 @@ add_library(${PROJECT_NAME}
 	Scene/SceneCamera.cpp
 	Scene/SceneNode.cpp
 	Scene/SceneShader.cpp
+	Scene/SceneImageEffectLayer.cpp
 
 	Utils/Logging.cpp
 	Utils/FrameTimer.cpp
@@ -63,6 +64,7 @@ add_library(${PROJECT_NAME}
 	WPTexImageParser.cpp
 	WPSoundParser.cpp
 	WPMdlParser.cpp
+	WPPuppet.cpp
 
 	SceneWallpaper.cpp	
 	SceneToRenderGraph.cpp

@@ -100,4 +100,15 @@ struct TextureSample {
 	TextureFilter minFilter {TextureFilter::NEAREST};
 };
 
+enum class VertexType {
+	FLOAT1,
+	FLOAT2,
+	FLOAT3,
+	FLOAT4,
+	UINT1,
+	UINT2,
+	UINT3,
+	UINT4
+};
+
 }

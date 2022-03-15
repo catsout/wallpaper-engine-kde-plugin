@@ -13,6 +13,7 @@ using namespace wallpaper;
 
 static constexpr const char* pre_shader_code = R"(#version 150
 #define GLSL 1
+#define HLSL 1
 #define highp
 #define mediump
 #define lowp
@@ -152,8 +153,6 @@ void ParseWPShader(const std::string& src, WPShaderInfo* pWPShaderInfo, const st
 							auto value = sv_json.at("default");
 							ShaderValue sv;	
 							name = defines.back();
-							if(name == "g_Center")
-								LOG_ERROR("find center");
 							if(value.is_string()) {
 								std::vector<float> v;
 								GET_JSON_VALUE(value, v);

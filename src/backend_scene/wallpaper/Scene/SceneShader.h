@@ -24,14 +24,18 @@ public:
 	ShaderValue(const ShaderValue&) = default;
 	ShaderValue& operator=(const ShaderValue&) = default;
 
-	constexpr ShaderValue(const value_type& value) noexcept : m_value{value}, m_size{1} {}
+	ShaderValue(const value_type& value) noexcept : m_value{value}, m_size{1} {}
     template <typename Range>
     ShaderValue(const Range& range) noexcept { fromSpan(range); }
 	ShaderValue(const value_type* ptr, std::size_t num) noexcept { fromSpan({ptr, num}); }
 
 	void fromSpan(Span<float> s) noexcept {
-		m_size = std::min(m_value.size(), (size_t)s.size());
-		std::copy(s.begin(), s.begin()+m_size, m_value.begin());
+		m_size = (size_t)s.size();
+		m_dynamic = s.size() > m_value.size();
+		if(m_dynamic) {
+			m_dvalue.resize(m_size);
+			std::copy(s.begin(), s.end(), m_dvalue.begin());
+		} else std::copy(s.begin(), s.end(), m_value.begin());
 	}
 	static ShaderValue fromMatrix(const Eigen::Ref<const Eigen::MatrixXf>& mat) {
 		return ShaderValue(Span{mat.data(), (size_t)mat.size()});
@@ -40,16 +44,22 @@ public:
 		const Eigen::Ref<const Eigen::MatrixXf>& matf = mat.cast<float>();
 		return fromMatrix(matf);
 	};
-	constexpr const auto& operator[](std::size_t index) const { return m_value[index]; }
-	constexpr auto& operator[](std::size_t index) { return m_value[index]; }
+	const auto& operator[](std::size_t index) const { return _value()[index]; }
+	auto& operator[](std::size_t index) { return m_dynamic ? m_dvalue[index] : m_value[index]; }
 
-	constexpr auto data() const noexcept { return m_value.data(); };
-	constexpr auto data() noexcept { return m_value.data(); };
-	constexpr size_t size() const noexcept { return m_size; };
+	auto data() const noexcept { return _value().data(); };
+	//constexpr auto data() noexcept { return m_value.data(); };
+	size_t size() const noexcept { return m_size; };
 
-	void setSize(size_t v) noexcept { m_size = std::min(v, m_value.size()); }
+	void setSize(size_t v) noexcept { m_size = std::min(v, (size_t)_value().size()); }
 private:
+	Span<float> _value() const noexcept {
+		if(m_dynamic) return m_dvalue;
+		return m_value;
+	}
+	bool m_dynamic {false};
 	ShaderValueInter m_value;
+	std::vector<value_type> m_dvalue;
 	size_t m_size {0};
 };
 

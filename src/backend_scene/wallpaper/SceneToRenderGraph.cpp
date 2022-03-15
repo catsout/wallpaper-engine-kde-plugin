@@ -86,6 +86,8 @@ static void ToGraphPass(SceneNode* node, std::string output, uint32_t imgId, Ext
     auto& scene = *extra.scene;
 
 	auto loadEffect = [node, &rgraph, &scene, &extra](SceneImageEffectLayer* effs) {
+        effs->ResolveEffect(scene.default_effect_mesh, "effect");
+
 		for(int32_t i=0;i<effs->EffectCount();i++) {
 			auto& eff = effs->GetEffect(i);
 			auto cmdItor = eff->commands.begin();

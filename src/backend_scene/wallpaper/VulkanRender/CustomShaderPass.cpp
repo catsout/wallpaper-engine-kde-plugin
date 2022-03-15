@@ -88,7 +88,7 @@ static void UpdateUniform(StagingBuffer* buf,
 	}
 
 	size_t offset = uni->second.offset;
-	size_t type_size = Sizeof(uni->second.type);
+	size_t type_size = Sizeof(uni->second.type) * uni->second.num;
 	if(type_size != value_u8.size()) {
 		//assert(type_size == value_u8.size());
 		;//to do
@@ -208,10 +208,20 @@ void CustomShaderPass::prepare(Scene& scene, const Device& device, RenderingReso
 			}
 			{
 				auto& buf = m_desc.vertex_bufs[i];
-				rr.vertex_buf->allocateSubRef(vertex.DataSizeOf(), buf);
-				rr.vertex_buf->writeToBuf(buf, {(uint8_t*)vertex.Data(), buf.size});
+				if(!rr.vertex_buf->allocateSubRef(vertex.DataSizeOf(), buf)) return;
+				if(!rr.vertex_buf->writeToBuf(buf, {(uint8_t*)vertex.Data(), buf.size})) return;
 			}
 			m_desc.draw_count += vertex.DataSize() / vertex.OneSize();
+		}
+
+		if(mesh.IndexCount() > 0) {
+			auto& indice = mesh.GetIndexArray(0);
+			size_t count = (indice.DataCount() * 2)/3;
+			size_t size_of = count*3*sizeof(uint16_t);
+			m_desc.draw_count = count*3;
+			auto& buf = m_desc.index_buf;
+			if(!rr.vertex_buf->allocateSubRef(size_of, buf)) return;
+			if(!rr.vertex_buf->writeToBuf(buf, {(uint8_t*)indice.Data(), buf.size})) return;
 		}
 	}
 	{
@@ -236,7 +246,7 @@ void CustomShaderPass::prepare(Scene& scene, const Device& device, RenderingReso
 		pipeline.setRenderPass(pass)
 			.addDescriptorSetInfo(descriptor_info)
 			.setColorBlendStates(color_blend)
-			.setTopology(vk::PrimitiveTopology::eTriangleStrip)
+			.setTopology(m_desc.index_buf ? vk::PrimitiveTopology::eTriangleList : vk::PrimitiveTopology::eTriangleStrip)
 			.addInputBindingDescription(bind_descriptions)
 			.addInputAttributeDescription(attr_descriptions);
 		for(auto& spv:spvs) pipeline.addStage(std::move(spv));
@@ -376,7 +386,9 @@ void CustomShaderPass::execute(const Device& device, RenderingResources& rr) {
 
 	cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, m_desc.pipeline.handle);
 	vk::Viewport viewport;
-	viewport.setX(0).setY(0).setMinDepth(0).setMaxDepth(1).setWidth(outext.width).setHeight(outext.height);
+	viewport.setX(0).setY(outext.height)
+		.setMinDepth(0.0f).setMaxDepth(1.0f)
+		.setWidth(outext.width).setHeight(-(float)outext.height);
 	vk::Rect2D scissor({0, 0}, {outext.width, outext.height});
 	cmd.setViewport(0, 1, &viewport);
 	cmd.setScissor(0, 1, &scissor);
@@ -385,7 +397,12 @@ void CustomShaderPass::execute(const Device& device, RenderingResources& rr) {
 		auto& buf = m_desc.vertex_bufs[i];
 		cmd.bindVertexBuffers(i, 1, &(rr.vertex_buf->gpuBuf()), &buf.offset);
 	}
-	cmd.draw(m_desc.draw_count, 1, 0, 0);
+	if(m_desc.index_buf) {
+		cmd.bindIndexBuffer(rr.vertex_buf->gpuBuf(), m_desc.index_buf.offset, vk::IndexType::eUint16);
+		cmd.drawIndexed(m_desc.draw_count, 1, 0, 0, 0);
+	} else {
+		cmd.draw(m_desc.draw_count, 1, 0, 0);
+	}
 
 	cmd.endRenderPass();
 }

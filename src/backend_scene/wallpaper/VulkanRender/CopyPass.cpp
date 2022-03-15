@@ -22,6 +22,16 @@ static TextureKey ToTexKey(wallpaper::SceneRenderTarget rt) {
 }
 
 void CopyPass::prepare(Scene& scene, const Device& device, RenderingResources& rr) {
+    if(scene.renderTargets.count(m_desc.src) == 0) { 
+        LOG_ERROR("%s not found", m_desc.src.c_str());
+        return;
+    }
+    {
+        auto& rt = scene.renderTargets.at(m_desc.src);
+        scene.renderTargets[m_desc.dst] = rt;
+        scene.renderTargets[m_desc.dst].allowReuse = true;
+    }
+	
     std::array<std::string, 2> textures = {m_desc.src, m_desc.dst};
     std::array<ImageSlots*, 2> vk_textures = {&m_desc.vk_src, &m_desc.vk_dst};
     for(int i=0;i < textures.size();i++) {
@@ -30,10 +40,7 @@ void CopyPass::prepare(Scene& scene, const Device& device, RenderingResources& r
 
 		vk::ResultValue<ImageSlots> rv {vk::Result::eSuccess, {}};
         if(IsSpecTex(tex_name)) {
-            // always use src name
-			if(scene.renderTargets.count(m_desc.src) == 0) continue;
-			auto& rt = scene.renderTargets.at(m_desc.src);
-            scene.renderTargets[m_desc.dst] = rt;
+			auto& rt = scene.renderTargets.at(tex_name);
 			auto rv_paras = device.tex_cache().Query(tex_name, ToTexKey(rt), !rt.allowReuse);
 			rv.result = rv_paras.result;
 			rv.value = ImageSlots{{rv_paras.value}, 0};

@@ -3,11 +3,16 @@
 #include <cstdint>
 #include <array>
 #include <vector>
+#include <memory>
+#include <Eigen/Dense>
+#include "WPPuppet.hpp"
 
 namespace wallpaper 
 {
 
-namespace fs { class IBinaryStream; }
+class WPShaderInfo;
+namespace wpscene { class WPMaterial; };
+namespace fs { class VFS; };
 
 struct WPMdl {
     uint mdlv {13};
@@ -24,7 +29,8 @@ struct WPMdl {
     std::vector<Vertex> vertexs;
     std::vector<std::array<uint16_t,3>> indices;
 
-    std::vector<std::array<float,3*4>> bones;
+    //std::vector<Eigen::Matrix<float, 3, 4>> bones;
+    std::shared_ptr<WPPuppet> puppet;
     // combo
     // SKINNING = 1
     // BONECOUNT
@@ -35,9 +41,17 @@ struct WPMdl {
     // uniform mat4x3 g_Bones[BONECOUNT]
 };
 
+class SceneMesh;
+
 class WPMdlParser {
 public:
-	static bool Parse(fs::IBinaryStream&, WPMdl&);
+	static bool Parse(std::string_view path, fs::VFS&, WPMdl&);
+
+    static void AddPuppetShaderInfo(WPShaderInfo& info, const WPMdl& mdl);
+    static void AddPuppetMatInfo(wpscene::WPMaterial& mat, const WPMdl& mdl);
+
+
+    static void GenPuppetMesh(SceneMesh& mesh, const WPMdl& mdl);
 };
 
 }

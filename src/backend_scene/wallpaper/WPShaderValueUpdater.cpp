@@ -48,7 +48,7 @@ void WPShaderValueUpdater::UpdateUniforms(SceneNode* pNode, sprite_map_t& sprite
 
 	bool hasNodeData = exists(m_nodeDataMap, pNode);
 	if(hasNodeData) {
-		const auto& nodeData = m_nodeDataMap.at(pNode);
+		auto& nodeData = m_nodeDataMap.at(pNode);
 		for(const auto& el:nodeData.renderTargetResolution) {
 			if(m_scene->renderTargets.count(el.second) == 0) continue;
 			std::string_view name = WE_GLTEX_RESOLUTION_NAMES[el.first];
@@ -61,6 +61,24 @@ void WPShaderValueUpdater::UpdateUniforms(SceneNode* pNode, sprite_map_t& sprite
 				rt.width, rt.height
 			});
 			updateOp(name, ShaderValue(array_cast<float>(resolution_uint)));
+		}
+		if(nodeData.puppet && existsOp(G_BONES)) {
+			auto data = nodeData.puppet->genFrame(nodeData.puppet_layers, m_scene->frameTime);
+			updateOp(G_BONES, Span<float>{data[0].data(), data.size()*16});
+			/*
+			nodeData.std140_bones.resize(nodeData.bones.size());
+			std::transform(nodeData.bones.begin(), nodeData.bones.end(), nodeData.std140_bones.begin(), [](auto& mat) {
+				typename decltype(nodeData.std140_bones)::value_type arr_16;
+				size_t offset = 0;
+				for(auto col:mat.colwise()) {
+					std::copy(col.begin(), col.end(), arr_16.begin() + offset);
+					offset += 4;
+				}
+				return arr_16;
+			});
+			auto& data = nodeData.std140_bones;
+			updateOp(G_BONES, Span<float>{data[0].data(), data.size()*16});
+			*/
 		}
 	}
 
@@ -117,6 +135,7 @@ void WPShaderValueUpdater::UpdateUniforms(SceneNode* pNode, sprite_map_t& sprite
 
 	if(existsOp(G_TEXELSIZEHALF))
 		updateOp(G_TEXELSIZEHALF, std::array {m_texelSize[0]/2.0f, m_texelSize[1]/2.0f});
+	
 	
 	for(auto& [i, sp]:sprites) {
 		const auto& f = sp.GetAnimateFrame(m_scene->frameTime);

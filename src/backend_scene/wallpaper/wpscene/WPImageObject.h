@@ -2,6 +2,7 @@
 #include "WPJson.h"
 #include "WPMaterial.h" 
 #include <vector>
+#include "WPPuppet.hpp"
 
 namespace wallpaper
 {
@@ -68,6 +69,7 @@ public:
     std::vector<WPImageEffect> effects;
 
     std::string puppet;
+    std::vector<WPPuppet::AnimationLayer> puppet_layers;
 };
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(WPEffectFbo, name, scale);

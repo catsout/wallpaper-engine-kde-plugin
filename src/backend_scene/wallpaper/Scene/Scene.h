@@ -34,6 +34,8 @@ public:
 	std::unique_ptr<IImageParser> imageParser;
 	std::unique_ptr<fs::VFS> vfs;
 
+	SceneMesh default_effect_mesh;
+
 	ParticleSystem paritileSys;
 
 	SceneCamera* activeCamera;

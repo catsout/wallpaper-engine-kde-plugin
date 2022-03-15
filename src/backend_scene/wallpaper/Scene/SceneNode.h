@@ -30,7 +30,7 @@ public:
 	const auto& Translate() const { return m_translate; }
 	const auto& Rotation() const { return m_rotation; }
 	void SetRotation(Eigen::Vector3f v) { m_rotation = v; }
-	void SetTranslate(const Eigen::Vector3f& value) { m_translate = value; }
+	void SetTranslate(Eigen::Vector3f v) { m_translate = v; }
 
 	void CopyTrans(const SceneNode& node) {
 		m_translate = node.m_translate;
@@ -39,6 +39,7 @@ public:
 	}
 	
 	SceneMesh* Mesh() { return m_mesh.get(); }
+	bool HasMaterial() const { return m_mesh && m_mesh->Material() != nullptr; };
 	
 	const auto& GetChildren() const { return m_children; }
 	auto& GetChildren() { return m_children; }

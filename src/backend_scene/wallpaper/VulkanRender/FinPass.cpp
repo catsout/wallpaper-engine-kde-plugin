@@ -35,10 +35,10 @@ struct VertexInput {
 };
 
 constexpr std::array<VertexInput, 4> vertex_input = {
-	-1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
-	-1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
-	1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
-	1.0f, 1.0f, 0.0f, 1.0f, 1.0f
+	-1.0f, -1.0f, 0.0f, 0.0f, 1.0f,
+	-1.0f, 1.0f, 0.0f, 0.0f, 0.0f,
+	1.0f, -1.0f, 0.0f, 1.0f, 1.0f,
+	1.0f, 1.0f, 0.0f, 1.0f, 0.0f
 };
 
 
@@ -252,7 +252,9 @@ void FinPass::execute(const Device& device, RenderingResources& rr) {
 
 	cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, m_desc.pipeline.handle);
 	vk::Viewport viewport;
-	viewport.setX(0).setY(0).setMinDepth(0).setMaxDepth(1).setWidth(outext.width).setHeight(outext.height);
+	viewport.setX(0).setY(outext.height)
+		.setMinDepth(0.0f).setMaxDepth(1.0f)
+		.setWidth(outext.width).setHeight(-(float)outext.height);
 	vk::Rect2D scissor({0, 0}, {outext.width, outext.height});
 	cmd.setViewport(0, 1, &viewport);
 	cmd.setScissor(0, 1, &scissor);

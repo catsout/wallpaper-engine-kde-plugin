@@ -39,6 +39,8 @@ public:
     std::vector<std::string> textures;
     std::unordered_map<std::string, int32_t> combos;
     std::unordered_map<std::string, std::vector<float>> constantshadervalues;
+
+    bool use_puppet {false};
 };
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(WPMaterialPassBindItem, name, index);

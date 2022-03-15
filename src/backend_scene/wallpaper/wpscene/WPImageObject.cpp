@@ -163,5 +163,15 @@ bool WPImageObject::FromJson(const nlohmann::json& json, fs::VFS& vfs) {
             effects.push_back(std::move(wpeff));
         }
     }
+    if(json.contains("animationlayers")) {
+        for(const auto& jLayer:json.at("animationlayers")) {
+             WPPuppet::AnimationLayer layer;
+             GET_JSON_NAME_VALUE(jLayer, "animation", layer.id);
+             GET_JSON_NAME_VALUE(jLayer, "blend", layer.blend);
+             GET_JSON_NAME_VALUE(jLayer, "rate", layer.rate);
+             GET_JSON_NAME_VALUE_NOWARN(jLayer, "visible", layer.visible);
+             puppet_layers.push_back(layer);
+        }
+    }
     return true;
 }

@@ -5,6 +5,7 @@
 #include "Utils/Algorism.h"
 #include "Utils/ArrayHelper.hpp"
 #include "Utils/Visitors.hpp"
+#include "Utils/StringHelper.hpp"
 #include "SpecTexs.h"
 
 #include "WPShaderParser.h"
@@ -59,15 +60,19 @@ void GenCardMesh(SceneMesh& mesh, const std::array<uint16_t, 2> size, const std:
 	std::vector<float> texCoord;
 	float tw = mapRate[0],th = mapRate[1];
 	texCoord = {
-			0.0f, 0.0f,
 			0.0f, th,
-			tw, 0.0f,
+			0.0f, 0.0f,
 			tw, th,
+			tw, 0.0f,
 	};
+
+	/*
 	std::vector<uint32_t> indices = { 
 		0, 1, 2,
 		1, 3, 2
 	};
+	*/
+
 	SceneVertexArray vertex({
 		{"a_Position", VertexType::FLOAT3},
 		{"a_TexCoord", VertexType::FLOAT2},
@@ -75,7 +80,7 @@ void GenCardMesh(SceneMesh& mesh, const std::array<uint16_t, 2> size, const std:
 	vertex.SetVertex("a_Position", pos);
 	vertex.SetVertex("a_TexCoord", texCoord);
 	mesh.AddVertexArray(std::move(vertex));
-	mesh.AddIndexArray(SceneIndexArray(indices));
+	//mesh.AddIndexArray(SceneIndexArray(indices));
 }
 
 void SetParticleMesh(SceneMesh& mesh, const wpscene::Particle& particle, uint32_t count, bool sprite=false) {
@@ -268,7 +273,7 @@ void LoadMaterial(fs::VFS& vfs,
 				svData.renderTargetResolution.push_back({i, name});
 			}
 			else if(pScene->renderTargets.count(name) == 0) {
-				LOG_ERROR(name.c_str());
+				LOG_ERROR("%s not found in render targes", name.c_str());
 			} else {
 				svData.renderTargetResolution.push_back({i, name});
 				const auto& rt = pScene->renderTargets.at(name);
@@ -362,7 +367,7 @@ void LoadMaterial(fs::VFS& vfs,
 
 void LoadAlignment(SceneNode& node, std::string_view align, Vector2f size) {
 	Vector3f trans = node.Translate();
-	size *= 0.5f;size.y() *= -1.0f; // flip y
+	size *= 0.5f;size.y() *= 1.0f;
 
 	auto contains = [&](std::string_view s) {
 		return align.find(s) != std::string::npos;
@@ -463,6 +468,7 @@ void InitContext(ParseContext& context, fs::VFS& vfs, wpscene::WPScene& sc) {
 	scene.imageParser = std::make_unique<WPTexImageParser>(&vfs);
 	scene.paritileSys.gener = std::make_unique<WPParticleRawGener>();
 	scene.shaderValueUpdater = std::make_unique<WPShaderValueUpdater>(&scene);
+	GenCardMesh(scene.default_effect_mesh, {2, 2});
 	context.shader_updater = static_cast<WPShaderValueUpdater*>(scene.shaderValueUpdater.get());
 
 	scene.clearColor = sc.general.clearcolor;
@@ -534,6 +540,8 @@ void ParseImageObj(ParseContext& context, wpscene::WPImageObject& img_obj) {
 	// skip no effect fullscreen layer
 	if(!hasEffect && wpimgobj.fullscreen)
 		return;
+	
+	bool hasPuppet = !wpimgobj.puppet.empty();
 
 	bool isCompose = (wpimgobj.image == "models/util/composelayer.json");
 	// skip no effect compose layer
@@ -541,7 +549,16 @@ void ParseImageObj(ParseContext& context, wpscene::WPImageObject& img_obj) {
 	if(!hasEffect && isCompose)
 		return;
 
-	wpimgobj.origin[1] = context.ortho_h - wpimgobj.origin[1];
+	std::unique_ptr<WPMdl> puppet; 
+	if(!wpimgobj.puppet.empty()) {
+		puppet = std::make_unique<WPMdl>();
+		if(!WPMdlParser::Parse(wpimgobj.puppet, vfs, *puppet)) {
+			LOG_ERROR("parse puppet failed: %s", wpimgobj.puppet.c_str());
+			return;
+		}
+	}
+
+	//wpimgobj.origin[1] = context.ortho_h - wpimgobj.origin[1];
 	auto spImgNode = std::make_shared<SceneNode>(
 		Vector3f(wpimgobj.origin.data()), 
 		Vector3f(wpimgobj.scale.data()), 
@@ -556,8 +573,12 @@ void ParseImageObj(ParseContext& context, wpscene::WPImageObject& img_obj) {
 	ShaderValueMap baseConstSvs = context.global_base_uniforms;
 	WPShaderInfo shaderInfo;
 	{
-		if(!hasEffect)
+		if(!hasEffect) {
 			svData.parallaxDepth = {wpimgobj.parallaxDepth[0], wpimgobj.parallaxDepth[1]};
+			if(puppet) {
+				WPMdlParser::AddPuppetShaderInfo(shaderInfo, *puppet);
+			}
+		}
 
 		baseConstSvs["g_Alpha"] = wpimgobj.alpha;
 		baseConstSvs["g_Color"] = wpimgobj.color;
@@ -590,14 +611,9 @@ void ParseImageObj(ParseContext& context, wpscene::WPImageObject& img_obj) {
 		}
 	}
 
-	if(!img_obj.puppet.empty())	{
-    	auto pfile = vfs.Open("/assets/" + img_obj.puppet);
-		WPMdl mdl;
-    	if (pfile && WPMdlParser::Parse(*pfile, mdl)) {
-		}
-	}
 
 	// mesh
+	SceneMesh effct_final_mesh {};
 	auto spMesh = std::make_shared<SceneMesh>();
 	auto& mesh = *spMesh;
 
@@ -611,9 +627,30 @@ void ParseImageObj(ParseContext& context, wpscene::WPImageObject& img_obj) {
 				r[3] / r[1]
 			};
 		}
-		GenCardMesh(mesh, {(uint16_t)wpimgobj.size[0], (uint16_t)wpimgobj.size[1]}, mapRate);
-	}
 
+		if(puppet) {
+			if(hasEffect) {
+				GenCardMesh(mesh, {(uint16_t)wpimgobj.size[0], (uint16_t)wpimgobj.size[1]}, mapRate);
+				WPMdlParser::GenPuppetMesh(effct_final_mesh, *puppet);
+
+				wpscene::WPImageEffect puppet_effect;
+				wpscene::WPMaterial puppet_mat;
+				puppet_mat = wpimgobj.material;
+				puppet_mat.textures[0] = "";
+				WPMdlParser::AddPuppetMatInfo(puppet_mat, *puppet);
+				puppet_effect.materials.push_back(puppet_mat);
+				wpimgobj.effects.push_back(puppet_effect);
+			} else {
+				svData.puppet = puppet->puppet;
+				svData.puppet_layers = wpimgobj.puppet_layers;
+				WPMdlParser::GenPuppetMesh(mesh, *puppet);
+			}
+		}
+		if(!puppet){
+			GenCardMesh(mesh, {(uint16_t)wpimgobj.size[0], (uint16_t)wpimgobj.size[1]}, mapRate);
+			GenCardMesh(effct_final_mesh, {(uint16_t)wpimgobj.size[0], (uint16_t)wpimgobj.size[1]});
+		}
+	}
 	// material blendmode for last step to use
 	auto imgBlendMode = material.blenmode;
 	// disable img material blend, as it's the first effect node now
@@ -648,30 +685,40 @@ void ParseImageObj(ParseContext& context, wpscene::WPImageObject& img_obj) {
 			scene.cameras.at(nodeAddr)->AttatchNode(context.effect_camera_node);
 		}
 		spImgNode->SetCamera(nodeAddr);
+		std::string effect_ppong_a, effect_ppong_b;
+		effect_ppong_a = WE_EFFECT_PPONG_PREFIX_A.data() + nodeAddr;
+		effect_ppong_b = WE_EFFECT_PPONG_PREFIX_B.data() + nodeAddr;
 		// set image effect
-		auto imgEffectLayer = std::make_shared<SceneImageEffectLayer>(spImgNode.get(), wpimgobj.size[0], wpimgobj.size[1]);
-		scene.cameras.at(nodeAddr)->AttatchImgEffect(imgEffectLayer);
-		// set renderTarget for ping-pong operate
-		std::string effectRTs[2];
-		effectRTs[0] = "_rt_" + nodeAddr;
-		effectRTs[1] = "_rt_" + nodeAddr + "1";
-		scene.renderTargets[effectRTs[0]] = {
-			.width = (uint16_t)wpimgobj.size[0], 
-			.height = (uint16_t)wpimgobj.size[1], 
-			.allowReuse = true
-		};
-		scene.renderTargets[effectRTs[1]] = scene.renderTargets.at(effectRTs[0]);
-		if(wpimgobj.fullscreen) {
-			scene.renderTargets[effectRTs[0]].bind = {
-				.enable = true,
-				.screen = true
-			};
-			scene.renderTargets[effectRTs[1]].bind = {
-				.enable = true,
-				.screen = true
-			};
+		auto imgEffectLayer = std::make_shared<SceneImageEffectLayer>(
+				spImgNode.get(), wpimgobj.size[0], wpimgobj.size[1],
+				effect_ppong_a, effect_ppong_b
+		);
+		{
+			imgEffectLayer->SetFinalBlend(imgBlendMode);
+			imgEffectLayer->FinalMesh().ChangeMeshDataFrom(effct_final_mesh);
+			imgEffectLayer->FinalNode().CopyTrans(*spImgNode);
+			if(isCompose) {
+			} else {
+				spImgNode->CopyTrans(SceneNode());
+			}
+			scene.cameras.at(nodeAddr)->AttatchImgEffect(imgEffectLayer);
 		}
-		imgEffectLayer->SetFirstTarget(effectRTs[0]);
+		// set renderTarget for ping-pong operate
+		{
+			scene.renderTargets[effect_ppong_a] = {
+				.width = (uint16_t)wpimgobj.size[0], 
+				.height = (uint16_t)wpimgobj.size[1], 
+				.allowReuse = true
+			};
+			if(wpimgobj.fullscreen) {
+				scene.renderTargets[effect_ppong_a].bind = {
+					.enable = true,
+					.screen = true
+				};
+			}
+			scene.renderTargets[effect_ppong_b] = scene.renderTargets.at(effect_ppong_a);
+		}
+
 		int32_t i_eff = -1;
 		for(const auto& wpeffobj:wpimgobj.effects) {
 			i_eff++;
@@ -682,13 +729,9 @@ void ParseImageObj(ParseContext& context, wpscene::WPImageObject& img_obj) {
 			std::shared_ptr<SceneImageEffect> imgEffect = std::make_shared<SceneImageEffect>();
 			imgEffectLayer->AddEffect(imgEffect);
 
-			const std::string& inRT = effectRTs[(i_eff)%2];
-			std::string outRT;
-			if(i_eff + 1 == count_eff) {
-				outRT = SpecTex_Default;
-			} else {
-				outRT = effectRTs[(i_eff+1)%2];
-			}
+
+			// this will be replace when resolve, use here to get rt info
+			const std::string inRT {effect_ppong_a};
 
 			// fbo name map and effect command
 			std::string effaddr = getAddr(imgEffectLayer.get());
@@ -737,7 +780,7 @@ void ParseImageObj(ParseContext& context, wpscene::WPImageObject& img_obj) {
 
 			for(int32_t i_mat=0;i_mat < wpeffobj.materials.size();i_mat++) {
 				wpscene::WPMaterial wpmat = wpeffobj.materials.at(i_mat);
-				std::string matOutRT = outRT;
+				std::string matOutRT {WE_EFFECT_PPONG_PREFIX_B};
 				if(wpeffobj.passes.size() > i_mat) {
 					const auto& wppass = wpeffobj.passes.at(i_mat);
 					wpmat.MergePass(wppass);
@@ -780,22 +823,14 @@ void ParseImageObj(ParseContext& context, wpscene::WPImageObject& img_obj) {
 				// load glname from alias and load to constvalue
 				LoadConstvalue(material, wpmat, wpEffShaderInfo);
 				auto spMesh = std::make_shared<SceneMesh>();
-				auto& mesh = *spMesh;
-				// the last effect and last material
-				if((i_eff + 1 == count_eff && i_mat + 1 == wpeffobj.materials.size()) && !wpimgobj.fullscreen) {
-					GenCardMesh(mesh, {(uint16_t)wpimgobj.size[0], (uint16_t)wpimgobj.size[1]});
-					spEffNode->CopyTrans(*spImgNode);
-					if(!isCompose)
-						spImgNode->CopyTrans(SceneNode());
+				{
 					svData.parallaxDepth = {wpimgobj.parallaxDepth[0], wpimgobj.parallaxDepth[1]};
-					material.blenmode = imgBlendMode;
-				} else {
-					GenCardMesh(mesh, {2, 2});
-					// disable blend for effect node, as it seems blend manually
-					material.blenmode = BlendMode::Normal;
-					spEffNode->SetCamera("effect");
+					if(puppet && wpmat.use_puppet) {
+						svData.puppet = puppet->puppet;
+						svData.puppet_layers = wpimgobj.puppet_layers;
+					}
 				}
-				mesh.AddMaterial(std::move(material));
+				spMesh->AddMaterial(std::move(material));
 				spEffNode->AddMesh(spMesh);
 
 				context.shader_updater->SetNodeData(spEffNode.get(), svData);
@@ -811,7 +846,7 @@ void ParseParticleObj(ParseContext& context, wpscene::WPParticleObject& particle
 	auto& wppartobj = particle;
 	auto& vfs = *context.vfs;
 
-	wppartobj.origin[1] = context.ortho_h - wppartobj.origin[1];
+	//wppartobj.origin[1] = context.ortho_h - wppartobj.origin[1];
 
 	auto spNode = std::make_shared<SceneNode>(
 		Vector3f(wppartobj.origin.data()), 
@@ -908,15 +943,10 @@ std::shared_ptr<Scene> WPSceneParser::Parse(const std::string& buf, fs::VFS& vfs
 			if(!wpimgobj.FromJson(obj, vfs)) continue;
 			if(!wpimgobj.visible) continue;
 			wp_objs.push_back(wpimgobj);
-			//wpimgobjs.push_back(wpimgobj);
-			//indexTable.push_back({"image", wpimgobjs.size() - 1});
-			//LOG_INFO(nlohmann::json(wpimgobj).dump(4));
 		} else if(obj.contains("particle") && !obj.at("particle").is_null()) {
-			//continue;
 			wpscene::WPParticleObject wppartobj;
 			if(!wppartobj.FromJson(obj, vfs)) continue;
 			if(!wppartobj.visible) continue;
-			continue;
 			wp_objs.push_back(wppartobj);
 		} else if(obj.contains("sound") && !obj.at("sound").is_null()) {
 			wpscene::WPSoundObject wpsoundobj;
@@ -946,7 +976,7 @@ std::shared_ptr<Scene> WPSceneParser::Parse(const std::string& buf, fs::VFS& vfs
 	ParseCamera(context, sc.general);
 
 	{
-		context.scene->renderTargets[std::string(SpecTex_Default)] = {
+		context.scene->renderTargets[SpecTex_Default.data()] = {
 			.width = context.ortho_w, 
 			.height = context.ortho_w,
 			.bind = {
