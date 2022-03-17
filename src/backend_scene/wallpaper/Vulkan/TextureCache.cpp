@@ -553,5 +553,6 @@ void TextureCache::MarkShareReady(std::string_view key) {
 		auto& query = m_query_map.find(key)->second;
 		if(query->persist) return;
 		query->share_ready = true;
+		m_query_map.erase(key.data());
 	}
 }
