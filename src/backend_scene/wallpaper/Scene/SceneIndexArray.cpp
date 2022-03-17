@@ -14,9 +14,10 @@ SceneIndexArray::SceneIndexArray(Span<uint32_t> data):m_size(data.size()),m_capa
 	m_pData = newdata;
 };
 
-
-void SceneIndexArray::Assign(std::size_t index, const uint32_t* data, std::size_t count) {
-	if(index+count > m_capacity) return;
-	if(index + count > m_size) m_size = index + count; 
-	std::memcpy(m_pData+index, data, count * sizeof(uint32_t));	
+bool SceneIndexArray::IncreaseCheckSet(size_t nsize) {
+	if(nsize > CapacitySizeof()) return false;
+	if(nsize > DataSizeOf()) {
+		m_size = nsize / Unit_Byte_Size + (nsize%Unit_Byte_Size == 0 ? 0 : 1); 
+	}
+	return true;
 }

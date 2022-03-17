@@ -14,12 +14,18 @@ typedef std::vector<std::pair<int32_t, std::string>> WPDefaultTexs;
 
 struct WPShaderInfo {
 	Combos combos;
-	ShaderValues svs;
-	ShaderValues baseConstSvs;
+	ShaderValueMap svs;
+	ShaderValueMap baseConstSvs;
 	WPAliasValueDict alias;
 	WPDefaultTexs defTexs;
+};
 
-	Map<std::string, std::string> innerInOut; // name to line
+struct WPPreprocessorInfo {
+	Map<std::string, std::string> input; // name to line
+	Map<std::string, std::string> output;
+
+	Set<uint> active_tex_slots;
+	std::string result;
 };
 
 struct WPShaderTexInfo {
@@ -32,5 +38,11 @@ public:
 	static std::string PreShaderSrc(fs::VFS&, const std::string& src, WPShaderInfo* pWPShaderInfo, const std::vector<WPShaderTexInfo>& texs);
 
 	static std::string PreShaderHeader(const std::string& src, const Combos& combos, ShaderType); 
+
+	static void InitGlslang();
+	static void FinalGlslang();
+
+	static void Preprocessor(const std::string& src, ShaderType, const Combos&, WPPreprocessorInfo&);
+	static std::string Finalprocessor(const WPPreprocessorInfo& cur, const WPPreprocessorInfo* pre=nullptr, const WPPreprocessorInfo* next=nullptr);
 };
 }

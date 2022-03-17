@@ -5,9 +5,13 @@
 #include "wpscene/WPUniform.h"
 #include "Fs/VFS.h"
 #include "Utils/span.hpp"
+#include "Vulkan/Shader.hpp"
 
 #include <regex>
 #include <stack>
+#include <charconv>
+
+static constexpr std::string_view SHADER_PLACEHOLD {"__SHADER_PLACEHOLD__"};
 
 using namespace wallpaper;
 
@@ -40,16 +44,21 @@ static constexpr const char* pre_shader_code = R"(#version 150
 #define float3 vec3
 #define float4 vec4
 #define lerp mix
+
+__SHADER_PLACEHOLD__
+
 )";
 
 static constexpr const char* pre_shader_code_vert = R"(
 #define attribute in
 #define varying out
+
 )";
 static constexpr const char* pre_shader_code_frag = R"(
 #define varying in
 #define gl_FragColor glOutColor
 out vec4 glOutColor;
+
 )";
 
 std::string LoadGlslInclude(fs::VFS& vfs, const std::string& input) {
@@ -83,7 +92,6 @@ void ParseWPShader(const std::string& src, WPShaderInfo* pWPShaderInfo, const st
 	auto& wpAliasDict = pWPShaderInfo->alias;
 	auto& shadervalues = pWPShaderInfo->svs;
 	auto& defTexs = pWPShaderInfo->defTexs;
-	auto& innerInOut = pWPShaderInfo->innerInOut;
 	int32_t texcount = texinfos.size();
 
 	// pos start of line
@@ -97,10 +105,7 @@ void ParseWPShader(const std::string& src, WPShaderInfo* pWPShaderInfo, const st
 			update_pos = true;
 		}
 		*/
-		if(line.find("varying ") != std::string::npos) {
-			std::vector<std::string> defines = utils::SpliteString(line.substr(0, line.find_first_of(';')), ' ');
-			innerInOut.insert({defines.back(), line});
-		} else if(line.find("// [COMBO]") != std::string::npos) {
+		if(line.find("// [COMBO]") != std::string::npos) {
 			nlohmann::json combo_json;
 			if(PARSE_JSON(line.substr(line.find_first_of('{')), combo_json)) {
 				if(combo_json.contains("combo")) {
@@ -280,4 +285,85 @@ std::string WPShaderParser::PreShaderHeader(const std::string& src, const Combos
 		header.append("#define " + cup + " " + std::to_string(c.second) + "\n");
 	}
 	return header + src;
+}
+
+static EShLanguage ToGLSL(ShaderType type) {
+	switch (type)
+	{
+	case ShaderType::VERTEX: return EShLangVertex;
+	case ShaderType::FRAGMENT: return EShLangFragment;
+	}
+	return EShLangVertex;
+} 
+
+
+void WPShaderParser::InitGlslang() {
+	glslang::InitializeProcess();
+}
+void WPShaderParser::FinalGlslang() {
+	glslang::FinalizeProcess();
+}
+
+void WPShaderParser::Preprocessor(const std::string& in_src, ShaderType type, const Combos& combos, WPPreprocessorInfo& process_info) {
+	std::string res;
+
+	std::string src = PreShaderHeader(in_src, combos, type);
+
+	glslang::TShader::ForbidIncluder includer;
+	glslang::TShader shader(ToGLSL(type));
+	const EShMessages emsg { (EShMessages)(EShMsgDefault 
+		| EShMsgSpvRules
+		| EShMsgRelaxedErrors
+		| EShMsgSuppressWarnings
+		| EShMsgVulkanRules
+	)};
+	auto* data = src.c_str();
+	shader.setStrings(&data, 1);
+	shader.preprocess(&vulkan::DefaultTBuiltInResource, 100, EProfile::ECoreProfile, false, false, emsg, &res, includer);
+
+	std::regex re_io (R"(.+\s(in|out)\s[\s\w]+\s(\w+)\s*;)", std::regex::ECMAScript);
+	for(auto it = std::sregex_iterator(res.begin(), res.end(), re_io);
+		it != std::sregex_iterator(); it++) {
+		std::smatch mc = *it;
+		if(mc[1] == "in") {
+			process_info.input[mc[2]] = mc[0].str();
+		} else {
+			process_info.output[mc[2]] = mc[0].str();
+		}
+	}
+
+	std::regex re_tex(R"(uniform\s+sampler2D\s+g_Texture(\d+))", std::regex::ECMAScript);
+	for(auto it = std::sregex_iterator(res.begin(), res.end(), re_tex);
+		it != std::sregex_iterator(); it++) {
+		std::smatch mc = *it;
+		auto str = mc[1].str();
+		uint slot;
+		auto [ptr, ec] { std::from_chars(str.c_str(), str.c_str() + str.size(), slot) };
+		if(ec != std::errc()) continue;
+		process_info.active_tex_slots.insert(slot);
+	}
+	process_info.result = std::move(res);
+}
+
+std::string WPShaderParser::Finalprocessor(const WPPreprocessorInfo& cur, const WPPreprocessorInfo* pre, const WPPreprocessorInfo* next) {
+	std::string insert_str;
+	if(pre != nullptr) {
+		for(auto& [k,v]:pre->output) {
+			if(!exists(cur.input, k)) {
+				auto n = std::regex_replace(v, std::regex(R"(\s*out\s)"), " in ");
+				insert_str += n + '\n';
+			}
+		}
+	}
+	if(next != nullptr) {
+		for(auto& [k,v]:next->input) {
+			if(!exists(cur.output, k)) {
+				auto n = std::regex_replace(v, std::regex(R"(\s*in\s)"), " out ");
+				insert_str += n + '\n';
+			}
+		}
+	}
+	std::regex re_hold(SHADER_PLACEHOLD.data());
+	//LOG_INFO("insert: %s", insert_str.c_str());
+	return std::regex_replace(cur.result, re_hold, insert_str);
 }

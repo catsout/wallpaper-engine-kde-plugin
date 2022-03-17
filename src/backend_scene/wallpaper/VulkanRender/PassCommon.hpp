@@ -26,14 +26,24 @@ inline void SetBlend(BlendMode bm, vk::PipelineColorBlendAttachmentState& state)
 			.setDstColorBlendFactor(vk::BlendFactor::eOneMinusSrcAlpha)
 			.setSrcAlphaBlendFactor(vk::BlendFactor::eSrcAlpha)
 			.setDstAlphaBlendFactor(vk::BlendFactor::eOneMinusSrcAlpha);
-		//glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
-		//glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		break;
 	case BlendMode::Additive:
 		state.setSrcColorBlendFactor(vk::BlendFactor::eSrcAlpha)
 			.setDstColorBlendFactor(vk::BlendFactor::eOne)
 			.setSrcAlphaBlendFactor(vk::BlendFactor::eSrcAlpha)
 			.setDstAlphaBlendFactor(vk::BlendFactor::eOne);
+		break;
+	}
+}
+inline void SetAttachmentLoadOp(BlendMode bm, vk::AttachmentLoadOp& load_op) {
+	switch(bm) {
+	case BlendMode::Disable:
+	case BlendMode::Normal:
+		load_op = vk::AttachmentLoadOp::eDontCare;
+		break;
+	case BlendMode::Additive:
+	case BlendMode::Translucent:
+		load_op = vk::AttachmentLoadOp::eLoad;
 		break;
 	}
 }

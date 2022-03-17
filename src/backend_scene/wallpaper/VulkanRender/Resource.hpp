@@ -16,7 +16,7 @@ struct RenderingResources {
 	vk::Fence fence_frame;
 
 	StagingBuffer* vertex_buf;
-	StagingBuffer* ubo_buf;
+	StagingBuffer* dyn_buf;
 };
 }
 }

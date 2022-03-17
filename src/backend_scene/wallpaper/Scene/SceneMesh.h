@@ -3,6 +3,7 @@
 #include <memory>
 #include <cstddef>
 #include <climits>
+#include <atomic>
 
 #include "SceneVertexArray.h"
 #include "SceneIndexArray.h"
@@ -20,10 +21,11 @@ public:
 
 	MeshPrimitive Primitive() const { return m_primitive; }
 	uint32_t PointSize() const { return m_pointSize; }
+
 	bool Dynamic() const { return m_dynamic; }
-	bool Dirty() const { return m_dirty; }
-	void SetDirty() { m_dirty = true; }
-	void SetClean() { m_dirty = false; }
+	const auto& Dirty() const { return m_dirty; }
+	auto& Dirty() { return m_dirty; }
+	void SetDirty() { m_dirty.store(true); }
 
 	uint32_t ID() const { return m_id; };
 	void SetID(uint32_t v) { m_id = v; };
@@ -65,7 +67,7 @@ private:
 	MeshPrimitive m_primitive {MeshPrimitive::TRIANGLE};
 	uint32_t m_pointSize {1};
 	bool m_dynamic;
-	bool m_dirty;
+	std::atomic<bool> m_dirty;
 
 	std::shared_ptr<Data> m_data;
 	std::shared_ptr<SceneMaterial> m_material;

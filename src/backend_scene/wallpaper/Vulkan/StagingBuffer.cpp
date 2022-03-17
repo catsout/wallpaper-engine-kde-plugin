@@ -127,7 +127,9 @@ void StagingBuffer::destroy() {
     m_virtual_blocks.clear();
 
     m_device.DestroyBuffer(m_stage_buf);
+    m_stage_buf = {};
     m_device.DestroyBuffer(m_gpu_buf);
+    m_gpu_buf = {};
 }
 
 bool StagingBuffer::allocateSubRef(vk::DeviceSize size, StagingBufferRef& ref, vk::DeviceSize alignment) {

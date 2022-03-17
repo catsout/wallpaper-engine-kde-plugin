@@ -1,6 +1,7 @@
 #pragma once
 #include <string_view>
 #include <cstdint>
+#include "Utils/StringHelper.hpp"
 #include "Utils/String.h"
 
 namespace wallpaper {
@@ -26,6 +27,9 @@ constexpr std::array WE_GLTEX_TRANSLATION_NAMES {
 
 constexpr std::string_view WE_SPEC_PREFIX {"_rt_"};
 constexpr std::string_view WE_IMAGE_LAYER_COMPOSITE_PREFIX {"_rt_imageLayerComposite_"};
+constexpr std::string_view WE_HALF_COMPO_BUFFER_PREFIX {"_rt_HalfCompoBuffer"};
+constexpr std::string_view WE_QUARTER_COMPO_BUFFER_PREFIX {"_rt_QuarterCompoBuffer"};
+constexpr std::string_view WE_FULL_COMPO_BUFFER_PREFIX {"_rt_FullCompoBuffer"};
 
 constexpr std::string_view WE_EFFECT_PPONG_PREFIX   {"_rt_effect_pingpong_"};
 constexpr std::string_view WE_EFFECT_PPONG_PREFIX_A   {"_rt_effect_pingpong_a_"};
@@ -35,6 +39,12 @@ constexpr std::string_view WE_IN_POSITION {"a_Position"};
 constexpr std::string_view WE_IN_TEXCOORD {"a_TexCoord"};
 constexpr std::string_view WE_IN_BLENDINDICES {"a_BlendIndices"};
 constexpr std::string_view WE_IN_BLENDWEIGHTS {"a_BlendWeights"};
+
+// particle
+constexpr std::string_view WE_IN_COLOR {"a_Color"};
+constexpr std::string_view WE_IN_TEXCOORDVEC4 {"a_TexCoordVec4"};
+constexpr std::string_view WE_IN_TEXCOORDVEC4C1 {"a_TexCoordVec4C1"};
+constexpr std::string_view WE_IN_TEXCOORDC2 {"a_TexCoordC2"};
 
 constexpr std::string_view G_M    { "g_ModelMatrix" };
 constexpr std::string_view G_VP   { "g_ViewProjectionMatrix" };
@@ -55,10 +65,10 @@ constexpr std::string_view SpecTex_Default { "_rt_default" };
 constexpr std::string_view SpecTex_Link { "_rt_link_" };
 
 inline bool IsSpecTex(const std::string_view name) {
-	return name.compare(0, 4, "_rt_") == 0;
+	return sstart_with(name, WE_SPEC_PREFIX);
 }
 inline bool IsSpecLinkTex(const std::string_view name) {
-	return name.find(SpecTex_Link) != std::string_view::npos;
+	return sstart_with(name, SpecTex_Link);
 }
 inline uint32_t ParseLinkTex(const std::string_view name) {
 	std::string sid {name};

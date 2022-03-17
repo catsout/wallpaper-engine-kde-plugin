@@ -154,6 +154,7 @@ private:
         if(m_rg) {
             //LOG_INFO("frame info, fps: %.1f, frametime: %.1f", 1.0f, 1000.0f*m_scene->frameTime);
             m_scene->shaderValueUpdater->FrameBegin();
+            m_scene->paritileSys.Emitt();
 
             m_render->drawFrame(*m_scene);
 

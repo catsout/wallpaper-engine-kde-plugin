@@ -2,13 +2,13 @@
 #include <cstring>
 #include <Eigen/Dense>
 #include <array>
+#include "SpecTexs.h"
 #include "ParticleModify.h"
 
 using namespace wallpaper;
 using namespace Eigen;
 
-void GenSingleGLData(const Particle& p, const SceneVertexArray& vertex, ParticleRawGenSpecOp& specOp, float* data, bool hasTexCoordVec4C1) {
-	std::size_t oneSize = vertex.OneSize();
+void GenSingleGLData(const Particle& p, size_t oneSize, const ParticleRawGenSpecOp& specOp, float* data, bool hasTexCoordVec4C1) {
 
 	float size = p.size/2.0f;
 
@@ -18,15 +18,15 @@ void GenSingleGLData(const Particle& p, const SceneVertexArray& vertex, Particle
 	specOp(p, {&lifetime});
 	
 	// pos
-	AssignVertexTimes(data, std::array<float,3>{p.position[0], -p.position[1], p.position[2]}, offset, oneSize, 4);
+	AssignVertexTimes(data, std::array<float,3>{p.position[0], p.position[1], p.position[2]}, offset, oneSize, 4);
 	offset+=4;
 	// TexCoordVec4
 	float rz = p.rotation[2];
 	float t[16] {
-		0.0f, 0.0f, rz, size,
-		1.0f, 0.0f, rz, size,
-		1.0f, 1.0f, rz, size, 
-		0.0f, 1.0f, rz, size
+		0.0f, 1.0f, rz, size,
+		1.0f, 1.0f, rz, size,
+		1.0f, 0.0f, rz, size, 
+		0.0f, 0.0f, rz, size
 	};
 	AssignVertex(data, t, 16, offset, oneSize, 4);
 	offset+=4;
@@ -37,25 +37,28 @@ void GenSingleGLData(const Particle& p, const SceneVertexArray& vertex, Particle
 
 
 	if(hasTexCoordVec4C1) {
-		AssignVertexTimes(data, std::array<float,4>{p.velocity[0], -p.velocity[1], p.velocity[2], lifetime}, offset, oneSize, 4);
+		AssignVertexTimes(data, std::array<float,4>{p.velocity[0], p.velocity[1], p.velocity[2], lifetime}, offset, oneSize, 4);
 		offset+=4;
 	}
 	// TexCoordC2
 	AssignVertexTimes(data, std::array<float,2>{p.rotation[0], p.rotation[1]}, offset, oneSize, 4);
 }
 
-void updateIndexArray(std::size_t index, std::size_t count, SceneIndexArray& iarray) {
-	std::vector<uint32_t> indexs;
-	indexs.reserve(16);
-	for(uint32_t i=index;i<count;i++) {
-		uint32_t x = i*4;
-		std::array<uint32_t, 6> t {
-			x, x+1, x+3,
-			x+1, x+2, x+3
-		};
-		indexs.insert(indexs.end(), t.begin(), t.end());
+void updateIndexArray(uint16_t index, size_t count, SceneIndexArray& iarray) {
+	const size_t single_size = 6;
+	const uint16_t cv = index * 4;
+	std::array<uint16_t, single_size> single;
+	single[0] = cv;
+	single[1] = cv + 1;
+	single[2] = cv + 3;
+	single[3] = cv + 1;
+	single[4] = cv + 2;
+	single[5] = cv + 3;
+	// every particle
+	for(uint16_t i=index;i<count;i++) {
+		iarray.AssignHalf(index*single_size, single);
+		for(auto& x:single) x += 4;
 	}
-	iarray.Assign(index*6, &indexs[0], indexs.size());
 }
 
 void WPParticleRawGener::GenGLData(const std::vector<Particle>& particles, SceneMesh& mesh, ParticleRawGenSpecOp& specOp) {
@@ -66,15 +69,16 @@ void WPParticleRawGener::GenGLData(const std::vector<Particle>& particles, Scene
 
 	bool hasTexCoordVec4C1 {false};
 	for(const auto& el:sv.Attributes()) {
-		if(el.name == "a_TexCoordVec4C1") hasTexCoordVec4C1 = true;
+		if(el.name == WE_IN_TEXCOORDVEC4C1) hasTexCoordVec4C1 = true;
 	}	
-	std::vector<float> storage(sv.OneSize()*4);
-	float* pStorage = &storage[0];
+	std::array<float, 32*4> storage;
+	float* pStorage = storage.data();
+	auto oneSize = sv.OneSize();
 	for(const auto& p:particles) {
-		GenSingleGLData(p, sv, specOp, pStorage, hasTexCoordVec4C1);
+		GenSingleGLData(p, oneSize, specOp, pStorage, hasTexCoordVec4C1);
 		sv.SetVertexs((i++)*4, 4, pStorage);
 	}
-	uint32_t indexNum = si.DataCount()/6;
+	uint16_t indexNum = (si.DataCount()*2)/6;
 	if(particles.size() > indexNum) {
 		updateIndexArray(indexNum, particles.size(), si);
 	}

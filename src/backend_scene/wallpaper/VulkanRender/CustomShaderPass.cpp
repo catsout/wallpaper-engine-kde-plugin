@@ -186,6 +186,7 @@ void CustomShaderPass::prepare(Scene& scene, const Device& device, RenderingReso
 	std::vector<vk::VertexInputBindingDescription> bind_descriptions;
 	std::vector<vk::VertexInputAttributeDescription> attr_descriptions;
 	{
+		m_desc.dyn_vertex = mesh.Dynamic();
 		m_desc.vertex_bufs.resize(mesh.VertexCount());
 		for(int i=0;i<mesh.VertexCount();i++) {
 			const auto& vertex = mesh.GetVertexArray(i);
@@ -208,8 +209,12 @@ void CustomShaderPass::prepare(Scene& scene, const Device& device, RenderingReso
 			}
 			{
 				auto& buf = m_desc.vertex_bufs[i];
-				if(!rr.vertex_buf->allocateSubRef(vertex.DataSizeOf(), buf)) return;
-				if(!rr.vertex_buf->writeToBuf(buf, {(uint8_t*)vertex.Data(), buf.size})) return;
+				if(!m_desc.dyn_vertex) {
+					if(!rr.vertex_buf->allocateSubRef(vertex.CapacitySizeOf(), buf)) return;
+					if(!rr.vertex_buf->writeToBuf(buf, {(uint8_t*)vertex.Data(), buf.size})) return;
+				} else {
+					if(!rr.dyn_buf->allocateSubRef(vertex.CapacitySizeOf(), buf)) return;
+				}
 			}
 			m_desc.draw_count += vertex.DataSize() / vertex.OneSize();
 		}
@@ -217,28 +222,33 @@ void CustomShaderPass::prepare(Scene& scene, const Device& device, RenderingReso
 		if(mesh.IndexCount() > 0) {
 			auto& indice = mesh.GetIndexArray(0);
 			size_t count = (indice.DataCount() * 2)/3;
-			size_t size_of = count*3*sizeof(uint16_t);
 			m_desc.draw_count = count*3;
 			auto& buf = m_desc.index_buf;
-			if(!rr.vertex_buf->allocateSubRef(size_of, buf)) return;
-			if(!rr.vertex_buf->writeToBuf(buf, {(uint8_t*)indice.Data(), buf.size})) return;
+			if(!m_desc.dyn_vertex) {
+				if(!rr.vertex_buf->allocateSubRef(indice.CapacitySizeof(), buf)) return;
+				if(!rr.vertex_buf->writeToBuf(buf, {(uint8_t*)indice.Data(), buf.size})) return;
+			} else {
+				if(!rr.dyn_buf->allocateSubRef(indice.CapacitySizeof(), buf)) return;
+			}
 		}
 	}
 	{
 		vk::PipelineColorBlendAttachmentState color_blend;
+		vk::AttachmentLoadOp loadOp {vk::AttachmentLoadOp::eDontCare};
 		{
 			vk::ColorComponentFlags colorMask =
 				vk::ColorComponentFlagBits::eR |
 				vk::ColorComponentFlagBits::eG |
 				vk::ColorComponentFlagBits::eB;
-			bool alpha = !(m_desc.node->Camera().empty() || m_desc.node->Camera().compare(0, 6, "global") == 0);
+			bool alpha = !(m_desc.node->Camera().empty() || sstart_with(m_desc.node->Camera(), "global"));
 			if(alpha) colorMask |= vk::ColorComponentFlagBits::eA;
 			color_blend.setColorWriteMask(colorMask);
-			SetBlend(mesh.Material()->blenmode, color_blend);
+			auto blendmode = mesh.Material()->blenmode;
+			SetBlend(blendmode, color_blend);
 			m_desc.blending = color_blend.blendEnable;
+
+			SetAttachmentLoadOp(blendmode, loadOp);
 		}
-		vk::AttachmentLoadOp loadOp {vk::AttachmentLoadOp::eDontCare};
-		if(m_desc.blending) loadOp = vk::AttachmentLoadOp::eLoad;
 		auto pass = CreateRenderPass(device.handle(), vk::Format::eR8G8B8A8Unorm, loadOp);
 		descriptor_info.push_descriptor = true;
 		GraphicsPipeline pipeline;
@@ -267,34 +277,62 @@ void CustomShaderPass::prepare(Scene& scene, const Device& device, RenderingReso
 
 	if(!ref.blocks.empty()){
 		auto& block = ref.blocks.front();
-		rr.ubo_buf->allocateSubRef(block.size, m_desc.ubo_buf, device.limits().minUniformBufferOffsetAlignment);
+		rr.dyn_buf->allocateSubRef(block.size, m_desc.ubo_buf, device.limits().minUniformBufferOffsetAlignment);
 	}
 
 	if(!ref.blocks.empty()) {
-		auto block = ref.blocks.front();
-		auto* shader_updater = scene.shaderValueUpdater.get();
-		auto* buf = rr.ubo_buf;
-		auto* bufref = &m_desc.ubo_buf;
-		auto* node = m_desc.node;
-		auto* sprites = &m_desc.sprites_map;
-		auto* vk_textures = &m_desc.vk_textures;
-		m_desc.update_uniform_op = [block, shader_updater, buf, bufref, node, sprites, vk_textures]() {
-			auto existsOp = [&block](std::string_view name) {
-				return exists(block.member_map, name);
+		std::function<void()> update_dyn_buf_op;
+		if(m_desc.dyn_vertex) {
+			auto& mesh = *m_desc.node->Mesh();
+			auto* dyn_buf = rr.dyn_buf;
+			auto& vertex_bufs = m_desc.vertex_bufs;
+			auto& draw_count = m_desc.draw_count;
+			auto& index_buf = m_desc.index_buf;
+			update_dyn_buf_op = [&mesh, &vertex_bufs, &draw_count, &index_buf, dyn_buf]() {
+				if(mesh.Dirty().exchange(false)) {
+					for(int i=0;i<mesh.VertexCount();i++) {
+						const auto& vertex = mesh.GetVertexArray(i);
+						auto& buf = vertex_bufs[i];
+						if(!dyn_buf->writeToBuf(buf, {(uint8_t*)vertex.Data(), vertex.DataSizeOf()})) return;
+					}
+					if(mesh.IndexCount() > 0) {
+						auto& indice = mesh.GetIndexArray(0);
+						size_t count = (indice.DataCount() * 2)/3;
+						draw_count = count*3;
+						auto& buf = index_buf;
+						if(!dyn_buf->writeToBuf(buf, {(uint8_t*)indice.Data(), indice.DataSizeOf()})) return;
+					}
+				}
 			};
-			auto updateOp = [&block, buf, bufref](std::string_view name, wallpaper::ShaderValue value) {
+		}
+
+		auto block = ref.blocks.front();
+		auto* buf = rr.dyn_buf;
+		auto* bufref = &m_desc.ubo_buf;
+
+		auto* node = m_desc.node;
+		auto* shader_updater = scene.shaderValueUpdater.get();
+		auto& sprites = m_desc.sprites_map;
+		auto& vk_textures = m_desc.vk_textures;
+		m_desc.update_op = [shader_updater, block, buf, bufref, node, &sprites, &vk_textures, update_dyn_buf_op]() {
+			auto update_unf_op = [&block, buf, bufref](std::string_view name, wallpaper::ShaderValue value) {
 				UpdateUniform(buf, *bufref, block, name, value);
 			};
+			auto exists_unf_op = [&block](std::string_view name) {
+				return exists(block.member_map, name);
+			};
 
-			shader_updater->UpdateUniforms(node, *sprites, existsOp, updateOp);
+			shader_updater->UpdateUniforms(node, sprites, exists_unf_op, update_unf_op);
 			// update image slot for sprites
 			{
-				for(auto& [i, sp]:*sprites) {
-					if(i >= vk_textures->size()) continue;
-					vk_textures->at(i).active = sp.GetCurFrame().imageId;
+				for(auto& [i, sp]:sprites) {
+					if(i >= vk_textures.size()) continue;
+					vk_textures.at(i).active = sp.GetCurFrame().imageId;
 				}
 			}
+			if(update_dyn_buf_op) update_dyn_buf_op();
 		};
+
 		{
 			auto& default_values = mesh.Material()->customShader.shader->default_uniforms;
 			auto& const_values = mesh.Material()->customShader.constValues;
@@ -307,10 +345,9 @@ void CustomShaderPass::prepare(Scene& scene, const Device& device, RenderingReso
 				}
 			}
 		}
-		m_desc.update_uniform_op();
-	} else {
-		m_desc.update_uniform_op = [](){};
+		m_desc.update_op();
 	}
+
 	{
 		auto& sc = scene.clearColor;
 		m_desc.clear_value = vk::ClearValue(std::array {sc[0], sc[1], sc[2], 1.0f});
@@ -322,7 +359,7 @@ void CustomShaderPass::prepare(Scene& scene, const Device& device, RenderingReso
 }
 
 void CustomShaderPass::execute(const Device& device, RenderingResources& rr) {
-	m_desc.update_uniform_op();
+	if(m_desc.update_op) m_desc.update_op();
 
 	auto& cmd = rr.command;
 	auto& outext = m_desc.vk_output.extent;
@@ -364,7 +401,7 @@ void CustomShaderPass::execute(const Device& device, RenderingResources& rr) {
 	}
 
 	if(m_desc.ubo_buf){
-		vk::DescriptorBufferInfo desc_buf {rr.ubo_buf->gpuBuf(), m_desc.ubo_buf.offset, m_desc.ubo_buf.size};
+		vk::DescriptorBufferInfo desc_buf {rr.dyn_buf->gpuBuf(), m_desc.ubo_buf.offset, m_desc.ubo_buf.size};
 		vk::WriteDescriptorSet wset;
 		wset.setDstSet({})
 			.setDstBinding(0)
@@ -393,12 +430,14 @@ void CustomShaderPass::execute(const Device& device, RenderingResources& rr) {
 	cmd.setViewport(0, 1, &viewport);
 	cmd.setScissor(0, 1, &scissor);
 
+	auto& gpu_buf = m_desc.dyn_vertex ? rr.dyn_buf->gpuBuf() : rr.vertex_buf->gpuBuf();
+
 	for(int i=0;i < m_desc.vertex_bufs.size();i++) {
 		auto& buf = m_desc.vertex_bufs[i];
-		cmd.bindVertexBuffers(i, 1, &(rr.vertex_buf->gpuBuf()), &buf.offset);
+		cmd.bindVertexBuffers(i, 1, &gpu_buf, &buf.offset);
 	}
 	if(m_desc.index_buf) {
-		cmd.bindIndexBuffer(rr.vertex_buf->gpuBuf(), m_desc.index_buf.offset, vk::IndexType::eUint16);
+		cmd.bindIndexBuffer(gpu_buf, m_desc.index_buf.offset, vk::IndexType::eUint16);
 		cmd.drawIndexed(m_desc.draw_count, 1, 0, 0, 0);
 	} else {
 		cmd.draw(m_desc.draw_count, 1, 0, 0);
@@ -408,10 +447,14 @@ void CustomShaderPass::execute(const Device& device, RenderingResources& rr) {
 }
 
 void CustomShaderPass::destory(const Device& device, RenderingResources& rr) {
-	for(auto& buf:m_desc.vertex_bufs) {
-		rr.vertex_buf->unallocateSubRef(buf);
+	m_desc.update_op = {};
+	{
+		auto& buf = m_desc.dyn_vertex ? rr.dyn_buf : rr.vertex_buf;
+		for(auto& bufref:m_desc.vertex_bufs) {
+			buf->unallocateSubRef(bufref);
+		}
 	}
-	rr.ubo_buf->unallocateSubRef(m_desc.ubo_buf);
+	rr.dyn_buf->unallocateSubRef(m_desc.ubo_buf);
 	device.DestroyPipeline(m_desc.pipeline);
 	device.handle().destroyFramebuffer(m_desc.fb);
 }

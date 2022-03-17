@@ -75,16 +75,16 @@ void GenCardMesh(SceneMesh& mesh, const std::array<uint16_t, 2> size, const std:
 
 void SetParticleMesh(SceneMesh& mesh, const wpscene::Particle& particle, uint32_t count, bool sprite=false) {
 	std::vector<SceneVertexArray::SceneVertexAttribute> attrs {
-		{"a_Position", VertexType::FLOAT3},
-		{"a_TexCoordVec4", VertexType::FLOAT4},
-		{"a_Color", VertexType::FLOAT4},
+		{WE_IN_POSITION.data(), VertexType::FLOAT3},
+		{WE_IN_TEXCOORDVEC4.data(), VertexType::FLOAT4},
+		{WE_IN_COLOR.data(), VertexType::FLOAT4},
 	};
 	if(sprite) {
-		attrs.push_back({"a_TexCoordVec4C1", VertexType::FLOAT4});
+		attrs.push_back({WE_IN_TEXCOORDVEC4C1.data(), VertexType::FLOAT4});
 	}
-	attrs.push_back({"a_TexCoordC2", VertexType::FLOAT2});
+	attrs.push_back({WE_IN_TEXCOORDC2.data(), VertexType::FLOAT2});
 	mesh.AddVertexArray(SceneVertexArray(attrs, count*4));
-	mesh.AddIndexArray(SceneIndexArray(count*2));
+	mesh.AddIndexArray(SceneIndexArray(count));
 }
 
 ParticleAnimationMode ToAnimMode(const std::string& str) {
@@ -127,7 +127,8 @@ BlendMode ParseBlendMode(std::string_view str) {
 	} else if(str == "normal") {
 		bm = BlendMode::Normal;
 	} else if(str == "disabled") {
-		bm = BlendMode::Disable;
+		// seems disabled is normal
+		bm = BlendMode::Normal;
 	} else {
 		LOG_ERROR("unknown blending: %s", str.data());
 	}
@@ -159,7 +160,11 @@ void ParseSpecTexName(std::string& name, const wpscene::WPMaterial& wpmat, const
 		}
 		else if(name == "_rt_MipMappedFrameBuffer") {
 			name = "";
-		} else if(sstart_with(name, WE_EFFECT_PPONG_PREFIX)) {}
+		} 
+		else if(sstart_with(name, WE_EFFECT_PPONG_PREFIX)) {}
+		else if(sstart_with(name, WE_HALF_COMPO_BUFFER_PREFIX)) {}
+		else if(sstart_with(name, WE_QUARTER_COMPO_BUFFER_PREFIX)) {}
+		else if(sstart_with(name, WE_FULL_COMPO_BUFFER_PREFIX)) {}
 		else {
 			LOG_ERROR("unknown tex \"%s\"", name.c_str());
 		}
@@ -215,22 +220,7 @@ void LoadMaterial(fs::VFS& vfs,
 	}
 
 	svCode = WPShaderParser::PreShaderSrc(vfs, svCode, pWPShaderInfo, texinfos);
-	auto vertexOut = pWPShaderInfo->innerInOut;
-	pWPShaderInfo->innerInOut.clear();
-
 	fgCode = WPShaderParser::PreShaderSrc(vfs, fgCode, pWPShaderInfo, texinfos);
-	{
-		auto fragIn = pWPShaderInfo->innerInOut;
-		pWPShaderInfo->innerInOut.clear();
-
-		std::string vertOutStr;
-		for(auto& in:fragIn) {
-			if(!exists(vertexOut, in.first)) {
-				vertOutStr.append(in.second + "\n");
-			}
-		}
-		svCode.insert(0, vertOutStr);
-	}
 
 	shader->default_uniforms = pWPShaderInfo->svs;
 
@@ -257,7 +247,6 @@ void LoadMaterial(fs::VFS& vfs,
 		material.textures.push_back(name);
 		material.defines.push_back("g_Texture" + std::to_string(i));
 		if(name.empty()) {
-			//LOG_ERROR("empty texture name");
 			continue;
 		}
 		
@@ -339,17 +328,18 @@ void LoadMaterial(fs::VFS& vfs,
 		//pWPShaderInfo->combos["PRELIGHTING"] = pWPShaderInfo->combos.at("LIGHTING");
 	}
 
-	svCode = WPShaderParser::PreShaderHeader(svCode, pWPShaderInfo->combos, ShaderType::VERTEX);
-	fgCode = WPShaderParser::PreShaderHeader(fgCode, pWPShaderInfo->combos, ShaderType::FRAGMENT);
+	WPPreprocessorInfo pre_vert, pre_frag;
+	WPShaderParser::Preprocessor(svCode, ShaderType::VERTEX, pWPShaderInfo->combos, pre_vert);
+	WPShaderParser::Preprocessor(fgCode, ShaderType::FRAGMENT, pWPShaderInfo->combos, pre_frag);
 
-	shader->vertexCode = svCode;
-	shader->fragmentCode = fgCode;
-	shader->attrs.push_back({"a_Position", 0});
-	shader->attrs.push_back({"a_TexCoord", 1});
-	shader->attrs.push_back({"a_TexCoordVec4", 1});
-	shader->attrs.push_back({"a_Color", 2});
-
+	shader->vertexCode = WPShaderParser::Finalprocessor(pre_vert, nullptr, &pre_frag);
+	shader->fragmentCode = WPShaderParser::Finalprocessor(pre_frag, &pre_vert, nullptr);;
 	material.blenmode = ParseBlendMode(wpmat.blending);
+
+	for(uint i=0;i<material.textures.size();i++) {
+		if(!exists(pre_frag.active_tex_slots, i)) 
+			material.textures[i].clear();
+	}
 
 	for(const auto& el:pWPShaderInfo->baseConstSvs) {
 		materialShader.constValues[el.first] = el.second;
@@ -856,7 +846,7 @@ void ParseParticleObj(ParseContext& context, wpscene::WPParticleObject& particle
 	svData.parallaxDepth = {wppartobj.parallaxDepth[0], wppartobj.parallaxDepth[1]};
 	WPShaderInfo shaderInfo;
 	shaderInfo.baseConstSvs = context.global_base_uniforms;
-	shaderInfo.baseConstSvs["g_OrientationUp"] = std::array {0.0f, -1.0f, 0.0f};
+	shaderInfo.baseConstSvs["g_OrientationUp"] = std::array {0.0f, 1.0f, 0.0f};
 	shaderInfo.baseConstSvs["g_OrientationRight"]= std::array {1.0f, 0.0f, 0.0f};
 	shaderInfo.baseConstSvs["g_OrientationForward"]= std::array {0.0f, 0.0f, 1.0f};
 	shaderInfo.baseConstSvs["g_ViewUp"]= std::array {0.0f, 1.0f, 0.0f};
@@ -980,6 +970,7 @@ std::shared_ptr<Scene> WPSceneParser::Parse(const std::string& buf, fs::VFS& vfs
 		};
 	}
 
+	WPShaderParser::InitGlslang();
 
 	for(WPObjectVar& obj:wp_objs) {
 		std::visit(visitor::overload {
@@ -987,12 +978,14 @@ std::shared_ptr<Scene> WPSceneParser::Parse(const std::string& buf, fs::VFS& vfs
 				ParseImageObj(context, obj);
 			},
 			[&context](wpscene::WPParticleObject& obj) {
-				//ParseParticleObj(context, obj);
+				ParseParticleObj(context, obj);
 			},
 			[&context, &sm](wpscene::WPSoundObject& obj) {
 				WPSoundParser::Parse(obj, *context.vfs, sm);
 			}
 		}, obj);
 	}
+
+	WPShaderParser::FinalGlslang();
 	return context.scene;
 }

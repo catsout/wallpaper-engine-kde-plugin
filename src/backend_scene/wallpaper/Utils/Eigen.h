@@ -11,6 +11,7 @@ double inline Radians(double a) {
 
 Matrix4d inline LookAt(Vector3d eye, Vector3d center, Vector3d up) {
 	Vector3d camDir = center - eye;
+	// cam look at neg z
 	Vector3d zAxis = -camDir.normalized();
 	Vector3d xAxis = up.cross(zAxis).normalized();
 	Vector3d yAxis = zAxis.cross(xAxis).normalized();
@@ -38,8 +39,12 @@ Matrix4d inline Ortho(double left, double right, double bottom, double top, doub
 	trans.prescale(Vector3d(
 		2.0f/(right-left),
 		2.0f/(top-bottom),
-		-2.0f/(farz-nearz)
+		2.0f/(farz-nearz)
 	));
+	// look at neg z, switch z before
+	trans.scale(Vector3d(1.0f,1.0f,-1.0f));
+	
+	// to [0, 1]
 	trans.prescale(Vector3d(
 		1.0f, 1.0f, 0.5f
 	));
@@ -49,13 +54,17 @@ Matrix4d inline Ortho(double left, double right, double bottom, double top, doub
 
 Matrix4d inline Perspective(double fov, double aspect, double nearz, double farz) {
 	Projective3d trans = Projective3d::Identity();
-	// z is negtive, but keep w positive
+	// no need to deal with neg z
 	trans.prescale(Vector3d(nearz, nearz, (nearz + farz)));
-	trans(3,2) = -1.0f;
+	trans(3,2) = 1.0f;
 	trans(3,3) = 0.0f;
-	trans(2,3) = nearz*farz;
-	double top = std::tan(fov/2.0f) * nearz;
+	trans(2,3) = -nearz*farz;
+	double top = std::tan(fov/2.0f) * std::abs(nearz);
 	double right = top * aspect;
+	// as look at neg z, switch z before
+	trans.scale(Vector3d(1.0f, 1.0f, -1.0f));
+	// as ortho also switch, do switch after to cancle 
+	trans.prescale(Vector3d(1.0f, 1.0f, -1.0f));
 	return Ortho(-right, right, -top, top, nearz, farz) * trans.matrix();
 }
 }

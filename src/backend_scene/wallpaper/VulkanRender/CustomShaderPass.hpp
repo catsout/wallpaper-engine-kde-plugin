@@ -31,6 +31,7 @@ public:
         ImageParameters vk_output;
 
         // bufs
+        bool dyn_vertex {false};
         std::vector<StagingBufferRef> vertex_bufs;
         StagingBufferRef index_buf;
         StagingBufferRef ubo_buf;
@@ -43,7 +44,7 @@ public:
         uint32_t draw_count {0};
 
         // uniforms
-        std::function<void()> update_uniform_op;
+        std::function<void()> update_op;
     };
 
     CustomShaderPass(const Desc&);

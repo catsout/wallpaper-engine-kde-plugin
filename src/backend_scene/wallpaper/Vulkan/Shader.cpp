@@ -5,6 +5,7 @@
 #include "Utils/Logging.h"
 #include <cstdlib>
 #include <string>
+#include "Utils/StringHelper.hpp"
 #include "Utils/Sha.hpp"
 
 using namespace wallpaper::vulkan;
@@ -15,31 +16,8 @@ using namespace wallpaper::vulkan;
 #define _VK_FORMAT_4(s, sign, type, x, y, z, w) vk::Format::e##x ##s ##y ##s ##z ##s ##w ##s ##sign ##type;
 
 
-namespace wallpaper 
-{
 
-vk::ShaderStageFlags vulkan::ToVkType(EShLanguageMask mask) {
-	vk::ShaderStageFlags flags {};
-	if(mask & EShLangVertexMask)
-		flags |= vk::ShaderStageFlagBits::eVertex;
-	if(mask & EShLangFragmentMask)
-		flags |= vk::ShaderStageFlagBits::eFragment;
-
-	return flags;
-}
-vk::ShaderStageFlagBits vulkan::ToVkType_Stage(EShLanguage lan) {
-	switch (lan)
-	{
-	case EShLangVertex: return vk::ShaderStageFlagBits::eVertex;
-	case EShLangFragment: return vk::ShaderStageFlagBits::eFragment;
-	}
-	return vk::ShaderStageFlagBits::eVertex;
-}
-}
-
-int ClientInputSemanticsVersion = 100;
-
-const TBuiltInResource DefaultTBuiltInResource = {
+const TBuiltInResource wallpaper::vulkan::DefaultTBuiltInResource = {
 	/* .MaxLights = */ 32,
 	/* .MaxClipPlanes = */ 6,
 	/* .MaxTextureUnits = */ 32,
@@ -146,6 +124,29 @@ const TBuiltInResource DefaultTBuiltInResource = {
 		/* .generalConstantMatrixVectorIndexing = */ 1,
 	}};
 
+namespace wallpaper 
+{
+
+vk::ShaderStageFlags vulkan::ToVkType(EShLanguageMask mask) {
+	vk::ShaderStageFlags flags {};
+	if(mask & EShLangVertexMask)
+		flags |= vk::ShaderStageFlagBits::eVertex;
+	if(mask & EShLangFragmentMask)
+		flags |= vk::ShaderStageFlagBits::eFragment;
+
+	return flags;
+}
+vk::ShaderStageFlagBits vulkan::ToVkType_Stage(EShLanguage lan) {
+	switch (lan)
+	{
+	case EShLangVertex: return vk::ShaderStageFlagBits::eVertex;
+	case EShLangFragment: return vk::ShaderStageFlagBits::eFragment;
+	}
+	return vk::ShaderStageFlagBits::eVertex;
+}
+}
+
+int ClientInputSemanticsVersion = 100;
 
 static glslang::EShClient getClient(glslang::EShTargetClientVersion ClientVersion) {
     switch (ClientVersion)
@@ -231,8 +232,14 @@ static size_t GetTypeNum(const glslang::TType* type) {
 	return num;
 }
 
-static bool GetReflectedInfo(glslang::TProgram& pro, ShaderReflected& ref) {
-	if(!pro.buildReflection()) return false;
+static bool GetReflectedInfo(glslang::TProgram& pro, ShaderReflected& ref, const ShaderCompOpt& opt) {
+	EShReflectionOptions reflect_opt {EShReflectionDefault};
+	if(opt.reflect_all_io_var)
+		reflect_opt = (decltype(reflect_opt))(reflect_opt | EShReflectionAllIOVariables);
+	if(opt.reflect_all_block_var)
+		reflect_opt = (decltype(reflect_opt))(reflect_opt | EShReflectionAllBlockVariables);
+
+	if(!pro.buildReflection(reflect_opt)) return false;
 	int numBlocks = pro.getNumUniformBlocks();
 	int numUnfis = pro.getNumUniformVariables();
 	for(int i=0;i<numBlocks;i++) {
@@ -281,8 +288,11 @@ static bool GetReflectedInfo(glslang::TProgram& pro, ShaderReflected& ref) {
 		auto& input = pro.getPipeInput(i);
 		auto* type = input.getType();
 		auto& qual = type->getQualifier();
-
-		if(!qual.hasAnyLocation()) return false;
+		if(wallpaper::sstart_with(input.name, "gl_")) continue;
+		if(!qual.hasAnyLocation())  {
+			LOG_ERROR("shader input %s no location", input.name.c_str());
+			return false;
+		}
 		ShaderReflected::Input rinput;
 		rinput.location = qual.layoutLocation;
 		rinput.format = ToVkType(type->getBasicType(), GetTypeNum(type));
@@ -316,7 +326,7 @@ bool wallpaper::vulkan::CompileAndLinkShaderUnits(Span<ShaderCompUnit> compUnits
     glslang::TGlslIoMapper ioMapper;
 
 	if(!( program.mapIO(&resolver, &ioMapper) && 
-		(reflectd == nullptr || GetReflectedInfo(program, *reflectd)) )) {
+		(reflectd == nullptr || GetReflectedInfo(program, *reflectd, opt)) )) {
         LOG_ERROR("glslang(mapIo): %s\n", program.getInfoLog());   
 		return false;
 	}

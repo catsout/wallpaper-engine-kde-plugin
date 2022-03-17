@@ -12,6 +12,7 @@
 #include <cstdint>
 
 
+#define ENABLE_RENDERDOC_API 1
 #if ENABLE_RENDERDOC_API
 #include "RenderDoc.h"
 #endif
@@ -117,11 +118,12 @@ bool VulkanRender::initRes() {
     m_vertex_buf = std::make_unique<StagingBuffer>(*m_device, 2*1024*1024,
         vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eIndexBuffer
     );
-    m_ubo_buf = std::make_unique<StagingBuffer>(*m_device, 2*1024*1024,
+    m_dyn_buf = std::make_unique<StagingBuffer>(*m_device, 2*1024*1024,
+        vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eIndexBuffer |
         vk::BufferUsageFlagBits::eUniformBuffer
     );
     if(!m_vertex_buf->allocate()) return false;
-    if(!m_ubo_buf->allocate()) return false;
+    if(!m_dyn_buf->allocate()) return false;
     {
         vk::CommandPool pool = m_device->cmd_pool();
         auto rv = m_device->handle().allocateCommandBuffers({pool, vk::CommandBufferLevel::ePrimary, 1});
@@ -148,7 +150,7 @@ void VulkanRender::destroy() {
             p->destory(*m_device, m_rendering_resources[0]);
         }
         m_vertex_buf->destroy();
-        m_ubo_buf->destroy();
+        m_dyn_buf->destroy();
         m_device->handle().freeCommandBuffers(m_device->cmd_pool(), 1u, &m_upload_cmd);
         for(auto& rr:m_rendering_resources) {
             DestroyRenderingResource(rr);
@@ -181,7 +183,7 @@ bool VulkanRender::CreateRenderingResource(RenderingResources& rr) {
     }
 
     rr.vertex_buf = m_vertex_buf.get();
-    rr.ubo_buf = m_ubo_buf.get();
+    rr.dyn_buf = m_dyn_buf.get();
 	return true;
 }
 
@@ -240,7 +242,7 @@ void VulkanRender::drawFrameSwapchain() {
     m_finpass->setPresent(image);
 
     VK_CHECK_RESULT_VOID_RE(rr.command.begin({vk::CommandBufferUsageFlagBits::eOneTimeSubmit}));
-    m_ubo_buf->recordUpload(rr.command);
+    m_dyn_buf->recordUpload(rr.command);
     for(auto* p:m_passes) {
         if(p->prepared()) {
             p->execute(*m_device, rr);
@@ -277,7 +279,7 @@ void VulkanRender::drawFrameOffscreen() {
 
     VK_CHECK_RESULT_VOID_RE(rr.command.begin({vk::CommandBufferUsageFlagBits::eOneTimeSubmit}));
 
-    m_ubo_buf->recordUpload(rr.command);
+    m_dyn_buf->recordUpload(rr.command);
 
     for(auto* p:m_passes) {
         if(p->prepared()) {
@@ -381,6 +383,12 @@ void VulkanRender::clearLastRenderGraph() {
     }
     m_passes.clear();
     m_device->tex_cache().Clear();
+
+    m_vertex_buf->destroy();
+    m_dyn_buf->destroy();
+
+    m_vertex_buf->allocate();
+    m_dyn_buf->allocate();
 }
 
 void VulkanRender::compileRenderGraph(Scene& scene, rg::RenderGraph& rg) {

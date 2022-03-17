@@ -14,6 +14,8 @@ namespace wallpaper
 namespace vulkan
 {
 
+extern const TBuiltInResource DefaultTBuiltInResource;
+
 struct ShaderCompUnit {
     EShLanguage stage;
     std::string src;
@@ -60,6 +62,10 @@ struct ShaderCompOpt {
     bool relaxed_rules_vulkan {false};
     // for global unifom block
     uint global_uniform_binding {0};
+
+    // relfect:
+    bool reflect_all_io_var {true};
+    bool reflect_all_block_var {false};
 };
 
 bool CompileAndLinkShaderUnits(Span<ShaderCompUnit> compUnits, const ShaderCompOpt& opt, std::vector<Uni_ShaderSpv>& spvs, ShaderReflected* reflectd);

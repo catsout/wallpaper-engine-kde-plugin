@@ -60,7 +60,7 @@ private:
     ReDrawCB m_redraw_cb;
 
     std::unique_ptr<StagingBuffer> m_vertex_buf {nullptr};
-    std::unique_ptr<StagingBuffer> m_ubo_buf {nullptr};
+    std::unique_ptr<StagingBuffer> m_dyn_buf {nullptr};
     vk::CommandBuffer m_upload_cmd;
 
     std::unique_ptr<Device> m_device;
