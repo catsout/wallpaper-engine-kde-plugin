@@ -22,6 +22,9 @@ target_link_libraries(${PROJECT_NAME}
 	mpvbackend
 	scenebackend
 )
+set_target_properties(${PROJECT_NAME} PROPERTIES CXX_VISIBILITY_PRESET hidden)
+set_target_properties(${PROJECT_NAME}
+                       PROPERTIES LINK_FLAGS "-Wl,--exclude-libs,ALL")
 
 # During plugin searching Qt will be looking for 'qmldir' file
 # So we should place it next to our plugin lib.
