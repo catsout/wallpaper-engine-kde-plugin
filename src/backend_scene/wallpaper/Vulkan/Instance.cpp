@@ -6,7 +6,7 @@
 
 using namespace wallpaper::vulkan;
 
-#define ENABLE_VK_VALID_LAYER 1
+VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 
 constexpr std::array<InstanceLayer, 0> base_inst_layers {
@@ -15,72 +15,6 @@ constexpr std::array<InstanceLayer, 0> base_inst_layers {
 constexpr std::array base_inst_exts {
     Extension { true, VK_EXT_DEBUG_UTILS_EXTENSION_NAME }
 };
-
-#define DECLARE_EXT_PFN(func) static PFN_##func pfn_##func;
-
-DECLARE_EXT_PFN(vkCreateDebugUtilsMessengerEXT);
-DECLARE_EXT_PFN(vkDestroyDebugUtilsMessengerEXT);
-DECLARE_EXT_PFN(vkGetMemoryFdKHR);
-DECLARE_EXT_PFN(vkGetSemaphoreFdKHR);
-DECLARE_EXT_PFN(vkCmdPushDescriptorSetKHR);
-
-void GetExtProcFunc(vk::Instance* instance) {
-	#define X(func) \
-		pfn_##func = reinterpret_cast<PFN_##func>(instance->getProcAddr(#func));
-	
-	X(vkCreateDebugUtilsMessengerEXT);
-	X(vkDestroyDebugUtilsMessengerEXT);
-	X(vkGetMemoryFdKHR);
-	X(vkGetSemaphoreFdKHR);
-	X(vkCmdPushDescriptorSetKHR);
-}
-
-#define CALL_EXT_PFN(func, ...) \
-    if (func != nullptr) { return func(__VA_ARGS__); } \
-	else { return VK_ERROR_EXTENSION_NOT_PRESENT; }
-
-#define CALL_EXT_PFN_VOID(func, ...) \
-    if (func != nullptr) { func(__VA_ARGS__); }
-
-VkResult vkCreateDebugUtilsMessengerEXT(
-    VkInstance                                  instance,
-    const VkDebugUtilsMessengerCreateInfoEXT*   pCreateInfo,
-    const VkAllocationCallbacks*                pAllocator,
-    VkDebugUtilsMessengerEXT*                   pMessenger) {
-	CALL_EXT_PFN(pfn_vkCreateDebugUtilsMessengerEXT, instance, pCreateInfo, pAllocator, pMessenger)
-}
-
-void vkDestroyDebugUtilsMessengerEXT(
-    VkInstance                                  instance,
-    VkDebugUtilsMessengerEXT                    messenger,
-    const VkAllocationCallbacks*                pAllocator) {
-	CALL_EXT_PFN_VOID(pfn_vkDestroyDebugUtilsMessengerEXT, instance, messenger, pAllocator);
-};
-
-VkResult vkGetMemoryFdKHR(
-    VkDevice                                    device,
-    const VkMemoryGetFdInfoKHR*                 pGetFdInfo,
-    int*                                        pFd) {
-	CALL_EXT_PFN(pfn_vkGetMemoryFdKHR, device, pGetFdInfo, pFd);
-};
-
-VkResult vkGetSemaphoreFdKHR(
-    VkDevice                                    device,
-    const VkSemaphoreGetFdInfoKHR*              pGetFdInfo,
-    int*                                        pFd) {
-	CALL_EXT_PFN(pfn_vkGetSemaphoreFdKHR, device, pGetFdInfo, pFd);
-}
-
-// Provided by VK_KHR_push_descriptor
-void vkCmdPushDescriptorSetKHR(
-    VkCommandBuffer                             commandBuffer,
-    VkPipelineBindPoint                         pipelineBindPoint,
-    VkPipelineLayout                            layout,
-    uint32_t                                    set,
-    uint32_t                                    descriptorWriteCount,
-    const VkWriteDescriptorSet*                 pDescriptorWrites) {
-	CALL_EXT_PFN_VOID(pfn_vkCmdPushDescriptorSetKHR, commandBuffer, pipelineBindPoint, layout, set, descriptorWriteCount, pDescriptorWrites);
-}
 
 
 static VkBool32 debugUtilsMessengerCallback(
@@ -107,6 +41,12 @@ vk::Result setupDebugCallback(vk::Instance* instance, vk::DebugUtilsMessengerEXT
 		.setPfnUserCallback(debugUtilsMessengerCallback)
 		.setPUserData(nullptr);
 	return instance->createDebugUtilsMessengerEXT(&createInfo, nullptr, &dcall);
+}
+
+static void LoadBasicVkFunc() {
+	vk::DynamicLoader dl;
+    PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr = dl.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
+    VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
 }
 
 static vk::Result CreatInstance(vk::Instance* inst, Span<std::string_view> exts, Span<std::string_view> layers) {
@@ -139,7 +79,8 @@ static vk::Result CreatInstance(vk::Instance* inst, Span<std::string_view> exts,
 
     vk::Result res = vk::createInstance(&inst_info, NULL, inst);
 	if (res == vk::Result::eSuccess) {
-		GetExtProcFunc(inst);
+		//GetExtProcFunc(inst);
+		VULKAN_HPP_DEFAULT_DISPATCHER.init(*inst);
 	}
 	return res;
 }
@@ -222,6 +163,8 @@ void Instance::Destroy() {
 }
 
 bool Instance::Create(Instance& inst, Span<Extension> instExts, Span<InstanceLayer> instLayers, Span<std::uint8_t> uuid) {
+	LoadBasicVkFunc();	
+
 	enumateExts(inst.m_extensions);
 	Set<std::string> exts, layers;
 	std::array test_exts_array { Span<Extension>(base_inst_exts), instExts };	
