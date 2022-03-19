@@ -134,9 +134,10 @@ public slots:
             int id = exh->id();
             if(texs_map.count(id) == 0) {
                 _Q_INFO("receive external texture(%dx%d) from fd: %d", exh->width, exh->height, exh->fd);
-                uint gltex = m_glex.genExTexture(*exh);
                 ExTex ex_tex;
                 ex_tex.fd = exh->fd;
+                uint gltex = m_glex.genExTexture(*exh);
+
                 ex_tex.gltex = gltex;
                 ex_tex.qsg = createTextureFromGl(gltex, QSize(exh->width, exh->height), m_window); 
                 texs_map[id] = ex_tex;

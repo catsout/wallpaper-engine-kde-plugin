@@ -16,7 +16,6 @@ constexpr std::string_view PROPERTY_GRAPHIVZ = "graphivz";
 
 #include "Utils/NoCopyMove.hpp"
 class MainHandler;
-class RenderHandler;
 struct RenderInitInfo;
 
 class SceneWallpaper : NoCopy {
@@ -27,7 +26,6 @@ public:
     bool inited() const;
 
     void initVulkan(const RenderInitInfo&);
-    void initVulkanEx(Span<uint8_t> uuid);
 
     void play();
     void pause();
@@ -41,11 +39,13 @@ public:
 
 private:
     bool m_inited {false};
-    bool m_exswap_mode {false};
 private:
     friend class MainHandler;
-    friend class RenderHandler;
+    /*
     class impl;
     std::unique_ptr<impl> pImpl;
+    */
+    bool m_offscreen {false};
+    std::shared_ptr<MainHandler> m_main_handler;
 };
 }

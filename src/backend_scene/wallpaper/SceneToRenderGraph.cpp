@@ -84,10 +84,10 @@ struct DelayLinkInfo {
 };
 
 struct ExtraInfo {
-    Map<size_t, rg::TexNode*> id_link_map;
-    std::vector<DelayLinkInfo> link_info;
-    rg::RenderGraph* rgraph;
-    Scene* scene;
+    Map<size_t, rg::TexNode*> id_link_map {};
+    std::vector<DelayLinkInfo> link_info {};
+    rg::RenderGraph* rgraph {nullptr};
+    Scene* scene {nullptr};
 };
 
 static void ToGraphPass(SceneNode* node, std::string_view output, uint32_t imgId, ExtraInfo& extra) {

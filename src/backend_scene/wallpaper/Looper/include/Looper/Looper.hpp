@@ -150,6 +150,10 @@ public:
         return false; 
     }
 
+    bool cleanAfterDeliver() const;
+    void setCleanAfterDeliver(bool v);
+    void cleanContent();
+
 private:
     template<typename T>
     const Item* findItem(std::string_view name) const;
@@ -158,6 +162,7 @@ private:
     constexpr static int32_t MaxNumItems = 64;
     std::array<Item, MaxNumItems> m_items;
     size_t m_num_items {0};
+    bool m_clean_after_dliver {false};
 };
 
 }

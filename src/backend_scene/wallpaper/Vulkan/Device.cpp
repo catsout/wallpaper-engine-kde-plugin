@@ -183,9 +183,7 @@ void Device::DestroyPipeline(const PipelineParameters& pipe) const {
 
 Device::Device():m_tex_cache(std::make_unique<TextureCache>(*this)) {
 }
-Device::~Device() {
-	LOG_INFO("device destroy");
-};
+Device::~Device() {};
 
 bool Device::supportExt(std::string_view name) const {
 	return exists(m_extensions, name);

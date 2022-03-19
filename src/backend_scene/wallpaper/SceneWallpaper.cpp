@@ -35,7 +35,7 @@ template <typename T>
 static void addMsgCmd(looper::Message& msg, T cmd) {
     msg.setInt32("cmd", (int32_t)cmd);
 }
-
+/*
 class SceneWallpaper::impl {
 public:
     impl(SceneWallpaper& uper);
@@ -47,9 +47,12 @@ public:
     std::shared_ptr<MainHandler> main_handler;
     std::shared_ptr<RenderHandler> render_handler;
 };
+*/
 
 namespace wallpaper
 {
+class RenderHandler;
+
 class MainHandler : public looper::Handler {
 public:
     enum class CMD {
@@ -58,9 +61,13 @@ public:
         CMD_NO
     };
 public:
-    MainHandler(SceneWallpaper& impl):uper(impl) {}
-    virtual ~MainHandler() = default;
-    SceneWallpaper& uper;
+    MainHandler();
+    virtual ~MainHandler() {};
+
+    bool init();
+    auto renderHandler() const { return m_render_handler; }
+    bool inited() const { return m_inited; }
+
 public:
     void onMessageReceived(const std::shared_ptr<looper::Message>& msg) override {
         int32_t cmd_int = (int32_t)CMD::CMD_NO;
@@ -86,6 +93,8 @@ private:
     MHANDLER_CMD(SET_PROPERTY);
 
 private:
+    bool m_inited {false};
+
     std::string m_assets;
     std::string m_source;
     bool m_gen_graphviz {false};
@@ -96,6 +105,11 @@ private:
     WPSceneParser parser;
     */
     WPSceneParser m_scene_parser;
+
+private:
+    std::shared_ptr<looper::Looper> m_main_loop;
+    std::shared_ptr<looper::Looper> m_render_loop;
+    std::shared_ptr<RenderHandler> m_render_handler;
 };
 // for macro
 using impl_MainHandler = MainHandler;
@@ -110,12 +124,13 @@ public:
         CMD_DRAW,
         CMD_NO
     };
-    RenderHandler(SceneWallpaper& impl):
-        uper(impl),
+    MainHandler& main_handler;
+    RenderHandler(MainHandler& m):main_handler(m),
         m_render(std::make_unique<vulkan::VulkanRender>()) {}
     virtual ~RenderHandler() { 
         frame_timer.Stop(); 
         m_render->destroy();
+        LOG_INFO("render handler deleted");
     }
  
 
@@ -178,7 +193,8 @@ private:
         if(msg->findObject("scene", &m_scene)) {
             decltype(m_rg) old_rg = std::move(m_rg);
             m_rg = sceneToRenderGraph(*m_scene);
-            if(uper.pImpl->main_handler->isGenGraphviz())
+
+            if(main_handler.isGenGraphviz())
                 m_rg->ToGraphviz("graph.dot");
             m_render->compileRenderGraph(*m_scene, *m_rg);
             m_render->UpdateCameraFillMode(*m_scene, m_fillmode);
@@ -190,7 +206,7 @@ private:
             m_render->init(*info);
 
             // inited, callback to laod scene
-            uper.pImpl->main_handler->sendCmdLoadScene();
+            main_handler.sendCmdLoadScene();
         }
     }
 
@@ -199,7 +215,6 @@ public:
 	FrameTimer frame_timer;
 	FpsCounter fps_counter;;
 private:
-    SceneWallpaper& uper;
     std::shared_ptr<Scene> m_scene {nullptr};
     std::unique_ptr<rg::RenderGraph> m_rg {nullptr};
     std::unique_ptr<vulkan::VulkanRender> m_render;
@@ -209,64 +224,46 @@ private:
 
 
 
-SceneWallpaper::SceneWallpaper():pImpl(std::make_unique<impl>(*this)) {}
+SceneWallpaper::SceneWallpaper():m_main_handler(std::make_shared<MainHandler>()) {}
 
-SceneWallpaper::~SceneWallpaper() {}
+SceneWallpaper::~SceneWallpaper() {
+    /*
+    if(m_offscreen) {
+        // no wait
+        auto msg = looper::Message::create(0, m_main_handler);
+        msg->setObject("self_clean", m_main_handler);
+        msg->setCleanAfterDeliver(true);
+        m_main_handler = nullptr;
+        msg->post();
+    }
+    */
+}
 
 bool SceneWallpaper::inited() const {
-    return m_inited;
+    return m_main_handler->inited();
 }
 
 bool SceneWallpaper::init() {
-    if(m_inited) return true;
-    auto& main_loop = pImpl->main_loop;
-    auto& render_loop = pImpl->render_loop;
-
-    main_loop->setName("main");
-    render_loop->setName("render");
-
-    main_loop->start();
-    render_loop->start();
-
-    main_loop->registerHandler(pImpl->main_handler);
-    render_loop->registerHandler(pImpl->render_handler);
-
-    {
-        auto& frameTimer = pImpl->render_handler->frame_timer;
-        auto msg = looper::Message::create(0, pImpl->render_handler);
-        addMsgCmd(*msg, RenderHandler::CMD::CMD_DRAW);
-
-        frameTimer.SetCallback([msg]() {
-            msg->post();
-        });
-        frameTimer.SetRequiredFps(15);
-        frameTimer.Run();
-    }
-
-    m_inited = true;
-    return true;
+    return m_main_handler->init();
 }
 
 void SceneWallpaper::initVulkan(const RenderInitInfo& info) {
+    m_offscreen = info.offscreen;
     std::shared_ptr<RenderInitInfo> sp_info = std::make_shared<RenderInitInfo>(info);
-    auto msg = looper::Message::create(0, pImpl->render_handler);
+    auto msg = looper::Message::create(0, m_main_handler->renderHandler());
     addMsgCmd(*msg, RenderHandler::CMD::CMD_INIT_VULKAN);
     msg->setObject("info", sp_info);
     msg->post();
 }
 
-void SceneWallpaper::initVulkanEx(Span<uint8_t> uuid) {
-    m_exswap_mode = true;
-}
-
 void SceneWallpaper::play() {
-    auto msg = looper::Message::create(0, pImpl->render_handler);
+    auto msg = looper::Message::create(0, m_main_handler->renderHandler());
     addMsgCmd(*msg, RenderHandler::CMD::CMD_STOP);
     msg->setBool("value", false);
     msg->post();
 }
 void SceneWallpaper::pause() {
-    auto msg = looper::Message::create(0, pImpl->render_handler);
+    auto msg = looper::Message::create(0, m_main_handler->renderHandler());
     addMsgCmd(*msg, RenderHandler::CMD::CMD_STOP);
     msg->setBool("value", true);
     msg->post();
@@ -274,7 +271,7 @@ void SceneWallpaper::pause() {
 
 #define BASIC_TYPE(NAME,TYPENAME)                                        \
 void SceneWallpaper::setProperty##NAME(std::string_view name, TYPENAME value) {    \
-    auto msg = looper::Message::create(0, pImpl->main_handler);          \
+    auto msg = looper::Message::create(0, m_main_handler);               \
     addMsgCmd(*msg, MainHandler::CMD::CMD_SET_PROPERTY);                 \
     msg->setString("property", std::string(name));                       \
     msg->set##NAME("value", value);                                      \
@@ -287,11 +284,11 @@ BASIC_TYPE(Float, float);
 BASIC_TYPE(String, std::string);
 
 ExSwapchain* SceneWallpaper::exSwapchain() const {
-    return pImpl->render_handler->exSwapchain();
+    return m_main_handler->renderHandler()->exSwapchain();
 }
 
 MHANDLER_CMD_IMPL(MainHandler, LOAD_SCENE) {
-    if(uper.pImpl->render_handler->renderInited()) {
+    if(m_render_handler->renderInited()) {
         loadScene();
     }
 }
@@ -310,12 +307,12 @@ MHANDLER_CMD_IMPL(MainHandler, SET_PROPERTY) {
             int32_t fps {15};
             msg->findInt32("value", &fps);
             if(fps >= 5) {
-                uper.pImpl->render_handler->frame_timer.SetRequiredFps((uint8_t)fps);
+                m_render_handler->frame_timer.SetRequiredFps((uint8_t)fps);
             }
         } else if(property == PROPERTY_FILLMODE) {
             int32_t value;
             if(msg->findInt32("value", &value)) {
-                auto nmsg = looper::Message::create(0, uper.pImpl->render_handler);
+                auto nmsg = looper::Message::create(0, m_render_handler);
                 addMsgCmd(*nmsg, RenderHandler::CMD::CMD_SET_FILLMODE);
                 nmsg->setInt32("value", value);
                 nmsg->post();
@@ -380,7 +377,7 @@ void MainHandler::loadScene() {
         scene->vfs.swap(pVfs);
     }
 
-    auto msg = looper::Message::create(0, uper.pImpl->render_handler);
+    auto msg = looper::Message::create(0, m_render_handler);
     addMsgCmd(*msg, RenderHandler::CMD::CMD_SET_SCENE);
     msg->setObject("scene", scene);
     msg->post();
@@ -391,9 +388,42 @@ void MainHandler::sendCmdLoadScene() {
     msg->post();
 }
 
+bool MainHandler::init() {
+    if(m_inited) return true;
+    m_main_loop->setName("main");
+    m_render_loop->setName("render");
+
+    m_main_loop->start();
+    m_render_loop->start();
+
+    m_main_loop->registerHandler(shared_from_this());
+    m_render_loop->registerHandler(m_render_handler);
+
+    {
+        auto& frameTimer = m_render_handler->frame_timer;
+        auto msg = looper::Message::create(0, m_render_handler);
+        addMsgCmd(*msg, RenderHandler::CMD::CMD_DRAW);
+
+        frameTimer.SetCallback([msg]() {
+            msg->post();
+        });
+        frameTimer.SetRequiredFps(15);
+        frameTimer.Run();
+    }
+
+    m_inited = true;
+    return true;
+}
+MainHandler::MainHandler():
+        m_main_loop(std::make_shared<looper::Looper>()),
+        m_render_loop(std::make_shared<looper::Looper>()),
+        m_render_handler(std::make_shared<RenderHandler>(*this))
+{}
+/*
 SceneWallpaper::impl::impl(SceneWallpaper& uper):
         uper(uper),
         main_loop(std::make_shared<looper::Looper>()),
         render_loop(std::make_shared<looper::Looper>()),
         main_handler(std::make_shared<MainHandler>(uper)),
         render_handler(std::make_shared<RenderHandler>(uper)) {};
+*/

@@ -37,24 +37,34 @@ bool Looper::loop() {
         m_msg_queue.erase(m_msg_queue.begin());
     }
     msg.msg->deliver();
+    if(msg.msg->cleanAfterDeliver()) {
+        msg.msg->cleanContent();
+    }
     return true;
 }
 
 status_t Looper::start() {
 	Lock lock(m_mutex);
     if(m_running) return status_t::INVALID_OPERATION;
-    m_thread = std::thread([](Looper* looper) {
-        LOG_INFO("%s looper started", looper->name().data());
-        looper->m_running = true;
-        while(looper->m_running && looper->loop()) {
+    // using weak_ptr to allow looper deleted at looper->loop() end
+    std::weak_ptr<Looper> wlooper = shared_from_this();
+    m_thread = std::thread([](std::weak_ptr<Looper> wlooper) {
+        Looper* looper = nullptr;
+        {
+            looper = wlooper.lock().get();
+            LOG_INFO("%s looper started", looper->name().data());
+            looper->m_running = true;
         }
-    }, this);
+        std::string name {looper->name()};
+        while(!wlooper.expired() && looper->m_running && looper->loop()) {
+        }
+        LOG_INFO("%s looper stopped", name.c_str());
+    }, wlooper);
     return status_t::OK;
 }
 
 void Looper::stop() {
     if(!m_running) return;
-    assert(std::this_thread::get_id() != m_thread.get_id());
 
     std::thread thd;
     {
@@ -64,9 +74,14 @@ void Looper::stop() {
         m_condition.notify_one();
     }
    	if(thd.joinable()) {
-		thd.join();
+        if(std::this_thread::get_id() == thd.get_id()) {
+            LOG_INFO("detach %s looper", m_name.c_str());
+            thd.detach();
+        }
+        else {
+		    thd.join();
+        }
 	}
-    LOG_INFO("%s looper stopped", name().data());
 }
 
 
@@ -80,7 +95,6 @@ void Looper::post(const std::shared_ptr<Message>& msg) {
 
 handler_id Looper::registerHandler(const std::shared_ptr<Handler>& handler) {
     static std::atomic<handler_id> next_handle_id {1};
-    std::weak_ptr<Looper> a = shared_from_this();
     if(handler->setID(next_handle_id++, shared_from_this())) {
         Lock lock(m_mutex);
         m_reg_handler[handler->id()] = handler;
@@ -246,3 +260,9 @@ bool Message::setObject(std::string_view name, const std::shared_ptr<void>& valu
 
 template
 const Message::Item* Message::findItem<std::shared_ptr<void>>(std::string_view) const;
+
+bool Message::cleanAfterDeliver() const { return m_clean_after_dliver; }
+void Message::setCleanAfterDeliver(bool v) { m_clean_after_dliver = v; };
+void Message::cleanContent() {
+    m_items.fill({});
+}

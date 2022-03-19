@@ -365,5 +365,9 @@ std::string WPShaderParser::Finalprocessor(const WPPreprocessorInfo& cur, const 
 	}
 	std::regex re_hold(SHADER_PLACEHOLD.data());
 	//LOG_INFO("insert: %s", insert_str.c_str());
-	return std::regex_replace(cur.result, re_hold, insert_str);
+	return std::regex_replace(
+		std::regex_replace(cur.result, re_hold, insert_str),
+		std::regex(R"(\s+\n)"),
+		"\n"
+	);
 }

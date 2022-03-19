@@ -66,10 +66,10 @@ private:
 	QUrl m_source;
 	QUrl m_assets;
 
-    int m_fps;
-	int m_fillMode;
-	float m_volume;
-	bool m_muted;
+    int m_fps {15};
+	int m_fillMode {FillMode::ASPECTCROP};
+	float m_volume {1.0f};
+	bool m_muted {false};
 
 public:
     static void on_update(void* ctx);
