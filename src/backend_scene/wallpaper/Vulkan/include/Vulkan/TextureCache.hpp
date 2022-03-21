@@ -31,6 +31,7 @@ struct TextureKey {
 	TexUsage usage;
 	TextureFormat format;
 	TextureSample sample;
+    uint mipmap_level {1};
 
 	static TexHash HashValue(const TextureKey&);
 };
@@ -48,6 +49,8 @@ public:
 
     vk::ResultValue<ImageParameters> Query(std::string_view key, TextureKey content_hash, bool persist=false);
     void MarkShareReady(std::string_view key);
+
+    void RecGenerateMipmaps(vk::CommandBuffer& cmd, const ImageParameters& image) const;
 private:
     vk::ResultValue<ImageParameters> CreateTex(TextureKey);
     void allocateCmd();

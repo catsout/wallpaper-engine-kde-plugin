@@ -1,6 +1,8 @@
 #pragma once
 #include "Vulkan/Instance.hpp"
 #include "Type.h"
+#include "Vulkan/TextureCache.hpp"
+#include "Scene/SceneRenderTarget.h"
 
 namespace wallpaper
 {
@@ -46,6 +48,17 @@ inline void SetAttachmentLoadOp(BlendMode bm, vk::AttachmentLoadOp& load_op) {
 		load_op = vk::AttachmentLoadOp::eLoad;
 		break;
 	}
+}
+
+inline TextureKey ToTexKey(wallpaper::SceneRenderTarget rt) {
+	return TextureKey {
+		.width = rt.width,
+		.height = rt.height,
+		.usage = {},
+		.format = wallpaper::TextureFormat::RGBA8,
+		.sample = rt.sample,
+		.mipmap_level = rt.mipmap_level
+	};
 }
 }
 }

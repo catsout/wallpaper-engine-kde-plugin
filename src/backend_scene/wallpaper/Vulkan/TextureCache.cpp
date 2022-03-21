@@ -40,6 +40,7 @@ std::size_t TextureKey::HashValue(const TextureKey& k) {
 	utils::hash_combine(seed, k.height);
 	utils::hash_combine(seed, (int)k.usage);
 	utils::hash_combine(seed, (int)k.format);
+	utils::hash_combine(seed, (int)k.mipmap_level);
 
 	utils::hash_combine(seed, (int)k.sample.wrapS);
 	utils::hash_combine(seed, (int)k.sample.wrapT);
@@ -262,7 +263,7 @@ vk::ResultValue<ExImageParameters> TextureCache::CreateExTex(uint32_t width, uin
 }
 
 static vk::Result CreateImage(const Device &device, ImageParameters& image, 
-							vk::Extent3D extent, int miplevel, vk::Format format,
+							vk::Extent3D extent, uint miplevel, vk::Format format,
 							vk::SamplerCreateInfo sampler_info,
 							vk::ImageUsageFlags usage,
 							VmaMemoryUsage mem_usage = VMA_MEMORY_USAGE_GPU_ONLY)
@@ -291,6 +292,7 @@ static vk::Result CreateImage(const Device &device, ImageParameters& image,
 					(VkImage *)&image.handle,
 					&image.allocation, &image.allocationInfo);
 		if(result != vk::Result::eSuccess) break;
+		image.mipmap_level = miplevel;
 		{
 			vk::ImageViewCreateInfo createinfo;
 			createinfo
@@ -468,7 +470,7 @@ vk::ResultValue<ImageParameters> TextureCache::CreateTex(TextureKey tex_key) {
 		vk::Format format = ToVkType(tex_key.format);
 		vk::Extent3D ext {tex_key.width, tex_key.height, 1};
 
-		rv.result = CreateImage(m_device, image_paras, ext, 1, format, sam_info, 	
+		rv.result = CreateImage(m_device, image_paras, ext, tex_key.mipmap_level, format, sam_info, 	
 			vk::ImageUsageFlagBits::eTransferSrc | 
 			vk::ImageUsageFlagBits::eTransferDst | 
 			vk::ImageUsageFlagBits::eSampled |
@@ -555,4 +557,92 @@ void TextureCache::MarkShareReady(std::string_view key) {
 		query->share_ready = true;
 		m_query_map.erase(key.data());
 	}
+}
+
+
+void TextureCache::RecGenerateMipmaps(vk::CommandBuffer& cmd, const ImageParameters& image) const {
+	vk::ImageMemoryBarrier barrier;
+	barrier.image = image.handle;
+	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+	barrier.subresourceRange.baseArrayLayer = 0;
+	barrier.subresourceRange.layerCount = 1;
+	barrier.subresourceRange.levelCount = 1;
+
+	uint16_t mipWidth = image.extent.width;
+	uint16_t mipHeight = image.extent.height;
+
+	for (uint i = 1; i < image.mipmap_level; i++) {
+		barrier.subresourceRange.baseMipLevel = i - 1;
+		barrier.oldLayout = i==1 ? vk::ImageLayout::eShaderReadOnlyOptimal : vk::ImageLayout::eTransferDstOptimal;
+		barrier.newLayout = vk::ImageLayout::eTransferSrcOptimal;
+		barrier.srcAccessMask = vk::AccessFlagBits::eMemoryRead;
+		barrier.dstAccessMask = vk::AccessFlagBits::eTransferRead;
+
+		cmd.pipelineBarrier(
+			vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eTransfer,
+			vk::DependencyFlagBits::eByRegion,
+			0, nullptr,
+			0, nullptr,
+			1, &barrier);
+		barrier.subresourceRange.baseMipLevel = i;
+		barrier.oldLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+		barrier.newLayout = vk::ImageLayout::eTransferDstOptimal;
+		cmd.pipelineBarrier(
+			vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eTransfer,
+			vk::DependencyFlagBits::eByRegion,
+			0, nullptr,
+			0, nullptr,
+			1, &barrier);
+
+
+		vk::ImageBlit blit;
+		blit.srcOffsets[0] = vk::Offset3D{0, 0, 0};
+		blit.srcOffsets[1] = vk::Offset3D{mipWidth, mipHeight, 1};
+		blit.srcSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
+		blit.srcSubresource.mipLevel = i - 1;
+		blit.srcSubresource.baseArrayLayer = 0;
+		blit.srcSubresource.layerCount = 1;
+		blit.dstOffsets[0] = vk::Offset3D{0, 0, 0};
+		blit.dstOffsets[1] = vk::Offset3D{ mipWidth > 1 ? mipWidth / 2 : 1, mipHeight > 1 ? mipHeight / 2 : 1, 1 };
+		blit.dstSubresource.aspectMask = blit.srcSubresource.aspectMask;
+		blit.dstSubresource.mipLevel = blit.srcSubresource.mipLevel + 1;
+		blit.dstSubresource.baseArrayLayer = 0;
+		blit.dstSubresource.layerCount = 1;
+
+	 	cmd.blitImage(
+			image.handle, vk::ImageLayout::eTransferSrcOptimal,
+			image.handle, vk::ImageLayout::eTransferDstOptimal,
+			1, &blit,
+			vk::Filter::eLinear);
+
+		barrier.subresourceRange.baseMipLevel = i - 1;
+		barrier.oldLayout = vk::ImageLayout::eTransferSrcOptimal;
+		barrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+		barrier.srcAccessMask = vk::AccessFlagBits::eTransferRead;
+		barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+
+		cmd.pipelineBarrier(
+			vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eFragmentShader,
+			vk::DependencyFlagBits::eByRegion,
+			0, nullptr,
+			0, nullptr,
+			1, &barrier);
+
+		if (mipWidth > 1) mipWidth /= 2;
+		if (mipHeight > 1) mipHeight /= 2;
+	}
+
+	barrier.subresourceRange.baseMipLevel = image.mipmap_level - 1;
+	barrier.oldLayout = vk::ImageLayout::eTransferDstOptimal;
+	barrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+	barrier.srcAccessMask = vk::AccessFlagBits::eTransferRead;
+	barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+	cmd.pipelineBarrier(
+		vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eFragmentShader,
+		vk::DependencyFlagBits::eByRegion,
+		0, nullptr,
+		0, nullptr,
+		1, &barrier);
 }

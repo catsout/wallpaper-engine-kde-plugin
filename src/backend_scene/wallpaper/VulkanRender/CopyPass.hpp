@@ -16,8 +16,8 @@ public:
         std::string src;
         std::string dst;
 
-        ImageSlots vk_src;
-        ImageSlots vk_dst;
+        ImageParameters vk_src;
+        ImageParameters vk_dst;
     };
 
     CopyPass(const Desc&);

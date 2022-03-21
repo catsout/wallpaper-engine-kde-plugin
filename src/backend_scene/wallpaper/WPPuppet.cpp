@@ -74,8 +74,8 @@ Span<Eigen::Affine3f> WPPuppet::genFrame(std::vector<AnimationLayer>& layers, do
         assert(bone.parent < i || bone.noParent());
         const Affine3f parent = bone.noParent() ? Affine3f::Identity() : m_final_affines[bone.parent];
 
-        Vector3f trans {Vector3f::Zero()};
-        Vector3f scale {Vector3f::Zero()};
+        Vector3f trans {bone.transform.translation() * blend};
+        Vector3f scale {Vector3f::Ones() * blend};
         Quaternionf quat {Quaternionf::Identity()};
 
         double cur_blend {0.0f};
@@ -90,7 +90,7 @@ Span<Eigen::Affine3f> WPPuppet::genFrame(std::vector<AnimationLayer>& layers, do
             double one_t = 1.0f - info.t;
             quat = frame_a.quaternion.slerp(info.t, frame_b.quaternion).slerp(1.0f - layer.blend, quat);
             trans += layer.blend * (frame_a.position * one_t + frame_b.position * info.t);
-            scale += layer.blend * (frame_a.scale * one_t + frame_b.scale * info.t);
+            scale +=  layer.blend * (frame_a.scale * one_t + frame_b.scale * info.t);
         }
         affine.pretranslate(trans);
         affine.rotate(quat);

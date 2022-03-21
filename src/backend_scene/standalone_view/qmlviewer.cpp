@@ -30,6 +30,8 @@ int main(int argc, char **argv)
 	sv->setProperty("assets", QUrl::fromLocalFile(program.get<std::string>(ARG_ASSETS).c_str()));
 	sv->setProperty("source", QUrl::fromLocalFile(program.get<std::string>(ARG_SCENE).c_str()));
 	sv->setProperty("fps", program.get<int32_t>(OPT_FPS));
+	sv->setAcceptMouse(true);
+	sv->setAcceptHover(true);
 
     return QGuiApplication::exec();
 }

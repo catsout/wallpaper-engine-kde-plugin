@@ -20,6 +20,7 @@
 #include "wpscene/WPImageObject.h"
 #include "wpscene/WPParticleObject.h"
 #include "wpscene/WPSoundObject.h"
+#include "wpscene/WPLightObject.hpp"
 #include "wpscene/WPScene.h"
 
 #include "Fs/VFS.h"
@@ -158,9 +159,7 @@ void ParseSpecTexName(std::string& name, const wpscene::WPMaterial& wpmat, const
 			}
 			name = GenLinkTex(wpid);
 		}
-		else if(name == "_rt_MipMappedFrameBuffer") {
-			name = "";
-		} 
+		else if(sstart_with(name, WE_MIP_MAPPED_FRAME_BUFFER)) {}
 		else if(sstart_with(name, WE_EFFECT_PPONG_PREFIX)) {}
 		else if(sstart_with(name, WE_HALF_COMPO_BUFFER_PREFIX)) {}
 		else if(sstart_with(name, WE_QUARTER_COMPO_BUFFER_PREFIX)) {}
@@ -253,12 +252,12 @@ void LoadMaterial(fs::VFS& vfs,
 		std::array<uint16_t, 4> resolution;
 		if(IsSpecTex(name)) {
 			if(IsSpecLinkTex(name)) {
-				svData.renderTargetResolution.push_back({i, name});
+				svData.renderTargets.push_back({i, name});
 			}
 			else if(pScene->renderTargets.count(name) == 0) {
 				LOG_ERROR("%s not found in render targes", name.c_str());
 			} else {
-				svData.renderTargetResolution.push_back({i, name});
+				svData.renderTargets.push_back({i, name});
 				const auto& rt = pScene->renderTargets.at(name);
 				resolution = {
 					rt.width,rt.height, 
@@ -408,7 +407,8 @@ struct ParseContext {
 using WPObjectVar = std::variant<
 	wpscene::WPImageObject,
 	wpscene::WPParticleObject,
-	wpscene::WPSoundObject
+	wpscene::WPSoundObject,
+	wpscene::WPLightObject
 >;
 
 void ParseCamera(ParseContext& context, wpscene::WPSceneGeneral& general) {
@@ -458,7 +458,6 @@ void InitContext(ParseContext& context, fs::VFS& vfs, wpscene::WPScene& sc) {
 	scene.clearColor = sc.general.clearcolor;
 	scene.ortho[0] = sc.general.orthogonalprojection.width;
 	scene.ortho[1] = sc.general.orthogonalprojection.height;
-	context.shader_updater->SetOrtho(scene.ortho[0], scene.ortho[1]);
 	context.ortho_w = scene.ortho[0];
 	context.ortho_h = scene.ortho[1];
 
@@ -472,8 +471,7 @@ void InitContext(ParseContext& context, fs::VFS& vfs, wpscene::WPScene& sc) {
 		gb["g_TexelSizeHalf"]= std::array {1.0f/1920.0f/2.0f, 1.0f/1080.0f/2.0f};
 
 		gb["g_LightAmbientColor"]= sc.general.ambientcolor;
-		gb["g_LightsColorPremultiplied[0]"] = std::array {848496.0f, 893676.0f, 1250141.0f, 0.0f};
-		gb["g_NormalModelMatrix"] = ShaderValue::fromMatrix(Matrix3f::Identity());
+		gb["g_NormalModelMatrix"] = ShaderValue::fromMatrix(Matrix4f::Identity());
 	}
 
 	{	
@@ -886,7 +884,10 @@ void ParseParticleObj(ParseContext& context, wpscene::WPParticleObject& particle
 		wppartobj.instanceoverride.rate,
 		[=](const Particle& p, const ParticleRawGenSpec& spec) {
 			auto& lifetime = *(spec.lifetime);
-			if(lifetime < 0.0f) return;
+			if(lifetime < 0.0f) { 
+				lifetime = 0.0f;
+				return; 
+			}
 			switch(animationmode) {
 			case ParticleAnimationMode::RANDOMONE:
 				lifetime = std::floor(p.lifetimeInit);
@@ -907,6 +908,25 @@ void ParseParticleObj(ParseContext& context, wpscene::WPParticleObject& particle
 	spNode->AddMesh(spMesh);
 	context.shader_updater->SetNodeData(spNode.get(), svData);
 	context.scene->sceneGraph->AppendChild(spNode);
+}
+
+void ParseLightObj(ParseContext& context, wpscene::WPLightObject& light_obj) {
+	auto node = std::make_shared<SceneNode>(
+		Vector3f(light_obj.origin.data()), 
+		Vector3f(light_obj.scale.data()), 
+		Vector3f(light_obj.angles.data()) 
+	);
+
+	context.scene->lights.emplace_back(std::make_unique<SceneLight>(
+		Vector3f(light_obj.color.data()),
+		light_obj.radius,
+		light_obj.intensity
+	));
+
+	auto& light = *(context.scene->lights.back());
+	light.setNode(node);
+
+	context.scene->sceneGraph->AppendChild(node);
 }
 
 std::shared_ptr<Scene> WPSceneParser::Parse(const std::string& buf, fs::VFS& vfs, audio::SoundManager& sm) {
@@ -937,6 +957,11 @@ std::shared_ptr<Scene> WPSceneParser::Parse(const std::string& buf, fs::VFS& vfs
 			if(!wpsoundobj.FromJson(obj)) continue;
 			continue;
 			wp_objs.push_back(wpsoundobj);
+		} else if(obj.contains("light") && !obj.at("light").is_null()) {
+			wpscene::WPLightObject wplightobj;
+			if(!wplightobj.FromJson(obj)) continue;
+			if(!wplightobj.visible) continue;
+			wp_objs.push_back(wplightobj);
 		}
 	}
 
@@ -968,6 +993,15 @@ std::shared_ptr<Scene> WPSceneParser::Parse(const std::string& buf, fs::VFS& vfs
 				.screen = true
 			}
 		};
+		context.scene->renderTargets[WE_MIP_MAPPED_FRAME_BUFFER.data()] = {
+			.width = context.ortho_w, 
+			.height = context.ortho_w,
+			.has_mipmap = true,
+			.bind = {
+				.enable = true,
+				.name = SpecTex_Default.data()
+			}
+		};
 	}
 
 	WPShaderParser::InitGlslang();
@@ -982,7 +1016,10 @@ std::shared_ptr<Scene> WPSceneParser::Parse(const std::string& buf, fs::VFS& vfs
 			},
 			[&context, &sm](wpscene::WPSoundObject& obj) {
 				WPSoundParser::Parse(obj, *context.vfs, sm);
-			}
+			},
+			[&context](wpscene::WPLightObject& obj) {
+				ParseLightObj(context, obj);
+			},
 		}, obj);
 	}
 

@@ -19,7 +19,7 @@ class Scene;
 struct WPShaderValueData {
 	std::array<float, 2> parallaxDepth {0.0f, 0.0f};
 	// index + name
-	std::vector<std::pair<int32_t, std::string>> renderTargetResolution;
+	std::vector<std::pair<int32_t, std::string>> renderTargets;
 
 	std::vector<WPPuppet::AnimationLayer> puppet_layers;
 	std::shared_ptr<WPPuppet> puppet;
@@ -46,14 +46,14 @@ public:
 	void SetNodeData(void*, const WPShaderValueData&);
 	void SetCameraParallax(const WPCameraParallax& value) { m_parallax = value; }
 
-	void SetOrtho(uint32_t w, uint32_t h) { m_ortho = {w, h}; }
+	void SetScreenSize(uint16_t w, uint16_t h) override { m_screen_size = {(float)w, (float)h}; }
 private:
 	Scene* m_scene;	
 	WPCameraParallax m_parallax;
 	double m_dayTime {0.0f};
 	std::array<float, 2> m_texelSize {1.0f/1920.0f, 1.0f/1080.0f};
 	std::array<float, 2> m_mousePos {0.5f, 0.5f};
-	std::array<uint32_t, 2> m_ortho {1920, 1080};
+	std::array<float, 2> m_screen_size {1920, 1080};
 
 	Map<void*, WPShaderValueData> m_nodeDataMap;
 };

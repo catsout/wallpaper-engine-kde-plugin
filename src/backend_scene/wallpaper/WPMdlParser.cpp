@@ -78,7 +78,7 @@ bool WPMdlParser::Parse(std::string_view path, fs::VFS& vfs, WPMdl& mdl) {
 
     uint16_t bones_num = f.ReadUint16();
     // 1 byte
-    {char c;f.Read(&c, 1);}
+    f.ReadUint8();
 
     mdl.puppet = std::make_shared<WPPuppet>();
     auto& bones = mdl.puppet->bones;
@@ -121,7 +121,7 @@ bool WPMdlParser::Parse(std::string_view path, fs::VFS& vfs, WPMdl& mdl) {
     }
 
     // 1 byte
-    {char c; f.Read(&c, 1);}
+    f.ReadUint8();
 
     mdl.mdla = ReadMDLVesion(f);
     if(mdl.mdla != 0) {

@@ -156,6 +156,10 @@ public:
         return m_render->inited();
     }
 
+    void setMousePos(float x, float y) {
+        m_mouse_pos.store(std::array {x,y});
+    }
+
 private:
     MHANDLER_CMD(STOP) {
         bool stop {false};
@@ -169,6 +173,10 @@ private:
         if(m_rg) {
             //LOG_INFO("frame info, fps: %.1f, frametime: %.1f", 1.0f, 1000.0f*m_scene->frameTime);
             m_scene->shaderValueUpdater->FrameBegin();
+            {
+                auto pos = m_mouse_pos.load();
+                m_scene->shaderValueUpdater->MouseInput(pos[0], pos[1]);
+            }
             m_scene->paritileSys.Emitt();
 
             m_render->drawFrame(*m_scene);
@@ -219,6 +227,8 @@ private:
     std::unique_ptr<rg::RenderGraph> m_rg {nullptr};
     std::unique_ptr<vulkan::VulkanRender> m_render;
     FillMode m_fillmode {FillMode::ASPECTCROP};
+
+    std::atomic<std::array<float, 2>> m_mouse_pos {std::array{0.5f, 0.5f}};
 };
 }
 
@@ -268,6 +278,11 @@ void SceneWallpaper::pause() {
     msg->setBool("value", true);
     msg->post();
 }
+
+void SceneWallpaper::mouseInput(float x, float y) {
+    m_main_handler->renderHandler()->setMousePos(x, y);
+}
+
 
 #define BASIC_TYPE(NAME,TYPENAME)                                        \
 void SceneWallpaper::setProperty##NAME(std::string_view name, TYPENAME value) {    \

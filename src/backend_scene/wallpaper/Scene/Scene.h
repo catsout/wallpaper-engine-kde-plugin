@@ -4,6 +4,7 @@
 #include "SceneTexture.h"
 #include "SceneRenderTarget.h"
 #include "SceneNode.h"
+#include "SceneLight.hpp"
 #include "Interface/IShaderValueUpdater.h"
 #include "Interface/IImageParser.h"
 #include "Particle/ParticleSystem.h"
@@ -28,6 +29,8 @@ public:
 
 	std::unordered_map<std::string, std::shared_ptr<SceneCamera>> cameras;
 	std::unordered_map<std::string, std::vector<std::string>> linkedCameras;
+
+	std::vector<std::unique_ptr<SceneLight>> lights;
 
 	std::shared_ptr<SceneNode> sceneGraph;	
 	std::unique_ptr<IShaderValueUpdater> shaderValueUpdater;

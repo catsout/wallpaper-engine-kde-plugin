@@ -29,6 +29,7 @@ public:
 
     void play();
     void pause();
+    void mouseInput(float x, float y);
 
     void setPropertyBool(std::string_view, bool);
     void setPropertyInt32(std::string_view, int32_t);
@@ -41,10 +42,7 @@ private:
     bool m_inited {false};
 private:
     friend class MainHandler;
-    /*
-    class impl;
-    std::unique_ptr<impl> pImpl;
-    */
+
     bool m_offscreen {false};
     std::shared_ptr<MainHandler> m_main_handler;
 };

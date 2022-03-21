@@ -8,8 +8,6 @@
 
 #include <QtGui/QGuiApplication>
 #include <QtGui/QOpenGLContext>
-#include <QtGui/QOpenGLFramebufferObject>
-#include <QtGui/QOpenGLFunctions>
 #include <QtQuick/QQuickWindow>
 
 #include <QtGui/QOffscreenSurface>
@@ -92,7 +90,7 @@ public:
     ~TextureNode() override {
         for(auto& item:texs_map) {
             auto& exh = item.second;
-            close(exh.fd);
+            //close(exh.fd);
             m_glex.deleteTexture(exh.gltex);
             delete exh.qsg;
         }
@@ -135,12 +133,13 @@ public slots:
             if(texs_map.count(id) == 0) {
                 _Q_INFO("receive external texture(%dx%d) from fd: %d", exh->width, exh->height, exh->fd);
                 ExTex ex_tex;
-                ex_tex.fd = exh->fd;
+                int fd = exh->fd;
                 uint gltex = m_glex.genExTexture(*exh);
 
                 ex_tex.gltex = gltex;
                 ex_tex.qsg = createTextureFromGl(gltex, QSize(exh->width, exh->height), m_window); 
                 texs_map[id] = ex_tex;
+                close(fd);
             }
             auto& newtex = texs_map.at(id);
             m_texture = newtex.qsg;
@@ -162,7 +161,7 @@ private:
     GlExtra m_glex;
 
     struct ExTex {
-        int fd;
+        //int fd;
         uint gltex;
         QSGTexture* qsg;
     };
@@ -290,6 +289,18 @@ void SceneObject::setAcceptMouse(bool value) {
 
 void SceneObject::setAcceptHover(bool value) {
 	setAcceptHoverEvents(value);
+}
+
+void SceneObject::mousePressEvent(QMouseEvent *event) {
+}
+void SceneObject::mouseMoveEvent(QMouseEvent *event) {
+    auto pos = event->localPos();
+    m_scene->mouseInput(pos.x()/width(), pos.y()/height());
+}
+
+void SceneObject::hoverMoveEvent(QHoverEvent *event) {
+    auto pos = event->posF();
+    m_scene->mouseInput(pos.x()/width(), pos.y()/height());
 }
 
 #include "SceneBackend.moc"

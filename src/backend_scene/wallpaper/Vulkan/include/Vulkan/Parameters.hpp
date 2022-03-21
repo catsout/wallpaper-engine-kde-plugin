@@ -28,6 +28,7 @@ struct ImageParameters {
 	vk::ImageView view;
 	vk::Sampler sampler;
 	vk::Extent3D extent;
+	uint mipmap_level {1};
 	VmaAllocation allocation {};
 	VmaAllocationInfo allocationInfo {};
 

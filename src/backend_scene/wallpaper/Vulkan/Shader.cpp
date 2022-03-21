@@ -202,7 +202,7 @@ static bool parse(const ShaderCompUnit& unit, const ShaderCompOpt& opt, EShMessa
 		shader.setGlobalUniformBinding(opt.global_uniform_binding);
         shader.setEnvInputVulkanRulesRelaxed();
 	}
-    const int default_ver = 100; // or 110
+    const int default_ver = 110; // 100 for es, 110 for desktop
     TBuiltInResource resource = DefaultTBuiltInResource;
     if (!shader.parse(&resource, default_ver, false, emsg)) {
 		std::string tmp_name = logToTmpfileWithSha1(unit.src, "%s", unit.src.c_str());

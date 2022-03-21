@@ -23,6 +23,7 @@ public:
     const PassNode& workPassNode() const;
     void setWorkPassNode(PassNode*);
     void markSelfWrite(TexNode*);
+    void markVirtualWrite(TexNode*);
 private:
     TexNode* createNewTexNode(const TexNode::Desc&);
 

@@ -3,6 +3,7 @@
 #include "Utils/Logging.h"
 #include "Utils/AutoDeletor.hpp"
 #include "Resource.hpp"
+#include "PassCommon.hpp"
 
 using namespace wallpaper::vulkan;
 
@@ -11,39 +12,27 @@ CopyPass::CopyPass(const Desc& desc):m_desc(desc) {}
 
 CopyPass::~CopyPass() {};
 
-static TextureKey ToTexKey(wallpaper::SceneRenderTarget rt) {
-	return TextureKey {
-		.width = rt.width,
-		.height = rt.height,
-		.usage = {},
-		.format = wallpaper::TextureFormat::RGBA8,
-		.sample = rt.sample
-	};
-}
-
 void CopyPass::prepare(Scene& scene, const Device& device, RenderingResources& rr) {
     if(scene.renderTargets.count(m_desc.src) == 0) { 
         LOG_ERROR("%s not found", m_desc.src.c_str());
         return;
     }
-    {
+    if(scene.renderTargets.count(m_desc.dst) == 0) {
         auto& rt = scene.renderTargets.at(m_desc.src);
         scene.renderTargets[m_desc.dst] = rt;
         scene.renderTargets[m_desc.dst].allowReuse = true;
     }
 	
     std::array<std::string, 2> textures = {m_desc.src, m_desc.dst};
-    std::array<ImageSlots*, 2> vk_textures = {&m_desc.vk_src, &m_desc.vk_dst};
+    std::array<ImageParameters*, 2> vk_textures = {&m_desc.vk_src, &m_desc.vk_dst};
     for(int i=0;i < textures.size();i++) {
         auto& tex_name = textures[i];
 		if(tex_name.empty()) continue;
 
-		vk::ResultValue<ImageSlots> rv {vk::Result::eSuccess, {}};
+		vk::ResultValue<ImageParameters> rv {vk::Result::eSuccess, {}};
         if(IsSpecTex(tex_name)) {
 			auto& rt = scene.renderTargets.at(tex_name);
-			auto rv_paras = device.tex_cache().Query(tex_name, ToTexKey(rt), !rt.allowReuse);
-			rv.result = rv_paras.result;
-			rv.value = ImageSlots{{rv_paras.value}, 0};
+			rv = device.tex_cache().Query(tex_name, ToTexKey(rt), !rt.allowReuse);
 		} else {
             LOG_ERROR("can't copy image source");
             return;
@@ -62,8 +51,8 @@ void CopyPass::prepare(Scene& scene, const Device& device, RenderingResources& r
 };
 void CopyPass::execute(const Device& device, RenderingResources& rr) {
     auto& cmd = rr.command;
-    auto& src = m_desc.vk_src.getActive();
-    auto& dst = m_desc.vk_dst.getActive();
+    auto& src = m_desc.vk_src;
+    auto& dst = m_desc.vk_dst;
 
     if(!(src.handle && dst.handle)) {
         assert(src.handle && dst.handle);
@@ -112,9 +101,9 @@ void CopyPass::execute(const Device& device, RenderingResources& rr) {
                             2, imbs.data());
     }
     cmd.copyImage(
-        m_desc.vk_src.getActive().handle,
+        src.handle,
         vk::ImageLayout::eTransferSrcOptimal,
-        m_desc.vk_dst.getActive().handle,
+        dst.handle,
         vk::ImageLayout::eTransferDstOptimal,
         1,
         &copy
@@ -140,6 +129,10 @@ void CopyPass::execute(const Device& device, RenderingResources& rr) {
                             0, nullptr,
                             0, nullptr,
                             2, imbs.data());
+    }
+
+    if(dst.mipmap_level > 1) {
+        device.tex_cache().RecGenerateMipmaps(cmd, dst);
     }
 };
 void CopyPass::destory(const Device&, RenderingResources&) {

@@ -6,27 +6,16 @@ import scenetest 1.0
 Item {
     width: 1280
     height: 720
-    Loader {
-        id: loader
+    SceneViewer {
+        id: renderer
         anchors.fill: parent
-        sourceComponent: rect
+        fps: 15
     }
-
-    Component {
-        id: rect
-        SceneViewer {
-            id: renderer
-            anchors.fill: parent
-            fps: 15
-        }
-    }
-
     Timer {
         running: false
         repeat: false
         interval: 1000*5
         onTriggered: {
-            loader.sourceComponent = undefined;
         }
     } 
 }

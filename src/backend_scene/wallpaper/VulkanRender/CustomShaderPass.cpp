@@ -64,16 +64,6 @@ vk::RenderPass CreateRenderPass(const vk::Device &device, vk::Format format, vk:
 	return device.createRenderPass(creatinfo).value;
 }
 
-static TextureKey ToTexKey(wallpaper::SceneRenderTarget rt) {
-	return TextureKey {
-		.width = rt.width,
-		.height = rt.height,
-		.usage = {},
-		.format = wallpaper::TextureFormat::RGBA8,
-		.sample = rt.sample
-	};
-}
-
 static void UpdateUniform(StagingBuffer* buf, 
 	const StagingBufferRef& bufref, 
 	const ShaderReflected::Block& block, 
@@ -162,6 +152,7 @@ void CustomShaderPass::prepare(Scene& scene, const Device& device, RenderingReso
 
 		auto& bindings = descriptor_info.bindings;
 		bindings.resize(ref.binding_map.size());
+		/*
 		LOG_INFO("----shader------");
 		LOG_INFO("%s", shader.name.c_str());
 		LOG_INFO("--inputs:");
@@ -169,8 +160,9 @@ void CustomShaderPass::prepare(Scene& scene, const Device& device, RenderingReso
 			LOG_INFO("%d %s", i.second, i.first.c_str());
 		}
 		LOG_INFO("--bindings:");
+		*/
 		std::transform(ref.binding_map.begin(), ref.binding_map.end(), bindings.begin(), [](auto& item) {
-			LOG_INFO("%d %s", item.second.binding, item.first.c_str());
+			//LOG_INFO("%d %s", item.second.binding, item.first.c_str());
 			return item.second;
 		});
 

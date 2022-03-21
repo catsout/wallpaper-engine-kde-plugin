@@ -33,6 +33,7 @@ add_library(${PROJECT_NAME}
 	wpscene/WPParticleObject.cpp
 	wpscene/WPMaterial.cpp
 	wpscene/WPScene.cpp
+	wpscene/WPLightObject.cpp
 	Particle/ParticleModify.cpp
 	Particle/ParticleSystem.cpp
 	Particle/ParticleEmitter.cpp

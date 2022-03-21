@@ -33,8 +33,9 @@ void WPShaderValueUpdater::UpdateUniforms(SceneNode* pNode, sprite_map_t& sprite
 	if(!pNode->Mesh()) return;
 
 	const SceneCamera* camera;
+	std::string_view cam_name = pNode->Camera();
 	if(!pNode->Camera().empty()) {
-		camera = m_scene->cameras.at(pNode->Camera()).get();
+		camera = m_scene->cameras.at(cam_name.data()).get();
 	}
 	else
 		camera = m_scene->activeCamera;
@@ -49,18 +50,22 @@ void WPShaderValueUpdater::UpdateUniforms(SceneNode* pNode, sprite_map_t& sprite
 	bool hasNodeData = exists(m_nodeDataMap, pNode);
 	if(hasNodeData) {
 		auto& nodeData = m_nodeDataMap.at(pNode);
-		for(const auto& el:nodeData.renderTargetResolution) {
+		for(const auto& el:nodeData.renderTargets) {
 			if(m_scene->renderTargets.count(el.second) == 0) continue;
-			std::string_view name = WE_GLTEX_RESOLUTION_NAMES[el.first];
-			if(!existsOp(name))
-				continue;
+			const auto& rt = m_scene->renderTargets[el.second];
 
-			const auto& rt = m_scene->renderTargets.at(el.second);
-			std::array<uint16_t,4> resolution_uint({
-				rt.width, rt.height, 
-				rt.width, rt.height
-			});
-			updateOp(name, ShaderValue(array_cast<float>(resolution_uint)));
+			const auto name_resolution = WE_GLTEX_RESOLUTION_NAMES[el.first];
+			if(existsOp(name_resolution)) {
+				std::array<uint16_t,4> resolution_uint({
+					rt.width, rt.height, 
+					rt.width, rt.height
+				});
+				updateOp(name_resolution, ShaderValue(array_cast<float>(resolution_uint)));
+			}
+			const auto name_mipmap = WE_GLTEX_MIPMAPINFO_NAMES[el.first];
+			if(existsOp(name_mipmap)) {
+				updateOp(name_mipmap, (float)rt.mipmap_level);
+			}
 		}
 		if(nodeData.puppet && existsOp(G_BONES)) {
 			auto data = nodeData.puppet->genFrame(nodeData.puppet_layers, m_scene->frameTime);
@@ -77,16 +82,16 @@ void WPShaderValueUpdater::UpdateUniforms(SceneNode* pNode, sprite_map_t& sprite
 	Matrix4d viewProTrans = camera->GetViewProjectionMatrix();
 
 	if(existsOp(G_VP)) {
-		//shadervs.push_back({G_VP, ShaderValue::ValueOf(viewProTrans)});
+		updateOp(G_VP, ShaderValue::fromMatrix(viewProTrans));
 	}
 	if(reqM || reqMVP || reqMI || reqMVPI) {
 		Matrix4d modelTrans = pNode->GetLocalTrans().cast<double>();
-		if(hasNodeData) {
+		if(hasNodeData && cam_name != "effect") {
 			const auto& nodeData = m_nodeDataMap.at(pNode);
 			if(m_parallax.enable) {
 				Vector3f nodePos = pNode->Translate();
 				Vector2f depth(&nodeData.parallaxDepth[0]);
-				Vector2f ortho{m_ortho[0], m_ortho[1]};
+				Vector2f ortho{(float)m_scene->ortho[0], (float)m_scene->ortho[1]};
 				Vector2f mouseVec = (Vector2f{0.5f, 0.5f} - Vector2f(&m_mousePos[0])).cwiseProduct(ortho);
 				mouseVec *= m_parallax.mouseinfluence;
 				Vector3f camPos = camera->GetPosition().cast<float>();
@@ -122,6 +127,9 @@ void WPShaderValueUpdater::UpdateUniforms(SceneNode* pNode, sprite_map_t& sprite
 	if(existsOp(G_TEXELSIZEHALF))
 		updateOp(G_TEXELSIZEHALF, std::array {m_texelSize[0]/2.0f, m_texelSize[1]/2.0f});
 	
+	if(existsOp(G_SCREEN))
+		updateOp(G_SCREEN, std::array<float,3> {m_screen_size[0], m_screen_size[1], m_screen_size[0]/m_screen_size[1]});
+	
 	
 	for(auto& [i, sp]:sprites) {
 		const auto& f = sp.GetAnimateFrame(m_scene->frameTime);
@@ -131,10 +139,22 @@ void WPShaderValueUpdater::UpdateUniforms(SceneNode* pNode, sprite_map_t& sprite
 		updateOp(gtrans, std::array {f.x, f.y});
 	}
 
+
 	if(existsOp(G_LP)) {
-		Vector2f ortho{m_ortho[0], m_ortho[1]};
-		Vector2f mouseVec = -(Vector2f{0.5f, 0.5f} - Vector2f(&m_mousePos[0])).cwiseProduct(ortho);
-		//shadervs.push_back({G_LP, {mouseVec[0], mouseVec[1], 500.0f}});
+		std::array<float, 16> lights {0};
+		std::array<float, 12> lights_color {0};
+		uint i = 0;
+		for(auto& l:m_scene->lights) {
+			assert(l->node() != nullptr);
+			if(i == 3) break;
+			const auto& trans = l->node()->Translate();
+			const auto& color = l->premultipliedColor();
+			std::copy(trans.begin(), trans.end(), lights.begin() + i*4);
+			std::copy(color.begin(), color.end(), lights_color.begin() + i*4);
+			i++;
+		}
+		updateOp(G_LP, lights);
+		updateOp(G_LCP, lights_color);
 	}
 }
 

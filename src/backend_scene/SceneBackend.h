@@ -3,6 +3,10 @@
 #include <QtQuick/QQuickFramebufferObject>
 #include <QtCore/QLoggingCategory>
 #include <QtCore/QTimer>
+#include <QtGui/QMouseEvent>
+#include <QtGui/QHoverEvent>
+
+
 
 #include "SceneWallpaper.hpp"
 
@@ -51,6 +55,11 @@ public:
 
 	Q_INVOKABLE void setAcceptMouse(bool);
 	Q_INVOKABLE void setAcceptHover(bool);
+
+protected:
+	void mousePressEvent(QMouseEvent *event) override;
+	void mouseMoveEvent(QMouseEvent *event) override;
+	void hoverMoveEvent(QHoverEvent *event) override;
 
 public slots:
     void resizeFb();

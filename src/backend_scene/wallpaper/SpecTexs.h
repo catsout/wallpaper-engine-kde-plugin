@@ -23,6 +23,9 @@ constexpr std::array WE_GLTEX_ROTATION_NAMES {
 constexpr std::array WE_GLTEX_TRANSLATION_NAMES {
 	BASE_GLTEX_NAMES(Translation)
 };
+constexpr std::array WE_GLTEX_MIPMAPINFO_NAMES {
+	BASE_GLTEX_NAMES(MipMapInfo)
+};
 #undef BASE_GLTEX_NAMES
 
 constexpr std::string_view WE_SPEC_PREFIX {"_rt_"};
@@ -30,6 +33,7 @@ constexpr std::string_view WE_IMAGE_LAYER_COMPOSITE_PREFIX {"_rt_imageLayerCompo
 constexpr std::string_view WE_HALF_COMPO_BUFFER_PREFIX {"_rt_HalfCompoBuffer"};
 constexpr std::string_view WE_QUARTER_COMPO_BUFFER_PREFIX {"_rt_QuarterCompoBuffer"};
 constexpr std::string_view WE_FULL_COMPO_BUFFER_PREFIX {"_rt_FullCompoBuffer"};
+constexpr std::string_view WE_MIP_MAPPED_FRAME_BUFFER {"_rt_MipMappedFrameBuffer"};
 
 constexpr std::string_view WE_EFFECT_PPONG_PREFIX   {"_rt_effect_pingpong_"};
 constexpr std::string_view WE_EFFECT_PPONG_PREFIX_A   {"_rt_effect_pingpong_a_"};
@@ -52,7 +56,8 @@ constexpr std::string_view G_MVP  { "g_ModelViewProjectionMatrix" };
 constexpr std::string_view G_AM   { "g_AltModelMatrix" };
 constexpr std::string_view G_MI   { "g_ModelMatrixInverse" };
 constexpr std::string_view G_MVPI { "g_ModelViewProjectionMatrixInverse" };
-constexpr std::string_view G_LP   { "g_LightsPosition[0]" };
+constexpr std::string_view G_LP   { "g_LightsPosition" };
+constexpr std::string_view G_LCP  { "g_LightsColorPremultiplied" };
 
 constexpr std::string_view G_TIME            { "g_Time" };
 constexpr std::string_view G_DAYTIME         { "g_DayTime" };
@@ -60,6 +65,7 @@ constexpr std::string_view G_POINTERPOSITION { "g_PointerPosition" };
 constexpr std::string_view G_TEXELSIZE       { "g_TexelSize" };
 constexpr std::string_view G_TEXELSIZEHALF   { "g_TexelSizeHalf" };
 constexpr std::string_view G_BONES           { "g_Bones" };
+constexpr std::string_view G_SCREEN          { "g_Screen" };
 
 constexpr std::string_view SpecTex_Default { "_rt_default" };
 constexpr std::string_view SpecTex_Link { "_rt_link_" };

@@ -58,6 +58,12 @@ void RenderGraphBuilder::markSelfWrite(TexNode* tex) {
         builder.write(tex);
     });
 }
+void RenderGraphBuilder::markVirtualWrite(TexNode* tex) {
+    if(tex->version() > 0) return;
+    m_rg.addPass<VirtualPass>("virtual pass", PassNode::Type::Virtual, [tex](RenderGraphBuilder& builder, auto&) {
+        builder.write(tex);
+    });
+}
 
 TexNode* RenderGraphBuilder::createTexNode(const TexNode::Desc& desc, bool write) {
     TexNode* node {nullptr};

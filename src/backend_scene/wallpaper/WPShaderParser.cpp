@@ -19,8 +19,6 @@ static constexpr const char* pre_shader_code = R"(#version 150
 #define GLSL 1
 #define HLSL 1
 #define highp
-#define mediump
-#define lowp
 
 #define CAST2(x) (vec2(x))
 #define CAST3(x) (vec3(x))
@@ -319,7 +317,7 @@ void WPShaderParser::Preprocessor(const std::string& in_src, ShaderType type, co
 	)};
 	auto* data = src.c_str();
 	shader.setStrings(&data, 1);
-	shader.preprocess(&vulkan::DefaultTBuiltInResource, 100, EProfile::ECoreProfile, false, false, emsg, &res, includer);
+	shader.preprocess(&vulkan::DefaultTBuiltInResource, 110, EProfile::ECoreProfile, false, false, emsg, &res, includer);
 
 	std::regex re_io (R"(.+\s(in|out)\s[\s\w]+\s(\w+)\s*;)", std::regex::ECMAScript);
 	for(auto it = std::sregex_iterator(res.begin(), res.end(), re_io);
@@ -346,7 +344,7 @@ void WPShaderParser::Preprocessor(const std::string& in_src, ShaderType type, co
 }
 
 std::string WPShaderParser::Finalprocessor(const WPPreprocessorInfo& cur, const WPPreprocessorInfo* pre, const WPPreprocessorInfo* next) {
-	std::string insert_str;
+	std::string insert_str {};
 	if(pre != nullptr) {
 		for(auto& [k,v]:pre->output) {
 			if(!exists(cur.input, k)) {
@@ -370,4 +368,5 @@ std::string WPShaderParser::Finalprocessor(const WPPreprocessorInfo& cur, const 
 		std::regex(R"(\s+\n)"),
 		"\n"
 	);
+	//return std::regex_replace(cur.result, re_hold, insert_str);
 }

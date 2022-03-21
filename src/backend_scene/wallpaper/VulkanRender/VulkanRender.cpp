@@ -300,11 +300,12 @@ void VulkanRender::drawFrameOffscreen() {
 }
 
 void VulkanRender::setRenderTargetSize(Scene& scene, rg::RenderGraph& rg) {
+    auto& ext = m_device->out_extent();
     for(auto& item:scene.renderTargets) {
         auto& rt = item.second;
         if(rt.bind.enable && rt.bind.screen) {
-            rt.width = rt.bind.scale * m_device->out_extent().width;
-            rt.height = rt.bind.scale * m_device->out_extent().height;
+            rt.width = rt.bind.scale * ext.width;
+            rt.height = rt.bind.scale * ext.height;
         }
     }
     for(auto& item:scene.renderTargets) {
@@ -322,8 +323,11 @@ void VulkanRender::setRenderTargetSize(Scene& scene, rg::RenderGraph& rg) {
         auto& rt = item.second;
 		if(!item.first.empty() && (rt.width*rt.height <= 4)) {
             LOG_ERROR("wrong size for render target: %s", item.first.c_str());
+        } else if(rt.has_mipmap) {
+            rt.mipmap_level = std::max(3u, static_cast<uint>(std::floor(std::log2(std::min(rt.width, rt.height))))) - 2u;
         }
     }
+    scene.shaderValueUpdater->SetScreenSize(ext.width, ext.height);
 }
 
 void VulkanRender::UpdateCameraFillMode(wallpaper::Scene& scene, wallpaper::FillMode fillmode) {
@@ -406,10 +410,10 @@ void VulkanRender::compileRenderGraph(Scene& scene, rg::RenderGraph& rg) {
         auto* pass = rg.getPass(id);
         assert(pass != nullptr);
         VulkanPass* vpass = static_cast<VulkanPass*>(pass);
-        LOG_INFO("----release tex");
+        //LOG_INFO("----release tex");
         for(auto& tex:texs) { 
             vpass->addReleaseTexs(tex->key());
-            LOG_INFO("%s", tex->key().data());
+        //    LOG_INFO("%s", tex->key().data());
         }
         return vpass;
     });

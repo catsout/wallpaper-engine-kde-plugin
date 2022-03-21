@@ -14,26 +14,25 @@ using namespace std;
 unsigned int SCR_WIDTH = 1280;
 unsigned int SCR_HEIGHT = 720;
 atomic<bool> renderCall(false);
-wallpaper::SceneWallpaper* psw = nullptr;
 
-void framebuffer_size_callback(GLFWwindow*, int width, int height) {
-	SCR_WIDTH = width;
-	SCR_HEIGHT = height;
-	/*
-	if(pwgl != nullptr) {
-		(*pwgl).SetDefaultFbo(0,SCR_WIDTH,SCR_HEIGHT);
+struct UserData {
+	wallpaper::SceneWallpaper* psw {nullptr};
+	uint16_t width;
+	uint16_t height;
+};
+
+extern "C" {
+	void framebuffer_size_callback(GLFWwindow*, int width, int height) {}
+
+	void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
+		if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+		}
 	}
-	*/
-}
 
-void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
-    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+	void cursor_position_callback(GLFWwindow* win, double xpos, double ypos) {
+		UserData* data = static_cast<UserData*>(glfwGetWindowUserPointer(win));
+		data->psw->mouseInput(xpos / data->width, ypos / data->height);
 	}
-}
-
-
-void cursor_position_callback(GLFWwindow*, double xpos, double ypos) {
-	//if(pwgl) pwgl->SetMousePos(xpos, ypos);
 }
 
 void updateCallback() {
@@ -50,6 +49,10 @@ int main(int argc, char**argv)
 	glfwInit();
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "WP", nullptr, nullptr);
+
+	UserData data;
+	data.width = SCR_WIDTH;
+	data.height = SCR_HEIGHT;
 
 	wallpaper::RenderInitInfo info;
 	info.enable_valid_layer = program.get<bool>(OPT_VALID_LAYER);
@@ -74,19 +77,23 @@ int main(int argc, char**argv)
         glfwTerminate();
         return -1;
     }
-    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-	glfwSetMouseButtonCallback(window, mouse_button_callback);
 
- 	// glfw callback
-	glfwSetCursorPosCallback(window, cursor_position_callback);
 
-    psw = new wallpaper::SceneWallpaper();
+    auto* psw = new wallpaper::SceneWallpaper();
+	data.psw = psw;
+
 	psw->init();
 	psw->initVulkan(info);
 	psw->setPropertyString(wallpaper::PROPERTY_ASSETS, program.get<std::string>(ARG_ASSETS));
 	psw->setPropertyString(wallpaper::PROPERTY_SOURCE, program.get<std::string>(ARG_SCENE));
 	psw->setPropertyBool(wallpaper::PROPERTY_GRAPHIVZ, program.get<bool>(OPT_GRAPHVIZ));
 	psw->setPropertyInt32(wallpaper::PROPERTY_FPS, program.get<int32_t>(OPT_FPS));
+
+	glfwSetWindowUserPointer(window, &data);
+
+    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+	glfwSetMouseButtonCallback(window, mouse_button_callback);
+	glfwSetCursorPosCallback(window, cursor_position_callback);
 
     while (!glfwWindowShouldClose(window)) {
 		glfwPollEvents();
