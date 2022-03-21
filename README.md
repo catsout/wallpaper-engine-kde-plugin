@@ -10,6 +10,8 @@ A wallpaper plugin integrating [wallpaper engine](https://store.steampowered.com
 - Requires *Wallpaper Engine* installed on steam
 - Requires [CMake 3.16+](#dependencies)
 - Requires [qt 5.13+](#dependencies) for playing video(no mpv), or [mpv](#dependencies) instead  
+- Requires vulkan 1.1  
+  opengl [External Memory Object](https://www.khronos.org/registry/OpenGL/extensions/EXT/EXT_external_objects.txt) extension
 
 ## Install
 #### Dependencies
@@ -31,7 +33,7 @@ qt5-qtx11extras-devel qt5-qtwebchannel-devel qt5-qtwebsockets-devel
 
 Arch:  
 ```sh
-sudo pacman -S git cmake extra-cmake-modules plasma-framework gst-libav \
+sudo pacman -S extra-cmake-modules plasma-framework gst-libav \
 base-devel mpv python-websockets qt5-declarative qt5-websockets qt5-webchannel
 ```
 #### Build and Install
@@ -39,6 +41,9 @@ base-devel mpv python-websockets qt5-declarative qt5-websockets qt5-webchannel
 # Download source
 git clone https://github.com/catsout/wallpaper-engine-kde-plugin.git
 cd wallpaper-engine-kde-plugin
+
+# Download submodule (glslang)
+git submodule update --init
 
 # Configure
 mkdir build && cd build
@@ -54,7 +59,7 @@ sudo make install
 ```
 #### Uninstall
 1. remove files that list in wallpaper-engine-kde-plugin/build/install_manifest.txt
-2. `plasmapkg2 -r ~/.local/share/plasma/wallpapers/com.github.catsout.wallpaperEngineKde`
+2. `plasmapkg2 -r ~/.local/share/plasma/wallpapers/com.github.casout.wallpaperEngineKde`
 
 ## Usage
 1. *Wallpaper Engine* installed on Steam
@@ -69,7 +74,7 @@ You can also try using: `kquitapp5 plasmashell && kstart5 plasmashell`
 
 ## Support Status
 ### Scene:
-Scene wallpapers are supported by direct OpenGL(3.2).  
+Scene wallpapers are supported by vulkan 1.1  
 Requires *Wallpaper Engine* installed for assets(shaders,pictures...)
 #### implemented
 - [x] Layer
@@ -101,9 +106,9 @@ Requires *Wallpaper Engine* installed for assets(shaders,pictures...)
 		- [ ] Vortex
 	- [ ] Control Points
 	- [ ] Children
+- [x] Puppet warp
 - [ ] 3D model
 - [ ] Timeline animations
-- [ ] Puppet warp
 - [ ] Scenescript  
 
 ### Web
