@@ -76,7 +76,7 @@ sudo make install
 
 ### Restart KDE
 You need to restart KDE(re-login) after **reinstalling the plugin**  
-Please not use `kstart5 plasmashell`, which will cause freezing
+Please not use `kstart5 plasmashell`, which will cause freezing  
 Re-login is ok  
 
 ## Support Status
