@@ -1,6 +1,6 @@
 find_package(Qt5 COMPONENTS Quick Qml REQUIRED)
-add_subdirectory(backend/mpv)
-add_subdirectory(backend/scene)
+add_subdirectory(backend_mpv)
+add_subdirectory(backend_scene)
 
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
@@ -22,6 +22,9 @@ target_link_libraries(${PROJECT_NAME}
 	mpvbackend
 	scenebackend
 )
+set_target_properties(${PROJECT_NAME} PROPERTIES CXX_VISIBILITY_PRESET hidden)
+set_target_properties(${PROJECT_NAME}
+                       PROPERTIES LINK_FLAGS "-Wl,--exclude-libs,ALL")
 
 # During plugin searching Qt will be looking for 'qmldir' file
 # So we should place it next to our plugin lib.
