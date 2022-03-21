@@ -10,8 +10,7 @@ A wallpaper plugin integrating [wallpaper engine](https://store.steampowered.com
 - Requires *Wallpaper Engine* installed on steam
 - Requires [CMake 3.16+](#dependencies)
 - Requires [qt 5.13+](#dependencies) for playing video(no mpv), or [mpv](#dependencies) instead  
-- Requires vulkan 1.1  
-  opengl [External Memory Object](https://www.khronos.org/registry/OpenGL/extensions/EXT/EXT_external_objects.txt) extension
+- Requires vulkan 1.1, opengl [External Memory Object](https://www.khronos.org/registry/OpenGL/extensions/EXT/EXT_external_objects.txt) extension
 
 ## Install
 #### Dependencies
@@ -65,7 +64,7 @@ make install_pkg
 sudo make install
 ```
 #### Uninstall
-1. remove files that list in wallpaper-engine-kde-plugin/build/install_manifest.txt
+1. remove files that list in `wallpaper-engine-kde-plugin/build/install_manifest.txt`
 2. `plasmapkg2 -r ~/.local/share/plasma/wallpapers/com.github.casout.wallpaperEngineKde`
 
 ## Usage
@@ -77,7 +76,8 @@ sudo make install
 
 ### Restart KDE
 You need to restart KDE(re-login) after **reinstalling the plugin**  
-You can also try using: `kquitapp5 plasmashell && kstart5 plasmashell`  
+Please not use `kstart5 plasmashell`, which will cause freezing
+Re-login is ok  
 
 ## Support Status
 ### Scene:
