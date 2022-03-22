@@ -12,7 +12,7 @@ namespace fs { class IBinaryStream; }
 namespace audio
 {
 
-class SoundStream {
+class SoundStream: NoCopy,NoMove {
 public:
 	struct Desc {
 		uint32_t channels;
@@ -21,10 +21,6 @@ public:
 public:
 	SoundStream() = default;
 	virtual ~SoundStream() = default;
-	SoundStream(const SoundStream&) = delete;
-	SoundStream& operator=(const SoundStream&) = delete;
-	SoundStream(SoundStream&&) = default;
-	SoundStream& operator=(SoundStream&&) = default;
 
 	virtual uint32_t NextPcmData(void* pData, uint32_t frameCount) = 0;
 	virtual void PassDesc(const Desc&) = 0;

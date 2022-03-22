@@ -61,19 +61,23 @@ public:
 		}
 		return m_inited;
 	}
-	ma_uint32 NextPcmData(void* pData, ma_uint32 frameCount) {
+	ma_uint64 NextPcmData(void* pData, ma_uint64 frameCount) {
 		if(!m_inited) return 0;
-		return ma_decoder_read_pcm_frames(&m_decoder, pData, frameCount);
+		decltype(frameCount) readed {0};
+		ma_result result = ma_decoder_read_pcm_frames(&m_decoder, pData, frameCount, &readed);
+		return result == MA_SUCCESS ? readed : 0;
 	}
 	bool IsInited() { return m_inited; }
 private:
-	static size_t Read(ma_decoder* pMaDecoder, void* pBufferOut, size_t bytesToRead) {
+	static ma_result Read(ma_decoder* pMaDecoder, void* pBufferOut, size_t bytesToRead, size_t* pBytesRead) {
 		auto* pDecoder = static_cast<Decoder<TStream>*>(pMaDecoder->pUserData);
-		return pDecoder->m_stream.Read(pBufferOut, bytesToRead);
+		*pBytesRead = pDecoder->m_stream.Read(pBufferOut, bytesToRead);
+		return MA_SUCCESS;
 	}
-	static ma_bool32 Seek(ma_decoder* pMaDecoder, ma_int64 byteOffset, ma_seek_origin origin) {
+	static ma_result Seek(ma_decoder* pMaDecoder, ma_int64 byteOffset, ma_seek_origin origin) {
 		auto* pDecoder = static_cast<Decoder<TStream>*>(pMaDecoder->pUserData);
-		return pDecoder->m_stream.Seek(byteOffset, origin);
+		bool ok = pDecoder->m_stream.Seek(byteOffset, origin);
+		return ok ? MA_SUCCESS : MA_ERROR;
 	}
 	bool m_inited {false};
 	ma_decoder m_decoder {};
@@ -143,7 +147,7 @@ public:
 		Start();
 		return true;
 	}
-	bool IsInited() const { return m_device.state != MA_STATE_UNINITIALIZED; }
+	bool IsInited() const { return m_device.state != ma_device_state_uninitialized; }
 	void UnInit() {
 		if(IsInited()) {
 			LOG_INFO("uninit sound device");

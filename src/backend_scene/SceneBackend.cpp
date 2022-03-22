@@ -253,13 +253,13 @@ void SceneObject::setFillMode(int value) {
 void SceneObject::setVolume(float value) {
 	if(m_volume == value) return;
 	m_volume = value;
-    SET_PROPERTY(Float, "volume", value);
+    SET_PROPERTY(Float, wallpaper::PROPERTY_VOLUME, value);
 	Q_EMIT volumeChanged();
 }
 void SceneObject::setMuted(bool value) {
 	if(m_muted == value) return;
 	m_muted = value;
-    SET_PROPERTY(Bool, "muted", value);
+    SET_PROPERTY(Bool, wallpaper::PROPERTY_MUTED, value);
 }
 
 void SceneObject::play() {

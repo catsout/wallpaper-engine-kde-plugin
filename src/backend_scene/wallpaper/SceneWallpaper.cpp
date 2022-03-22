@@ -35,19 +35,6 @@ template <typename T>
 static void addMsgCmd(looper::Message& msg, T cmd) {
     msg.setInt32("cmd", (int32_t)cmd);
 }
-/*
-class SceneWallpaper::impl {
-public:
-    impl(SceneWallpaper& uper);
-
-    ~impl()	{}
-    SceneWallpaper& uper;
-    std::shared_ptr<looper::Looper> main_loop;
-    std::shared_ptr<looper::Looper> render_loop;
-    std::shared_ptr<MainHandler> main_handler;
-    std::shared_ptr<RenderHandler> render_handler;
-};
-*/
 
 namespace wallpaper
 {
@@ -58,6 +45,7 @@ public:
     enum class CMD {
         CMD_LOAD_SCENE,
         CMD_SET_PROPERTY,
+        CMD_STOP,
         CMD_NO
     };
 public:
@@ -91,6 +79,7 @@ private:
 
     MHANDLER_CMD(LOAD_SCENE);
     MHANDLER_CMD(SET_PROPERTY);
+    MHANDLER_CMD(STOP);
 
 private:
     bool m_inited {false};
@@ -99,12 +88,8 @@ private:
     std::string m_source;
     bool m_gen_graphviz {false};
 
-    /*
-    fs::VFS vfs;
-    std::unique_ptr<Scene> scene;
-    WPSceneParser parser;
-    */
     WPSceneParser m_scene_parser;
+    std::unique_ptr<audio::SoundManager> m_sound_manager;
 
 private:
     std::shared_ptr<looper::Looper> m_main_loop;
@@ -267,14 +252,14 @@ void SceneWallpaper::initVulkan(const RenderInitInfo& info) {
 }
 
 void SceneWallpaper::play() {
-    auto msg = looper::Message::create(0, m_main_handler->renderHandler());
-    addMsgCmd(*msg, RenderHandler::CMD::CMD_STOP);
+    auto msg = looper::Message::create(0, m_main_handler);
+    addMsgCmd(*msg, MainHandler::CMD::CMD_STOP);
     msg->setBool("value", false);
     msg->post();
 }
 void SceneWallpaper::pause() {
-    auto msg = looper::Message::create(0, m_main_handler->renderHandler());
-    addMsgCmd(*msg, RenderHandler::CMD::CMD_STOP);
+    auto msg = looper::Message::create(0, m_main_handler);
+    addMsgCmd(*msg, MainHandler::CMD::CMD_STOP);
     msg->setBool("value", true);
     msg->post();
 }
@@ -334,7 +319,32 @@ MHANDLER_CMD_IMPL(MainHandler, SET_PROPERTY) {
             }
         } else if(property == PROPERTY_GRAPHIVZ) {
             msg->findBool("value", &m_gen_graphviz);
+        } else if(property == PROPERTY_MUTED) {
+            bool muted {false};
+            msg->findBool("value", &muted);
+            m_sound_manager->SetMuted(muted);
+        } else if(property == PROPERTY_VOLUME) {
+            float volume {1.0f};
+            msg->findFloat("value", &volume);
+            m_sound_manager->SetVolume(volume);
         }
+    }
+}
+
+MHANDLER_CMD_IMPL(MainHandler, STOP) {
+    bool stop {false};
+    if(msg->findBool("value", &stop)) {
+        auto msg_r = looper::Message::create(0, m_render_handler);
+        addMsgCmd(*msg_r, RenderHandler::CMD::CMD_STOP);
+        if(stop) {
+            m_sound_manager->Pause();
+            msg_r->setBool("value", true);
+        }
+        else {
+            m_sound_manager->Play();
+            msg_r->setBool("value", false);
+        }
+        msg_r->post();
     }
 }
 
@@ -342,6 +352,13 @@ MHANDLER_CMD_IMPL(MainHandler, SET_PROPERTY) {
 void MainHandler::loadScene() {
     if(m_source.empty() || m_assets.empty()) 
         return;
+
+   	if(!m_sound_manager->IsInited()) {
+		m_sound_manager->Init();
+		m_sound_manager->Play();
+	} else {
+        m_sound_manager->UnMountAll();
+    }
 
     std::shared_ptr<Scene> scene {nullptr};
 
@@ -387,8 +404,7 @@ void MainHandler::loadScene() {
             LOG_ERROR("Not supported scene type");
             return;
         }
-        audio::SoundManager sm;
-        scene = m_scene_parser.Parse(scene_src, vfs, sm);	
+        scene = m_scene_parser.Parse(scene_src, vfs, *m_sound_manager);
         scene->vfs.swap(pVfs);
     }
 
@@ -430,15 +446,8 @@ bool MainHandler::init() {
     return true;
 }
 MainHandler::MainHandler():
+        m_sound_manager(std::make_unique<audio::SoundManager>()),
         m_main_loop(std::make_shared<looper::Looper>()),
         m_render_loop(std::make_shared<looper::Looper>()),
         m_render_handler(std::make_shared<RenderHandler>(*this))
 {}
-/*
-SceneWallpaper::impl::impl(SceneWallpaper& uper):
-        uper(uper),
-        main_loop(std::make_shared<looper::Looper>()),
-        render_loop(std::make_shared<looper::Looper>()),
-        main_handler(std::make_shared<MainHandler>(uper)),
-        render_handler(std::make_shared<RenderHandler>(uper)) {};
-*/

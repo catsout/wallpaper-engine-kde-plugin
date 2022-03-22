@@ -955,7 +955,6 @@ std::shared_ptr<Scene> WPSceneParser::Parse(const std::string& buf, fs::VFS& vfs
 		} else if(obj.contains("sound") && !obj.at("sound").is_null()) {
 			wpscene::WPSoundObject wpsoundobj;
 			if(!wpsoundobj.FromJson(obj)) continue;
-			continue;
 			wp_objs.push_back(wpsoundobj);
 		} else if(obj.contains("light") && !obj.at("light").is_null()) {
 			wpscene::WPLightObject wplightobj;
