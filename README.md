@@ -83,6 +83,16 @@ Re-login is ok
 ### Scene:
 Scene wallpapers are supported by vulkan 1.1  
 Requires *Wallpaper Engine* installed for assets(shaders,pictures...)
+#### open-source libraries
+[argparse](https://github.com/p-ranav/argparse) - Command line argument parser  
+[stb](https://github.com/nothings/stb) - Image loading  
+[miniaudio](https://github.com/mackron/miniaudio) - Audio loading and playback  
+[nlohmann/json](https://github.com/nlohmann/json) - Json parsing  
+[Eigen](https://eigen.tuxfamily.org/index.php) - Math operations  
+[glad](https://github.com/Dav1dde/glad) - Opengl loader  
+[glslang](https://github.com/KhronosGroup/glslang) - Glsl to Spv  
+[Vulkan-Hpp](https://github.com/KhronosGroup/Vulkan-Hpp) - Vulkan C++ API  
+[VulkanMemoryAllocator](https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator) - Vulkan memory allocation library  
 #### implemented
 - [x] Layer
 	- [x] Image
@@ -138,6 +148,9 @@ The config is set to `hwdec=auto`, and is not configurable for now.
 - [RePKG](https://github.com/notscuffed/repkg)
 - [RenderDoc](https://renderdoc.org/)
 - [NVIDIA Nsight Graphics](https://developer.nvidia.com/nsight-graphics)
+- [learnopengl.com](https://learnopengl.com/)
+- [SaschaWillems/Vulkan](https://github.com/SaschaWillems/Vulkan)
+- All the open-source libraries mentioned above
 
 ### Preview
 ![](https://cdn.pling.com/img/f/b/9/f/63f1672d628422f92fd189fe55f60ee8c9f911a691d0745eeaf51d2c6fae6763b8f8.jpg)
