@@ -90,7 +90,7 @@ static bool ChoosePhysicalDevice(vk::Instance& instance, vk::PhysicalDevice& gpu
 	auto& deviceList = rv_deviceList.value;
 	VkInstanceCreateInfo crea;
 	auto logGpu = [](const vk::PhysicalDeviceProperties& props) {
-		LOG_INFO("vulkan device: %s", props.deviceName.data());
+		LOG_INFO("vulkan device: %s", (const char*)props.deviceName);
 	};
 	// choose deiscrete device
 	for(const auto& d:deviceList) {
