@@ -65,6 +65,7 @@ public:
             {
             CASE_CMD(SET_PROPERTY);
             CASE_CMD(LOAD_SCENE);
+            CASE_CMD(STOP);
             default:
                 break;
             }
@@ -334,16 +335,16 @@ MHANDLER_CMD_IMPL(MainHandler, SET_PROPERTY) {
 MHANDLER_CMD_IMPL(MainHandler, STOP) {
     bool stop {false};
     if(msg->findBool("value", &stop)) {
-        auto msg_r = looper::Message::create(0, m_render_handler);
-        addMsgCmd(*msg_r, RenderHandler::CMD::CMD_STOP);
-        if(stop) {
+       if(stop) {
             m_sound_manager->Pause();
-            msg_r->setBool("value", true);
         }
         else {
             m_sound_manager->Play();
-            msg_r->setBool("value", false);
         }
+
+        auto msg_r = looper::Message::create(0, m_render_handler);
+        addMsgCmd(*msg_r, RenderHandler::CMD::CMD_STOP);
+        msg_r->setBool("value", stop);
         msg_r->post();
     }
 }
