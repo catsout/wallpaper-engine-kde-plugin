@@ -12,7 +12,7 @@
 #include <cstdint>
 
 
-#define ENABLE_RENDERDOC_API 1
+#define ENABLE_RENDERDOC_API 0
 #if ENABLE_RENDERDOC_API
 #include "RenderDoc.h"
 #endif

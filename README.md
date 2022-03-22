@@ -16,7 +16,7 @@ A wallpaper plugin integrating [wallpaper engine](https://store.steampowered.com
 #### Dependencies
 Debian:  
 ```sh
-sudo apt install plasma-workspace-dev gstreamer1.0-libav \
+sudo apt install libvulkan-dev plasma-workspace-dev gstreamer1.0-libav \
 liblz4-dev libmpv-dev python3-websockets qtbase5-private-dev \
 libqt5x11extras5-dev qml-module-qt-labs-folderlistmodel \
 qml-module-qtwebchannel qml-module-qtwebsockets
@@ -25,7 +25,7 @@ qml-module-qtwebchannel qml-module-qtwebsockets
 Fedora:  
 ```sh
 # Please add "RPM Fusion" repo first
-sudo dnf install plasma-workspace-devel kf5-plasma-devel gstreamer1-libav \
+sudo dnf install vulkan-headers plasma-workspace-devel kf5-plasma-devel gstreamer1-libav \
 lz4-devel mpv-libs-devel python3-websockets qt5-qtbase-private-devel \
 qt5-qtx11extras-devel qt5-qtwebchannel-devel qt5-qtwebsockets-devel
 ```
@@ -34,14 +34,13 @@ Arch:
 ```sh
 sudo pacman -S extra-cmake-modules plasma-framework gst-libav \
 base-devel mpv python-websockets qt5-declarative qt5-websockets qt5-webchannel vulkan-devel 
-yay -S renderdoc
 ```
 
 Void:  
 ```sh
-sudo xbps-install -S git cmake extra-cmake-modules plasma-framework \
+sudo xbps-install -S extra-cmake-modules plasma-framework \
 gst-libav base-devel mpv python3-websockets qt5-declarative qt5-websockets \
-qt5-webchannel plasma-workspace-devel mpv-devel liblz4-devel
+qt5-webchannel plasma-workspace-devel mpv-devel liblz4-devel vulkan-devel
 ```
 #### Build and Install
 ```sh
