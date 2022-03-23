@@ -5,9 +5,11 @@ find_package(OpenGL REQUIRED)
 find_package(Threads REQUIRED)
 pkg_check_modules(LZ4 REQUIRED liblz4)
 
-if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-	add_compile_definitions(DEBUG_OPENGL=1)
-endif ()
+option(ENABLE_RENDERDOC "Build with renderdoc api" OFF)
+
+if (ENABLE_RENDERDOC)
+	add_compile_definitions(ENABLE_RENDERDOC_API=1)
+endif()
 
 include(TestBigEndian)
 TEST_BIG_ENDIAN(ENDIAN)
