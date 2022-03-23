@@ -33,14 +33,14 @@ qt5-qtx11extras-devel qt5-qtwebchannel-devel qt5-qtwebsockets-devel
 Arch:  
 ```sh
 sudo pacman -S extra-cmake-modules plasma-framework gst-libav \
-base-devel mpv python-websockets qt5-declarative qt5-websockets qt5-webchannel vulkan-devel 
+base-devel mpv python-websockets qt5-declarative qt5-websockets qt5-webchannel vulkan-headers 
 ```
 
 Void:  
 ```sh
 sudo xbps-install -S extra-cmake-modules plasma-framework \
 gst-libav base-devel mpv python3-websockets qt5-declarative qt5-websockets \
-qt5-webchannel plasma-workspace-devel mpv-devel liblz4-devel vulkan-devel
+qt5-webchannel plasma-workspace-devel mpv-devel liblz4-devel vulkan-headers
 ```
 #### Build and Install
 ```sh
