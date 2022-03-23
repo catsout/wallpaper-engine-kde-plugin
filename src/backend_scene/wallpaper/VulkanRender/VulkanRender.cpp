@@ -95,7 +95,9 @@ bool VulkanRender::init(RenderInitInfo info) {
     }
 
     if(info.offscreen) {
-        m_ex_swapchain = CreateExSwapchain(*m_device, extent.width, extent.height);
+        m_ex_swapchain = CreateExSwapchain(*m_device, extent.width, extent.height, (info.offscreen_tiling == TexTiling::OPTIMAL 
+            ? vk::ImageTiling::eOptimal 
+            : vk::ImageTiling::eLinear));
         m_with_surface = false;
     }
 

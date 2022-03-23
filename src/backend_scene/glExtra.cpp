@@ -56,14 +56,46 @@ bool GlExtra::init(void *get_proc_address(const char *)) {
     do {
         if(inited) break;
         if (!gladLoadGLLoader((GLADloadproc)get_proc_address)) {
-            printf("Failed to initialize GLAD\n");
+            LOG_ERROR("Failed to initialize GLAD");
             break;
         }
-        printf("OpenGL Version %d.%d loaded\n", GLVersion.major, GLVersion.minor);
-        if(GLAD_GL_EXT_memory_object && GLAD_GL_EXT_semaphore) {
-            printf("GL EXT loaded\n");
+        LOG_INFO("gl: OpenGL Version %d.%d loaded", GLVersion.major, GLVersion.minor);
+        if(!(GLAD_GL_EXT_memory_object && GLAD_GL_EXT_semaphore)) {
+            LOG_ERROR("EXT_memory_object not available");
+            break;
         }
         pImpl->uuid = getUUID();
+
+        {
+            int num {0};
+            std::array<int, 2> tex_tiling;
+            glGetInternalformativ(GL_TEXTURE_2D, GL_RGBA8, GL_NUM_TILING_TYPES_EXT, 1, &num);
+            glGetInternalformativ(GL_TEXTURE_2D, GL_RGBA8, GL_TILING_TYPES_EXT, tex_tiling.size(), tex_tiling.data());
+            CHECK_GL_ERROR_IF_DEBUG();
+            num = std::min(num, (int)tex_tiling.size());
+            if(num <= 0) {
+                LOG_ERROR("can't get texture tiling support info");
+                break;
+            }
+            bool ok {true};
+            for(int i=0;i<num;i++) {
+                if(tex_tiling[i] == GL_OPTIMAL_TILING_EXT) {
+                    m_tiling = wallpaper::TexTiling::OPTIMAL;
+                    LOG_INFO("gl: external tex using optimal tiling");
+                    break;
+                } else if(tex_tiling[i] == GL_LINEAR_TILING_EXT) {
+                    m_tiling = wallpaper::TexTiling::LINEAR;
+                    LOG_INFO("gl: external tex using linear tiling");
+                    break;
+                }
+                if(i+1 == num) ok = false;
+            }
+            if(!ok) {
+                LOG_ERROR("no supported tiling mode");
+                break;
+            }
+        }
+
         inited = true;
     } while(false);
     return inited;
@@ -73,16 +105,25 @@ Span<std::uint8_t> GlExtra::uuid() const {
     return pImpl->uuid;
 }
 
+TexTiling GlExtra::tiling() const { return m_tiling; }
+
 uint GlExtra::genExTexture(ExHandle& handle) {
     uint memobject, tex;
     glCreateMemoryObjectsEXT(1, &memobject);
     glImportMemoryFdEXT(memobject, handle.size, GL_HANDLE_TYPE_OPAQUE_FD_EXT, handle.fd);
     CHECK_GL_ERROR_IF_DEBUG()
+
     glGenTextures(1, &tex);
     glBindTexture(GL_TEXTURE_2D, tex);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_TILING_EXT, (m_tiling == TexTiling::OPTIMAL 
+        ? GL_OPTIMAL_TILING_EXT 
+        : GL_LINEAR_TILING_EXT));
     CHECK_GL_ERROR_IF_DEBUG()
+
     glTexStorageMem2DEXT(GL_TEXTURE_2D, 1, GL_RGBA8, handle.width, handle.height, memobject, 0);
     CHECK_GL_ERROR_IF_DEBUG()
+
     glBindTexture(GL_TEXTURE_2D, 0);
     handle.fd = -1;
     return tex;

@@ -20,6 +20,8 @@ struct RenderInitInfo {
     bool enable_valid_layer {false};
     bool offscreen {false};
     Span<std::uint8_t> uuid;
+    TexTiling offscreen_tiling {TexTiling::OPTIMAL};
+
     VulkanSurfaceInfo surface_info;
     uint16_t width {1920};
     uint16_t height {1080};

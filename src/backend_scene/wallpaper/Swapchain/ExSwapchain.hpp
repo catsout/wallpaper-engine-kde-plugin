@@ -5,6 +5,10 @@
 namespace wallpaper
 {
 
+enum class TexTiling {
+    OPTIMAL, LINEAR
+};
+
 struct ExHandle {
     int fd;
     std::uint32_t width;

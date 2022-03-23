@@ -63,10 +63,10 @@ private:
     vk::Extent2D m_extent;
 };
 
-inline std::unique_ptr<VulkanExSwapchain> CreateExSwapchain(const Device& device, uint w, uint h) {
+inline std::unique_ptr<VulkanExSwapchain> CreateExSwapchain(const Device& device, uint w, uint h, vk::ImageTiling tiling) {
     std::array<VulkanExHandle, 3> handles;
     for(auto& handle:handles) {
-        auto rv = device.tex_cache().CreateExTex(w, h, vk::Format::eR8G8B8A8Unorm);
+        auto rv = device.tex_cache().CreateExTex(w, h, vk::Format::eR8G8B8A8Unorm, tiling);
         VK_CHECK_RESULT_ACT(return nullptr, rv.result);
         handle.image = rv.value;
     }

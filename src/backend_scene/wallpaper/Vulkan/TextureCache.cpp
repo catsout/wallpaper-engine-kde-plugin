@@ -151,7 +151,7 @@ static vk::ResultValue<vk::DeviceMemory> AllocateMemory(const vk::Device& device
 	return {vk::Result::eIncomplete,{}};
 }
 
-static vk::ResultValue<ExImageParameters> CreateExImage(uint32_t width, uint32_t height, vk::Format format,
+static vk::ResultValue<ExImageParameters> CreateExImage(uint32_t width, uint32_t height, vk::Format format, vk::ImageTiling tiling,
 	vk::SamplerCreateInfo sampler_info,
 	vk::ImageUsageFlags usage,
 	const vk::Device& device,
@@ -177,7 +177,7 @@ static vk::ResultValue<ExImageParameters> CreateExImage(uint32_t width, uint32_t
 			.setArrayLayers(1)
 			.setMipLevels(1)
 			.setSamples(vk::SampleCountFlagBits::e1)
-			.setTiling(vk::ImageTiling::eOptimal)
+			.setTiling(tiling)
 			.setUsage(usage)
 			.setQueueFamilyIndexCount(0)
 			.setInitialLayout(vk::ImageLayout::eUndefined)
@@ -231,7 +231,7 @@ static vk::ResultValue<ExImageParameters> CreateExImage(uint32_t width, uint32_t
 }
 
 
-vk::ResultValue<ExImageParameters> TextureCache::CreateExTex(uint32_t width, uint32_t height, vk::Format format) {
+vk::ResultValue<ExImageParameters> TextureCache::CreateExTex(uint32_t width, uint32_t height, vk::Format format, vk::ImageTiling tiling) {
 	vk::SamplerCreateInfo sampler_info;
 	sampler_info
 		.setMagFilter(vk::Filter::eNearest)
@@ -247,7 +247,7 @@ vk::ResultValue<ExImageParameters> TextureCache::CreateExTex(uint32_t width, uin
 		.setMinLod(0.0f).setMaxLod(1.0f)
 		.setBorderColor(vk::BorderColor::eIntOpaqueBlack)
 		.setUnnormalizedCoordinates(false);
-    auto rv = CreateExImage(width, height, format, sampler_info,
+    auto rv = CreateExImage(width, height, format, tiling, sampler_info,
         vk::ImageUsageFlagBits::eSampled |
 		vk::ImageUsageFlagBits::eColorAttachment |
 		vk::ImageUsageFlagBits::eTransferDst, 

@@ -109,6 +109,7 @@ public:
         wallpaper::RenderInitInfo info;
         info.enable_valid_layer = m_enable_valid;
         info.offscreen = true;
+        info.offscreen_tiling = m_glex.tiling();
         info.uuid = m_glex.uuid();
         info.width = w;
         info.height = h;

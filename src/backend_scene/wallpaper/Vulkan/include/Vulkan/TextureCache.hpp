@@ -44,7 +44,7 @@ public:
     void Destroy();
     void Clear();
 
-    vk::ResultValue<ExImageParameters> CreateExTex(uint32_t witdh, uint32_t height, vk::Format);
+    vk::ResultValue<ExImageParameters> CreateExTex(uint32_t witdh, uint32_t height, vk::Format, vk::ImageTiling);
     vk::ResultValue<ImageSlots> CreateTex(Image&);
 
     vk::ResultValue<ImageParameters> Query(std::string_view key, TextureKey content_hash, bool persist=false);
