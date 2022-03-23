@@ -38,6 +38,39 @@ vk::Result CreateDevice(Instance& instance,
 }
 
 
+bool Device::CheckGPU(vk::PhysicalDevice gpu, Span<Extension> exts, vk::SurfaceKHR surface) {
+	std::vector<vk::DeviceQueueCreateInfo> queues;
+	auto props = gpu.getQueueFamilyProperties();
+
+	// check queue
+	bool has_graphics_queue {false};
+	bool has_present_queue {false};
+	uint index {0};
+	for(auto& prop:props) {
+		if(prop.queueFlags & vk::QueueFlagBits::eGraphics)
+			has_graphics_queue = true;
+		if(surface) {
+			vk::Bool32 ok {false};
+			VK_CHECK_RESULT(gpu.getSurfaceSupportKHR(index, surface, &ok));
+			if(ok) has_present_queue = true;
+		}
+		index++;
+	};
+	if(!has_graphics_queue) return false;
+	if(surface && !has_present_queue) return false;
+
+	// check exts
+	Set<std::string> extensions;
+	enumateDeviceExts(gpu, extensions);
+	for(auto& ext:exts) {
+		if(ext.required) {
+			if(!exists(extensions, ext.name)) 
+				return false;
+		}
+	}
+	return true;
+}
+
 std::vector<vk::DeviceQueueCreateInfo> Device::ChooseDeviceQueue(vk::SurfaceKHR surface) {
 	std::vector<vk::DeviceQueueCreateInfo> queues;
 	auto props = m_gpu.getQueueFamilyProperties();
@@ -62,13 +95,15 @@ std::vector<vk::DeviceQueueCreateInfo> Device::ChooseDeviceQueue(vk::SurfaceKHR 
 	if(surface) {
 		index = 0;
 		for(auto& prop:props) {
-			vk::Bool32 ok;
+			vk::Bool32 ok {false};
 			VK_CHECK_RESULT(m_gpu.getSurfaceSupportKHR(index, surface, &ok))
 			if(ok)
 				present_indexs.push_back(index);
 			index++;
 		};
-		if(graphic_indexs.front() != present_indexs.front()) {
+		if(present_indexs.empty()) {
+			LOG_ERROR("not find present queue");
+		} else if(graphic_indexs.front() != present_indexs.front()) {
 			m_present_queue.family_index = present_indexs.front();
 			vk::DeviceQueueCreateInfo info;
 			info

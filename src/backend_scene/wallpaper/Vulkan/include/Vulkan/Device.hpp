@@ -18,6 +18,7 @@ public:
 	~Device();
 
 	static bool Create(Instance&, Span<Extension> exts, vk::Extent2D extent, Device&);
+	static bool CheckGPU(vk::PhysicalDevice gpu, Span<Extension> exts, vk::SurfaceKHR surface);
 
 	void Destroy();
 

@@ -85,13 +85,17 @@ static vk::Result CreatInstance(vk::Instance* inst, Span<std::string_view> exts,
 	return res;
 }
 
-static bool ChoosePhysicalDevice(vk::Instance& instance, vk::PhysicalDevice& gpu, Span<std::uint8_t> uuid) {
-	auto rv_deviceList = instance.enumeratePhysicalDevices();
+bool Instance::ChoosePhysicalDevice(const CheckGpuOp& checkgpu, Span<std::uint8_t> uuid) {
+	auto rv_deviceList = m_inst.enumeratePhysicalDevices();
+	VK_CHECK_RESULT_BOOL_RE(rv_deviceList.result);
 	auto& deviceList = rv_deviceList.value;
 	VkInstanceCreateInfo crea;
 	auto logGpu = [](const vk::PhysicalDeviceProperties& props) {
 		LOG_INFO("vulkan device: %s", (const char*)props.deviceName);
 	};
+
+	vk::PhysicalDevice final_gpu;
+	vk::PhysicalDeviceProperties final_props;
 	// choose deiscrete device
 	for(const auto& d:deviceList) {
 		auto chains = d.getProperties2<vk::PhysicalDeviceProperties2,vk::PhysicalDeviceIDProperties>();
@@ -99,22 +103,31 @@ static bool ChoosePhysicalDevice(vk::Instance& instance, vk::PhysicalDevice& gpu
 		if(uuid.size() > 0) {
 			decltype(uuid) device_uuid {chains.get<vk::PhysicalDeviceIDProperties>().deviceUUID};
 			if(uuid == device_uuid) {
-				logGpu(props.properties);
+				/*
 				for(const auto& p:device_uuid) {
-					//printf("%02x ", p);
+					printf("%02x ", p);
 				}
-				gpu = d;
-				return true;
+				*/
+				final_props = props.properties;
+				final_gpu = d;
+				break;
 			}
 		} else { 
-			if (props.properties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu) {
-				logGpu(props.properties);
-				gpu = d;
-				return true;
+			if(checkgpu(d)) {
+				final_props = props.properties;
+				final_gpu = d;
+				break;
 			}
 		}
 	}
-	return false;
+	if(final_gpu) {
+		logGpu(final_props);
+		m_gpu = final_gpu;
+		return true;
+	} else {
+		LOG_ERROR("failed to find GPU with vulkan support");
+		return false;
+	}
 }
 
 static void enumateExts(wallpaper::Set<std::string>& set) {
@@ -162,7 +175,7 @@ void Instance::Destroy() {
 	}
 }
 
-bool Instance::Create(Instance& inst, Span<Extension> instExts, Span<InstanceLayer> instLayers, Span<std::uint8_t> uuid) {
+bool Instance::Create(Instance& inst, Span<Extension> instExts, Span<InstanceLayer> instLayers) {
 	LoadBasicVkFunc();	
 
 	enumateExts(inst.m_extensions);
@@ -196,11 +209,13 @@ bool Instance::Create(Instance& inst, Span<Extension> instExts, Span<InstanceLay
 	VK_CHECK_RESULT_ACT(return false, CreatInstance(&inst.m_inst, exts_vec, layers_vec));
 	VK_CHECK_RESULT_ACT(return false, setupDebugCallback(&inst.m_inst, inst.m_debug_utils));
 
-	if(!ChoosePhysicalDevice(inst.m_inst, inst.m_gpu, uuid)) {
+	/*
+	if(!ChoosePhysicalDevice(inst.m_inst, inst.m_gpu, checkgpu, uuid)) {
 		if(uuid.size() > 0) {
 			// to do
 		}
 		return false;
 	}
+	*/
 	return true;
 }

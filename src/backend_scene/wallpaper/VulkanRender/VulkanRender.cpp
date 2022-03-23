@@ -19,6 +19,8 @@
 
 using namespace wallpaper::vulkan;
 
+constexpr uint64_t vk_wait_time {10u*1000u*1000000u};
+
 constexpr std::array base_inst_exts {
     Extension { false, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME },
 };
@@ -63,7 +65,7 @@ bool VulkanRender::init(RenderInitInfo info) {
         LOG_INFO("vulkan valid layer \"%s\" enabled", VALIDATION_LAYER_NAME.data());
     }
 
-    if(!Instance::Create(m_instance, inst_exts, inst_layers, info.uuid)) {
+    if(!Instance::Create(m_instance, inst_exts, inst_layers)) {
         LOG_ERROR("init vulkan failed"); 
         return false;
     }
@@ -75,6 +77,14 @@ bool VulkanRender::init(RenderInitInfo info) {
         }, (vk::Result)info.surface_info.createSurfaceOp(m_instance.inst(), &surface));
         m_instance.setSurface(vk::SurfaceKHR(surface));
         m_with_surface = true;
+    }
+    {
+        auto surface = m_instance.surface();
+        auto check_gpu = [&info, &device_exts, surface](vk::PhysicalDevice gpu) {
+            return Device::CheckGPU(gpu, device_exts, surface);
+        };
+        if(!m_instance.ChoosePhysicalDevice(check_gpu, info.uuid))
+            return false;
     }
 
     {
@@ -232,7 +242,7 @@ void VulkanRender::drawFrameSwapchain() {
     resource_index = (resource_index + 1) % 3;
     uint32_t image_index = 0;
     {
-        auto rv = m_device->handle().acquireNextImageKHR(m_device->swapchain().handle(), UINT32_MAX, rr.sem_swap_wait_image, {});
+        auto rv = m_device->handle().acquireNextImageKHR(m_device->swapchain().handle(), vk_wait_time, rr.sem_swap_wait_image, {});
         VK_CHECK_RESULT_VOID_RE(rv.result);
         image_index = rv.value;
     }
@@ -268,7 +278,7 @@ void VulkanRender::drawFrameSwapchain() {
         .setPImageIndices(&image_index);
     VK_CHECK_RESULT_VOID_RE(m_device->present_queue().handle.presentKHR(present_info));
 
-    VK_CHECK_RESULT_VOID_RE(m_device->handle().waitForFences(1, &rr.fence_frame, false, 10u*1000u*1000000u));
+    VK_CHECK_RESULT_VOID_RE(m_device->handle().waitForFences(1, &rr.fence_frame, false, vk_wait_time));
     VK_CHECK_RESULT_VOID_RE(m_device->handle().resetFences(1, &rr.fence_frame));
 }
 void VulkanRender::drawFrameOffscreen() {
@@ -294,7 +304,7 @@ void VulkanRender::drawFrameOffscreen() {
         .setPCommandBuffers(&rr.command);
     VK_CHECK_RESULT_VOID_RE(m_device->graphics_queue().handle.submit(1, &sub_info, rr.fence_frame));
 
-    VK_CHECK_RESULT_VOID_RE(m_device->handle().waitForFences(1, &rr.fence_frame, false, 10u*1000u*1000000u));
+    VK_CHECK_RESULT_VOID_RE(m_device->handle().waitForFences(1, &rr.fence_frame, false, vk_wait_time));
     VK_CHECK_RESULT_VOID_RE(m_device->handle().resetFences(1, &rr.fence_frame));
     m_ex_swapchain->renderFrame();
 }

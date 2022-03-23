@@ -5,6 +5,7 @@
 #include <vulkan/vulkan.hpp>
 #include <cassert>
 #include <string_view>
+#include <functional>
 #include "Utils/span.hpp"
 #include "Utils/Logging.h"
 #include "Utils/MapSet.hpp"
@@ -37,6 +38,8 @@ struct Extension {
 
 using InstanceLayer = Extension;
 
+using CheckGpuOp = std::function<bool(vk::PhysicalDevice)>;
+
 constexpr std::string_view VALIDATION_LAYER_NAME = "VK_LAYER_KHRONOS_validation";
 
 constexpr uint32_t WP_VULKAN_VERSION {VK_API_VERSION_1_1};
@@ -50,7 +53,8 @@ public:
 
     void Destroy();
 
-    static bool Create(Instance&, Span<Extension>, Span<InstanceLayer>, Span<std::uint8_t> uuid={});
+    static bool Create(Instance&, Span<Extension>, Span<InstanceLayer>);
+    bool ChoosePhysicalDevice(const CheckGpuOp& checkgpu, Span<std::uint8_t> uuid={});
 
     const vk::Instance& inst() const;
     const vk::PhysicalDevice& gpu() const;

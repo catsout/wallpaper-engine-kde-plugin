@@ -4,18 +4,42 @@
 
 using namespace wallpaper::vulkan;
 
+struct SwapChainSupportDetails {
+    vk::SurfaceCapabilitiesKHR capabilities;
+    std::vector<vk::SurfaceFormatKHR> formats;
+    std::vector<vk::PresentModeKHR> presentModes;
+};
+
 namespace {
 
-vk::Format GetFormat(const vk::PhysicalDevice &phy, vk::SurfaceKHR &surface)
-{
-	auto rv = phy.getSurfaceFormatsKHR(surface);
-	VK_CHECK_RESULT(rv.result);
-	vk::Format format = rv.value.front().format;
-	return (format == vk::Format::eUndefined) ? vk::Format::eB8G8R8A8Unorm : format;
+bool querySwapChainSupport(const vk::PhysicalDevice& gpu, vk::SurfaceKHR surface, SwapChainSupportDetails& details) {
+	VK_CHECK_RESULT_BOOL_RE(gpu.getSurfaceCapabilitiesKHR(surface, &details.capabilities));
+	{
+		auto [res, value] = gpu.getSurfaceFormatsKHR(surface);
+		VK_CHECK_RESULT_BOOL_RE(res);
+		details.formats = value;
+	}
+	{
+		auto [res, value] = gpu.getSurfacePresentModesKHR(surface);
+		VK_CHECK_RESULT_BOOL_RE(res);
+		details.presentModes = value;
+	}
+	return true;
 }
 
-vk::Extent2D GetSwapChainExtent(vk::SurfaceCapabilitiesKHR &surface_capabilities, vk::Extent2D ext)
-{
+vk::SurfaceFormatKHR chooseSwapSurfaceFormat(Span<vk::SurfaceFormatKHR> availableFormats) {
+	for (const auto& availableFormat : availableFormats) {
+		if (availableFormat.format == vk::Format::eB8G8R8A8Unorm || availableFormat.format == vk::Format::eR8G8B8A8Unorm) {
+			if(availableFormat.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear)
+				return availableFormat;
+		}
+	}
+	auto& format = availableFormats[0];
+	LOG_INFO("swapchain format: %s, color space: %s", vk::to_string(format.format).c_str(), vk::to_string(format.colorSpace).c_str());
+	return format;
+}
+
+vk::Extent2D GetSwapChainExtent(vk::SurfaceCapabilitiesKHR &surface_capabilities, vk::Extent2D ext) {
 	if (surface_capabilities.currentExtent.width == -1)
 	{
 		auto min = surface_capabilities.minImageExtent;
@@ -59,7 +83,7 @@ bool CreateSwapImageView(const vk::Device &device, vk::Format format, vk::Image 
 
 
 const vk::SwapchainKHR& Swapchain::handle() const { return m_handle; }
-vk::Format Swapchain::format() const { return m_format; };
+vk::Format Swapchain::format() const { return m_format.format; };
 vk::Extent2D Swapchain::extent() const { return m_extent; };
 
 Span<ImageParameters> Swapchain::images() const {
@@ -69,44 +93,34 @@ Span<ImageParameters> Swapchain::images() const {
 vk::PresentModeKHR Swapchain::presentMode() const { return m_present_mode; };
 
 bool Swapchain::Create(Device& device, vk::SurfaceKHR surface, vk::Extent2D extent, Swapchain& swap) {
+	SwapChainSupportDetails swap_details;
+	if(!querySwapChainSupport(device.gpu(), surface, swap_details)) 
+		return false;
 	
-	swap.m_format = GetFormat(device.gpu(), surface);
+	swap.m_format = chooseSwapSurfaceFormat(swap_details.formats);
 
-	vk::SurfaceCapabilitiesKHR surfaceCapabilities;
-	VK_CHECK_RESULT_BOOL_RE(device.gpu().getSurfaceCapabilitiesKHR(surface, &surfaceCapabilities));
+	auto& surfaceCapabilities = swap_details.capabilities;
 
 	// triple
 	uint32_t image_count = surfaceCapabilities.minImageCount + 1;
-	if (image_count > surfaceCapabilities.maxImageCount)
-	{
+	if (surfaceCapabilities.maxImageCount > 0 && image_count > surfaceCapabilities.maxImageCount)
 		image_count = surfaceCapabilities.maxImageCount;
-	}
 
 	swap.m_extent = GetSwapChainExtent(surfaceCapabilities, extent);
 
 	swap.m_present_mode = vk::PresentModeKHR::eFifo;
-	vk::SurfaceTransformFlagBitsKHR preTransform =
-		(surfaceCapabilities.supportedTransforms & vk::SurfaceTransformFlagBitsKHR::eIdentity)
-			? vk::SurfaceTransformFlagBitsKHR::eIdentity
-			: surfaceCapabilities.currentTransform;
-
-	vk::CompositeAlphaFlagBitsKHR compositeAlpha =
-		(surfaceCapabilities.supportedCompositeAlpha & vk::CompositeAlphaFlagBitsKHR::ePreMultiplied)
-			? vk::CompositeAlphaFlagBitsKHR::ePreMultiplied
-		: (surfaceCapabilities.supportedCompositeAlpha & vk::CompositeAlphaFlagBitsKHR::ePostMultiplied)
-			? vk::CompositeAlphaFlagBitsKHR::ePostMultiplied
-		: (surfaceCapabilities.supportedCompositeAlpha & vk::CompositeAlphaFlagBitsKHR::eInherit)
-			? vk::CompositeAlphaFlagBitsKHR::eInherit
-			: vk::CompositeAlphaFlagBitsKHR::eOpaque;
+	vk::SurfaceTransformFlagBitsKHR preTransform = surfaceCapabilities.currentTransform;
+	vk::CompositeAlphaFlagBitsKHR compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;
 
 	vk::SwapchainCreateInfoKHR swapCreateInfo;
 	swapCreateInfo
 		.setSurface(surface)
 		.setMinImageCount(image_count)
-		.setImageFormat(swap.m_format)
+		.setImageFormat(swap.m_format.format)
 		.setImageExtent(swap.m_extent)
 		.setPresentMode(swap.m_present_mode)
 		.setPreTransform(preTransform)
+		.setImageColorSpace(swap.m_format.colorSpace)
 		.setCompositeAlpha(compositeAlpha)
 		.setImageSharingMode(vk::SharingMode::eExclusive)
 		.setImageUsage(vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eColorAttachment)
@@ -125,7 +139,7 @@ bool Swapchain::Create(Device& device, vk::SurfaceKHR surface, vk::Extent2D exte
 				.sampler = {},
 				.extent = {swap.m_extent.width, swap.m_extent.height, 1}
 			}; 
-			CreateSwapImageView(device.device(), swap.m_format, image, image_paras.view);
+			CreateSwapImageView(device.device(), swap.m_format.format, image, image_paras.view);
 			return image_paras;
 		});
 	}

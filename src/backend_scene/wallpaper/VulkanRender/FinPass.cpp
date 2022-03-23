@@ -1,6 +1,7 @@
 #include "FinPass.hpp"
 #include "Vulkan/Shader.hpp"
 #include "Resource.hpp"
+#include "PassCommon.hpp"
 
 using namespace wallpaper::vulkan;
 
@@ -76,17 +77,6 @@ static vk::RenderPass CreateRenderPass(const vk::Device &device, vk::Format form
 		.setSubpassCount(1)
 		.setPSubpasses(&subpass);
 	return device.createRenderPass(creatinfo).value;
-}
-
-
-static TextureKey ToTexKey(wallpaper::SceneRenderTarget rt) {
-	return TextureKey {
-		.width = rt.width,
-		.height = rt.height,
-		.usage = {},
-		.format = wallpaper::TextureFormat::RGBA8,
-		.sample = rt.sample
-	};
 }
 
 void FinPass::setPresent(ImageParameters img) {
