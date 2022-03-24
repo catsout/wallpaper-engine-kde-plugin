@@ -3,6 +3,7 @@ Encoding=UTF-8
 Name=Wallpaper Engine for Kde
 Type=Service
 Icon=preferences-desktop-wallpaper
+Comment=Wallpaper Engine for Kde
 
 X-Plasma-MainScript=ui/main.qml
 X-KDE-ServiceTypes=Plasma/Wallpaper
