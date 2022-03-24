@@ -10,7 +10,7 @@ A wallpaper plugin integrating [wallpaper engine](https://store.steampowered.com
 - Requires *Wallpaper Engine* installed on steam
 - Requires [CMake 3.16+](#dependencies)
 - Requires [qt 5.13+](#dependencies) for playing video(no mpv), or [mpv](#dependencies) instead  
-- Requires vulkan 1.1, opengl [External Memory Object](https://www.khronos.org/registry/OpenGL/extensions/EXT/EXT_external_objects.txt) extension
+- Requires vulkan 1.1+, opengl [External Memory Object](https://www.khronos.org/registry/OpenGL/extensions/EXT/EXT_external_objects.txt) extension
 
 ## Install
 #### Dependencies
@@ -144,7 +144,12 @@ It's using GStreamer to play video.
 Need to compile the plugin lib.  
 The config is set to `hwdec=auto`, and is not configurable for now.  
 
-### Acknowledgments
+## About integrating into other desktop environments
+There is no general way. If there is a way to have good support for most desktop environments, why we just require wallpaper engine itself to support linux. Some similar apps like [lively](https://github.com/rocksdanister/lively) and [ScreenPlay](https://store.steampowered.com/app/672870/ScreenPlay) can benefit from that, but that way doesn't exist. Actually the integration and implement are separated, for all integration ways, the implement is shared. So if there is a general way, we can move to it easily.  
+
+The major work of this plugin is the scene wallpaper [renderer](src/backend_scene/wallpaper). If you want to integrating this into other desktop environments, here are some [examples](src/backend_scene/standalone_view). Currently this renderer is rendering under vulkan and sharing to opengl texture which will be read by qml(plasmashell) in kde. You can integrate this renderer to anything that can show vulkan or opengl textures.  
+
+## Acknowledgments
 - [RePKG](https://github.com/notscuffed/repkg)
 - [RenderDoc](https://renderdoc.org/)
 - [NVIDIA Nsight Graphics](https://developer.nvidia.com/nsight-graphics)
@@ -152,7 +157,7 @@ The config is set to `hwdec=auto`, and is not configurable for now.
 - [SaschaWillems/Vulkan](https://github.com/SaschaWillems/Vulkan)
 - All the open-source libraries mentioned above
 
-### Preview
+## Preview
 ![](https://cdn.pling.com/img/f/b/9/f/63f1672d628422f92fd189fe55f60ee8c9f911a691d0745eeaf51d2c6fae6763b8f8.jpg)
 ![](https://cdn.pling.com/img/d/7/9/f/c28d236408e66ba3cbca5173fb0bf4362b9df45e6e1c485deb6d9f7b4fe6adf93a2b.jpg)
 ![](https://cdn.pling.com/img/0/e/e/9/23b2aefba63630c7eb723afc202cdaaa2809d32d8a2ddca03b9fec8f82de62d721cd.jpg)
