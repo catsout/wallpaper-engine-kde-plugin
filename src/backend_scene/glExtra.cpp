@@ -68,31 +68,42 @@ bool GlExtra::init(void *get_proc_address(const char *)) {
 
         {
             int num {0};
-            std::array<int, 2> tex_tiling;
+            std::vector<int> tex_tilings;
             glGetInternalformativ(GL_TEXTURE_2D, GL_RGBA8, GL_NUM_TILING_TYPES_EXT, 1, &num);
-            glGetInternalformativ(GL_TEXTURE_2D, GL_RGBA8, GL_TILING_TYPES_EXT, tex_tiling.size(), tex_tiling.data());
-            CHECK_GL_ERROR_IF_DEBUG();
-            num = std::min(num, (int)tex_tiling.size());
             if(num <= 0) {
                 LOG_ERROR("can't get texture tiling support info");
                 break;
             }
-            bool ok {true};
-            for(int i=0;i<num;i++) {
-                if(tex_tiling[i] == GL_OPTIMAL_TILING_EXT) {
-                    m_tiling = wallpaper::TexTiling::OPTIMAL;
-                    LOG_INFO("gl: external tex using optimal tiling");
-                    break;
-                } else if(tex_tiling[i] == GL_LINEAR_TILING_EXT) {
-                    m_tiling = wallpaper::TexTiling::LINEAR;
-                    LOG_INFO("gl: external tex using linear tiling");
-                    break;
+            tex_tilings.resize(num);
+
+            glGetInternalformativ(GL_TEXTURE_2D, GL_RGBA8, GL_TILING_TYPES_EXT, tex_tilings.size(), tex_tilings.data());
+            CHECK_GL_ERROR_IF_DEBUG();
+
+            bool support_optimal {false}, support_linear {false};
+            for(auto& tiling:tex_tilings) {
+                if(tiling == GL_OPTIMAL_TILING_EXT) {
+                    support_optimal = true;
+                } else if(tiling == GL_LINEAR_TILING_EXT) {
+                    support_linear = true;
                 }
-                if(i+1 == num) ok = false;
             }
-            if(!ok) {
+            if(!support_optimal && !support_linear) {
                 LOG_ERROR("no supported tiling mode");
                 break;
+            }
+
+            // try linear first, fix for amd
+            // https://gitlab.freedesktop.org/mesa/mesa/-/issues/2456
+            if(support_linear) {
+                m_tiling = wallpaper::TexTiling::LINEAR;
+            } else if(support_optimal) {
+                m_tiling = wallpaper::TexTiling::OPTIMAL;
+            }
+
+            if(m_tiling == wallpaper::TexTiling::OPTIMAL) {
+                LOG_INFO("gl: external tex using optimal tiling");
+            } else {
+                LOG_INFO("gl: external tex using linear tiling");
             }
         }
 
