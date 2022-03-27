@@ -74,6 +74,7 @@ bool GlExtra::init(void *get_proc_address(const char *)) {
                 LOG_ERROR("can't get texture tiling support info");
                 break;
             }
+            num = std::min(num, 2);
             tex_tilings.resize(num);
 
             glGetInternalformativ(GL_TEXTURE_2D, GL_RGBA8, GL_TILING_TYPES_EXT, tex_tilings.size(), tex_tilings.data());

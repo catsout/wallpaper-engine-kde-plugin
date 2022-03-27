@@ -21,7 +21,7 @@ public:
 		qmlRegisterType<MouseGrabber>(uri, WPVersion[0], WPVersion[1], "MouseGrabber");
 		qmlRegisterType<scenebackend::SceneObject>(uri, WPVersion[0], WPVersion[1], "SceneViewer");
 		std::setlocale(LC_NUMERIC, "C");
-		qmlRegisterType<MpvObject>(uri, WPVersion[0], WPVersion[1], "MpvObject");
+		qmlRegisterType<mpv::MpvObject>(uri, WPVersion[0], WPVersion[1], "MpvObject");
     }   
 };
 

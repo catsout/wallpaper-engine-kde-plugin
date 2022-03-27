@@ -5,7 +5,7 @@
 #include <QtQuick/QQuickView>
 #include <iostream>
 #include <string>
-#include "mpvbackend.h"
+#include "MpvBackend.hpp"
 
 int main(int argc, char **argv)
 {
@@ -15,14 +15,14 @@ int main(int argc, char **argv)
 	}
 	QCoreApplication::setAttribute(Qt::AA_DisableHighDpiScaling);
     QGuiApplication app(argc, argv);
-	qmlRegisterType<MpvObject>("mpvtest", 1, 0, "MpvObject");
+	qmlRegisterType<mpv::MpvObject>("mpvtest", 1, 0, "MpvObject");
 	setlocale(LC_NUMERIC, "C");
     QQuickView view;
     view.setResizeMode(QQuickView::SizeRootObjectToView);
     view.setSource(QUrl("qrc:///qml/main.qml"));
     view.show();
 	QObject *obj = view.rootObject();
-	MpvObject* mpv = obj->findChild<MpvObject *>();
+	mpv::MpvObject* mpv = obj->findChild<mpv::MpvObject *>();
 	mpv->setSource(QUrl::fromLocalFile(argv[1]));
     return app.exec();
 }

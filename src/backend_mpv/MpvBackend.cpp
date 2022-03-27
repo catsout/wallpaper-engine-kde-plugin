@@ -16,9 +16,9 @@
 #include <QtQuick/QSGSimpleTextureNode> 
 
 #include <clocale>
-#include <atomic>
 #include <array>
 #include <functional>
+#include <memory>
 
 
 #if defined(__linux__) || defined(__FreeBSD__)
@@ -31,6 +31,8 @@
 Q_LOGGING_CATEGORY(wekdeMpv, "wekde.mpv")
 
 #define _Q_DEBUG() qCDebug(wekdeMpv)
+
+using namespace mpv;
 
 /// some api tips
 /*
@@ -90,17 +92,20 @@ namespace {
 }
 
 bool MpvObject::command(const QVariant &params) {
+    auto* mpv = m_mpv;
     int errorCode = mpv::qt::get_error(mpv::qt::command(mpv, params));
     return (errorCode >= 0);
 }
 
 bool MpvObject::setProperty(const QString &name, const QVariant &value) {
+    auto* mpv = m_mpv;
     int errorCode = mpv::qt::get_error(mpv::qt::set_property(mpv, name, value));
     _Q_DEBUG() << "Setting property" << name << "to" << value;
     return (errorCode >= 0);
 }
 
 QVariant MpvObject::getProperty(const QString &name, bool *ok) const {
+    auto* mpv = m_mpv;
     if (ok)
         *ok = false;
 
@@ -206,76 +211,40 @@ void MpvObject::setSource(const QUrl &source) {
 }
 
 
-class MpvRender : public QObject {
+namespace mpv {
+
+class MpvRender : public QObject, public QQuickFramebufferObject::Renderer  {
     Q_OBJECT
 public:
-    MpvRender(QSize size):m_size(size),m_mpv{mpv_create()} {
-        if (!m_mpv)
-            _Q_DEBUG() << "could not create mpv context";
-        mpv_set_option_string(m_mpv, "terminal", "no");
-        mpv_set_option_string(m_mpv, "msg-level", "all=info");
-        if (mpv_initialize(m_mpv) < 0)
-            _Q_DEBUG() << "could not initialize mpv context";
+    MpvRender(std::shared_ptr<MpvHandle> mpv, QQuickWindow *win):
+        m_shared_mpv(mpv),
+        m_mpv(mpv.get()->handle),
+        m_window(win) {}
 
-        mpv_set_option_string(m_mpv, "config", "no");
-        mpv_set_option_string(m_mpv, "hwdec", "auto");
-        mpv_set_option_string(m_mpv, "vo", "libmpv");
-        mpv_set_option_string(m_mpv, "loop", "inf");   
+    virtual ~MpvRender() {
+        _Q_DEBUG() << "destroyed";
+        mpv::qt::command(m_mpv, QVariantList{"stop"});
 
-        m_format.setAttachment(QOpenGLFramebufferObject::CombinedDepthStencil);
-        connect(this, &MpvRender::mpvRedraw, this, &MpvRender::renderFrame, Qt::QueuedConnection);
-
-        _Q_DEBUG() << m_size;
-    }
-    ~MpvRender() = default;    
-
-    QSGTexture* eatFrame(QQuickWindow * window) {
-        if(!dirty.exchange(false)) return nullptr;
-        presented = ready.exchange(presented);
-        FrameBufferParameters* fbo = presented.load();
-        if(fbo) {
-            QSGTexture* tex = createTextureFromGl(fbo->gltex, fbo->size, window);
-            return tex;
-        }
-        return nullptr;
+        if(m_mpv_context) mpv_render_context_free(m_mpv_context);
+        m_mpv_context = nullptr;
     }
 
-    mpv_handle* Mpv() { return m_mpv; }
-
-    void markRenderThread(QThread* t) { m_renderThread = t; }
+    bool Dirty() const { return m_dirty.load(); }
+    bool setDirty(bool v) { return m_dirty.exchange(v); };
 
 signals:
     void mpvRedraw();
-    void newFrame();
     void inited();
 
 public slots:
-    void renderFrame() {
-        context->makeCurrent(surface);
-
-        if (!m_mpv_context) {
-            std::array<AtomicFbo*, 3> atoms {&presented, &ready, &inprogress};
-            for(auto& atom:atoms) {
-                *atom = new FrameBufferParameters(m_size, m_format);
-            }
-
-            //mpv_set_wakeup_callback(m_mpv_handle, on_mpv_events, nullptr);
-            if (CreateMpvContex(m_mpv, &m_mpv_context) >= 0) {
-                mpv_render_context_set_update_callback(m_mpv_context, on_mpv_redraw, this);
-                emit this->inited();
-            }
-        }
-        QOpenGLFramebufferObject* qfbo;
-        {
-            auto* fbo = inprogress.load();
-            if(fbo->qfbo.size() != m_size) {
-                delete fbo;
-                inprogress = new FrameBufferParameters(m_size, m_format);
-                fbo = inprogress.load();
-            }
-            qfbo = &(fbo->qfbo);
-        }
-        mpv_opengl_fbo mpfbo{.fbo = static_cast<int>(qfbo->handle()), .w = qfbo->width(), .h = qfbo->height(), .internal_format = 0};
+    // render thread
+    void renderFrame(QOpenGLFramebufferObject* fbo) {
+        mpv_opengl_fbo mpfbo{
+            .fbo = static_cast<int>(fbo->handle()), 
+            .w = fbo->width(), 
+            .h = fbo->height(), 
+            .internal_format = 0
+        };
         int flip_y{0};
 
         mpv_render_param params[] = {
@@ -284,198 +253,94 @@ public slots:
             {MPV_RENDER_PARAM_FLIP_Y, &flip_y},
             {MPV_RENDER_PARAM_INVALID, nullptr}};
         mpv_render_context_render(m_mpv_context, params);
-        context->functions()->glFlush();
-        inprogress = ready.exchange(inprogress);
-        dirty = true;
-        emit newFrame();
     }
 
-    void newSize(QSize size) {
-        m_size = size;
+    /*
+	 * This function is called when a new FBO is needed.
+     * This happens on the initial frame.
+	 */
+    QOpenGLFramebufferObject *createFramebufferObject(const QSize &size) override {
+        //QMetaObject::invokeMethod(m_obj, "initCallback", Qt::QueuedConnection);
+        //emit m_updater.inited();
+        return QQuickFramebufferObject::Renderer::createFramebufferObject(size);
     }
 
-    void waitShutDown() {
-        mpv::qt::command(m_mpv, QVariantList{"stop"});
-        QMetaObject::invokeMethod(this, "shutDown", Qt::QueuedConnection);
-        if(m_renderThread) m_renderThread->wait();
-    }
-
-    void shutDown() {
-        _Q_DEBUG() << "destroyed";
-        context->makeCurrent(surface);
-        {
-            std::array<AtomicFbo*, 3> fbos {&presented, &ready, &inprogress};
-            for(auto& fb:fbos) {
-                delete fb->load();
+    /*
+	 * called as a result of QQuickFramebufferObject::update()
+	 * called once before the FBO is created
+	 * only place when it is safe for the renderer and the item to read and write each others members
+	 */
+    void synchronize(QQuickFramebufferObject *item) override {
+        if (m_mpv_context == nullptr) {
+            //mpv_set_wakeup_callback(m_mpv_handle, on_mpv_events, nullptr);
+            if (CreateMpvContex(m_mpv, &m_mpv_context) >= 0) {
+                mpv_render_context_set_update_callback(m_mpv_context, on_mpv_redraw, this);
+                Q_EMIT this->inited();
             }
-            if(m_mpv_context) mpv_render_context_free(m_mpv_context);
         }
-        context->doneCurrent();
-        delete context;
-
-        if(m_mpv) mpv_terminate_destroy(m_mpv);
-        // schedule this to be deleted only after we're done cleaning up
-        delete surface;
-        QThread::currentThread()->exit();
+        m_window->resetOpenGLState();
     }
 
-public:
-    QOffscreenSurface *surface {nullptr};
-    QOpenGLContext *context {nullptr};
-    struct FrameBufferParameters {
-        FrameBufferParameters(QSize size, QOpenGLFramebufferObjectFormat format):qfbo(size, format),size(size) {
-            gltex = qfbo.texture();
+
+    void render() override {
+        if(setDirty(false)) {
+            QOpenGLFramebufferObject *fbo = framebufferObject();
+            renderFrame(fbo);
+            m_window->resetOpenGLState();
         }
-        QOpenGLFramebufferObject qfbo;
-        uint32_t gltex;
-        QSize size;
-    };
-    typedef std::atomic<FrameBufferParameters*> AtomicFbo;
-    AtomicFbo presented {nullptr};
-    AtomicFbo ready {nullptr};
-    AtomicFbo inprogress {nullptr};
-
-    std::atomic<bool> dirty {false};
-
+    }
 private:
     mpv_render_context *m_mpv_context {nullptr};
     mpv_handle *m_mpv {nullptr};
-    QOpenGLFramebufferObjectFormat m_format;
+    QQuickWindow *m_window {nullptr};
 
-    QSize m_size;
-    // wait for exit
-    QThread *m_renderThread {nullptr};
+    std::shared_ptr<MpvHandle> m_shared_mpv {nullptr};
+
+    std::atomic<bool> m_dirty {false};
 };
+
+}
 
 namespace {
     void on_mpv_redraw(void *ctx) {
-        emit static_cast<MpvRender*>(ctx)->mpvRedraw();
+        auto* mpv = static_cast<mpv::MpvRender*>(ctx);
+        mpv->setDirty(true);
+        Q_EMIT mpv->mpvRedraw();
     }
 }
 
-class TextureNode : public QObject, public QSGSimpleTextureNode {
-    Q_OBJECT
-public:
-    typedef std::function<QSGTexture*(QQuickWindow*)> EatFrameOp;
-    TextureNode(QQuickWindow *window, EatFrameOp eatFrameOp)
-        : m_texture(nullptr)
-        , m_eatFrameOp(eatFrameOp)
-        , m_window(window)
-    {
-        // texture node must have a texture, so use the default 0 texture.
-        m_texture = createTextureFromGl(0, QSize(1, 1), window);
-        setTexture(m_texture);
-        setFiltering(QSGTexture::Linear);
-        setOwnsTexture(false);
-    }
-
-    ~TextureNode() override {
-        delete m_texture;
-        emit nodeDestroyed();
-    }
-
-signals:
-    void textureInUse();
-    void nodeDestroyed();
-
-public slots:
-    void newTexture() {
-        QSGTexture *newtex = m_eatFrameOp(m_window);
-        if(newtex) {
-            if(m_texture) delete m_texture;
-            m_texture = newtex;
-            setTexture(m_texture);
-            markDirty(DirtyMaterial);
-            emit textureInUse();
-        }
-    }
-
-private:
-    QSGTexture *m_texture;
-    EatFrameOp m_eatFrameOp;
-    QQuickWindow *m_window;
-};
 
 MpvObject::MpvObject(QQuickItem* parent)
-    :QQuickItem(parent),
-    m_renderThread(nullptr),
-    m_mpvRender(nullptr)
+    : QQuickFramebufferObject(parent),m_shared_mpv(std::make_shared<MpvHandle>(mpv_create()))
 {
-    setFlag(ItemHasContents, true);
-    m_renderThread = new QThread();
-    m_mpvRender = new MpvRender({1280, 720});
-    mpv = m_mpvRender->Mpv();
-    connect(m_mpvRender, &MpvRender::inited, this, &MpvObject::initCallback, Qt::QueuedConnection);
+    m_mpv = m_shared_mpv.get()->handle;
 
-    connect(this, &MpvObject::widthChanged, this, &MpvObject::resizeFb);
-    connect(this, &MpvObject::heightChanged, this, &MpvObject::resizeFb);
+    if (!m_mpv)
+        _Q_DEBUG() << "could not create mpv context";
+    mpv_set_option_string(m_mpv, "terminal", "no");
+    mpv_set_option_string(m_mpv, "msg-level", "all=info");
+    if (mpv_initialize(m_mpv) < 0)
+        _Q_DEBUG() << "could not initialize mpv context";
+
+    mpv_set_option_string(m_mpv, "config", "no");
+    mpv_set_option_string(m_mpv, "hwdec", "auto");
+    mpv_set_option_string(m_mpv, "vo", "libmpv");
+    mpv_set_option_string(m_mpv, "loop", "inf");   
 }
 
 MpvObject::~MpvObject() {}
 
-void MpvObject::resizeFb() {
-    QSize size;
-    size.setWidth(this->width());
-    size.setHeight(this->height());
-    QMetaObject::invokeMethod(m_mpvRender, "newSize", Qt::QueuedConnection,
-        Q_ARG(QSize, size));
+QQuickFramebufferObject::Renderer *MpvObject::createRenderer() const {
+    window()->setPersistentOpenGLContext(true);
+    window()->setPersistentSceneGraph(true);
+
+    auto* render =  new MpvRender(m_shared_mpv, window());
+
+    // Use Queued signal to update at gui thread
+    connect(render, &MpvRender::mpvRedraw, this, &MpvObject::update, Qt::QueuedConnection);
+    connect(render, &MpvRender::inited, this, &MpvObject::initCallback, Qt::QueuedConnection);
+    return render;
 }
 
-void MpvObject::prepareMpv()
-{
-    m_mpvRender->surface = new QOffscreenSurface();
-    m_mpvRender->surface->setFormat(m_mpvRender->context->format());
-    m_mpvRender->surface->create();
-
-    m_mpvRender->markRenderThread(m_renderThread);
-    m_mpvRender->moveToThread(m_renderThread);
-
-    m_renderThread->start();
-    _Q_DEBUG() << "renderThread started";
-    update();
-}
-
-QSGNode *MpvObject::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
-{
-    TextureNode *node = static_cast<TextureNode *>(oldNode);
-
-    if (!m_mpvRender->context) {
-        _Q_DEBUG() << "setContext ";
-        QOpenGLContext *current = window()->openglContext();
-        // Some GL implementations requres that the currently bound context is
-        // made non-current before we set up sharing, so we doneCurrent here
-        // and makeCurrent down below while setting up our own context.
-        current->doneCurrent();
-
-        m_mpvRender->context = new QOpenGLContext();
-        m_mpvRender->context->setFormat(current->format());
-        m_mpvRender->context->setShareContext(current);
-        m_mpvRender->context->create();
-        m_mpvRender->context->moveToThread(m_renderThread);
-
-        current->makeCurrent(window());
-
-        QMetaObject::invokeMethod(this, "prepareMpv");
-        return nullptr;
-    }
-
-    if (!node) {
-        node = new TextureNode(window(),[this](QQuickWindow * window) {
-            return m_mpvRender->eatFrame(window);
-        });
-
-        connect(m_mpvRender, &MpvRender::newFrame, window(), &QQuickWindow::update, Qt::QueuedConnection);
-        connect(window(), &QQuickWindow::beforeRendering, node, &TextureNode::newTexture, Qt::DirectConnection);
-
-        connect(node, &TextureNode::nodeDestroyed, m_mpvRender, &MpvRender::waitShutDown, Qt::DirectConnection);
-
-        resizeFb();
-        on_mpv_redraw(m_mpvRender);
-    }
-
-    node->setRect(boundingRect());
-
-    return node;
-}
 
 #include "MpvBackend.moc"
