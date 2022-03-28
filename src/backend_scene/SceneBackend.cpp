@@ -80,7 +80,7 @@ public:
         , m_window(window)
     {
         // texture node must have a texture, so use the default 0 texture.
-        m_texture = createTextureFromGl(0, QSize(1, 1), window);
+        m_texture = createTextureFromGl(0, QSize(64, 64), window);
         m_init_texture = m_texture;
         setTexture(m_texture);
         setFiltering(QSGTexture::Linear);
