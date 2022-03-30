@@ -1,125 +1,129 @@
 import QtQuick 2.6
 import QtQuick.Controls 2.2
 import QtQuick.Layouts 1.5
-import org.kde.plasma.core 2.0 as PlasmaCore
-import org.kde.plasma.components 3.0 as PlasmaComponents
-import org.kde.kirigami 2.4 as Kirigami
 
 import ".."
+import "../components"
 
-Kirigami.FormLayout {
+import org.kde.plasma.core 2.0 as PlasmaCore
+import org.kde.plasma.components 3.0 as PlasmaComponents
+
+
+Flickable {
     Layout.fillWidth: true
-    twinFormLayouts: parentLayout
-    PlasmaComponents.TextArea {
-        Layout.fillWidth: true
-        Kirigami.FormData.label: {
-            Kirigami.FormData.label = "Requirements:";
-            if(Kirigami.FormData.labelAlignment !== undefined) 
-                Kirigami.FormData.labelAlignment = Qt.AlignTop;
-        }
-        implicitWidth: 0
-        text: `
-            <ol>
-            <li><i>Wallpaper Engine</i> installed on Steam</li>
-            <li>Subscribe to some wallpapers on the Workshop</li>
-            <li>Select the <i>steamlibrary</i> folder on the Wallpapers tab of this plugin
-                <ul>
-                    <li>The <i>steamlibrary</i> which contains the <i>steamapps<i/> folder</li>
-                    <li><i>Wallpaper Engine</i> needs to be installed in this <i>steamlibrary</i></li>
-                </ul>
-            </li>
-            </ol>
-        `
-        wrapMode: Text.Wrap
-        textFormat: Text.RichText
-        readOnly: true
-        selectByMouse: false
-    }
-    PlasmaComponents.TextArea {
-        Layout.fillWidth: true
-        Kirigami.FormData.label: {
-            Kirigami.FormData.label = "Fix crashes:";
-            if(Kirigami.FormData.labelAlignment !== undefined)
-                Kirigami.FormData.labelAlignment = Qt.AlignTop;
-        }
-        implicitWidth: 0
-        text: `
-            <ol>
-            <li>Remove <i>WallpaperFilePath</i> line in <b>~/.config/plasma-org.kde.plasma.desktop-appletsrc</b></li>
-            <li>Restart KDE</li>
-            </ol>
-        `
-        readOnly: true
-        wrapMode: Text.Wrap
-        textFormat: Text.RichText
-        selectByMouse: true
-        visible: libcheck.wallpaper
-        MouseArea {
-            anchors.fill: parent
-            acceptedButtons: Qt.NoButton
-            cursorShape: Qt.IBeamCursor
-        }
-    }
-    PlasmaComponents.Label {
-        Kirigami.FormData.label: {
-            Kirigami.FormData.label = "Readme:";
-            if(Kirigami.FormData.labelAlignment !== undefined)
-                Kirigami.FormData.labelAlignment = Qt.AlignTop;
-        }
-        text: '<a href="https://github.com/catsout/wallpaper-engine-kde-plugin">repo</a>'
-        onLinkActivated: Qt.openUrlExternally(link)
-        MouseArea {
-            anchors.fill: parent
-            acceptedButtons: Qt.NoButton
-            cursorShape: Qt.PointingHandCursor
-        }
-    }
-    ListView {
-        Layout.fillWidth: true
-        Kirigami.FormData.label: {
-            Kirigami.FormData.label = "Lib check:";
-            if(Kirigami.FormData.labelAlignment !== undefined)
-                Kirigami.FormData.labelAlignment = Qt.AlignTop;
-        }
-        implicitHeight: (font.pixelSize * 2) * modelraw.length
-        model: ListModel {}
-        clip: false
-        property var modelraw: {
-            const _model = [
-                {
-                    ok: libcheck.folderlist,
-                    name: "*qt-lab-folderlist"
-                },
-                {
-                    ok: libcheck.qtwebsockets,
-                    name: "*qtwebsockets (qml)"
-                },
-                {
-                    ok: pyext && pyext.ok,
-                    name: "*python3-websockets"
-                },
-                {
-                    ok: libcheck.qtwebchannel,
-                    name: "qtwebchannel (qml) (for web)"
-                },
-                {
-                    ok: libcheck.wallpaper,
-                    name: "plugin lib (for scene,mpv)"
-                }
-            ];
-            return _model;
-        }
-        onModelrawChanged: {
-            this.model.clear();
-            this.modelraw.forEach((el) => {
-                this.model.append(el);
-            });
-        }
-        delegate: CheckBox {
-            text: name
-            checked: ok
-            enabled: false
-        }
+    ScrollBar.vertical: ScrollBar { id: scrollbar }
+    //ScrollBar.horizontal: ScrollBar { }
 
+    contentWidth: width - (scrollbar.visible ? scrollbar.width : 0)
+    contentHeight: contentItem.childrenRect.height
+    clip: true
+    boundsBehavior: Flickable.OvershootBounds
+
+    OptionGroup {
+        id: option_group
+        header.visible: false
+        anchors.left: parent.left
+        anchors.right: parent.right
+
+        OptionItem {
+            text: 'Requirements'
+            text_color: Theme.textColor
+            icon: '../../images/information-outline.svg'
+            Layout.minimumWidth: 0
+
+            contentBottom: Text {
+                color: Theme.disabledTextColor
+                text: `
+                    <ol>
+                    <li><i>Wallpaper Engine</i> installed on Steam</li>
+                    <li>Subscribe to some wallpapers on the Workshop</li>
+                    <li>Select the <i>steamlibrary</i> folder on the Wallpapers tab of this plugin
+                        <ul>
+                            <li>The <i>steamlibrary</i> which contains the <i>steamapps</i> folder</li>
+                            <li><i>Wallpaper Engine</i> needs to be installed in this <i>steamlibrary</i></li>
+                        </ul>
+                    </li>
+                    </ol>
+                `
+                wrapMode: Text.Wrap
+                textFormat: Text.RichText
+            }
+        }
+        OptionItem {
+            visible: libcheck.wallpaper
+            Layout.minimumWidth: 0
+
+            text: 'Fix Crashes'
+            text_color: Theme.textColor
+            icon: '../../images/information-outline.svg'
+            contentBottom: Text {
+                color: Theme.disabledTextColor
+                text: `
+                    <ol>
+                    <li>Remove <i>WallpaperFilePath</i> line in <b>~/.config/plasma-org.kde.plasma.desktop-appletsrc</b></li>
+                    <li>Restart KDE</li>
+                    </ol>
+                `
+                wrapMode: Text.Wrap
+                textFormat: Text.RichText
+            }
+        }
+        OptionItem {
+            icon: '../../images/github.svg'
+            text: 'Github Repo'
+            text_color: Theme.textColor
+            MouseArea {
+                anchors.fill: parent
+                acceptedButtons: Qt.LeftButton
+                cursorShape: Qt.PointingHandCursor
+                onClicked: Qt.openUrlExternally(Common.repo_url)
+            }
+        }
+        OptionItem {
+            text: 'Lib Checking'
+            text_color: Theme.textColor
+            icon: '../../images/checkmark.svg'
+            contentBottom: ListView {
+                implicitHeight: (font.pixelSize * 2) * modelraw.length
+                model: ListModel {}
+                clip: false
+                property var modelraw: {
+                    const _model = [
+                        {
+                            ok: libcheck.folderlist,
+                            name: "*qt-lab-folderlist"
+                        },
+                        {
+                            ok: libcheck.qtwebsockets,
+                            name: "*qtwebsockets (qml)"
+                        },
+                        {
+                            ok: pyext && pyext.ok,
+                            name: "*python3-websockets"
+                        },
+                        {
+                            ok: libcheck.qtwebchannel,
+                            name: "qtwebchannel (qml) (for web)"
+                        },
+                        {
+                            ok: libcheck.wallpaper,
+                            name: "plugin lib (for scene,mpv)"
+                        }
+                    ];
+                    return _model;
+                }
+                onModelrawChanged: {
+                    this.model.clear();
+                    this.modelraw.forEach((el) => {
+                        this.model.append(el);
+                    });
+                }
+                delegate: CheckBox {
+                    text: name
+                    checked: ok
+                    enabled: false
+                }
+            }
+        }
     }
 }
