@@ -27,6 +27,26 @@ QtObject {
 
     readonly property string repo_url: 'https://github.com/catsout/wallpaper-engine-kde-plugin'
 
+    readonly property var wpitem_template: ({
+        workshopid: "",
+        path: "", // need convert to qurl
+        loaded: false,
+        title: "unknown",
+        preview: "",
+        type: "unknown",
+        contentrating: "Everyone",
+        tags: [],
+        favor: false
+    })
+
+    function wpitemFromQtObject(qobj) {
+        const v = Object.assign({}, Common.wpitem_template);
+        for(const prop in wpitem_template) {
+            v[prop] = qobj[prop];
+        }
+        return v;
+    }
+
     property var filterModel: ListModel {
         ListElement { text: "Favorite";     type:"favor";         key:"favor";         def: 0}
         ListElement { text: "TYPE";         type:"_nocheck";      key:"";              def: 1}
@@ -102,7 +122,7 @@ QtObject {
             const checkFavor = (el) => onlyFavor?el.favor:true;
             const checkNoTags = (el) => {
                 for(let i=0;i < el.tags.length;i++) {
-                    if(noTags.has(el.tags[i])) {
+                    if(noTags.has(el.tags[i].key)) {
                         return false;
                     }
                 }
@@ -134,7 +154,17 @@ QtObject {
     function getAssetsPath(steamLibrary) {
         return steamLibrary + "/steamapps/common/wallpaper_engine/assets";
     }
-
+    
+    // wallpaper list modle
+    function getWpModelPreviewSource(model) {
+        return model.preview ? `${model.path}/${model.preview}` : '';
+    }
+    function getWpModelFileSource(model) {
+        return model.path ? `${model.path}/${model.file}` : '';
+    }
+    function getWpModelProjectPath(model) {
+        return model.path ? `${model.path}/project.json` : '';
+    }
 
     function loadCustomConf(data) {
         const conf = {

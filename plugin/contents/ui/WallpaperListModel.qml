@@ -20,18 +20,6 @@ Item {
     signal modelStartSync
     signal modelRefreshed
 
-    readonly property var itemTemplate: ({
-        workshopid: "",
-        path: "", // need convert to qurl
-        loaded: false,
-        title: "unknown",
-        preview: "",
-        type: "unknown",
-        contentrating: "Everyone",
-        tags: [],
-        favor: false
-    })
-
     readonly property ListModel model: ListModel {
         function assignModel(index, value) {
             Object.assign(this.get(index), value);
@@ -66,8 +54,9 @@ Item {
                 el.type = project.type.toLowerCase();
             if("contentrating" in project)
                 el.contentrating = project.contentrating;
-            if("tags" in project)
-                el.tags = project.tags;
+            if("tags" in project) {
+                el.tags = project.tags.map(el => Object({key: el}));
+            }
         }
     }
 
@@ -176,7 +165,7 @@ Item {
                         const count = this.count;
                         const get = this.get.bind(this);
                         for(let i=0;i < count;i++) {
-                            const v = Object.assign({}, root.itemTemplate);
+                            const v = Object.assign({}, Common.wpitem_template);
                             v.workshopid = get(i,"fileName");
                             // use qurl to convert to file://
                             v.path = Qt.resolvedUrl(get(i,"filePath")).toString();
@@ -192,7 +181,7 @@ Item {
                         const plist = []
                         proxyModel.forEach((el) => {
                             // as no allSettled, catch any error
-                            const p = root._readfile(Common.urlNative(el.path)+"/project.json").then(value => {
+                            const p = root._readfile(Common.urlNative(Common.getWpModelProjectPath(el))).then(value => {
                                     root.loadItemFromJson(value, el);
                                 }).catch(reason => console.error(reason));
                             plist.push(p);

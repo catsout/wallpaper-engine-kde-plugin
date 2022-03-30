@@ -84,7 +84,8 @@ Flickable {
             text_color: Theme.textColor
             icon: '../../images/checkmark.svg'
             contentBottom: ListView {
-                implicitHeight: (font.pixelSize * 2) * modelraw.length
+                implicitHeight: contentItem.childrenRect.height
+
                 model: ListModel {}
                 clip: false
                 property var modelraw: {
