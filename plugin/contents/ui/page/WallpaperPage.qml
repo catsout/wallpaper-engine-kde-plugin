@@ -1,6 +1,7 @@
 import QtQuick 2.6
 import QtQuick.Controls 2.3
 import QtQuick.Controls 2.3 as QQC
+import QtQuick.Window 2.0 // for Screen
 import QtQuick.Dialogs 1.2
 import QtQuick.Layouts 1.5
 
@@ -163,10 +164,15 @@ RowLayout {
 
                     readonly property var currentModel: view.model.get(view.currentIndex)
 
+                    // from org.kde.image
+                    view.implicitCellWidth: Screen.width / 10 + Kirigami.Units.smallSpacing * 2
+                    view.implicitCellHeight: Screen.height / 10 + Kirigami.Units.smallSpacing * 2 + Kirigami.Units.gridUnit * 3
+
                     view.model: wpListModel.model
                     view.delegate: KCM.GridDelegate {
                         // path is file://, safe to concat with '/'
                         text: title
+                        hoverEnabled: true
                         actions: [
                             Kirigami.Action {
                                 icon.name: favor?"user-bookmarks-symbolic":"bookmark-add-symbolic"
@@ -211,6 +217,7 @@ RowLayout {
                                 fillMode: Image.PreserveAspectCrop//Image.Stretch
                                 cache: false
                                 asynchronous: true
+                                smooth: true
                                 visible: Boolean(preview)
                             }
                         }
