@@ -7,6 +7,7 @@ import QtQuick.Layouts 1.5
 import "../utils.mjs" as Utils
 import ".."
 import "../components"
+import "../bbcode.mjs" as BBCode
 
 import org.kde.plasma.core 2.0 as PlasmaCore
 import org.kde.plasma.components 3.0 as PlasmaComponents
@@ -38,10 +39,12 @@ RowLayout {
                 spacing: 10
 
                 Label {
+                    visible: cfg_WallpaperWorkShopId
                     text: `Shopid: ${cfg_WallpaperWorkShopId}  Type: ${cfg_WallpaperType}`
                 }
 
                 Kirigami.ActionToolBar {
+                    Layout.fillWidth: true
                     alignment: Qt.AlignRight
                     flat: false
 
@@ -383,29 +386,33 @@ RowLayout {
                     }
                 }
 
-                Text {
+                PlasmaComponents.TextArea {
                     Layout.alignment: Qt.AlignTop
                     Layout.fillWidth: true
                     Layout.minimumWidth: 0
                     Layout.minimumHeight: implicitHeight
 
+                    visible: false
                     text: ''
                     readonly property bool _set_text: {
                         const path = Common.getWpModelProjectPath(right_content.wpmodel);
                         if(path) {
                             pyext.readfile(Common.urlNative(path)).then(value => {
                                 const project = Utils.parseJson(value);    
-                                this.text = project && project.description ? project.description : '';
+                                const text = project && project.description ? project.description : '';
+
+                                this.visible = text;
+                                if(this.visible) this.text = BBCode.parser.parse(text);
                             }).catch(reason => console.error(`read '${path}' error\n`, reason));
-                        }
+                        } else this.visible = false;
                         return true;
                     }
-                    color: Theme.textColor
                     font.bold: false
  
                     wrapMode: Text.Wrap
-                    textFormat: Text.PlainText
+                    textFormat: Text.RichText
                     horizontalAlignment: Text.AlignLeft
+                    readOnly: true
                 }
             }
         }
