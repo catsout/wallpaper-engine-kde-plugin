@@ -30,7 +30,6 @@ class MpvRender;
 class MpvObject : public QQuickFramebufferObject
 {
     Q_OBJECT
-    QML_NAMED_ELEMENT(Renderer)
     Q_PROPERTY(QUrl source READ source WRITE setSource NOTIFY sourceChanged)
     Q_PROPERTY(Status status READ status NOTIFY statusChanged)
     Q_PROPERTY(bool mute READ mute WRITE setMute)

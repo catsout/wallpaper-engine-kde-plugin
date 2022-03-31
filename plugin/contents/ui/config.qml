@@ -18,7 +18,6 @@ ColumnLayout {
     property string cfg_WallpaperType
     property string cfg_FilterStr
     property int    cfg_SortMode
-    property alias  cfg_FilterMode: wallpaperPage.cfg_FilterMode
 
     property alias  cfg_Fps:                settingPage.cfg_Fps
     property alias  cfg_Volume:             settingPage.cfg_Volume
@@ -34,6 +33,7 @@ ColumnLayout {
 
     //property alias  cfg_UseMpv
     //property string cfg_BackgroundColor: "black"
+    //property alias  cfg_FilterMode: wallpaperPage.cfg_FilterMode
 
     property string cfg_CustomConf
     property var customConf: {
@@ -50,7 +50,7 @@ ColumnLayout {
         }
     }
     property var themeWidth: {
-        if(PlasmaCore.Theme) {
+        if(PlasmaCore.Theme && PlasmaCore.Theme.mSize) {
             themeWidth = PlasmaCore.Theme.mSize(theme.defaultFont).width;
         } else if(theme) {
             themeWidth = theme.mSize(theme.defaultFont).width;
@@ -111,12 +111,17 @@ ColumnLayout {
     PlasmaComponents.TabBar {
         id: bar
         implicitWidth: font.pixelSize*8 * 3
-        Repeater {
-            model: [qsTr("Wallpapers"), qsTr("Settings"), qsTr("About")]
-            PlasmaComponents.TabButton {
-                text: modelData
-                display: PlasmaComponents.TabButton.TextOnly
-            }
+        PlasmaComponents.TabButton {
+            text: 'Wallpapers'
+            display: PlasmaComponents.TabButton.TextOnly
+        }
+        PlasmaComponents.TabButton {
+            text: 'Settings'
+            display: PlasmaComponents.TabButton.TextOnly
+        }
+        PlasmaComponents.TabButton {
+            text: 'About'
+            display: PlasmaComponents.TabButton.TextOnly
         }
     }
 

@@ -230,9 +230,13 @@ QtObject {
     function cbCurrentValue(combo) {
         return combo.model[combo.currentIndex].value;
     }
-
+    function cbValueOfIndex(combo, index) {
+        return combo.model[index].value;
+    }
     function cbIndexOfValue(combo, value) {
-        const model = combo.model;
+        return modelIndexOfValue(combo.model,value);
+    }
+    function modelIndexOfValue(model, value) {
         for(let i=0;i < model.length;i++) {
             if(model[i].value == value) {
                 return i;

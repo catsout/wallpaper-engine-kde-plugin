@@ -15,11 +15,11 @@ Item {
             "[ -f \"$HOME/.local/share/$EXT\" ] && WKD=\"$HOME/.local/share/$EXT\"",
             "[ -f /usr/share/$EXT ] && WKD=/usr/share/$EXT",
             "[ -f /usr/local/share/$EXT ] && WKD=/usr/local/share/$EXT",
-            `exec python3 "$WKD" "${server.url}"`
+            `exec python3 "$WKD" "${ws_server.url}"`
         ].join("\n");
         return sh;
     }
-    readonly property bool ok: server.socket.status == WebSocket.Open
+    readonly property bool ok: ws_server.socket.status == WebSocket.Open
 
     property string _log
     readonly property string log: _log
@@ -27,7 +27,7 @@ Item {
     property var commands: []
 
     function readfile(path) {
-        return server.jrpc.send("readfile", [path]).then((el) => {
+        return ws_server.jrpc.send("readfile", [path]).then((el) => {
             return Qt.atob(el.result);
         });
     }
@@ -43,7 +43,7 @@ Item {
     }
 
     WebSocketServer {
-        id: server
+        id: ws_server
         listen: true
         property var socket: { status: WebSocket.Closed }
         property var backmsg: []
@@ -55,14 +55,14 @@ Item {
             console.error("----python helper connected----")
             this.socket = webSocket;
             webSocket.onTextMessageReceived.connect((message) => {
-                server.jrpc.reserve(message);
+                ws_server.jrpc.reserve(message);
             });
             webSocket.onStatusChanged.connect((status) => {
                 if(status != WebSocket.Open) {
-                    server.jrpc.rejectUnfinished();
+                    ws_server.jrpc.rejectUnfinished();
                     console.error("----python helper disconnected----")
                 } else {
-                    server.dealBackmsg();
+                    ws_server.dealBackmsg();
                 }
             });
             this.dealBackmsg();
@@ -73,7 +73,7 @@ Item {
             const m = backmsg;
             backmsg = [];
             m.forEach(el => {
-                server.socket.sendTextMessage(el);
+                ws_server.socket.sendTextMessage(el);
             });
         }
         function sendStr(s) {

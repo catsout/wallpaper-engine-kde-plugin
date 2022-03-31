@@ -1,4 +1,4 @@
-import QtQuick 2.15
+import QtQuick 2.6
 import QtGraphicalEffects 1.12
 
 

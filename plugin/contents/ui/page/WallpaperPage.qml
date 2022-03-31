@@ -1,5 +1,6 @@
 import QtQuick 2.6
-import QtQuick.Controls 2.2
+import QtQuick.Controls 2.3
+import QtQuick.Controls 2.3 as QQC
 import QtQuick.Dialogs 1.2
 import QtQuick.Layouts 1.5
 
@@ -11,13 +12,11 @@ import org.kde.plasma.core 2.0 as PlasmaCore
 import org.kde.plasma.components 3.0 as PlasmaComponents
 // for kcm gridview
 import org.kde.kcm 1.1 as KCM
-import org.kde.kirigami 2.4 as Kirigami
+import org.kde.kirigami 2.6 as Kirigami
 import org.kde.kquickcontrolsaddons 2.0
 
 RowLayout {
     Layout.fillWidth: true
-
-    property alias cfg_FilterMode: comboxFilter.currentIndex
     
     Control {
         id: left_content
@@ -38,148 +37,99 @@ RowLayout {
                 Layout.alignment: Qt.AlignHCenter
                 spacing: 10
 
-                Item { Layout.fillWidth: true }
                 Label {
-                    id: workshopidLabel
-                    text: "Shopid: " + cfg_WallpaperWorkShopId
+                    text: `Shopid: ${cfg_WallpaperWorkShopId}  Type: ${cfg_WallpaperType}`
                 }
-                Label {
-                    text: "Type: " + cfg_WallpaperType
-                }
-                Button {
-                    id: wpFolderButton
-                    implicitWidth: height
-                    IconSvg {
-                        anchors.margins: 8
-                        anchors.fill: parent
-                        color: Theme.textColor
-                        source: '../../images/folder-outline.svg'
-                    }
-                    PlasmaCore.ToolTipArea {
-                        anchors.fill: parent
-                        subText: cfg_SteamLibraryPath?cfg_SteamLibraryPath:"Select steam library dir"
-                    }
 
-                    MouseArea {
-                        anchors.fill: parent
-                        onClicked: { wpDialog.open() }
-                    }
-                }
-                ComboBox {
-                    id: comboxFilter
-                    implicitWidth: height * 1.5
-                    popup.width: font.pixelSize * 11
-                    popup.height: font.pixelSize * 25
-                    popup.x: width - popup.width
+                Kirigami.ActionToolBar {
+                    alignment: Qt.AlignRight
+                    flat: false
 
-                    property var modelValues: Common.filterModel.getValueArray(cfg_FilterStr)
-                    model: Common.filterModel
-
-                    indicator: IconSvg {
-                        anchors.margins: 8
-                        anchors.top: parent.top
-                        anchors.bottom: parent.bottom
-                        color: Theme.textColor
-                        source: '../../images/filter.svg'
+                    ActionGroup {
+                        id: group_sort
+                        exclusive: true
                     }
-                    delegate: ItemDelegate {
-                        id: combox_dg
-                        width: comboxFilter.popup.width
-                        contentItem: RowLayout {
-                            anchors.fill: parent
-                            anchors.leftMargin: 5
-                            CheckBox {
-                                visible: model.type !== "_nocheck"
-                                checked: comboxFilter.modelValues[index]
-                                onToggled: combox_dg.toggle()
+                    Component {
+                        id: comp_action_filter
+                        Kirigami.Action {
+                            property int act_index;
+
+                            checkable: false
+                            checked: action_cb_filter.modelValues[act_index]
+                            onTriggered: {
+                                if(!checkable) return;
+                                const modelValues = action_cb_filter.modelValues;
+                                modelValues[act_index] = Number(!modelValues[act_index]);
+                                cfg_FilterStr = Utils.intArrayToStr(modelValues);
                             }
-                            Label {
-                                Layout.fillWidth: true
-                                text: model.text
-                            }
-                        }
-                        MouseArea {
-                            anchors.fill: parent
-                            onClicked: parent.toggle()
-                        }
-                        function toggle() {
-                            if(model.type === "_nocheck") return;
-                            const modelValues = comboxFilter.modelValues;
-                            modelValues[index] = Number(!modelValues[index]);
-                            cfg_FilterStr = Utils.intArrayToStr(modelValues);
+
+                            Component.onCompleted: comp_action_sort.Component.destruction.connect(this.destroy)
                         }
                     }
-                    
-                }
-                ComboBox {
-                    id: comboxSort
-                    Layout.preferredWidth: contentItem.implicitWidth + height
-                    popup.width: font.pixelSize * 18
-                    popup.x: width - popup.width
+                    Component {
+                        id: comp_action_sort
+                        Kirigami.Action {
+                            ActionGroup.group: group_sort
 
+                            property int act_value;
+                            checkable: true
+                            checked: {
+                                checked = cfg_SortMode == act_value;
+                            }
+                            onTriggered: cfg_SortMode = act_value
 
-                    model: [
-                        {
-                            text: "Sort By Workshop Id",
-                            short: "Id",
-                            value: Common.SortMode.Id
+                            Component.onCompleted: comp_action_sort.Component.destruction.connect(this.destroy)
+                        }
+                    }
+
+                    actions: [
+                        Kirigami.Action {
+                            icon.source: '../../images/folder-outline.svg'
+                            text: 'Library'
+                            tooltip: cfg_SteamLibraryPath ? cfg_SteamLibraryPath : 'Select steam library dir'
+                            onTriggered: wpDialog.open()
                         },
-                        {
-                            text: "Sort Alphabetically By Name",
-                            short: "Alphabetical",
-                            value: Common.SortMode.Name
+                        Kirigami.Action {
+                            id: action_cb_filter
+                            text: 'Filter'
+                            icon.source: '../../images/filter.svg'
+
+                            property int currentIndex
+                            readonly property var model: Common.filterModel
+                            readonly property var modelValues: Common.filterModel.getValueArray(cfg_FilterStr)
+
+                            children: model.map((el, index) => comp_action_filter.createObject(null, {
+                                text: el.text, 
+                                act_index: index,
+                                checkable: el.type !== '_nocheck'
+                            }))
                         },
-                        {
-                            text: "Show Newest Modified First",
-                            short: "Modified",
-                            value: Common.SortMode.Modified
+                        Kirigami.Action {
+                            id: action_cb_sort
+                            text: model[currentIndex].short
+                            icon.source: '../../images/arrow-down.svg'
+
+                            property int currentIndex: Common.modelIndexOfValue(model, cfg_SortMode)
+                            readonly property var model: [
+                                {
+                                    text: "Sort By Workshop Id",
+                                    short: "Id",
+                                    value: Common.SortMode.Id
+                                },
+                                {
+                                    text: "Sort Alphabetically By Name",
+                                    short: "Alphabetical",
+                                    value: Common.SortMode.Name
+                                },
+                                {
+                                    text: "Show Newest Modified First",
+                                    short: "Modified",
+                                    value: Common.SortMode.Modified
+                                }
+                            ]
+                            children: model.map((el, index) => comp_action_sort.createObject(null, {text: el.text, act_value: el.value}))
                         }
                     ]
-                    contentItem: RowLayout { 
-                        anchors.top: parent.top
-                        anchors.bottom: parent.bottom
-                        spacing: 0
-                        Item {
-                            Layout.fillHeight: true
-                            Layout.preferredWidth: height
-                            IconSvg {
-                                anchors.margins: 8
-                                anchors.top: parent.top
-                                anchors.bottom: parent.bottom
-                                color: Theme.textColor
-                                source: '../../images/arrow-down.svg'
-                            }
-                        }
-                        Label {
-                            Layout.fillHeight: true
-                            text: comboxSort.model[comboxSort.currentIndex].short
-                        }
-                        Item { Layout.fillWidth: true ; height: 1 }
-                    }
-                    ButtonGroup { id: sortGroup }
-                    delegate: ItemDelegate {
-                        width: comboxSort.popup.width
-                        contentItem: RowLayout {
-                            anchors.fill: parent
-                            anchors.leftMargin: 5
-                            PlasmaComponents.RadioButton {
-                                Layout.fillWidth: true
-                                Layout.fillHeight: true
-                                text: modelData.text
-                                autoExclusive: true
-                                ButtonGroup.group: sortGroup
-                                onClicked:   {
-                                    comboxSort.currentIndex = index;
-                                    comboxSort.popup.close();
-                                    cfg_SortMode = Common.cbCurrentValue(comboxSort)
-                                }
-                                checked: {
-                                    checked = index == cfg_SortMode;
-                                }
-                            }
-                        }
-                    }
-                    Component.onCompleted: currentIndex = Common.cbIndexOfValue(this, cfg_SortMode)
                 }
             }
 
