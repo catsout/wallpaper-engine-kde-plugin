@@ -413,6 +413,13 @@ RowLayout {
                     textFormat: Text.RichText
                     horizontalAlignment: Text.AlignLeft
                     readOnly: true
+
+                    onLinkActivated: Qt.openUrlExternally(link)
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: parent.hoveredLink ? Qt.PointingHandCursor : Qt.ArrowCursor
+                        acceptedButtons: Qt.NoButton
+                    }
                 }
             }
         }
