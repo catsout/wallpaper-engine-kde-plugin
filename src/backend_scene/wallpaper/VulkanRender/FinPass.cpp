@@ -211,14 +211,14 @@ void FinPass::execute(const Device& device, RenderingResources& rr) {
         cmd.pushDescriptorSetKHR(vk::PipelineBindPoint::eGraphics, m_desc.pipeline.layout, 0, 1, &wset);
 	}
 
-
+	// do queue family transfer operation
 	if(m_desc.present_queue_index != device.graphics_queue().family_index) {
 		vk::ImageMemoryBarrier imb;
 		imb.setImage(m_desc.vk_present.handle)
 			.setSrcAccessMask(vk::AccessFlagBits::eMemoryRead)
 			.setDstAccessMask(vk::AccessFlagBits::eColorAttachmentWrite)
-			.setOldLayout(vk::ImageLayout::eUndefined)
-			.setNewLayout(m_desc.render_layout)
+			.setOldLayout(m_desc.present_layout)//vk::ImageLayout::eUndefined)
+			.setNewLayout(m_desc.present_layout)
 			.setSrcQueueFamilyIndex(m_desc.present_queue_index)
 			.setDstQueueFamilyIndex(device.graphics_queue().family_index)
 			.setSubresourceRange(base_range);
@@ -252,12 +252,14 @@ void FinPass::execute(const Device& device, RenderingResources& rr) {
 	cmd.bindVertexBuffers(0, 1, &(rr.vertex_buf->gpuBuf()), &m_desc.vertex_buf.offset);
 	cmd.draw(4, 1, 0, 0);
 	cmd.endRenderPass();	
+
+	// do queue family transfer operation
 	if(m_desc.present_queue_index != device.graphics_queue().family_index) {
 		vk::ImageMemoryBarrier imb;
 		imb.setImage(m_desc.vk_present.handle)	
 			.setSrcAccessMask(vk::AccessFlagBits::eColorAttachmentWrite)
 			.setDstAccessMask(vk::AccessFlagBits::eMemoryRead)
-			.setOldLayout(m_desc.render_layout)
+			.setOldLayout(m_desc.present_layout)
 			.setNewLayout(m_desc.present_layout)
 			.setSrcQueueFamilyIndex(device.graphics_queue().family_index)
 			.setDstQueueFamilyIndex(m_desc.present_queue_index)

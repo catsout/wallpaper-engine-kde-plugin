@@ -116,8 +116,8 @@ bool VulkanRender::initRes() {
         m_finpass->setPresentLayout(vk::ImageLayout::ePresentSrcKHR);
     } else {
         m_finpass->setPresentFormat(m_ex_swapchain->format());
-        m_finpass->setPresentQueueIndex(m_device->graphics_queue().family_index);
         m_finpass->setPresentLayout(vk::ImageLayout::eGeneral);
+        m_finpass->setPresentQueueIndex(VK_QUEUE_FAMILY_EXTERNAL);
     }
     /*
     m_testpass = std::make_unique<FinPass>(FinPass::Desc{});
