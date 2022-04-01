@@ -59,12 +59,15 @@ bool GlExtra::init(void *get_proc_address(const char *)) {
             LOG_ERROR("Failed to initialize GLAD");
             break;
         }
-        LOG_INFO("gl: OpenGL Version %d.%d loaded", GLVersion.major, GLVersion.minor);
+        LOG_INFO("gl: OpenGL version %d.%d loaded", GLVersion.major, GLVersion.minor);
         if(!(GLAD_GL_EXT_memory_object && GLAD_GL_EXT_semaphore)) {
             LOG_ERROR("EXT_memory_object not available");
             break;
         }
         pImpl->uuid = getUUID();
+
+        std::string gl_verdor_name {(const char *)glGetString(GL_VENDOR)};
+        LOG_INFO("gl: OpenGL vendor string: %s", gl_verdor_name.c_str());
 
         {
             int num {0};
@@ -93,13 +96,18 @@ bool GlExtra::init(void *get_proc_address(const char *)) {
                 break;
             }
 
-            // try linear first, fix for amd
-            // https://gitlab.freedesktop.org/mesa/mesa/-/issues/2456
-            if(support_linear) {
-                m_tiling = wallpaper::TexTiling::LINEAR;
-            } else if(support_optimal) {
+            if(support_optimal) {
                 m_tiling = wallpaper::TexTiling::OPTIMAL;
+            } else if(support_linear) {
+                m_tiling = wallpaper::TexTiling::LINEAR;
             }
+
+            // linear, fix for amd
+            // https://gitlab.freedesktop.org/mesa/mesa/-/issues/2456
+            if(support_linear && gl_verdor_name.find("AMD") != std::string::npos) {
+                m_tiling = wallpaper::TexTiling::LINEAR;
+            }
+ 
 
             if(m_tiling == wallpaper::TexTiling::OPTIMAL) {
                 LOG_INFO("gl: external tex using optimal tiling");
