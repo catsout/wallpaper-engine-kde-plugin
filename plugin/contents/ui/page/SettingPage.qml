@@ -71,6 +71,13 @@ Flickable {
                     onActivated: cfg_PauseMode = Common.cbCurrentValue(this)
                     Component.onCompleted: currentIndex = Common.cbIndexOfValue(this, cfg_PauseMode)
                 }
+                contentBottom: ColumnLayout {
+                    Text {
+                        color: Theme.disabledTextColor
+                        text: "Automatically pauses playback if any/focus/maximized window detected"
+                    }
+                }
+ 
             }
             OptionItem {
                 text: 'Display'
@@ -137,6 +144,12 @@ Flickable {
                             stepSize: 50
                         }
                         Label { text: " ms" }
+                    }
+                }
+                contentBottom: ColumnLayout {
+                    Text {
+                        color: Theme.disabledTextColor
+                        text: "Time to wait to resume playback from pause"
                     }
                 }
             }
@@ -258,6 +271,13 @@ Flickable {
                         snapMode: Slider.SnapOnRelease
                     }
                 }
+                contentBottom: ColumnLayout {
+                    Text {
+                        color: Theme.disabledTextColor
+                        text: "Low: 10, Medium: 15, High: 25, Ultra High: 30"
+                    }
+                }
+
             }
         }
     }
