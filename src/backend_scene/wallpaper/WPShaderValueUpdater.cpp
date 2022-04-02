@@ -148,12 +148,14 @@ void WPShaderValueUpdater::UpdateUniforms(SceneNode* pNode, sprite_map_t& sprite
         std::array<float, 12> lights_color { 0 };
         uint                  i = 0;
         for (auto& l : m_scene->lights) {
+            if (i == 4) break;
             assert(l->node() != nullptr);
-            if (i == 3) break;
             const auto& trans = l->node()->Translate();
-            const auto& color = l->premultipliedColor();
             std::copy(trans.begin(), trans.end(), lights.begin() + i * 4);
-            std::copy(color.begin(), color.end(), lights_color.begin() + i * 4);
+            if (i < 3) {
+                const auto& color = l->premultipliedColor();
+                std::copy(color.begin(), color.end(), lights_color.begin() + i * 4);
+            }
             i++;
         }
         updateOp(G_LP, lights);
