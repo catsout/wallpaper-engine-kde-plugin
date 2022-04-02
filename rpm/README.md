@@ -11,11 +11,10 @@ cd wallpaper-engine-kde-plugin
 plasmapkg2 -i ./plugin
 
 # Rpmbuild
-cd rpm
 rpmbuild --define="commit $(git rev-parse HEAD)" \
     --define="glslang_ver 11.8.0" \
     --undefine=_disable_source_fetch \
-    -ba ./wek.spec
+    -ba ./rpm/wek.spec
 
 # Install package
 cd ~/rpmbuild/RPMS/x86_64
