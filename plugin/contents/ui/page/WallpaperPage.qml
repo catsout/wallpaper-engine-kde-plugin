@@ -355,6 +355,7 @@ RowLayout {
                     fillMode: Image.PreserveAspectFit
                     cache: true
                     asynchronous: true
+                    onStatusChanged: playing = (status == AnimatedImage.Ready)
                 }
 
                 Text {
