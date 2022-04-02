@@ -110,9 +110,10 @@ void LoadInitializer(ParticleSubSystem& pSys, const wpscene::Particle& wp,
     }
     if (over.enabled) pSys.AddInitializer(WPParticleParser::genOverrideInitOp(over));
 }
-void LoadOperator(ParticleSubSystem& pSys, const wpscene::Particle& wp, RandomFn& randomFn) {
+void LoadOperator(ParticleSubSystem& pSys, const wpscene::Particle& wp,
+                  const wpscene::ParticleInstanceoverride& over, RandomFn& randomFn) {
     for (const auto& op : wp.operators) {
-        pSys.AddOperator(WPParticleParser::genParticleOperatorOp(op, randomFn));
+        pSys.AddOperator(WPParticleParser::genParticleOperatorOp(op, randomFn, over));
     }
 }
 void LoadEmitter(ParticleSubSystem& pSys, const wpscene::Particle& wp, float count,
@@ -878,7 +879,7 @@ void ParseParticleObj(ParseContext& context, wpscene::WPParticleObject& particle
         *particleSub, wppartobj.particleObj, wppartobj.instanceoverride.count, context.randomFn);
     LoadInitializer(
         *particleSub, wppartobj.particleObj, wppartobj.instanceoverride, context.randomFn);
-    LoadOperator(*particleSub, wppartobj.particleObj, context.randomFn);
+    LoadOperator(*particleSub, wppartobj.particleObj, wppartobj.instanceoverride, context.randomFn);
 
     context.scene->paritileSys.subsystems.emplace_back(std::move(particleSub));
     mesh.AddMaterial(std::move(material));

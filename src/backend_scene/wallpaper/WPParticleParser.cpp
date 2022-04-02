@@ -328,20 +328,24 @@ struct Turbulence {
     };
 };
 
-ParticleOperatorOp WPParticleParser::genParticleOperatorOp(const nlohmann::json& wpj, RandomFn rf) {
+ParticleOperatorOp
+WPParticleParser::genParticleOperatorOp(const nlohmann::json& wpj, RandomFn rf,
+                                        const wpscene::ParticleInstanceoverride& over) {
     do {
         if (! wpj.contains("name")) break;
         std::string name;
         GET_JSON_NAME_VALUE(wpj, "name", name);
         if (name == "movement") {
-            float                drag { 0.0f };
+            float drag { 0.0f };
+            auto  speed = over.speed;
+
             std::array<float, 3> gravity { 0, 0, 0 };
             GET_JSON_NAME_VALUE_NOWARN(wpj, "drag", drag);
             GET_JSON_NAME_VALUE_NOWARN(wpj, "gravity", gravity);
             Vector3d vecG = Vector3f(gravity.data()).cast<double>();
             return [=](Particle& p, uint32_t, float life, double t) {
                 Vector3d acc = algorism::DragForce(PM::GetVelocity(p).cast<double>(), drag) + vecG;
-                PM::Accelerate(p, acc, t);
+                PM::Accelerate(p, speed * acc, t);
                 PM::MoveByTime(p, t);
             };
         } else if (name == "angularmovement") {
@@ -366,9 +370,10 @@ ParticleOperatorOp WPParticleParser::genParticleOperatorOp(const nlohmann::json&
                     PM::MutiplyAlpha(p, 1.0f - FadeValueChange(life, fadeouttime, 1.0f, 0, 1.0f));
             };
         } else if (name == "sizechange") {
-            auto vc = ValueChange::ReadFromJson(wpj);
-            return [vc](Particle& p, uint32_t, float life, double t) {
-                PM::MutiplySize(p, FadeValueChange(life, vc));
+            auto vc        = ValueChange::ReadFromJson(wpj);
+            auto size_over = over.size;
+            return [vc, size_over](Particle& p, uint32_t, float life, double t) {
+                PM::MutiplySize(p, size_over * FadeValueChange(life, vc));
             };
         } else if (name == "alphachange") {
             auto vc = ValueChange::ReadFromJson(wpj);

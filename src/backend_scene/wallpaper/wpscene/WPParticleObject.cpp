@@ -7,7 +7,8 @@ using namespace wallpaper::wpscene;
 
 bool ParticleRender::FromJson(const nlohmann::json& json) {
     GET_JSON_NAME_VALUE(json, "name", name);
-    if(name == "spritetrail") {
+    if (name == "ropetrail") name = "spritetrail";
+    if (name == "spritetrail") {
         GET_JSON_NAME_VALUE_NOWARN(json, "length", length);
         GET_JSON_NAME_VALUE_NOWARN(json, "maxlength", maxlength);
     }
@@ -25,9 +26,10 @@ bool Emitter::FromJson(const nlohmann::json& json) {
     GET_JSON_NAME_VALUE_NOWARN(json, "sign", sign);
     GET_JSON_NAME_VALUE_NOWARN(json, "audioprocessingmode", audioprocessingmode);
     std::transform(sign.begin(), sign.end(), sign.begin(), [](int32_t v) {
-        if(v != 0)
+        if (v != 0)
             return v / std::abs(v);
-        else return 0;
+        else
+            return 0;
     });
     return true;
 }
@@ -40,10 +42,10 @@ bool ParticleInstanceoverride::FromJosn(const nlohmann::json& json) {
     GET_JSON_NAME_VALUE_NOWARN(json, "rate", rate);
     GET_JSON_NAME_VALUE_NOWARN(json, "speed", speed);
     GET_JSON_NAME_VALUE_NOWARN(json, "count", count);
-    if(json.contains("color")) {
+    if (json.contains("color")) {
         GET_JSON_NAME_VALUE(json, "color", color);
         overColor = true;
-    } else if(json.contains("colorn")) {
+    } else if (json.contains("colorn")) {
         GET_JSON_NAME_VALUE(json, "colorn", colorn);
         overColorn = true;
     }
@@ -51,43 +53,43 @@ bool ParticleInstanceoverride::FromJosn(const nlohmann::json& json) {
 };
 
 bool Particle::FromJson(const nlohmann::json& json) {
-    if(!json.contains("emitter")) {
+    if (! json.contains("emitter")) {
         LOG_ERROR("particle no emitter");
         return false;
     }
-    for(const auto& el:json.at("emitter")) {
+    for (const auto& el : json.at("emitter")) {
         Emitter emi;
         emi.FromJson(el);
         emitters.push_back(emi);
     }
-    if(json.contains("renderer"))  {
-        for(const auto& el:json.at("renderer")) {
+    if (json.contains("renderer")) {
+        for (const auto& el : json.at("renderer")) {
             ParticleRender pr;
             pr.FromJson(el);
             renderers.push_back(pr);
         }
     }
-    if(json.contains("initializer")) {
-        for(const auto& el:json.at("initializer")) {
+    if (json.contains("initializer")) {
+        for (const auto& el : json.at("initializer")) {
             initializers.push_back(el);
         }
     }
-    if(json.contains("operator")) {
-        for(const auto& el:json.at("operator")) {
+    if (json.contains("operator")) {
+        for (const auto& el : json.at("operator")) {
             operators.push_back(el);
         }
     }
-	GET_JSON_NAME_VALUE_NOWARN(json, "animationmode", animationmode);
-	GET_JSON_NAME_VALUE_NOWARN(json, "sequencemultiplier", sequencemultiplier);
-	GET_JSON_NAME_VALUE(json, "maxcount", maxcount);
-	GET_JSON_NAME_VALUE(json, "starttime", starttime);
+    GET_JSON_NAME_VALUE_NOWARN(json, "animationmode", animationmode);
+    GET_JSON_NAME_VALUE_NOWARN(json, "sequencemultiplier", sequencemultiplier);
+    GET_JSON_NAME_VALUE(json, "maxcount", maxcount);
+    GET_JSON_NAME_VALUE(json, "starttime", starttime);
 
-    int32_t rawflags {0};
-	GET_JSON_NAME_VALUE_NOWARN(json, "flags", rawflags);
-    if(rawflags > 0) {
-        flags.wordspace = rawflags & 1;
+    int32_t rawflags { 0 };
+    GET_JSON_NAME_VALUE_NOWARN(json, "flags", rawflags);
+    if (rawflags > 0) {
+        flags.wordspace             = rawflags & 1;
         flags.spritenoframeblending = rawflags & 2;
-        flags.perspective = rawflags & 4;
+        flags.perspective           = rawflags & 4;
     }
     return true;
 }
@@ -96,28 +98,25 @@ bool WPParticleObject::FromJson(const nlohmann::json& json, fs::VFS& vfs) {
     GET_JSON_NAME_VALUE(json, "particle", particle);
     GET_JSON_NAME_VALUE_NOWARN(json, "visible", visible);
 
-	GET_JSON_NAME_VALUE_NOWARN(json, "name", name);
-	GET_JSON_NAME_VALUE_NOWARN(json, "id", id);
-	GET_JSON_NAME_VALUE(json, "origin", origin);	
-	GET_JSON_NAME_VALUE(json, "angles", angles);	
-	GET_JSON_NAME_VALUE(json, "scale", scale);	
-	GET_JSON_NAME_VALUE_NOWARN(json, "parallaxDepth", parallaxDepth);
+    GET_JSON_NAME_VALUE_NOWARN(json, "name", name);
+    GET_JSON_NAME_VALUE_NOWARN(json, "id", id);
+    GET_JSON_NAME_VALUE(json, "origin", origin);
+    GET_JSON_NAME_VALUE(json, "angles", angles);
+    GET_JSON_NAME_VALUE(json, "scale", scale);
+    GET_JSON_NAME_VALUE_NOWARN(json, "parallaxDepth", parallaxDepth);
 
-    if(json.contains("instanceoverride") && !json.at("instanceoverride").is_null()) {
+    if (json.contains("instanceoverride") && ! json.at("instanceoverride").is_null()) {
         instanceoverride.FromJosn(json.at("instanceoverride"));
     }
 
     nlohmann::json jParticle;
-    if(!PARSE_JSON(fs::GetFileContent(vfs, "/assets/" + particle), jParticle))
-        return false;
-    if(!particleObj.FromJson(jParticle))
-        return false;
-    if(jParticle.contains("material")) {
+    if (! PARSE_JSON(fs::GetFileContent(vfs, "/assets/" + particle), jParticle)) return false;
+    if (! particleObj.FromJson(jParticle)) return false;
+    if (jParticle.contains("material")) {
         std::string matPath;
-		GET_JSON_NAME_VALUE(jParticle, "material", matPath);	
+        GET_JSON_NAME_VALUE(jParticle, "material", matPath);
         nlohmann::json jMat;
-        if(!PARSE_JSON(fs::GetFileContent(vfs, "/assets/" + matPath), jMat))
-            return false;
+        if (! PARSE_JSON(fs::GetFileContent(vfs, "/assets/" + matPath), jMat)) return false;
         material.FromJson(jMat);
     } else {
         LOG_ERROR("particle object no material");
