@@ -29,43 +29,47 @@ Flickable {
             text: 'Requirements'
             text_color: Theme.textColor
             icon: '../../images/information-outline.svg'
-            Layout.minimumWidth: 0
 
-            contentBottom: Text {
-                color: Theme.disabledTextColor
-                text: `
-                    <ol>
-                    <li><i>Wallpaper Engine</i> installed on Steam</li>
-                    <li>Subscribe to some wallpapers on the Workshop</li>
-                    <li>Select the <i>steamlibrary</i> folder on the Wallpapers tab of this plugin
-                        <ul>
-                            <li>The <i>steamlibrary</i> which contains the <i>steamapps</i> folder</li>
-                            <li><i>Wallpaper Engine</i> needs to be installed in this <i>steamlibrary</i></li>
-                        </ul>
-                    </li>
-                    </ol>
-                `
-                wrapMode: Text.Wrap
-                textFormat: Text.RichText
+            contentBottom: ColumnLayout {
+                Text {
+                    Layout.fillWidth: true
+                    color: Theme.disabledTextColor
+                    text: `
+                        <ol>
+                        <li><i>Wallpaper Engine</i> installed on Steam</li>
+                        <li>Subscribe to some wallpapers on the Workshop</li>
+                        <li>Select the <i>steamlibrary</i> folder on the Wallpapers tab of this plugin
+                            <ul>
+                                <li>The <i>steamlibrary</i> which contains the <i>steamapps</i> folder</li>
+                                <li><i>Wallpaper Engine</i> needs to be installed in this <i>steamlibrary</i></li>
+                            </ul>
+                        </li>
+                        </ol>
+                    `
+                    wrapMode: Text.Wrap
+                    textFormat: Text.RichText
+                }
             }
         }
         OptionItem {
             visible: libcheck.wallpaper
-            Layout.minimumWidth: 0
 
             text: 'Fix Crashes'
             text_color: Theme.textColor
             icon: '../../images/information-outline.svg'
-            contentBottom: Text {
-                color: Theme.disabledTextColor
-                text: `
-                    <ol>
-                    <li>Remove <i>WallpaperFilePath</i> line in <b>~/.config/plasma-org.kde.plasma.desktop-appletsrc</b></li>
-                    <li>Restart KDE</li>
-                    </ol>
-                `
-                wrapMode: Text.Wrap
-                textFormat: Text.RichText
+            contentBottom: ColumnLayout {
+                Text {
+                    Layout.fillWidth: true
+                    color: Theme.disabledTextColor
+                    text: `
+                        <ol>
+                        <li>Remove <i>WallpaperFilePath</i> line in <b>~/.config/plasma-org.kde.plasma.desktop-appletsrc</b></li>
+                        <li>Restart KDE</li>
+                        </ol>
+                    `
+                    wrapMode: Text.Wrap
+                    textFormat: Text.RichText
+                }
             }
         }
         OptionItem {

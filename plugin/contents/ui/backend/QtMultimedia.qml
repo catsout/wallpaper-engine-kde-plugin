@@ -36,6 +36,7 @@ Item{
         muted: background.mute
         source: background.source
         volume: 0.0
+        playbackRate: background.videoRate
     }
     Component.onCompleted:{
         background.nowBackend = "QtMultimedia";

@@ -4,6 +4,8 @@ import asyncio
 import websockets
 import json
 import base64
+from pathlib import Path
+
 #import functools;
 
 class Jsonrpc:
@@ -44,6 +46,13 @@ def readfile(path):
     with open(path, 'rb') as f:
         data = f.read()
         return base64.b64encode(data).decode('ascii')
+
+@jrpc.add_method
+def get_dir_size(path, depth):
+    glob_strs = ['**/*'] if depth <= 0 else ['/'.join(['*' for _ in range(i+1)]) for i in range(depth)]
+    root_directory = Path(path)
+    # limit to 3 depth
+    return sum([sum(f.stat().st_size for f in root_directory.glob(s) if f.is_file()) for s in glob_strs])
 
 async def connect(uri):
     async with websockets.connect(uri) as websocket:

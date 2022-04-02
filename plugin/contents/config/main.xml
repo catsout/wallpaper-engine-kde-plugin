@@ -71,12 +71,16 @@
       <default>120</default>
     </entry>
     <entry name="ResumeTime" type="Int">
-      <label>resume time from paused (in ms)</label>
+      <label>Resume time from paused (in ms)</label>
       <default>300</default>
     </entry>
     <entry name="Volume" type="Int">
       <label>Volume</label>
       <default>100</default>
+    </entry>
+    <entry name="VideoRate" type="Double">
+      <label>Video playback rate</label>
+      <default>1.0</default>
     </entry>
     <entry name="FilterStr" type="String">
       <label>FilterStr</label>

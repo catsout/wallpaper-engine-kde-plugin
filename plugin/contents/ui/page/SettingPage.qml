@@ -13,6 +13,7 @@ Flickable {
     property alias cfg_Fps: sliderFps.value
     property alias cfg_Volume: sliderVol.value
     property alias cfg_MpvStats: ckbox_mpvStats.checked
+    property alias cfg_VideoRate: spin_video_rate.dValue
     property alias cfg_MuteAudio: ckbox_muteAudio.checked
     property alias cfg_MouseInput: ckbox_mouseInput.checked
     property alias cfg_ResumeTime: resumeSpin.value
@@ -73,8 +74,10 @@ Flickable {
                 }
                 contentBottom: ColumnLayout {
                     Text {
+                        Layout.fillWidth: true
                         color: Theme.disabledTextColor
                         text: "Automatically pauses playback if any/focus/maximized window detected"
+                        wrapMode: Text.Wrap
                     }
                 }
  
@@ -105,29 +108,7 @@ Flickable {
                     Component.onCompleted: currentIndex = Common.cbIndexOfValue(this, cfg_DisplayMode)
                 }
             }
-            OptionItem {
-                text: 'Video Backend'
-                text_color: Theme.textColor
-                icon: '../../images/plugin.svg'
-                actor: ComboBox {
-                    implicitWidth: comboBoxWidth
-                    model: [
-                        {
-                            text: "QtMultimedia",
-                            value: Common.VideoBackend.QtMultimedia,
-                            enabled: true
-                        },
-                        {
-                            text: "Mpv",
-                            value: Common.VideoBackend.Mpv,
-                            enabled: libcheck.wallpaper
-                        }
-                    ].filter(el => el.enabled)
-                    textRole: "text"
-                    onActivated: cfg_VideoBackend = Common.cbCurrentValue(this)
-                    Component.onCompleted: currentIndex = Common.cbIndexOfValue(this, cfg_VideoBackend)
-                }
-            }
+
             OptionItem {
                 text: 'Resume Time'
                 text_color: Theme.textColor
@@ -137,8 +118,6 @@ Flickable {
                     RowLayout {
                         SpinBox {
                             id: resumeSpin
-                            width: font.pixelSize * 4
-                            height: heightpicker.height
                             from: 1
                             to: 60*1000
                             stepSize: 50
@@ -148,6 +127,7 @@ Flickable {
                 }
                 contentBottom: ColumnLayout {
                     Text {
+                        Layout.fillWidth: true
                         color: Theme.disabledTextColor
                         text: "Time to wait to resume playback from pause"
                     }
@@ -162,6 +142,7 @@ Flickable {
                 }
                 contentBottom: ColumnLayout {
                     Text {
+                        Layout.fillWidth: true
                         color: Theme.disabledTextColor
                         text: "Randomize wallpapers filtered in the 'Wallpapers' page"
                     }
@@ -228,16 +209,54 @@ Flickable {
         OptionGroup {
             Layout.fillWidth: true
 
-            header.text: 'Mpv Option'
+            header.text: 'Video Option'
             header.text_color: Theme.textColor
             header.icon: '../../images/cheveron-down.svg'
             header.color: Theme.activeBackgroundColor
-            visible: libcheck.wallpaper
 
             OptionItem {
-                text: 'Show Stats'
+                text: 'Video Backend'
+                text_color: Theme.textColor
+                icon: '../../images/plugin.svg'
+                actor: ComboBox {
+                    implicitWidth: comboBoxWidth
+                    model: [
+                        {
+                            text: "QtMultimedia",
+                            value: Common.VideoBackend.QtMultimedia,
+                            enabled: true
+                        },
+                        {
+                            text: "Mpv",
+                            value: Common.VideoBackend.Mpv,
+                            enabled: libcheck.wallpaper
+                        }
+                    ].filter(el => el.enabled)
+                    textRole: "text"
+                    onActivated: cfg_VideoBackend = Common.cbCurrentValue(this)
+                    Component.onCompleted: currentIndex = Common.cbIndexOfValue(this, cfg_VideoBackend)
+                }
+            }
+            
+            OptionItem {
+                text: "Video Playback Rate"
+                text_color: Theme.textColor
+                icon: '../../images/fast-forward.svg'
+                actor: RowLayout {
+                    DoubleSpinBox {
+                        id: spin_video_rate
+                        dFrom: 0.1
+                        dTo: 100.0
+                        dStepSize: 0.1
+                    }
+                }
+            }
+
+            OptionItem {
+                text: 'Show Mpv Stats'
                 text_color: Theme.textColor
                 icon: '../../images/information-outline.svg'
+                visible: cfg_VideoBackend == Common.VideoBackend.Mpv
                 actor: Switch {
                     id: ckbox_mpvStats
                 }
@@ -273,6 +292,7 @@ Flickable {
                 }
                 contentBottom: ColumnLayout {
                     Text {
+                        Layout.fillWidth: true
                         color: Theme.disabledTextColor
                         text: "Low: 10, Medium: 15, High: 25, Ultra High: 30"
                     }

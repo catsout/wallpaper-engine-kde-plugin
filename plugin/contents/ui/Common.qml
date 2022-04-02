@@ -135,6 +135,7 @@ QtObject {
     }
     
     readonly property var regex_workshop_online: new RegExp('^[0-9]+$', 'g');
+    readonly property var regex_path_check: new RegExp('^file://.+?(431960/[0-9]+$|wallpaper_engine/projects/[a-z]+/.+)', 'g');
 
     function getWorkshopDir(steamLibraryPath) {
         return steamLibraryPath + "/steamapps/workshop/content/431960";

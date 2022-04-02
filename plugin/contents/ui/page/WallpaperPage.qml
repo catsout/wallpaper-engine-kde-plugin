@@ -37,7 +37,7 @@ RowLayout {
             RowLayout {
                 id: infoRow
                 Layout.alignment: Qt.AlignHCenter
-                spacing: 10
+                spacing: 5
 
                 Label {
                     visible: cfg_WallpaperWorkShopId
@@ -392,6 +392,38 @@ RowLayout {
                             text: right_content.wpmodel.type
                         }
                     }
+
+                    Control {
+                        id: control_dir_size
+                        leftPadding: 8
+                        topPadding: 4
+
+                        rightPadding: leftPadding
+                        bottomPadding: topPadding
+                        visible: false
+
+                        background: Rectangle {
+                            color: Theme.view.positiveBackgroundColor
+                            radius: 8
+                        }
+                        contentItem: Text {
+                            color: Theme.view.textColor
+                            font.capitalization: Font.Capitalize
+                            readonly property bool _set_text: {
+                                const dir = right_content.wpmodel.path;
+                                if(!dir.match(Common.regex_path_check)) {
+                                    control_dir_size.visible = false;
+                                    return false;
+                                }
+                                pyext.get_dir_size(dir.substring('file://'.length), 4).then(res => {
+                                    this.text = Utils.prettyBytes(res);
+                                    control_dir_size.visible = true;
+                                }).catch(reason => console.error(reason));
+                                return true;
+                            }
+                        }
+                    }
+
                     Kirigami.ActionToolBar {
                         Layout.fillWidth: false
                         Layout.preferredWidth: implicitWidth
@@ -428,7 +460,17 @@ RowLayout {
                     implicitHeight: contentItem.childrenRect.height
 
                     orientation: ListView.Horizontal
-                    model: right_content.wpmodel.tags
+                    model: ListModel {}
+                    readonly property bool _set_model: {
+                        const wpmodel = right_content.wpmodel;
+                        const tags = right_content.wpmodel.tags;
+                        const _model = this.model;
+                        _model.clear();
+                        for(const i of Array(tags.length).keys())
+                            _model.append(tags.get(i));
+                        _model.append({key: wpmodel.contentrating});
+                        return true;
+                    }
                     clip: false
                     spacing: 8
 

@@ -5,8 +5,9 @@ import ".."
 Item{
     id: videoItem
     anchors.fill: parent
-    property int displayMode: background.displayMode
-    property bool stats: background.mpvStats
+    readonly property int displayMode: background.displayMode
+    readonly property real videoRate: background.videoRate 
+    readonly property bool stats: background.mpvStats
     property var volumeFade: Common.createVolumeFade(
         videoItem, 
         Qt.binding(function() { return background.mute ? 0 : background.volume; }),
@@ -29,6 +30,8 @@ Item{
     onStatsChanged: {
         player.command(["script-binding","stats/display-stats-toggle"]);
     }
+
+    onVideoRateChanged: player.setProperty('speed', videoRate);
 
     // logfile
     // source

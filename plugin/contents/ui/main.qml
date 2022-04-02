@@ -15,6 +15,7 @@ Rectangle {
 
     property int    displayMode: wallpaper.configuration.DisplayMode
     property int    videoBackend: wallpaper.configuration.VideoBackend
+    property real   videoRate: wallpaper.configuration.VideoRate
     property int    volume: wallpaper.configuration.Volume
     property int    switchTimer: wallpaper.configuration.SwitchTimer
     property int    fps: wallpaper.configuration.Fps

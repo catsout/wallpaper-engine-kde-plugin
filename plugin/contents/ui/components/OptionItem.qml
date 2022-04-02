@@ -23,7 +23,9 @@ Control {
     readonly property bool _has_bottom: contentBottom != bottom_empty
 
     Layout.fillWidth: true
-    Layout.minimumWidth: implicitWidth
+
+    // default 0 to resize text
+    Layout.minimumWidth: 0 //implicitWidth
     Layout.minimumHeight: implicitHeight
 
     leftPadding: 16
