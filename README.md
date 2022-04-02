@@ -42,6 +42,10 @@ sudo xbps-install -S extra-cmake-modules plasma-framework \
 gst-libav base-devel mpv python3-websockets qt5-declarative qt5-websockets \
 qt5-webchannel plasma-workspace-devel mpv-devel liblz4-devel Vulkan-Headers
 ```
+
+Fedora Kinoite: 
+see [rpm](rpm)
+
 #### Build and Install
 ```sh
 # Download source
