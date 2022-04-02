@@ -177,21 +177,13 @@ RowLayout {
                             Kirigami.Action {
                                 icon.name: favor?"user-bookmarks-symbolic":"bookmark-add-symbolic"
                                 tooltip: favor?"Remove from favorites":"Add to favorites"
-                                onTriggered: {
-                                    if(favor) {
-                                        root.customConf.favor.delete(workshopid);
-                                    } else {
-                                        root.customConf.favor.add(workshopid);
-                                    }
-                                    view.model.assignModel(index, { favor: !favor });
-                                    root.saveCustomConf();
-                                }
+                                onTriggered: picViewLoader.item.toggleFavor(model, index)
                             },
                             Kirigami.Action {
                                 icon.name: "folder-remote-symbolic"
                                 tooltip: "Open Workshop Link"
-                                visible: Boolean(workshopid)
-                                onTriggered: Qt.openUrlExternally("https://steamcommunity.com/sharedfiles/filedetails/?id=" + workshopid)
+                                enabled: workshopid.match(Common.regex_workshop_online)
+                                onTriggered: Qt.openUrlExternally(Common.getWorkshopUrl(workshopid))
                             },
                             Kirigami.Action {
                                 icon.name: "document-open-folder"
@@ -278,6 +270,19 @@ RowLayout {
                             resolve();
                         });
                     }
+                    function toggleFavor(model, index) {
+                        if(!index) index = view.currentIndex;
+
+                        if(model.favor) {
+                            root.customConf.favor.delete(model.workshopid);
+                        } else {
+                            root.customConf.favor.add(model.workshopid);
+                        }
+                        this.view.model.assignModel(index, {favor: !model.favor});
+                        this.view.currentIndexChanged();
+                        root.saveCustomConf();
+                    }
+
                 }
             }
 
@@ -366,6 +371,57 @@ RowLayout {
                     horizontalAlignment: Text.AlignHCenter
                 }
 
+                RowLayout {
+                    Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
+                    spacing: 8
+
+                    Control {
+                        leftPadding: 8
+                        topPadding: 4
+
+                        rightPadding: leftPadding
+                        bottomPadding: topPadding
+
+                        background: Rectangle {
+                            color: Theme.view.positiveBackgroundColor
+                            radius: 8
+                        }
+                        contentItem: Text {
+                            color: Theme.view.textColor
+                            font.capitalization: Font.Capitalize
+                            text: right_content.wpmodel.type
+                        }
+                    }
+                    Kirigami.ActionToolBar {
+                        Layout.fillWidth: false
+                        Layout.preferredWidth: implicitWidth
+                        flat: true
+
+                        actions: [
+                            Kirigami.Action {
+                                icon.source: right_content.wpmodel.favor 
+                                    ? '../../images/bookmark.svg'
+                                    : '../../images/bookmark-outline-add.svg'
+                                tooltip: right_content.wpmodel.favor
+                                    ? 'Remove from favorites'
+                                    : 'Add to favorites'
+                                onTriggered: picViewLoader.item.toggleFavor(right_content.wpmodel)
+                            },
+                            Kirigami.Action {
+                                icon.source: '../../images/link.svg'
+                                tooltip: "Open Workshop Link"
+                                enabled: right_content.wpmodel.workshopid.match(Common.regex_workshop_online)
+                                onTriggered: Qt.openUrlExternally(Common.getWorkshopUrl(right_content.wpmodel.workshopid))
+                            },
+                            Kirigami.Action {
+                                icon.source: '../../images/folder-outline.svg'
+                                tooltip: "Open Containing Folder"
+                                onTriggered: Qt.openUrlExternally(right_content.wpmodel.path) 
+                            }
+                        ]
+                    }
+                }
+
                 ListView {
                     Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
                     implicitWidth: contentItem.childrenRect.width
@@ -378,8 +434,8 @@ RowLayout {
 
                     delegate: Control {
                         leftPadding: 8
-                        rightPadding: leftPadding
                         topPadding: 4
+                        rightPadding: leftPadding
                         bottomPadding: topPadding
 
                         background: Rectangle {
@@ -387,7 +443,7 @@ RowLayout {
                             radius: 8
                         }
                         contentItem: Text {
-                            color: Theme.textColor
+                            color: Theme.view.textColor
                             text: model.key
                         }
                     }

@@ -13,6 +13,7 @@ Item {
     property var linkColor
     property var visitedLinkColor
     property var positiveTextColor
+    property var positiveBackgroundColor
     property var neutralTextColor
     property var negativeTextColor
     property var disabledTextColor
@@ -33,6 +34,7 @@ Item {
         this.linkColor                = get_color('linkColor');
         this.visitedLinkColor         = get_color('visitedLinkColor');
         this.positiveTextColor        = get_color('positiveTextColor');
+        this.positiveBackgroundColor  = get_color('positiveBackgroundColor');
         this.neutralTextColor         = get_color('neutralTextColor');
         this.negativeTextColor        = get_color('negativeTextColor');
         this.disabledTextColor        = get_color('disabledTextColor');
@@ -52,6 +54,7 @@ Item {
         property var linkColor
         property var visitedLinkColor
         property var positiveTextColor
+        property var positiveBackgroundColor
         property var neutralTextColor
         property var negativeTextColor
         property var disabledTextColor
