@@ -11,24 +11,20 @@
 
 #include "qthelper.hpp"
 
-
 Q_DECLARE_LOGGING_CATEGORY(wekdeMpv)
 
-namespace mpv 
+namespace mpv
 {
 
-struct MpvHandle { 
-    MpvHandle(mpv_handle* mpv):handle(mpv) {}
-    ~MpvHandle() {
-        mpv_terminate_destroy(handle);
-    }
-    mpv_handle* handle; 
+struct MpvHandle {
+    MpvHandle(mpv_handle* mpv): handle(mpv) {}
+    ~MpvHandle() { mpv_terminate_destroy(handle); }
+    mpv_handle* handle;
 };
 
 class MpvRender;
 
-class MpvObject : public QQuickFramebufferObject
-{
+class MpvObject : public QQuickFramebufferObject {
     Q_OBJECT
     Q_PROPERTY(QUrl source READ source WRITE setSource NOTIFY sourceChanged)
     Q_PROPERTY(Status status READ status NOTIFY statusChanged)
@@ -43,17 +39,18 @@ public:
     virtual ~MpvObject();
     Renderer* createRenderer() const override;
 
-    enum Status {
+    enum Status
+    {
         Stopped,
         Playing,
         Paused,
     };
     Q_ENUM(Status)
-    Status status() const;
-    QUrl source() const;
-    bool mute() const;
+    Status  status() const;
+    QUrl    source() const;
+    bool    mute() const;
     QString logfile() const;
-    int volume() const;
+    int     volume() const;
 
     void setSource(const QUrl& source);
     void setMute(const bool& mute);
@@ -65,10 +62,10 @@ public slots:
     void pause();
     void stop();
 
-    bool command(const QVariant& params);
-    bool setProperty(const QString& name, const QVariant& value);
+    bool     command(const QVariant& params);
+    bool     setProperty(const QString& name, const QVariant& value);
     QVariant getProperty(const QString& name, bool* ok = nullptr) const;
-    void initCallback();
+    void     initCallback();
 
 signals:
     void initFinished();
@@ -76,14 +73,14 @@ signals:
     void sourceChanged();
 
 private:
-    bool inited = false;
-    QUrl m_source;
+    bool   inited = false;
+    QUrl   m_source;
     Status m_status = Stopped;
 
 private:
-    mpv_handle* m_mpv {nullptr};
-    std::shared_ptr<MpvHandle> m_shared_mpv {nullptr};
+    mpv_handle*                m_mpv { nullptr };
+    std::shared_ptr<MpvHandle> m_shared_mpv { nullptr };
 };
-}
+} // namespace mpv
 
 #endif

@@ -9,8 +9,6 @@ set(CMAKE_AUTOUIC ON)
 add_library(${PROJECT_NAME}
 	SHARED
 	plugin.cpp
-	WPCommon.h
-	MouseGrabber.h
 	MouseGrabber.cpp
 	qmldir
 )

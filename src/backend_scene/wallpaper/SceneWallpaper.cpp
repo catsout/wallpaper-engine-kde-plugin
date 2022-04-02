@@ -6,12 +6,12 @@
 
 #include "Utils/FrameTimer.h"
 #include "Utils/FpsCounter.h"
-#include "WPSceneParser.h"
+#include "WPSceneParser.hpp"
 #include "Scene/Scene.h"
 
 #include "Fs/VFS.h"
 #include "Fs/PhysicalFs.h"
-#include "WPPkgFs.h"
+#include "WPPkgFs.hpp"
 
 #include "Audio/SoundManager.h"
 
@@ -22,16 +22,18 @@
 #include "Vulkan/VulkanExSwapchain.hpp"
 #include <atomic>
 
-
 using namespace wallpaper;
 
-
-#define CASE_CMD(cmd) case CMD::CMD_##cmd: handle_##cmd(msg);break;
+#define CASE_CMD(cmd)      \
+    case CMD::CMD_##cmd:   \
+        handle_##cmd(msg); \
+        break;
 #define MHANDLER_CMD(cmd) void handle_##cmd(const std::shared_ptr<looper::Message>& msg)
-#define MHANDLER_CMD_IMPL(cl, cmd) void impl_##cl::handle_##cmd(const std::shared_ptr<looper::Message>& msg)
+#define MHANDLER_CMD_IMPL(cl, cmd) \
+    void impl_##cl::handle_##cmd(const std::shared_ptr<looper::Message>& msg)
 #define CALL_MHANDLER_CMD(cmd, msg) handle_##cmd(msg)
 
-template <typename T>
+template<typename T>
 static void addMsgCmd(looper::Message& msg, T cmd) {
     msg.setInt32("cmd", (int32_t)cmd);
 }
@@ -42,12 +44,14 @@ class RenderHandler;
 
 class MainHandler : public looper::Handler {
 public:
-    enum class CMD {
+    enum class CMD
+    {
         CMD_LOAD_SCENE,
         CMD_SET_PROPERTY,
         CMD_STOP,
         CMD_NO
     };
+
 public:
     MainHandler();
     virtual ~MainHandler() {};
@@ -59,15 +63,13 @@ public:
 public:
     void onMessageReceived(const std::shared_ptr<looper::Message>& msg) override {
         int32_t cmd_int = (int32_t)CMD::CMD_NO;
-        if(msg->findInt32("cmd", &cmd_int)) {
+        if (msg->findInt32("cmd", &cmd_int)) {
             CMD cmd = static_cast<CMD>(cmd_int);
-            switch (cmd)
-            {
-            CASE_CMD(SET_PROPERTY);
-            CASE_CMD(LOAD_SCENE);
-            CASE_CMD(STOP);
-            default:
-                break;
+            switch (cmd) {
+                CASE_CMD(SET_PROPERTY);
+                CASE_CMD(LOAD_SCENE);
+                CASE_CMD(STOP);
+            default: break;
             }
         }
     }
@@ -83,26 +85,27 @@ private:
     MHANDLER_CMD(STOP);
 
 private:
-    bool m_inited {false};
+    bool m_inited { false };
 
     std::string m_assets;
     std::string m_source;
-    bool m_gen_graphviz {false};
+    bool        m_gen_graphviz { false };
 
-    WPSceneParser m_scene_parser;
+    WPSceneParser                        m_scene_parser;
     std::unique_ptr<audio::SoundManager> m_sound_manager;
 
 private:
     std::shared_ptr<looper::Looper> m_main_loop;
     std::shared_ptr<looper::Looper> m_render_loop;
-    std::shared_ptr<RenderHandler> m_render_handler;
+    std::shared_ptr<RenderHandler>  m_render_handler;
 };
 // for macro
 using impl_MainHandler = MainHandler;
 
 class RenderHandler : public looper::Handler {
 public:
-    enum class CMD {
+    enum class CMD
+    {
         CMD_INIT_VULKAN,
         CMD_SET_SCENE,
         CMD_SET_FILLMODE,
@@ -111,53 +114,48 @@ public:
         CMD_NO
     };
     MainHandler& main_handler;
-    RenderHandler(MainHandler& m):main_handler(m),
-        m_render(std::make_unique<vulkan::VulkanRender>()) {}
-    virtual ~RenderHandler() { 
-        frame_timer.Stop(); 
+    RenderHandler(MainHandler& m)
+        : main_handler(m), m_render(std::make_unique<vulkan::VulkanRender>()) {}
+    virtual ~RenderHandler() {
+        frame_timer.Stop();
         m_render->destroy();
         LOG_INFO("render handler deleted");
     }
- 
 
     void onMessageReceived(const std::shared_ptr<looper::Message>& msg) override {
         int32_t cmd_int = (int32_t)CMD::CMD_NO;
-        if(msg->findInt32("cmd", &cmd_int)) {
+        if (msg->findInt32("cmd", &cmd_int)) {
             CMD cmd = static_cast<CMD>(cmd_int);
-            switch(cmd) {
-            CASE_CMD(DRAW)
-            CASE_CMD(STOP)
-            CASE_CMD(SET_FILLMODE)
-            CASE_CMD(SET_SCENE)
-            CASE_CMD(INIT_VULKAN)
+            switch (cmd) {
+                CASE_CMD(DRAW);
+                CASE_CMD(STOP);
+                CASE_CMD(SET_FILLMODE);
+                CASE_CMD(SET_SCENE);
+                CASE_CMD(INIT_VULKAN);
             }
         }
     }
 
-    vulkan::VulkanExSwapchain* exSwapchain() const {
-        return m_render->exSwapchain();
-    }
+    vulkan::VulkanExSwapchain* exSwapchain() const { return m_render->exSwapchain(); }
 
-    bool renderInited() const {
-        return m_render->inited();
-    }
+    bool renderInited() const { return m_render->inited(); }
 
-    void setMousePos(float x, float y) {
-        m_mouse_pos.store(std::array {x,y});
-    }
+    void setMousePos(float x, float y) { m_mouse_pos.store(std::array { x, y }); }
 
 private:
     MHANDLER_CMD(STOP) {
-        bool stop {false};
-        if(msg->findBool("value", &stop)) {
-            if(stop) frame_timer.Stop();
-            else frame_timer.Run();
+        bool stop { false };
+        if (msg->findBool("value", &stop)) {
+            if (stop)
+                frame_timer.Stop();
+            else
+                frame_timer.Run();
         }
     }
     MHANDLER_CMD(DRAW) {
         frame_timer.FrameBegin();
-        if(m_rg) {
-            //LOG_INFO("frame info, fps: %.1f, frametime: %.1f", 1.0f, 1000.0f*m_scene->frameTime);
+        if (m_rg) {
+            // LOG_INFO("frame info, fps: %.1f, frametime: %.1f", 1.0f, 1000.0f*m_scene->frameTime);
             m_scene->shaderValueUpdater->FrameBegin();
             {
                 auto pos = m_mouse_pos.load();
@@ -170,33 +168,32 @@ private:
             m_scene->PassFrameTime(frame_timer.IdeaTime());
 
             m_scene->shaderValueUpdater->FrameEnd();
-            //fps_counter.RegisterFrame();
+            // fps_counter.RegisterFrame();
         }
         frame_timer.FrameEnd();
     }
     MHANDLER_CMD(SET_FILLMODE) {
         int32_t value;
-        if(msg->findInt32("value", &value)) {
+        if (msg->findInt32("value", &value)) {
             m_fillmode = (FillMode)value;
-            if(m_scene && renderInited()) {
+            if (m_scene && renderInited()) {
                 m_render->UpdateCameraFillMode(*m_scene, m_fillmode);
             }
         }
     }
     MHANDLER_CMD(SET_SCENE) {
-        if(msg->findObject("scene", &m_scene)) {
+        if (msg->findObject("scene", &m_scene)) {
             decltype(m_rg) old_rg = std::move(m_rg);
-            m_rg = sceneToRenderGraph(*m_scene);
+            m_rg                  = sceneToRenderGraph(*m_scene);
 
-            if(main_handler.isGenGraphviz())
-                m_rg->ToGraphviz("graph.dot");
+            if (main_handler.isGenGraphviz()) m_rg->ToGraphviz("graph.dot");
             m_render->compileRenderGraph(*m_scene, *m_rg);
             m_render->UpdateCameraFillMode(*m_scene, m_fillmode);
         }
     }
     MHANDLER_CMD(INIT_VULKAN) {
         std::shared_ptr<RenderInitInfo> info;
-        if(msg->findObject("info", &info)) {
+        if (msg->findObject("info", &info)) {
             m_render->init(*info);
 
             // inited, callback to laod scene
@@ -204,23 +201,22 @@ private:
         }
     }
 
-
 public:
-	FrameTimer frame_timer;
-	FpsCounter fps_counter;;
+    FrameTimer frame_timer;
+    FpsCounter fps_counter;
+    ;
+
 private:
-    std::shared_ptr<Scene> m_scene {nullptr};
-    std::unique_ptr<rg::RenderGraph> m_rg {nullptr};
+    std::shared_ptr<Scene>                m_scene { nullptr };
+    std::unique_ptr<rg::RenderGraph>      m_rg { nullptr };
     std::unique_ptr<vulkan::VulkanRender> m_render;
-    FillMode m_fillmode {FillMode::ASPECTCROP};
+    FillMode                              m_fillmode { FillMode::ASPECTCROP };
 
-    std::atomic<std::array<float, 2>> m_mouse_pos {std::array{0.5f, 0.5f}};
+    std::atomic<std::array<float, 2>> m_mouse_pos { std::array { 0.5f, 0.5f } };
 };
-}
+} // namespace wallpaper
 
-
-
-SceneWallpaper::SceneWallpaper():m_main_handler(std::make_shared<MainHandler>()) {}
+SceneWallpaper::SceneWallpaper(): m_main_handler(std::make_shared<MainHandler>()) {}
 
 SceneWallpaper::~SceneWallpaper() {
     /*
@@ -235,16 +231,12 @@ SceneWallpaper::~SceneWallpaper() {
     */
 }
 
-bool SceneWallpaper::inited() const {
-    return m_main_handler->inited();
-}
+bool SceneWallpaper::inited() const { return m_main_handler->inited(); }
 
-bool SceneWallpaper::init() {
-    return m_main_handler->init();
-}
+bool SceneWallpaper::init() { return m_main_handler->init(); }
 
 void SceneWallpaper::initVulkan(const RenderInitInfo& info) {
-    m_offscreen = info.offscreen;
+    m_offscreen                             = info.offscreen;
     std::shared_ptr<RenderInitInfo> sp_info = std::make_shared<RenderInitInfo>(info);
     auto msg = looper::Message::create(0, m_main_handler->renderHandler());
     addMsgCmd(*msg, RenderHandler::CMD::CMD_INIT_VULKAN);
@@ -269,15 +261,14 @@ void SceneWallpaper::mouseInput(float x, float y) {
     m_main_handler->renderHandler()->setMousePos(x, y);
 }
 
-
-#define BASIC_TYPE(NAME,TYPENAME)                                        \
-void SceneWallpaper::setProperty##NAME(std::string_view name, TYPENAME value) {    \
-    auto msg = looper::Message::create(0, m_main_handler);               \
-    addMsgCmd(*msg, MainHandler::CMD::CMD_SET_PROPERTY);                 \
-    msg->setString("property", std::string(name));                       \
-    msg->set##NAME("value", value);                                      \
-    msg->post();                                                         \
-}
+#define BASIC_TYPE(NAME, TYPENAME)                                                  \
+    void SceneWallpaper::setProperty##NAME(std::string_view name, TYPENAME value) { \
+        auto msg = looper::Message::create(0, m_main_handler);                      \
+        addMsgCmd(*msg, MainHandler::CMD::CMD_SET_PROPERTY);                        \
+        msg->setString("property", std::string(name));                              \
+        msg->set##NAME("value", value);                                             \
+        msg->post();                                                                \
+    }
 
 BASIC_TYPE(Bool, bool);
 BASIC_TYPE(Int32, int32_t);
@@ -289,43 +280,43 @@ ExSwapchain* SceneWallpaper::exSwapchain() const {
 }
 
 MHANDLER_CMD_IMPL(MainHandler, LOAD_SCENE) {
-    if(m_render_handler->renderInited()) {
+    if (m_render_handler->renderInited()) {
         loadScene();
     }
 }
 
 MHANDLER_CMD_IMPL(MainHandler, SET_PROPERTY) {
     std::string property;
-    if(msg->findString("property", &property)) {
-        if(property == PROPERTY_SOURCE) {
+    if (msg->findString("property", &property)) {
+        if (property == PROPERTY_SOURCE) {
             msg->findString("value", &m_source);
             LOG_INFO("source: %s", m_source.c_str());
             CALL_MHANDLER_CMD(LOAD_SCENE, msg);
-        } else if(property == PROPERTY_ASSETS) {
+        } else if (property == PROPERTY_ASSETS) {
             msg->findString("value", &m_assets);
             CALL_MHANDLER_CMD(LOAD_SCENE, msg);
-        } else if(property == PROPERTY_FPS) {
-            int32_t fps {15};
+        } else if (property == PROPERTY_FPS) {
+            int32_t fps { 15 };
             msg->findInt32("value", &fps);
-            if(fps >= 5) {
+            if (fps >= 5) {
                 m_render_handler->frame_timer.SetRequiredFps((uint8_t)fps);
             }
-        } else if(property == PROPERTY_FILLMODE) {
+        } else if (property == PROPERTY_FILLMODE) {
             int32_t value;
-            if(msg->findInt32("value", &value)) {
+            if (msg->findInt32("value", &value)) {
                 auto nmsg = looper::Message::create(0, m_render_handler);
                 addMsgCmd(*nmsg, RenderHandler::CMD::CMD_SET_FILLMODE);
                 nmsg->setInt32("value", value);
                 nmsg->post();
             }
-        } else if(property == PROPERTY_GRAPHIVZ) {
+        } else if (property == PROPERTY_GRAPHIVZ) {
             msg->findBool("value", &m_gen_graphviz);
-        } else if(property == PROPERTY_MUTED) {
-            bool muted {false};
+        } else if (property == PROPERTY_MUTED) {
+            bool muted { false };
             msg->findBool("value", &muted);
             m_sound_manager->SetMuted(muted);
-        } else if(property == PROPERTY_VOLUME) {
-            float volume {1.0f};
+        } else if (property == PROPERTY_VOLUME) {
+            float volume { 1.0f };
             msg->findFloat("value", &volume);
             m_sound_manager->SetVolume(volume);
         }
@@ -333,12 +324,11 @@ MHANDLER_CMD_IMPL(MainHandler, SET_PROPERTY) {
 }
 
 MHANDLER_CMD_IMPL(MainHandler, STOP) {
-    bool stop {false};
-    if(msg->findBool("value", &stop)) {
-       if(stop) {
+    bool stop { false };
+    if (msg->findBool("value", &stop)) {
+        if (stop) {
             m_sound_manager->Pause();
-        }
-        else {
+        } else {
             m_sound_manager->Play();
         }
 
@@ -349,59 +339,54 @@ MHANDLER_CMD_IMPL(MainHandler, STOP) {
     }
 }
 
-
 void MainHandler::loadScene() {
-    if(m_source.empty() || m_assets.empty()) 
-        return;
+    if (m_source.empty() || m_assets.empty()) return;
 
-   	if(!m_sound_manager->IsInited()) {
-		m_sound_manager->Init();
-		m_sound_manager->Play();
-	} else {
+    if (! m_sound_manager->IsInited()) {
+        m_sound_manager->Init();
+        m_sound_manager->Play();
+    } else {
         m_sound_manager->UnMountAll();
     }
 
-    std::shared_ptr<Scene> scene {nullptr};
+    std::shared_ptr<Scene> scene { nullptr };
 
-    //mount assets dir
+    // mount assets dir
     std::unique_ptr<fs::VFS> pVfs = std::make_unique<fs::VFS>();
-    auto& vfs = *pVfs;
-    if(!vfs.IsMounted("assets")) {
-        bool sus = vfs.Mount("/assets",
-            fs::CreatePhysicalFs(m_assets),
-            "assets"
-        );
-        if(!sus) { 
+    auto&                    vfs  = *pVfs;
+    if (! vfs.IsMounted("assets")) {
+        bool sus = vfs.Mount("/assets", fs::CreatePhysicalFs(m_assets), "assets");
+        if (! sus) {
             LOG_ERROR("Mount assets dir failed");
             return;
         }
     }
-    std::filesystem::path pkgPath_fs {m_source};
+    std::filesystem::path pkgPath_fs { m_source };
     pkgPath_fs.replace_extension("pkg");
-    std::string pkgPath = pkgPath_fs.native();
+    std::string pkgPath  = pkgPath_fs.native();
     std::string pkgEntry = pkgPath_fs.filename().replace_extension("json").native();
-    std::string pkgDir = pkgPath_fs.parent_path().native();
-    //load pkgfile
-    if(!vfs.Mount("/assets", fs::WPPkgFs::CreatePkgFs(pkgPath))) {
+    std::string pkgDir   = pkgPath_fs.parent_path().native();
+    // load pkgfile
+    if (! vfs.Mount("/assets", fs::WPPkgFs::CreatePkgFs(pkgPath))) {
         LOG_INFO("load pkg file %s failed, fallback to use dir", pkgPath.c_str());
-        //load pkg dir
-        if(!vfs.Mount("/assets", fs::CreatePhysicalFs(pkgDir))) {
+        // load pkg dir
+        if (! vfs.Mount("/assets", fs::CreatePhysicalFs(pkgDir))) {
             LOG_ERROR("Can't load pkg directory: %s", pkgDir.c_str());
             return;
         }
     }
 
     {
-        std::string scene_src;
-        const std::string base {"/assets/"};
+        std::string       scene_src;
+        const std::string base { "/assets/" };
         {
             std::string scenePath = base + pkgEntry;
-            if(vfs.Contains(scenePath)) {
+            if (vfs.Contains(scenePath)) {
                 auto f = vfs.Open(scenePath);
-                if(f) scene_src = f->ReadAllStr();
+                if (f) scene_src = f->ReadAllStr();
             }
         }
-        if(scene_src.empty()) {
+        if (scene_src.empty()) {
             LOG_ERROR("Not supported scene type");
             return;
         }
@@ -421,7 +406,7 @@ void MainHandler::sendCmdLoadScene() {
 }
 
 bool MainHandler::init() {
-    if(m_inited) return true;
+    if (m_inited) return true;
     m_main_loop->setName("main");
     m_render_loop->setName("render");
 
@@ -433,7 +418,7 @@ bool MainHandler::init() {
 
     {
         auto& frameTimer = m_render_handler->frame_timer;
-        auto msg = looper::Message::create(0, m_render_handler);
+        auto  msg        = looper::Message::create(0, m_render_handler);
         addMsgCmd(*msg, RenderHandler::CMD::CMD_DRAW);
 
         frameTimer.SetCallback([msg]() {
@@ -446,9 +431,8 @@ bool MainHandler::init() {
     m_inited = true;
     return true;
 }
-MainHandler::MainHandler():
-        m_sound_manager(std::make_unique<audio::SoundManager>()),
-        m_main_loop(std::make_shared<looper::Looper>()),
-        m_render_loop(std::make_shared<looper::Looper>()),
-        m_render_handler(std::make_shared<RenderHandler>(*this))
-{}
+MainHandler::MainHandler()
+    : m_sound_manager(std::make_unique<audio::SoundManager>()),
+      m_main_loop(std::make_shared<looper::Looper>()),
+      m_render_loop(std::make_shared<looper::Looper>()),
+      m_render_handler(std::make_shared<RenderHandler>(*this)) {}

@@ -10,18 +10,18 @@ class GlExtra {
 public:
     GlExtra();
     ~GlExtra();
-    bool init(void *get_proc_address(const char *));
+    bool init(void* get_proc_address(const char*));
     uint genExTexture(wallpaper::ExHandle&);
     void deleteTexture(uint);
-    
-    Span<std::uint8_t> uuid() const;
+
+    Span<std::uint8_t>   uuid() const;
     wallpaper::TexTiling tiling() const;
+
 private:
-	class impl;
+    class impl;
     std::unique_ptr<impl> pImpl;
 
-    uint semaphore {0};
+    bool inited { false };
 
-    wallpaper::TexTiling m_tiling {wallpaper::TexTiling::OPTIMAL};
-    bool inited {false};
+    wallpaper::TexTiling m_tiling { wallpaper::TexTiling::OPTIMAL };
 };

@@ -7,7 +7,7 @@
 #include "Vulkan/GraphicsPipeline.hpp"
 
 #include "Scene/Scene.h"
-#include "SpecTexs.h"
+#include "SpecTexs.hpp"
 
 namespace wallpaper
 {
@@ -18,19 +18,19 @@ class FinPass : public VulkanPass {
 public:
     struct Desc {
         // in
-        const std::string_view result {SpecTex_Default};
-        vk::Format present_format;
-        vk::ImageLayout present_layout;
-        uint32_t present_queue_index;
+        const std::string_view result { SpecTex_Default };
+        vk::Format             present_format;
+        vk::ImageLayout        present_layout;
+        uint32_t               present_queue_index;
 
         // prepared
         ImageParameters vk_result;
         ImageParameters vk_present;
         vk::ImageLayout render_layout;
-        vk::ClearValue clear_value;
+        vk::ClearValue  clear_value;
 
-        StagingBufferRef vertex_buf; 
-        vk::Framebuffer fb;
+        StagingBufferRef   vertex_buf;
+        vk::Framebuffer    fb;
         PipelineParameters pipeline;
     };
 
@@ -50,5 +50,5 @@ private:
     Desc m_desc;
 };
 
-}
-}
+} // namespace vulkan
+} // namespace wallpaper

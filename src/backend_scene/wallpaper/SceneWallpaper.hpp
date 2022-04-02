@@ -1,7 +1,7 @@
 #pragma once
 #include <memory>
 #include <string_view>
-#include "Type.h"
+#include "Type.hpp"
 #include "Utils/span.hpp"
 #include "Swapchain/ExSwapchain.hpp"
 
@@ -37,15 +37,16 @@ public:
     void setPropertyInt32(std::string_view, int32_t);
     void setPropertyFloat(std::string_view, float);
     void setPropertyString(std::string_view, std::string);
-    
+
     ExSwapchain* exSwapchain() const;
 
 private:
-    bool m_inited {false};
+    bool m_inited { false };
+
 private:
     friend class MainHandler;
 
-    bool m_offscreen {false};
+    bool                         m_offscreen { false };
     std::shared_ptr<MainHandler> m_main_handler;
 };
-}
+} // namespace wallpaper

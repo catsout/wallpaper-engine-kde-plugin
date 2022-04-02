@@ -13,20 +13,20 @@ using ReDrawCB = std::function<void()>;
 
 struct VulkanSurfaceInfo {
     std::function<VkResult(VkInstance, VkSurfaceKHR*)> createSurfaceOp;
-    std::vector<std::string> instanceExts;
+    std::vector<std::string>                           instanceExts;
 };
 
 struct RenderInitInfo {
-    bool enable_valid_layer {false};
-    bool offscreen {false};
+    bool enable_valid_layer { false };
+    bool offscreen { false };
+
     Span<std::uint8_t> uuid;
-    TexTiling offscreen_tiling {TexTiling::OPTIMAL};
+    TexTiling          offscreen_tiling { TexTiling::OPTIMAL };
+    VulkanSurfaceInfo  surface_info;
 
-    VulkanSurfaceInfo surface_info;
-    uint16_t width {1920};
-    uint16_t height {1080};
-
+    uint16_t width { 1920 };
+    uint16_t height { 1080 };
     ReDrawCB redraw_callback;
 };
 
-}
+} // namespace wallpaper

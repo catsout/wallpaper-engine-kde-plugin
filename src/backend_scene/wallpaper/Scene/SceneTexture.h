@@ -1,17 +1,16 @@
 #pragma once
-#include "SpriteAnimation.h"
+#include "SpriteAnimation.hpp"
 #include <string>
 #include <vector>
-#include "Type.h"
-
+#include "Type.hpp"
 
 namespace wallpaper
 {
 
 struct SceneTexture {
-	std::string url;
-	TextureSample sample;
-	bool isSprite {false};
-	SpriteAnimation spriteAnim;
+    std::string     url;
+    TextureSample   sample;
+    bool            isSprite { false };
+    SpriteAnimation spriteAnim;
 };
-}
+} // namespace wallpaper

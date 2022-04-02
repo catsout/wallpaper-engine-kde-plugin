@@ -7,7 +7,7 @@
 #include "Scene/Scene.h"
 #include "Vulkan/StagingBuffer.hpp"
 #include "Vulkan/GraphicsPipeline.hpp"
-#include "SpriteAnimation.h"
+#include "SpriteAnimation.hpp"
 
 namespace wallpaper
 {
@@ -19,29 +19,29 @@ class CustomShaderPass : public VulkanPass {
 public:
     struct Desc {
         // in
-        SceneNode* node {nullptr};
+        SceneNode*               node { nullptr };
         std::vector<std::string> textures;
-        std::string output;
-        sprite_map_t sprites_map;
+        std::string              output;
+        sprite_map_t             sprites_map;
 
         // -----prepared
         // vulkan texs
         std::vector<ImageSlots> vk_textures;
-        std::vector<int> vk_tex_binding;
-        ImageParameters vk_output;
+        std::vector<int>        vk_tex_binding;
+        ImageParameters         vk_output;
 
         // bufs
-        bool dyn_vertex {false};
+        bool                          dyn_vertex { false };
         std::vector<StagingBufferRef> vertex_bufs;
-        StagingBufferRef index_buf;
-        StagingBufferRef ubo_buf;
+        StagingBufferRef              index_buf;
+        StagingBufferRef              ubo_buf;
 
         // pipeline
-        vk::ClearValue clear_value;
-        bool blending {false};
-        vk::Framebuffer fb;
+        vk::ClearValue     clear_value;
+        bool               blending { false };
+        vk::Framebuffer    fb;
         PipelineParameters pipeline;
-        uint32_t draw_count {0};
+        uint32_t           draw_count { 0 };
 
         // uniforms
         std::function<void()> update_op;
@@ -55,9 +55,10 @@ public:
     void prepare(Scene&, const Device&, RenderingResources&) override;
     void execute(const Device&, RenderingResources&) override;
     void destory(const Device&, RenderingResources&) override;
+
 private:
     Desc m_desc;
 };
 
-}
-}
+} // namespace vulkan
+} // namespace wallpaper

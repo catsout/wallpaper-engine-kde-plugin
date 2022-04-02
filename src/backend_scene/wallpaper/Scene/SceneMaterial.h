@@ -5,32 +5,32 @@
 #include <unordered_set>
 
 #include "SceneShader.h"
-#include "Type.h"
+#include "Type.hpp"
 
 namespace wallpaper
 {
 
 struct SceneMaterialCustomShader {
-	std::shared_ptr<SceneShader> shader;
-	ShaderValues constValues;
+    std::shared_ptr<SceneShader> shader;
+    ShaderValues                 constValues;
 };
 
 struct SceneMaterial {
 public:
-	SceneMaterial() = default;
-	SceneMaterial(const SceneMaterial&) = default;
-	SceneMaterial(SceneMaterial&& o)
-		: name(std::move(o.name)),
-		  textures(std::move(o.textures)),
-		  defines(std::move(o.defines)) {};
+    SceneMaterial()                     = default;
+    SceneMaterial(const SceneMaterial&) = default;
+    SceneMaterial(SceneMaterial&& o)
+        : name(std::move(o.name)),
+          textures(std::move(o.textures)),
+          defines(std::move(o.defines)) {};
 
-	std::string name;
-	std::vector<std::string> textures;
-	std::vector<std::string> defines;
+    std::string              name;
+    std::vector<std::string> textures;
+    std::vector<std::string> defines;
 
-	bool hasSprite {false};
+    bool hasSprite { false };
 
-	SceneMaterialCustomShader customShader;
-	BlendMode blenmode {BlendMode::Disable};
+    SceneMaterialCustomShader customShader;
+    BlendMode                 blenmode { BlendMode::Disable };
 };
-}
+} // namespace wallpaper

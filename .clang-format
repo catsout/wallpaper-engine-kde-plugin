@@ -1,23 +1,31 @@
 ﻿---
-AccessModifierOffset: -2
+AccessModifierOffset: -4
+
 AlignAfterOpenBracket: Align
 AlignConsecutiveMacros: true
 AlignConsecutiveAssignments: true
 AlignConsecutiveDeclarations: true
-AlignEscapedNewlines: DontAlign
+AlignEscapedNewlines: Left
 AlignOperands: true
 AlignTrailingComments: true
+
 AllowAllParametersOfDeclarationOnNextLine: true
 AllowShortBlocksOnASingleLine: false
-AllowShortCaseLabelsOnASingleLine: false
-AllowShortIfStatementsOnASingleLine: Never
-AllowShortLoopsOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortIfStatementsOnASingleLine: true
+AllowShortLoopsOnASingleLine: true
+AllowShortLambdasOnASingleLine: false
+
 AlwaysBreakAfterReturnType: None
+AlwaysBreakTemplateDeclarations: true
+
 BreakBeforeBraces: Custom
 BraceWrapping:
   AfterEnum: true
   AfterNamespace: true
-BinPackArguments: true
+  SplitEmptyFunction: false
+  SplitEmptyRecord: false
+BinPackArguments: false
 BinPackParameters: true
 CompactNamespaces: false
 ConstructorInitializerAllOnOneLineOrOnePerLine: true
@@ -46,4 +54,5 @@ SpacesInParentheses: false
 SpacesInSquareBrackets: false
 Standard: Cpp11
 TabWidth: 4
-UseTab: ForIndentation
+UseTab: Never
+ColumnLimit: 100
