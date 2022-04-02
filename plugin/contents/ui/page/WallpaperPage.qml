@@ -279,8 +279,9 @@ RowLayout {
                             root.customConf.favor.add(model.workshopid);
                         }
                         this.view.model.assignModel(index, {favor: !model.favor});
-                        this.view.currentIndexChanged();
                         root.saveCustomConf();
+
+                        if(index == view.currentIndex) this.view.currentIndexChanged();
                     }
 
                 }
