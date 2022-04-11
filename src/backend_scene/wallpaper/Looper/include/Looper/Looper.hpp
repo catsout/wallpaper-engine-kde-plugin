@@ -10,6 +10,7 @@
 #include <map>
 #include <string_view>
 #include <variant>
+#include <array>
 
 #include "Utils/Visitors.hpp"
 #include "Utils/NoCopyMove.hpp"
