@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <algorithm>
+#include <vector>
 
 template <typename T>
 class Span {
