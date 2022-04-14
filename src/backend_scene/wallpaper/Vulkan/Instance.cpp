@@ -219,3 +219,11 @@ bool Instance::Create(Instance& inst, Span<Extension> instExts, Span<InstanceLay
 	*/
 	return true;
 }
+
+// reduce compilation time, as vulkan.hpp is too fat
+#include "Device_impl.hpp"
+#include "Shader_impl.hpp"
+#include "Swapchain_impl.hpp"
+#include "TextureCache_impl.hpp"
+#include "StagingBuffer_impl.hpp"
+#include "GraphicsPipeline_impl.hpp"

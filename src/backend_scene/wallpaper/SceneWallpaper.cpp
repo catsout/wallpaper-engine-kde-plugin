@@ -16,8 +16,8 @@
 #include "Audio/SoundManager.h"
 
 #include "RenderGraph/RenderGraph.hpp"
-#include "SceneToRenderGraph.hpp"
 
+#include "VulkanRender/SceneToRenderGraph.hpp"
 #include "VulkanRender/VulkanRender.hpp"
 #include "Vulkan/VulkanExSwapchain.hpp"
 #include <atomic>

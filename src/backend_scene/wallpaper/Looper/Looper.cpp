@@ -56,6 +56,9 @@ status_t Looper::start() {
             looper->m_running = true;
         }
         std::string name {looper->name()};
+		// expired is safe here
+		// 1. looper deleted at another thread, will join this, expired() allways true
+		// 2. looper deleted at this thread, only in loop(), expired() reliable
         while(!wlooper.expired() && looper->m_running && looper->loop()) {
         }
         LOG_INFO("%s looper stopped", name.c_str());

@@ -455,3 +455,9 @@ void VulkanRender::compileRenderGraph(Scene& scene, rg::RenderGraph& rg) {
     m_pass_loaded = true;
 };
 
+
+#include "CopyPass_impl.hpp"
+#include "CustomShaderPass_impl.hpp"
+#include "FinPass_impl.hpp"
+#include "PrePass_impl.hpp"
+#include "SceneToRenderGraph_impl.hpp"

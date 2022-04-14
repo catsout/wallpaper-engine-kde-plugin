@@ -54,10 +54,6 @@ add_library(${PROJECT_NAME}
 	Utils/Algorism.cpp	
 	Utils/Sha.cpp
 
-	VulkanRender/CopyPass.cpp
-	VulkanRender/CustomShaderPass.cpp
-	VulkanRender/PrePass.cpp
-	VulkanRender/FinPass.cpp
 	VulkanRender/VulkanRender.cpp
 
 	WPParticleParser.cpp
@@ -70,7 +66,6 @@ add_library(${PROJECT_NAME}
 	WPPuppet.cpp
 
 	SceneWallpaper.cpp	
-	SceneToRenderGraph.cpp
 )
 
 set(InteralLib wpAudio wpVulkan wpRGraph wpLooper)
