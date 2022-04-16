@@ -4,8 +4,10 @@ import QtQuick.Controls 2.2
 import scenetest 1.0
 
 Item {
+    id: root
     width: 1280
     height: 720
+
     SceneViewer {
         id: renderer
         anchors.fill: parent

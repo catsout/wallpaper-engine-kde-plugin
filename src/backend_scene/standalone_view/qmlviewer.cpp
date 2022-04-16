@@ -15,9 +15,14 @@ int main(int argc, char** argv) {
 
     qmlRegisterType<scenebackend::SceneObject>("scenetest", 1, 0, "SceneViewer");
     QQuickView view;
-    view.setResizeMode(QQuickView::SizeRootObjectToView);
-    view.setSource(QUrl("qrc:///pkg/main.qml"));
-    view.show();
+	{
+		auto [w_width, w_height] = program.get<Resolution>(OPT_RESOLUTION);
+		view.setWidth(w_width);
+		view.setHeight(w_height);
+		view.setResizeMode(QQuickView::SizeRootObjectToView);
+		view.setSource(QUrl("qrc:///pkg/main.qml"));
+	}
+
     QObject*                   obj = view.rootObject();
     scenebackend::SceneObject* sv  = obj->findChild<scenebackend::SceneObject*>();
     if (program.get<bool>(OPT_VALID_LAYER)) sv->enableVulkanValid();
@@ -28,5 +33,6 @@ int main(int argc, char** argv) {
     sv->setAcceptMouse(true);
     sv->setAcceptHover(true);
 
+    view.show();
     return QGuiApplication::exec();
 }

@@ -11,8 +11,6 @@
 
 using namespace std;
 
-unsigned int SCR_WIDTH  = 1280;
-unsigned int SCR_HEIGHT = 720;
 atomic<bool> renderCall(false);
 
 struct UserData {
@@ -44,19 +42,20 @@ void updateCallback() {
 int main(int argc, char** argv) {
     argparse::ArgumentParser program("scene-viewer");
     setAndParseArg(program, argc, argv);
+	auto [w_width, w_height] = program.get<Resolution>(OPT_RESOLUTION);
 
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "WP", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(w_width, w_height, "WP", nullptr, nullptr);
 
     UserData data;
-    data.width  = SCR_WIDTH;
-    data.height = SCR_HEIGHT;
+    data.width  = w_width;
+    data.height = w_height;
 
     wallpaper::RenderInitInfo info;
     info.enable_valid_layer = program.get<bool>(OPT_VALID_LAYER);
-    info.width              = SCR_WIDTH;
-    info.height             = SCR_HEIGHT;
+    info.width              = w_width;
+    info.height             = w_height;
 
     auto& sf_info = info.surface_info;
     {
