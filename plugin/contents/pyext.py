@@ -4,6 +4,7 @@ import asyncio
 import websockets
 import json
 import base64
+import math
 from pathlib import Path
 
 #import functools;
@@ -51,8 +52,37 @@ def readfile(path):
 def get_dir_size(path, depth):
     glob_strs = ['**/*'] if depth <= 0 else ['/'.join(['*' for _ in range(i+1)]) for i in range(depth)]
     root_directory = Path(path)
-    # limit to 3 depth
     return sum([sum(f.stat().st_size for f in root_directory.glob(s) if f.is_file()) for s in glob_strs])
+
+
+@jrpc.add_method
+def get_folder_list(path, _opt={}):
+    def gen_item(f):
+        stat = f.stat()
+        return {
+            'name': f.name,
+            'mtime': math.floor(stat.st_mtime)
+        }
+    opt = get_folder_list.default_opt.copy()
+    opt.update(_opt);
+    opt_only_dir = opt['only_dir']
+
+    def path_filter(p):
+        return p.is_dir() if opt_only_dir else True;
+
+    folder = next(filter(lambda p: p.is_dir(),[Path(p) for p in [path, *opt['fallbacks']]]), None)
+    if folder is None:
+        return None
+    return {
+        'folder': str(folder),
+        'items': [gen_item(p) for p in folder.glob('*') if path_filter(p)]
+    }
+
+
+get_folder_list.default_opt = {
+    'only_dir': True,
+    'fallbacks': []
+}
 
 async def connect(uri):
     async with websockets.connect(uri) as websocket:
@@ -68,5 +98,8 @@ if __name__ == '__main__':
     parser.add_argument("url", metavar='URL', type=str,
                     help='a websocket url')
     args = vars(parser.parse_args())
-    asyncio.get_event_loop().run_until_complete(
-          connect(args['url']))
+
+    if (hasattr(asyncio, 'run')):
+        asyncio.run(connect(args['url']))
+    else:
+        asyncio.get_event_loop().run_until_complete(connect(args['url']))

@@ -266,9 +266,10 @@ Rectangle {
         sourceCallback();
     }
    
-    function autoPause() {background.ok
-                    ? backendLoader.item.play()
-                    : backendLoader.item.pause()
+    function autoPause() {
+        background.ok
+            ? backendLoader.item.play()
+            : backendLoader.item.pause();
     }
 
     Component.onCompleted: {

@@ -34,6 +34,9 @@ Item {
     function get_dir_size(path, depth=3) {
         return ws_server.jrpc.send("get_dir_size", [path, depth]).then(res => res.result);
     }
+    function get_folder_list(path, opt={}) {
+        return ws_server.jrpc.send("get_folder_list", [path, opt]).then(res => res.result);
+    }
 
     function _createTimer(callback) {
         const timer = Qt.createQmlObject("import QtQuick 2.0; Timer {}", root);

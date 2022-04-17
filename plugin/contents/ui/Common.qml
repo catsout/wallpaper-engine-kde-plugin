@@ -140,6 +140,14 @@ QtObject {
     function getWorkshopDir(steamLibraryPath) {
         return steamLibraryPath + "/steamapps/workshop/content/431960";
     }
+    function getWorkshopDirs(steamLibraryPath) {
+        return [
+            "/steamapps/workshop/content/431960",
+            "/Steamapps/Workshop/content/431960",
+            "/Steamapps/Workshop/Content/431960",
+            "/steamapps/Workshop/Content/431960",
+        ].map(el => steamLibraryPath + el);
+    }
     function getDefProjectsDir(steamLibraryPath) {
         return steamLibraryPath + "/steamapps/common/wallpaper_engine/projects/defaultprojects";
     }
@@ -148,7 +156,7 @@ QtObject {
     }
     function getProjectDirs(steamLibraryPath) {
         return [
-            getWorkshopDir(steamLibraryPath),
+            getWorkshopDirs(steamLibraryPath),
             getDefProjectsDir(steamLibraryPath),
             getMyProjectsDir(steamLibraryPath)
         ];
@@ -302,8 +310,10 @@ QtObject {
     
     function urlNative(url) {
         const str = url.toString();
-        if(str.slice(0,7) === "file://") {
+        if(str.startsWith('file://')) {
             return str.slice(7);
+        } else if(str.startsWith('file:')) {
+            return str.slice(5);
         }
         return str;
     }

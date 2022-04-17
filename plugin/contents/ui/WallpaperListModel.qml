@@ -2,7 +2,6 @@ import QtQuick 2.5
 import QtQuick.Controls 1.0
 import QtQuick.Layouts 1.2
 
-import Qt.labs.folderlistmodel 2.11
 import "utils.mjs" as Utils
 
 Item {
@@ -120,16 +119,70 @@ Item {
             });
         }
     }
+
     function refresh() {
         if(!root.enabled) return;
-        this.folderModels.forEach(el => el.destroy());
-        this.folderModels = [];
+        const p_list = [];
         this.workshopDirs.forEach(el => {
-            this.folderModels.push(folderCom.createObject(this, {
-                folder: el,
-                requirFolder: el
-            }));
+            const dirs = (Array.isArray(el) ? el : [el]).map(Common.urlNative);
+            p_list.push(pyext.get_folder_list(
+                dirs[0],
+                { only_dir: true, fallbacks: dirs.slice(1) }
+            ).then(res => {
+                if(!res) console.error(`folder not found: ${dirs[0]}`);
+                return res;
+            }).catch(reason => console.error(reason)));
         });
+        new Promise((resolve, reject) => {
+            Promise.all(p_list).then(values => {
+                this.loadFolderLists(values);
+            }).catch(reason => console.error(reason));
+            resolve();
+        });
+
+    }
+
+    function loadFolderLists(folders) {
+        const proxyModel = []
+        folders.forEach(folder => {
+            if(!folder) return;
+            // seems qml's "for" is a function
+            const folder_dir = folder.folder;
+            folder.items.forEach(el => {
+                const v = Object.assign({}, Common.wpitem_template);
+                v.workshopid = el.name;
+                // use qurl to convert to file://
+                v.path = Qt.resolvedUrl(folder_dir + '/' + el.name).toString();
+                v.modified = el.mtime;
+                root._initItemOp(v);
+                proxyModel.push(v);
+            });
+            //if(proxyModel) console.error(`show the first: ${proxyModel[0].path}`)
+        });
+        new Promise((resolve, reject) => {
+            const plist = []
+            proxyModel.forEach((el) => {
+                // as no allSettled, catch any error
+                const p = root._readfile(Common.urlNative(Common.getWpModelProjectPath(el))).then(value => {
+                        root.loadItemFromJson(value, el);
+                    }).catch(reason => console.error(reason));
+                plist.push(p);
+            });
+            const path = this.folder;
+            Promise.all(plist).then(value => {
+                folderWorker.loadModel(path, proxyModel);
+            }).catch(reason => console.error(reason));
+            resolve();
+            /*
+            const msg = {
+                action: "loadFolder", 
+                data: proxyModel,
+                path: this.folder
+            };
+            sendMessage(msg);
+            */
+        });
+
     }
     Component.onCompleted: {
         this.filterStrChanged.connect(function() {
@@ -148,61 +201,7 @@ Item {
         });
         this.refresh();
     }
-    Component {
-        id: folderCom
-        FolderListModel {
-            property url requirFolder
-            onStatusChanged: {
-                if(this.folder != requirFolder) { 
-                    console.error(`require: ${requirFolder}, but get: ${this.folder}`);
-                    return;
-                }
-                if (root.enabled && this.status === FolderListModel.Ready) {
-                    console.error(`scan folder: ${this.folder}, found ${this.count} subdir`);
-                    const proxyModel = []
-                    new Promise((resolve, reject) => {
-                        // seems qml's "for" is a function
-                        const count = this.count;
-                        const get = this.get.bind(this);
-                        for(let i=0;i < count;i++) {
-                            const v = Object.assign({}, Common.wpitem_template);
-                            v.workshopid = get(i,"fileName");
-                            // use qurl to convert to file://
-                            v.path = Qt.resolvedUrl(get(i,"filePath")).toString();
-                            v.modified = get(i, "fileModified");
-                            root._initItemOp(v);
-                            proxyModel.push(v);
-                            if(i === 0) {
-                                console.error(`show the first: ${v.path}`)
-                            }
-                        }
-                        resolve();
-                    }).then((value) => {
-                        const plist = []
-                        proxyModel.forEach((el) => {
-                            // as no allSettled, catch any error
-                            const p = root._readfile(Common.urlNative(Common.getWpModelProjectPath(el))).then(value => {
-                                    root.loadItemFromJson(value, el);
-                                }).catch(reason => console.error(reason));
-                            plist.push(p);
-                        });
-                        const path = this.folder;
-                        Promise.all(plist).then(value => {
-                            folderWorker.loadModel(path, proxyModel);
-                        }).catch(reason => console.error(reason));
-                        /*
-                        const msg = {
-                            action: "loadFolder", 
-                            data: proxyModel,
-                            path: this.folder
-                        };
-                        sendMessage(msg);
-                        */
-                    }).catch(reason => console.error(reason));
-                }
-            }
-        }
-    }
+
     // scan once
     Timer {
         running: true

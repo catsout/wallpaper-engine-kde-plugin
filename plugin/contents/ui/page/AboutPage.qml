@@ -95,10 +95,6 @@ Flickable {
                 property var modelraw: {
                     const _model = [
                         {
-                            ok: libcheck.folderlist,
-                            name: "*qt-lab-folderlist"
-                        },
-                        {
                             ok: libcheck.qtwebsockets,
                             name: "*qtwebsockets (qml)"
                         },

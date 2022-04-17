@@ -9,9 +9,10 @@ A wallpaper plugin integrating [wallpaper engine](https://store.steampowered.com
   - Screen Locking is not supported, please not use this plugin in screen locking.  
 - Support **scene(2d)**,**video**,**web** wallpaper types
 - Requires *Wallpaper Engine* installed on steam
-- Requires [CMake 3.16+](#dependencies)
-- Requires [qt 5.13+](#dependencies) for playing video(no mpv), or [mpv](#dependencies) instead  
-- Requires vulkan 1.1+, opengl [External Memory Object](https://www.khronos.org/registry/OpenGL/extensions/EXT/EXT_external_objects.txt) extension
+- Requires Python 3.3+
+- Requires CMake 3.16+
+- Requires Qt 5.13+ for playing video(no mpv), or mpv instead  
+- Requires Vulkan 1.1+, Opengl [External Memory Object](https://www.khronos.org/registry/OpenGL/extensions/EXT/EXT_external_objects.txt) extension
 
 ## Install
 #### Dependencies
@@ -19,7 +20,7 @@ Debian:
 ```sh
 sudo apt install build-essential libvulkan-dev plasma-workspace-dev gstreamer1.0-libav \
 liblz4-dev libmpv-dev python3-websockets qtbase5-private-dev \
-libqt5x11extras5-dev qml-module-qt-labs-folderlistmodel \
+libqt5x11extras5-dev \
 qml-module-qtwebchannel qml-module-qtwebsockets
 ```  
 
