@@ -14,8 +14,7 @@ ColumnLayout {
     
     property string cfg_SteamLibraryPath
     property string cfg_WallpaperWorkShopId
-    property string cfg_WallpaperFilePath
-    property string cfg_WallpaperType
+    property string cfg_WallpaperSource
     property string cfg_FilterStr
     property int    cfg_SortMode
 

@@ -7,6 +7,7 @@ import "../utils.mjs" as Utils
 Item {
     id: webItem
     anchors.fill: parent
+    property alias source: web.url
     property bool hasLib: background.hasLib
     property int fps: background.fps
     property var readfile
@@ -55,7 +56,6 @@ Item {
         anchors.fill: parent
         enabled: true
         audioMuted: background.mute
-        url: background.source
         activeFocusOnPress: false
         webChannel: channel
         userScripts: [

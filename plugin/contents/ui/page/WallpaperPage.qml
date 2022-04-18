@@ -41,7 +41,8 @@ RowLayout {
 
                 Label {
                     visible: cfg_WallpaperWorkShopId
-                    text: `Shopid: ${cfg_WallpaperWorkShopId}  Type: ${cfg_WallpaperType}`
+                    text: `Shopid: ${cfg_WallpaperWorkShopId}  Type: ${Common.unpackWallpaperSource(cfg_WallpaperSource).type}`
+                    //${cfg_WallpaperType}
                 }
 
                 Kirigami.ActionToolBar {
@@ -220,8 +221,7 @@ RowLayout {
                             }
                         }
                         onClicked: {
-                            cfg_WallpaperFilePath = Common.getWpModelFileSource(model);
-                            cfg_WallpaperType = type;
+                            cfg_WallpaperSource = Common.packWallpaperSource(model);
                             cfg_WallpaperWorkShopId = workshopid;
                             view.currentIndex = index;
                         }
@@ -268,7 +268,7 @@ RowLayout {
                             if(view.currentIndex == -1 && model.count != 0)
                                 view.currentIndex = 0;
 
-                            if(!cfg_WallpaperFilePath || cfg_WallpaperFilePath == "")
+                            if(!cfg_WallpaperSource)
                                 if(view.currentIndex != -1)
                                     view.currentItem.onClicked();
 
@@ -422,7 +422,7 @@ RowLayout {
                                     control_dir_size.visible = false;
                                     return false;
                                 }
-                                pyext.get_dir_size(dir.substring('file://'.length), 4).then(res => {
+                                pyext.get_dir_size(Common.urlNative(dir)).then(res => {
                                     this.text = Utils.prettyBytes(res);
                                     control_dir_size.visible = true;
                                 }).catch(reason => console.error(reason));

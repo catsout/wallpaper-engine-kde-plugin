@@ -14,12 +14,8 @@
       <label>Wallpaper workshopid</label>
       <default></default>
     </entry>
-    <entry name="WallpaperFilePath" type="Path">
-      <label>Wallpaper file path</label>
-      <default></default>
-    </entry>
-    <entry name="WallpaperType" type="String">
-      <label>Wallpaper type</label>
+    <entry name="WallpaperSource" type="Path">
+      <label>Wallpaper Source</label>
       <default></default>
     </entry>
     <entry name="BackgroundColor" type="String">

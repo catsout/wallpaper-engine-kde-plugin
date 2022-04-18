@@ -7,6 +7,7 @@ Item {
     property string info: "error"
     property string type: "unknown"
     property string wid: "unknown"
+    property string source
     GridLayout {
         id: configRow
         columns: 1

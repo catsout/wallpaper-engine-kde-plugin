@@ -5,6 +5,7 @@ import ".."
 Item{
     id: videoItem
     anchors.fill: parent
+    property alias source: player.source
     property int displayMode: background.displayMode
     property var volumeFade: Common.createVolumeFade(
         videoItem, 
@@ -34,7 +35,6 @@ Item{
         autoPlay: true
         loops: MediaPlayer.Infinite
         muted: background.mute
-        source: background.source
         volume: 0.0
         playbackRate: background.videoRate
     }

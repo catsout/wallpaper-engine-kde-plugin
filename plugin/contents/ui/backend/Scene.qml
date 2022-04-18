@@ -5,6 +5,7 @@ import ".."
 Item{
     id: sceneItem
     anchors.fill: parent
+    property alias source: player.source
     property string assets: "assets"
     property int displayMode: background.displayMode
     property var volumeFade: Common.createVolumeFade(
@@ -27,7 +28,6 @@ Item{
         anchors.fill: parent
         fps: background.fps
         muted: background.mute
-        source: background.source
         assets: sceneItem.assets
         Component.onCompleted: {
             player.setAcceptMouse(true);

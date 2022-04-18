@@ -5,6 +5,7 @@ import ".."
 Item{
     id: videoItem
     anchors.fill: parent
+    property alias source: player.source
     readonly property int displayMode: background.displayMode
     readonly property real videoRate: background.videoRate 
     readonly property bool stats: background.mpvStats
@@ -41,7 +42,6 @@ Item{
     MpvObject {
         id: player
         anchors.fill: parent
-        source: background.source
         mute: background.mute
         volume: 0
     }

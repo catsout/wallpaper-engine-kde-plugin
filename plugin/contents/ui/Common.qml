@@ -136,6 +136,7 @@ QtObject {
     
     readonly property var regex_workshop_online: new RegExp('^[0-9]+$', 'g');
     readonly property var regex_path_check: new RegExp('^file://.+?(431960/[0-9]+$|wallpaper_engine/projects/[a-z]+/.+)', 'g');
+    readonly property var regex_source: new RegExp('^(.+)\\+([a-z]+)$', '');
 
     function getWorkshopDir(steamLibraryPath) {
         return steamLibraryPath + "/steamapps/workshop/content/431960";
@@ -174,10 +175,21 @@ QtObject {
         return model.preview ? `${model.path}/${model.preview}` : '';
     }
     function getWpModelFileSource(model) {
-        return model.path ? `${model.path}/${model.file}` : '';
+        return model.path ? `${model.path}/${model.file}+${model.type}` : '';
     }
     function getWpModelProjectPath(model) {
         return model.path ? `${model.path}/project.json` : '';
+    }
+
+    function packWallpaperSource(model) {
+        return model.path ? `${model.path}/${model.file}+${model.type}` : '';
+    }
+    function unpackWallpaperSource(source) {
+        const match = source.match(regex_source);
+        return {
+            path: match ? match[1] : '',
+            type: match ? match[2] : ''
+        };
     }
 
     function loadCustomConf(data) {
@@ -207,7 +219,7 @@ QtObject {
     function checklib(libName, parentItem) {
         let ok = false;
         let create = null;
-         try {
+        try {
             create = Qt.createQmlObject(
             'import '+ libName +';import QtQml 2.2; QtObject{}',
             parentItem);
