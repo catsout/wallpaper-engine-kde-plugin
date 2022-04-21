@@ -93,9 +93,9 @@ void WPShaderValueUpdater::UpdateUniforms(SceneNode* pNode, sprite_map_t& sprite
                 Vector3f nodePos = pNode->Translate();
                 Vector2f depth(&nodeData.parallaxDepth[0]);
                 Vector2f ortho { (float)m_scene->ortho[0], (float)m_scene->ortho[1] };
-                Vector2f mouseVec =
-                    (Vector2f { 0.5f, 0.5f } - Vector2f(&m_mousePos[0])).cwiseProduct(ortho);
-                mouseVec *= m_parallax.mouseinfluence;
+                // flip mouse y axis
+                Vector2f mouseVec = Scaling(1.0f, -1.0f) * (Vector2f { 0.5f, 0.5f } - Vector2f(&m_mousePos[0]));
+                mouseVec = mouseVec.cwiseProduct(ortho) * m_parallax.mouseinfluence;
                 Vector3f camPos = camera->GetPosition().cast<float>();
                 Vector2f paraVec =
                     (nodePos.head<2>() - camPos.head<2>() + mouseVec).cwiseProduct(depth) *
