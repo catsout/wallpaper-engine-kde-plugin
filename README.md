@@ -4,7 +4,7 @@ A wallpaper plugin integrating [wallpaper engine](https://store.steampowered.com
 ## Note
 - Known issues:
   - Some scene wallpapers may **crash** your KDE.  
-    Remove `WallpaperFilePath` line in `~/.config/plasma-org.kde.plasma.desktop-appletsrc` and restart KDE to fix.  
+    Remove `WallpaperSource` line in `~/.config/plasma-org.kde.plasma.desktop-appletsrc` and restart KDE to fix.  
   - Mouse long press (to enter panel edit mode) is broken on desktop.
   - Screen Locking is not supported, please not use this plugin in screen locking.  
 - Support **scene(2d)**,**video**,**web** wallpaper types
