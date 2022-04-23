@@ -31,8 +31,33 @@ void WPShaderValueUpdater::MouseInput(double x, double y) {
     m_mousePos[1] = y;
 }
 
+void WPShaderValueUpdater::InitUniforms(SceneNode* pNode, const ExistsUniformOp& existsOp) {
+    m_nodeUniformInfoMap[pNode] = WPUniformInfo();
+    auto& info                  = m_nodeUniformInfoMap[pNode];
+    info.has_MI                 = existsOp(G_MI);
+    info.has_M                  = existsOp(G_M);
+    info.has_AM                 = existsOp(G_AM);
+    info.has_MVP                = existsOp(G_MVP);
+    info.has_MVPI               = existsOp(G_MVPI);
+    info.has_VP                 = existsOp(G_VP);
+
+    info.has_BONES           = existsOp(G_BONES);
+    info.has_TIME            = existsOp(G_TIME);
+    info.has_DAYTIME         = existsOp(G_DAYTIME);
+    info.has_POINTERPOSITION = existsOp(G_POINTERPOSITION);
+    info.has_TEXELSIZE       = existsOp(G_TEXELSIZE);
+    info.has_TEXELSIZEHALF   = existsOp(G_TEXELSIZEHALF);
+    info.has_SCREEN          = existsOp(G_SCREEN);
+    info.has_LP              = existsOp(G_LP);
+
+    std::accumulate(begin(info.texs), end(info.texs), 0, [&existsOp](uint index, auto& value) {
+        value.has_resolution = existsOp(WE_GLTEX_RESOLUTION_NAMES[index]);
+        value.has_mipmap     = existsOp(WE_GLTEX_MIPMAPINFO_NAMES[index]);
+        return index + 1;
+    });
+}
+
 void WPShaderValueUpdater::UpdateUniforms(SceneNode* pNode, sprite_map_t& sprites,
-                                          const ExistsUniformOp& existsOp,
                                           const UpdateUniformOp& updateOp) {
     if (! pNode->Mesh()) return;
 
@@ -50,6 +75,9 @@ void WPShaderValueUpdater::UpdateUniforms(SceneNode* pNode, sprite_map_t& sprite
     // auto& shadervs = material->customShader.updateValueList;
     // const auto& valueSet = material->customShader.valueSet;
 
+    assert(exists(m_nodeUniformInfoMap, pNode));
+    const auto& info = m_nodeUniformInfoMap[pNode];
+
     bool hasNodeData = exists(m_nodeDataMap, pNode);
     if (hasNodeData) {
         auto& nodeData = m_nodeDataMap.at(pNode);
@@ -57,32 +85,33 @@ void WPShaderValueUpdater::UpdateUniforms(SceneNode* pNode, sprite_map_t& sprite
             if (m_scene->renderTargets.count(el.second) == 0) continue;
             const auto& rt = m_scene->renderTargets[el.second];
 
-            const auto name_resolution = WE_GLTEX_RESOLUTION_NAMES[el.first];
-            if (existsOp(name_resolution)) {
+            const auto& unifrom_tex = info.texs[el.first];
+
+            if (unifrom_tex.has_resolution) {
                 std::array<uint16_t, 4> resolution_uint(
                     { rt.width, rt.height, rt.width, rt.height });
-                updateOp(name_resolution, ShaderValue(array_cast<float>(resolution_uint)));
+                updateOp(WE_GLTEX_RESOLUTION_NAMES[el.first],
+                         ShaderValue(array_cast<float>(resolution_uint)));
             }
-            const auto name_mipmap = WE_GLTEX_MIPMAPINFO_NAMES[el.first];
-            if (existsOp(name_mipmap)) {
-                updateOp(name_mipmap, (float)rt.mipmap_level);
+            if (unifrom_tex.has_mipmap) {
+                updateOp(WE_GLTEX_MIPMAPINFO_NAMES[el.first], (float)rt.mipmap_level);
             }
         }
-        if (nodeData.puppet && existsOp(G_BONES)) {
+        if (nodeData.puppet && info.has_BONES) {
             auto data = nodeData.puppet->genFrame(nodeData.puppet_layers, m_scene->frameTime);
             updateOp(G_BONES, Span<float> { data[0].data(), data.size() * 16 });
         }
     }
 
-    bool reqMI   = existsOp(G_MI);
-    bool reqM    = existsOp(G_M);
-    bool reqAM   = existsOp(G_AM);
-    bool reqMVP  = existsOp(G_MVP);
-    bool reqMVPI = existsOp(G_MVPI);
+    bool reqMI   = info.has_MI;
+    bool reqM    = info.has_M;
+    bool reqAM   = info.has_AM;
+    bool reqMVP  = info.has_MVP;
+    bool reqMVPI = info.has_MVPI;
 
     Matrix4d viewProTrans = camera->GetViewProjectionMatrix();
 
-    if (existsOp(G_VP)) {
+    if (info.has_VP) {
         updateOp(G_VP, ShaderValue::fromMatrix(viewProTrans));
     }
     if (reqM || reqMVP || reqMI || reqMVPI) {
@@ -94,8 +123,9 @@ void WPShaderValueUpdater::UpdateUniforms(SceneNode* pNode, sprite_map_t& sprite
                 Vector2f depth(&nodeData.parallaxDepth[0]);
                 Vector2f ortho { (float)m_scene->ortho[0], (float)m_scene->ortho[1] };
                 // flip mouse y axis
-                Vector2f mouseVec = Scaling(1.0f, -1.0f) * (Vector2f { 0.5f, 0.5f } - Vector2f(&m_mousePos[0]));
-                mouseVec = mouseVec.cwiseProduct(ortho) * m_parallax.mouseinfluence;
+                Vector2f mouseVec =
+                    Scaling(1.0f, -1.0f) * (Vector2f { 0.5f, 0.5f } - Vector2f(&m_mousePos[0]));
+                mouseVec        = mouseVec.cwiseProduct(ortho) * m_parallax.mouseinfluence;
                 Vector3f camPos = camera->GetPosition().cast<float>();
                 Vector2f paraVec =
                     (nodePos.head<2>() - camPos.head<2>() + mouseVec).cwiseProduct(depth) *
@@ -119,18 +149,18 @@ void WPShaderValueUpdater::UpdateUniforms(SceneNode* pNode, sprite_map_t& sprite
     //	g_EffectTextureProjectionMatrix
     // shadervs.push_back({"g_EffectTextureProjectionMatrixInverse",
     // ShaderValue::ValueOf(Eigen::Matrix4f::Identity())});
-    if (existsOp(G_TIME)) updateOp(G_TIME, (float)m_scene->elapsingTime);
+    if (info.has_TIME) updateOp(G_TIME, (float)m_scene->elapsingTime);
 
-    if (existsOp(G_DAYTIME)) updateOp(G_DAYTIME, (float)m_dayTime);
+    if (info.has_DAYTIME) updateOp(G_DAYTIME, (float)m_dayTime);
 
-    if (existsOp(G_POINTERPOSITION)) updateOp(G_POINTERPOSITION, m_mousePos);
+    if (info.has_POINTERPOSITION) updateOp(G_POINTERPOSITION, m_mousePos);
 
-    if (existsOp(G_TEXELSIZE)) updateOp(G_TEXELSIZE, m_texelSize);
+    if (info.has_TEXELSIZE) updateOp(G_TEXELSIZE, m_texelSize);
 
-    if (existsOp(G_TEXELSIZEHALF))
+    if (info.has_TEXELSIZEHALF)
         updateOp(G_TEXELSIZEHALF, std::array { m_texelSize[0] / 2.0f, m_texelSize[1] / 2.0f });
 
-    if (existsOp(G_SCREEN))
+    if (info.has_SCREEN)
         updateOp(G_SCREEN,
                  std::array<float, 3> {
                      m_screen_size[0], m_screen_size[1], m_screen_size[0] / m_screen_size[1] });
@@ -143,7 +173,7 @@ void WPShaderValueUpdater::UpdateUniforms(SceneNode* pNode, sprite_map_t& sprite
         updateOp(gtrans, std::array { f.x, f.y });
     }
 
-    if (existsOp(G_LP)) {
+    if (info.has_LP) {
         std::array<float, 16> lights { 0 };
         std::array<float, 12> lights_color { 0 };
         uint                  i = 0;

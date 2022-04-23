@@ -19,7 +19,6 @@
 
 #include "VulkanRender/SceneToRenderGraph.hpp"
 #include "VulkanRender/VulkanRender.hpp"
-#include "Vulkan/VulkanExSwapchain.hpp"
 #include <atomic>
 
 using namespace wallpaper;
@@ -136,7 +135,7 @@ public:
         }
     }
 
-    vulkan::VulkanExSwapchain* exSwapchain() const { return m_render->exSwapchain(); }
+    ExSwapchain* exSwapchain() const { return m_render->exSwapchain(); }
 
     bool renderInited() const { return m_render->inited(); }
 

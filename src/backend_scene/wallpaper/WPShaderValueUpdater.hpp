@@ -16,6 +16,30 @@ namespace wallpaper
 
 class Scene;
 
+struct WPUniformInfo {
+    bool has_MI { false };
+    bool has_M { false };
+    bool has_AM { false };
+    bool has_MVP { false };
+    bool has_MVPI { false };
+    bool has_VP { false };
+
+    bool has_BONES { false };
+    bool has_TIME { false };
+    bool has_DAYTIME { false };
+    bool has_POINTERPOSITION { false };
+    bool has_TEXELSIZE { false };
+    bool has_TEXELSIZEHALF { false };
+    bool has_SCREEN { false };
+    bool has_LP { false };
+
+    struct Tex {
+        bool has_resolution { false };
+        bool has_mipmap { false };
+    };
+    std::array<Tex, 12> texs;
+};
+
 struct WPShaderValueData {
     std::array<float, 2> parallaxDepth { 0.0f, 0.0f };
     // index + name
@@ -38,8 +62,9 @@ public:
     virtual ~WPShaderValueUpdater() {}
 
     void FrameBegin() override;
-    void UpdateUniforms(SceneNode*, sprite_map_t&, const ExistsUniformOp&,
-                        const UpdateUniformOp&) override;
+
+    void InitUniforms(SceneNode*, const ExistsUniformOp&) override;
+    void UpdateUniforms(SceneNode*, sprite_map_t&, const UpdateUniformOp&) override;
     void FrameEnd() override;
     void MouseInput(double, double) override;
     void SetTexelSize(float x, float y) override;
@@ -58,5 +83,6 @@ private:
     std::array<float, 2> m_screen_size { 1920, 1080 };
 
     Map<void*, WPShaderValueData> m_nodeDataMap;
+    Map<void*, WPUniformInfo>     m_nodeUniformInfoMap;
 };
 } // namespace wallpaper
