@@ -10,7 +10,7 @@ cd wallpaper-engine-kde-plugin
 # plasmapkg2 -u, for update
 plasmapkg2 -i ./plugin
 
-# Rpmbuild
+# Rpmbuild in toolbox
 rpmbuild --define="commit $(git rev-parse HEAD)" \
     --define="glslang_ver 11.8.0" \
     --undefine=_disable_source_fetch \
