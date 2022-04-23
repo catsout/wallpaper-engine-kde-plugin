@@ -13,6 +13,8 @@ A wallpaper plugin integrating [wallpaper engine](https://store.steampowered.com
 - Requires CMake 3.16+
 - Requires Qt 5.13+ for playing video(no mpv), or mpv instead  
 - Requires Vulkan 1.1+, Opengl [External Memory Object](https://www.khronos.org/registry/OpenGL/extensions/EXT/EXT_external_objects.txt) extension
+- Requires [vulkan driver](https://wiki.archlinux.org/title/Vulkan#Installation) installed  
+If you are using amd, please choose RADV driver.  
 
 ## Install
 #### Dependencies
@@ -47,6 +49,10 @@ qt5-webchannel plasma-workspace-devel mpv-devel liblz4-devel Vulkan-Headers
 
 Fedora Kinoite:  
 see [install via rpm-ostree](rpm)
+
+#### Note for kde store
+Still need to run commands below to get scene and mpv work.  
+Every time you receive update in discover, you should run these commands to update.  
 
 #### Build and Install
 ```sh
@@ -90,6 +96,20 @@ Re-login is ok
 ### Scene:
 Scene wallpapers are supported by vulkan 1.1  
 Requires *Wallpaper Engine* installed for assets(shaders,pictures...)
+
+#### standalone
+Only for testing and debug  
+Requires glfw  
+```
+# git clone and init submodule
+cd src/backend_scene/standalone_view
+mkdir build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_QML=ON
+make 
+
+./sceneviewer --help
+```
+
 #### open-source libraries
 [argparse](https://github.com/p-ranav/argparse) - Command line argument parser  
 [stb](https://github.com/nothings/stb) - Image loading  
