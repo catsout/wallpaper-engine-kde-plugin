@@ -168,10 +168,10 @@ static void ToGraphPass(SceneNode* node, std::string_view output, uint32_t imgId
                     desc.type = ! IsSpecTex(url) ? rg::TexNode::TexType::Imported
                                                  : rg::TexNode::TexType::Temp;
                     input     = builder.createTexNode(desc);
-                    if (sstart_with(url, WE_MIP_MAPPED_FRAME_BUFFER)) {
-                        extra.use_mipmap_framebuffer = true;
+					if (IsSpecTex(url))
                         builder.markVirtualWrite(input);
-                    }
+                    if (sstart_with(url, WE_MIP_MAPPED_FRAME_BUFFER))
+                        extra.use_mipmap_framebuffer = true;
                 }
 
                 if (url == output) {

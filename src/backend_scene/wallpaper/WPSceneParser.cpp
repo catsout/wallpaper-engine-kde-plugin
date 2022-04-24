@@ -729,7 +729,8 @@ void ParseImageObj(ParseContext& context, wpscene::WPImageObject& img_obj) {
                     }
                     imgEffect->commands.push_back({ .cmd = SceneImageEffect::CmdType::Copy,
                                                     .dst = fboMap[el.target],
-                                                    .src = fboMap[el.source] });
+                                                    .src = fboMap[el.source],
+													.afterpos = el.afterpos });
                 }
             }
 

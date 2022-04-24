@@ -59,7 +59,7 @@ void RenderGraphBuilder::markSelfWrite(TexNode* tex) {
     });
 }
 void RenderGraphBuilder::markVirtualWrite(TexNode* tex) {
-    if(tex->version() > 0) return;
+    if(tex->version() > 0 || tex->writer() != nullptr) return;
     m_rg.addPass<VirtualPass>("virtual pass", PassNode::Type::Virtual, [tex](RenderGraphBuilder& builder, auto&) {
         builder.write(tex);
     });
