@@ -690,7 +690,8 @@ void ParseImageObj(ParseContext& context, wpscene::WPImageObject& img_obj) {
             const std::string inRT { effect_ppong_a };
 
             // fbo name map and effect command
-            std::string                                  effaddr = getAddr(imgEffectLayer.get());
+            std::string effaddr = getAddr(imgEffectLayer.get());
+
             std::unordered_map<std::string, std::string> fboMap;
             {
                 fboMap["previous"] = inRT;

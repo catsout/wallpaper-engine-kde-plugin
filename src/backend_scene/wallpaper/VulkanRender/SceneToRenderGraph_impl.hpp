@@ -113,7 +113,7 @@ static void ToGraphPass(SceneNode* node, std::string_view output, uint32_t imgId
             for (auto& n : eff->nodes) {
                 if (cmdItor != cmdEnd && nodePos == cmdItor->afterpos) {
                     rg::addCopyPass(
-                        rgraph, rg::createTexDesc(cmdItor->dst), rg::createTexDesc(cmdItor->src));
+                        rgraph, rg::createTexDesc(cmdItor->src), rg::createTexDesc(cmdItor->dst));
                     cmdItor++;
                 }
                 auto& name = n.output;
