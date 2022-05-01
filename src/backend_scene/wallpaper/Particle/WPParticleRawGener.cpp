@@ -4,12 +4,14 @@
 #include <array>
 #include "SpecTexs.hpp"
 #include "ParticleModify.h"
+#include "Utils/Logging.h"
 
 using namespace wallpaper;
 using namespace Eigen;
-
-void GenSingleGLData(const Particle& p, size_t oneSize, const ParticleRawGenSpecOp& specOp,
-                     float* data, bool hasTexCoordVec4C1) {
+namespace
+{
+inline void GenSingleGLData(const Particle& p, size_t oneSize, const ParticleRawGenSpecOp& specOp,
+                            float* data, bool hasTexCoordVec4C1) {
     float size = p.size / 2.0f;
 
     std::size_t offset = 0;
@@ -53,10 +55,13 @@ void GenSingleGLData(const Particle& p, size_t oneSize, const ParticleRawGenSpec
         data, std::array<float, 2> { p.rotation[0], p.rotation[1] }, offset, oneSize, 4);
 }
 
-void updateIndexArray(uint16_t index, size_t count, SceneIndexArray& iarray) {
-    const size_t                      single_size = 6;
-    const uint16_t                    cv          = index * 4;
+inline void updateIndexArray(uint16_t index, size_t count, SceneIndexArray& iarray) {
+    constexpr size_t single_size = 6;
+    const uint16_t   cv          = index * 4;
+
     std::array<uint16_t, single_size> single;
+    // 0 1 3
+    // 1 2 3
     single[0] = cv;
     single[1] = cv + 1;
     single[2] = cv + 3;
@@ -65,10 +70,11 @@ void updateIndexArray(uint16_t index, size_t count, SceneIndexArray& iarray) {
     single[5] = cv + 3;
     // every particle
     for (uint16_t i = index; i < count; i++) {
-        iarray.AssignHalf(index * single_size, single);
+        iarray.AssignHalf(i * single_size, single);
         for (auto& x : single) x += 4;
     }
 }
+} // namespace
 
 void WPParticleRawGener::GenGLData(const std::vector<Particle>& particles, SceneMesh& mesh,
                                    ParticleRawGenSpecOp& specOp) {
@@ -82,8 +88,9 @@ void WPParticleRawGener::GenGLData(const std::vector<Particle>& particles, Scene
         if (el.name == WE_IN_TEXCOORDVEC4C1) hasTexCoordVec4C1 = true;
     }
     std::array<float, 32 * 4> storage;
-    float*                    pStorage = storage.data();
-    auto                      oneSize  = sv.OneSize();
+
+    float* pStorage = storage.data();
+    auto   oneSize  = sv.OneSize();
     for (const auto& p : particles) {
         GenSingleGLData(p, oneSize, specOp, pStorage, hasTexCoordVec4C1);
         sv.SetVertexs((i++) * 4, 4, pStorage);
