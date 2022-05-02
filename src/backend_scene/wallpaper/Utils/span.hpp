@@ -40,26 +40,25 @@ public:
     /// This is inteded for subranges.
     constexpr Span(pointer ptr_, size_type num_) noexcept: ptr { ptr_ }, num { num_ } {}
 
-    constexpr const_pointer data() const noexcept { return ptr; }
-
-    constexpr pointer data() noexcept { return ptr; }
+    constexpr pointer data() const noexcept { return ptr; }
 
     constexpr size_type size() const noexcept { return num; }
 
     constexpr bool empty() const noexcept { return num == 0; }
 
     /// @pre: index < size()
-    constexpr const_reference operator[](std::size_t index) const noexcept { return ptr[index]; }
+    constexpr reference operator[](std::size_t index) const noexcept { return ptr[index]; }
 
-    constexpr const_pointer begin() const noexcept { return ptr; }
-    constexpr const_pointer end() const noexcept { return ptr + num; }
-    constexpr const_pointer cbegin() const noexcept { return ptr; }
-    constexpr const_pointer cend() const noexcept { return ptr + num; }
-
-    constexpr pointer begin() noexcept { return ptr; }
-    constexpr pointer end() noexcept { return ptr + num; }
-    constexpr pointer cbegin() noexcept { return ptr; }
-    constexpr pointer cend() noexcept { return ptr + num; }
+    constexpr pointer begin() const noexcept { return ptr; }
+    constexpr pointer end() const noexcept { return ptr + num; }
+    constexpr pointer cbegin() const noexcept { return ptr; }
+    constexpr pointer cend() const noexcept { return ptr + num; }
+    /*
+        constexpr pointer begin() noexcept { return ptr; }
+        constexpr pointer end() noexcept { return ptr + num; }
+        constexpr pointer cbegin() noexcept { return ptr; }
+        constexpr pointer cend() noexcept { return ptr + num; }
+    */
 
 private:
     pointer   ptr { nullptr };

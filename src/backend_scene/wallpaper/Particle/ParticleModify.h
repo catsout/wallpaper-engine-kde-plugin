@@ -115,16 +115,31 @@ inline void RotateByTime(Particle& p, double t) noexcept {
     Rotate(p, p.angularVelocity[0] * t, p.angularVelocity[1] * t, p.angularVelocity[2] * t);
 }
 
-void MutiplyAlpha(Particle&, float);
-void MutiplySize(Particle&, float);
-void MutiplyColor(Particle&, float r, float g, float b);
-void MutiplyVelocity(Particle&, float);
+inline void MutiplyAlpha(Particle& p, double a) { p.alpha *= a; }
+inline void MutiplySize(Particle& p, double s) { p.size *= s; }
+inline void MutiplyColor(Particle& p, float r, float g, float b) {
+    p.color[0] *= r;
+    p.color[1] *= g;
+    p.color[2] *= b;
+}
+inline void MutiplyVelocity(Particle& p, double m) {
+    p.velocity[0] *= m;
+    p.velocity[1] *= m;
+    p.velocity[2] *= m;
+}
+
+inline void ChangeSize(Particle& p, double s) { p.size += s; }
+inline void ChangeAlpha(Particle& p, double a) { p.alpha += a; }
 
 void MutiplyInitLifeTime(Particle&, float);
 void MutiplyInitAlpha(Particle&, float);
 void MutiplyInitSize(Particle&, float);
 void MutiplyInitColor(Particle&, float r, float g, float b);
 
-void Reset(Particle&);
+inline void Reset(Particle& p) {
+    p.alpha = p.alphaInit;
+    p.size  = p.sizeInit;
+    std::memcpy(p.color, p.colorInit, 3 * sizeof(float));
+}
 }; // namespace ParticleModify
 } // namespace wallpaper
