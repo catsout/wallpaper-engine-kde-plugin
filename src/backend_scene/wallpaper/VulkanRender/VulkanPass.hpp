@@ -23,14 +23,14 @@ public:
     virtual void execute(const Device&, RenderingResources&) = 0;
     virtual void destory(const Device&, RenderingResources&) = 0;
 
-    void addReleaseTexs(Span<std::string_view> texs) {
+    void addReleaseTexs(Span<const std::string_view> texs) {
         m_release_texs.clear();
         std::transform(texs.begin(), texs.end(), std::back_inserter(m_release_texs), [](auto& sv) {
             return std::string(sv);
         });
     }
     bool prepared() const { return m_prepared; }
-    Span<std::string> releaseTexs() const { return m_release_texs; }
+    Span<const std::string> releaseTexs() const { return m_release_texs; }
     void clearReleaseTexs() { m_release_texs.clear(); }
 protected:
     void setPrepared(bool v=true) { m_prepared = v; }

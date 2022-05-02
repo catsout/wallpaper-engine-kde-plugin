@@ -53,8 +53,8 @@ public:
 
     void Destroy();
 
-    static bool Create(Instance&, Span<Extension>, Span<InstanceLayer>);
-    bool ChoosePhysicalDevice(const CheckGpuOp& checkgpu, Span<std::uint8_t> uuid={});
+    static bool Create(Instance&, Span<const Extension>, Span<const InstanceLayer>);
+    bool ChoosePhysicalDevice(const CheckGpuOp& checkgpu, Span<const std::uint8_t> uuid={});
 
     const vk::Instance& inst() const;
     const vk::PhysicalDevice& gpu() const;

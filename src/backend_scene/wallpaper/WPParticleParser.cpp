@@ -21,12 +21,15 @@ typedef const std::vector<float>& cFloats;
 typedef std::vector<float>        Floats;
 typedef std::function<float()>    RandomFn;
 
-static double GetRandomIn(double min, double max, double random) {
+namespace
+{
+
+inline double GetRandomIn(double min, double max, double random) {
     return min + (max - min) * random;
 }
 
-void Color(Particle& p, double, RandomFn& rf, const std::array<float, 3> min,
-           const std::array<float, 3> max) {
+inline void Color(Particle& p, double, RandomFn& rf, const std::array<float, 3> min,
+                  const std::array<float, 3> max) {
     float                random = rf();
     std::array<float, 3> result;
     for (int32_t i = 0; i < 3; i++) {
@@ -35,14 +38,16 @@ void Color(Particle& p, double, RandomFn& rf, const std::array<float, 3> min,
     PM::InitColor(p, result[0], result[1], result[2]);
 }
 
-Vector3d GenRandomVec3(const RandomFn& rf, const std::array<float, 3>& min,
-                       const std::array<float, 3>& max) {
+inline Vector3d GenRandomVec3(const RandomFn& rf, const std::array<float, 3>& min,
+                              const std::array<float, 3>& max) {
     Vector3d result(3);
     for (int32_t i = 0; i < 3; i++) {
         result[i] = GetRandomIn(min[i], max[i], rf());
     }
     return result;
 }
+
+} // namespace
 
 struct SingleRandom {
     float       min { 0.0f };
@@ -271,6 +276,7 @@ struct FrequencyValue {
 
     struct StorageRandom {
         float frequency { 0.0f };
+        float scale { 1.0f };
         float phase { 0.0f };
     };
 
@@ -288,22 +294,33 @@ struct FrequencyValue {
         GET_JSON_NAME_VALUE_NOWARN(j, "mask", v.mask);
         return v;
     };
-    static void CheckAndResize(FrequencyValue& fv, uint32_t index) {
-        if (fv.storage.size() <= index) fv.storage.resize(2 * (index + 1));
+    inline void CheckAndResize(uint32_t index) {
+        if (storage.size() <= index) storage.resize(2 * (index + 1));
     }
-    static void GenFrequency(FrequencyValue& fv, Particle& p, uint32_t index, RandomFn& rf) {
-        if (! PM::LifetimeOk(p)) fv.storage.at(index).frequency = 0.0f;
-        if (fv.storage.at(index).frequency == 0.0f) {
-            fv.storage[index].frequency = GetRandomIn(fv.frequencymin, fv.frequencymax, rf());
-            fv.storage[index].phase     = GetRandomIn(fv.phasemin, fv.phasemax, rf());
+    inline void GenFrequency(Particle& p, uint32_t index, RandomFn& rf) {
+        CheckAndResize(index);
+        auto& st = storage.at(index);
+        if (! PM::LifetimeOk(p)) st.frequency = 0.0f;
+        if (st.frequency == 0.0f) {
+            st.frequency = GetRandomIn(frequencymin, frequencymax, rf());
+            st.scale     = GetRandomIn(scalemin, scalemax, rf());
+            st.phase     = GetRandomIn(phasemin, phasemax, rf());
         }
     }
-    static double GetScale(const FrequencyValue& fv, uint32_t index, double timePass,
-                           double slow = 4.0f) {
-        auto t     = 1.0f * slow / fv.storage.at(index).frequency;
+    inline double GetMove(uint32_t index, double time, double timePass) {
+        const auto& st = storage.at(index);
+        double      f  = st.frequency / (4.0f * M_PI);
+        double      w  = 2.0f * M_PI * f;
+        return -1.0f * st.scale * w * std::sin(w * time + st.phase) * timePass;
+        /*
+        auto f     = fv.storage.at(index).frequency / (4.0f * M_PI);
+        auto w     = 2.0f * M_PI * f;
         auto phase = fv.storage.at(index).phase;
-        auto value = std::sin(timePass * 2.0f * M_PI / t + phase) + 1.0f;
-        return algorism::lerp(value * 0.5f, fv.scalemin, fv.scalemax);
+        // auto value = std::sin(w * timePass + phase) + 1.0f;
+        auto scale = fv.scalemax;
+        return -1.0f * scale * w * w * std::cos(w * timePass + phase);
+        // return algorism::lerp(value * 0.5f, fv.scalemin, fv.scalemax);
+        */
     }
 };
 
@@ -392,33 +409,31 @@ WPParticleParser::genParticleOperatorOp(const nlohmann::json& wpj, RandomFn rf,
         } else if (name == "oscillatealpha") {
             FrequencyValue fv = FrequencyValue::ReadFromJson(wpj);
             return [fv, rf](Particle& p, uint32_t index, float life, double t) mutable {
-                FrequencyValue::CheckAndResize(fv, index);
-                FrequencyValue::GenFrequency(fv, p, index, rf);
-                PM::MutiplyAlpha(p, FrequencyValue::GetScale(fv, index, PM::LifetimePassed(p)));
+                fv.GenFrequency(p, index, rf);
+                // PM::MutiplyAlpha(p, FrequencyValue::GetScale(fv, index, PM::LifetimePassed(p)));
             };
         } else if (name == "oscillatesize") {
             FrequencyValue fv = FrequencyValue::ReadFromJson(wpj);
             return [fv, rf](Particle& p, uint32_t index, float life, double t) mutable {
-                FrequencyValue::CheckAndResize(fv, index);
-                FrequencyValue::GenFrequency(fv, p, index, rf);
-                PM::MutiplySize(p, FrequencyValue::GetScale(fv, index, PM::LifetimePassed(p)));
+                fv.GenFrequency(p, index, rf);
+                // PM::MutiplySize(p, FrequencyValue::GetScale(fv, index, PM::LifetimePassed(p)));
             };
         } else if (name == "oscillateposition") {
-            std::vector<Vector3f>       lastMove;
-            FrequencyValue              fvx = FrequencyValue::ReadFromJson(wpj);
-            std::vector<FrequencyValue> fxp = { fvx, fvx, fvx };
+            std::vector<Vector3f>         lastMove;
+            FrequencyValue                fvx = FrequencyValue::ReadFromJson(wpj);
+            std::array<FrequencyValue, 3> fxp = { fvx, fvx, fvx };
             return [=](Particle& p, uint32_t index, float life, double t) mutable {
-                Vector3f pos { Vector3f::Zero() };
+                Vector3d del { Vector3d::Zero() };
                 for (int32_t i = 0; i < 3; i++) {
                     if (fxp[0].mask[i] < 0.01) continue;
-                    FrequencyValue::CheckAndResize(fxp[i], index);
-                    FrequencyValue::GenFrequency(fxp[i], p, index, rf);
-                    pos[i] = FrequencyValue::GetScale(fxp[i], index, PM::LifetimePassed(p)) * 2.0f;
+                    fxp[i].GenFrequency(p, index, rf);
+                    del[i] = fxp[i].GetMove(index, PM::LifetimePassed(p), t);
                 }
-                if (lastMove.size() <= index) lastMove.resize(2 * (index + 1), Vector3f::Zero());
-                Vector3f& lastP = lastMove.at(index);
-                PM::Move(p, pos[0] - lastP[0], pos[1] - lastP[1], 0);
-                lastP = pos;
+                PM::Move(p, del);
+                // if (lastMove.size() <= index) lastMove.resize(2 * (index + 1), Vector3f::Zero());
+                // Vector3f& lastP = lastMove.at(index);
+                // PM::Move(p, pos[0] - lastP[0], pos[1] - lastP[1], 0);
+                // lastP = pos;
             };
         } else if (name == "turbulence") {
             Turbulence tur = Turbulence::ReadFromJson(wpj);

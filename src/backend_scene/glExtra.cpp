@@ -124,7 +124,7 @@ bool GlExtra::init(void* get_proc_address(const char*)) {
     return inited;
 }
 
-Span<std::uint8_t> GlExtra::uuid() const { return pImpl->uuid; }
+Span<const std::uint8_t> GlExtra::uuid() const { return pImpl->uuid; }
 
 TexTiling GlExtra::tiling() const { return m_tiling; }
 

@@ -155,7 +155,7 @@ void ParseWPShader(const std::string& src, WPShaderInfo* pWPShaderInfo,
                             if (value.is_string()) {
                                 std::vector<float> v;
                                 GET_JSON_VALUE(value, v);
-                                sv = Span<float>(v);
+                                sv = Span<const float>(v);
                             } else if (value.is_number()) {
                                 sv.setSize(1);
                                 GET_JSON_VALUE(value, sv[0]);

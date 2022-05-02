@@ -49,7 +49,7 @@ static void LoadBasicVkFunc() {
     VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
 }
 
-static vk::Result CreatInstance(vk::Instance* inst, Span<std::string_view> exts, Span<std::string_view> layers) {
+static vk::Result CreatInstance(vk::Instance* inst, Span<const std::string_view> exts, Span<const std::string_view> layers) {
     vk::ApplicationInfo app_info;
 	app_info
 		.setPApplicationName(WP_APPLICATION_NAME)
@@ -85,7 +85,7 @@ static vk::Result CreatInstance(vk::Instance* inst, Span<std::string_view> exts,
 	return res;
 }
 
-bool Instance::ChoosePhysicalDevice(const CheckGpuOp& checkgpu, Span<std::uint8_t> uuid) {
+bool Instance::ChoosePhysicalDevice(const CheckGpuOp& checkgpu, Span<const std::uint8_t> uuid) {
 	auto rv_deviceList = m_inst.enumeratePhysicalDevices();
 	VK_CHECK_RESULT_BOOL_RE(rv_deviceList.result);
 	auto& deviceList = rv_deviceList.value;
@@ -175,12 +175,12 @@ void Instance::Destroy() {
 	}
 }
 
-bool Instance::Create(Instance& inst, Span<Extension> instExts, Span<InstanceLayer> instLayers) {
+bool Instance::Create(Instance& inst, Span<const Extension> instExts, Span<const InstanceLayer> instLayers) {
 	LoadBasicVkFunc();	
 
 	enumateExts(inst.m_extensions);
 	Set<std::string> exts, layers;
-	std::array test_exts_array { Span<Extension>(base_inst_exts), instExts };	
+	std::array test_exts_array { Span<const Extension>(base_inst_exts), instExts };	
 	for(auto& test_exts:test_exts_array) {
 		for(auto& ext:test_exts) {
 			bool ok = inst.supportExt(ext.name);
@@ -193,7 +193,7 @@ bool Instance::Create(Instance& inst, Span<Extension> instExts, Span<InstanceLay
 	}
 
 	enumateLayers(inst.m_layers);
-	std::array test_layers_array { Span<InstanceLayer>(base_inst_layers), instLayers };	
+	std::array test_layers_array { Span<const InstanceLayer>(base_inst_layers), instLayers };	
 	for(auto& test_layers:test_layers_array) {
 		for(auto& layer:test_layers) {
 			bool ok = inst.supportLayer(layer.name);

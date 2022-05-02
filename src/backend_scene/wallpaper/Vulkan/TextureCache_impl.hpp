@@ -293,7 +293,7 @@ static vk::Result CreateImage(const Device& device, ImageParameters& image, vk::
     return result;
 }
 
-static vk::Result CopyImageData(Span<BufferParameters> in_bufs, Span<vk::Extent3D> in_exts,
+static vk::Result CopyImageData(Span<const BufferParameters> in_bufs, Span<const vk::Extent3D> in_exts,
                                 const vk::Queue& queue, vk::CommandBuffer& cmd,
                                 ImageParameters& image) {
     vk::Result result;

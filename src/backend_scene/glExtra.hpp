@@ -14,7 +14,7 @@ public:
     uint genExTexture(wallpaper::ExHandle&);
     void deleteTexture(uint);
 
-    Span<std::uint8_t>   uuid() const;
+    Span<const std::uint8_t>   uuid() const;
     wallpaper::TexTiling tiling() const;
 
 private:

@@ -38,15 +38,16 @@ void WPPuppet::prepared() {
     }
 }
 
-Span<Eigen::Affine3f> WPPuppet::genFrame(std::vector<AnimationLayer>& layers, double time) {
+Span<const Eigen::Affine3f> WPPuppet::genFrame(std::vector<AnimationLayer>& layers, double time) {
     m_layers_in.resize(layers.size());
     float blend = 1.0f;
     std::transform(
         layers.rbegin(), layers.rend(), m_layers_in.rbegin(), [&blend, time, this](auto& layer) {
             float cur_blend { 0.0f };
-            auto  it = std::find_if(
-                anims.begin(), anims.end(), [&layer](auto& a) { return layer.id == a.id; });
-            bool                         ok = it != anims.end() && layer.visible;
+            auto  it = std::find_if(anims.begin(), anims.end(), [&layer](auto& a) {
+                return layer.id == a.id;
+            });
+            bool  ok = it != anims.end() && layer.visible;
             Animation::InterpolationInfo info;
 
             if (ok) {

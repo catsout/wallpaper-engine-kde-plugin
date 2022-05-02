@@ -6,52 +6,53 @@
 
 namespace wallpaper
 {
-	class SceneIndexArray {
-		constexpr static size_t Unit_Byte_Size {sizeof(uint32_t)};
-	public:
-		SceneIndexArray(std::size_t indexCount);
-		SceneIndexArray(Span<uint32_t> data);
+class SceneIndexArray {
+    constexpr static size_t Unit_Byte_Size { sizeof(uint32_t) };
 
-		SceneIndexArray(SceneIndexArray&& other):m_pData(other.m_pData),
-												m_size(other.m_size),
-												m_capacity(other.m_capacity),
-												m_id(other.m_id) {
-			other.m_pData = nullptr;
-		}
-		SceneIndexArray(const SceneIndexArray&) = delete;
-		~SceneIndexArray() {
-			if(m_pData != nullptr)
-				delete[] m_pData;
-		}
+public:
+    SceneIndexArray(std::size_t indexCount);
+    SceneIndexArray(Span<const uint32_t> data);
 
-		void Assign(std::size_t index, Span<uint32_t> data)     { AssignSpan(index, data); }
-		void AssignHalf(std::size_t index, Span<uint16_t> data) { AssignSpan(index, data); }
+    SceneIndexArray(SceneIndexArray&& other)
+        : m_pData(other.m_pData),
+          m_size(other.m_size),
+          m_capacity(other.m_capacity),
+          m_id(other.m_id) {
+        other.m_pData = nullptr;
+    }
+    SceneIndexArray(const SceneIndexArray&) = delete;
+    ~SceneIndexArray() {
+        if (m_pData != nullptr) delete[] m_pData;
+    }
 
-		// Get
-		const uint32_t* Data() const { return m_pData; }
-		std::size_t DataCount() const { return m_size; }
-		std::size_t DataSizeOf() const { return m_size * Unit_Byte_Size; }
+    void Assign(std::size_t index, Span<const uint32_t> data) { AssignSpan(index, data); }
+    void AssignHalf(std::size_t index, Span<const uint16_t> data) { AssignSpan(index, data); }
 
-		std::size_t CapacityCount() const { return m_capacity; }
-		std::size_t CapacitySizeof() const { return m_capacity * Unit_Byte_Size; }
+    // Get
+    const uint32_t* Data() const { return m_pData; }
+    std::size_t     DataCount() const { return m_size; }
+    std::size_t     DataSizeOf() const { return m_size * Unit_Byte_Size; }
 
-		uint32_t ID() const { return m_id; }
-		void SetID(uint32_t id) { m_id = id; }
-	private:
-		bool IncreaseCheckSet(size_t size);
+    std::size_t CapacityCount() const { return m_capacity; }
+    std::size_t CapacitySizeof() const { return m_capacity * Unit_Byte_Size; }
 
-		template <typename T>
-		void AssignSpan(std::size_t index, Span<T> data) {
-			using in_value_type = T;
-			if(!IncreaseCheckSet((index + data.size()) * sizeof(in_value_type)))
-				return;
-			std::copy(data.begin(), data.end(), ((in_value_type*)m_pData) + index);
-		}
+    uint32_t ID() const { return m_id; }
+    void     SetID(uint32_t id) { m_id = id; }
 
-		uint32_t* m_pData;
-		std::size_t m_size;
-		std::size_t m_capacity;
+private:
+    bool IncreaseCheckSet(size_t size);
 
-		uint32_t m_id;
-	};
-}
+    template<typename T>
+    void AssignSpan(std::size_t index, Span<const T> data) {
+        using in_value_type = T;
+        if (! IncreaseCheckSet((index + data.size()) * sizeof(in_value_type))) return;
+        std::copy(data.begin(), data.end(), ((in_value_type*)m_pData) + index);
+    }
+
+    uint32_t*   m_pData;
+    std::size_t m_size;
+    std::size_t m_capacity;
+
+    uint32_t m_id;
+};
+} // namespace wallpaper

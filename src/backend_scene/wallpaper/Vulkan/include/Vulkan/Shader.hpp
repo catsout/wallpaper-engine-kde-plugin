@@ -68,7 +68,7 @@ struct ShaderCompOpt {
     bool reflect_all_block_var {false};
 };
 
-bool CompileAndLinkShaderUnits(Span<ShaderCompUnit> compUnits, const ShaderCompOpt& opt, std::vector<Uni_ShaderSpv>& spvs, ShaderReflected* reflectd);
+bool CompileAndLinkShaderUnits(Span<const ShaderCompUnit> compUnits, const ShaderCompOpt& opt, std::vector<Uni_ShaderSpv>& spvs, ShaderReflected* reflectd);
 
 }
 }

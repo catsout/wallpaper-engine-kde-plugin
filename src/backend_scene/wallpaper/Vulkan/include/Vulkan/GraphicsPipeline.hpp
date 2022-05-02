@@ -38,15 +38,15 @@ public:
     ShaderSpv* getShaderSpv(vk::ShaderStageFlagBits) const;
     const auto& pass() const { return m_pass; }
 
-    GraphicsPipeline& setColorBlendStates(Span<vk::PipelineColorBlendAttachmentState>);
+    GraphicsPipeline& setColorBlendStates(Span<const vk::PipelineColorBlendAttachmentState>);
     GraphicsPipeline& setLogicOp(bool enable, vk::LogicOp);
 
     // required after default
     GraphicsPipeline& setRenderPass(vk::RenderPass);
-    GraphicsPipeline& addDescriptorSetInfo(Span<DescriptorSetInfo>);
+    GraphicsPipeline& addDescriptorSetInfo(Span<const DescriptorSetInfo>);
     GraphicsPipeline& addStage(Uni_ShaderSpv&&);
-    GraphicsPipeline& addInputAttributeDescription(Span<vk::VertexInputAttributeDescription>);
-    GraphicsPipeline& addInputBindingDescription(Span<vk::VertexInputBindingDescription>);
+    GraphicsPipeline& addInputAttributeDescription(Span<const vk::VertexInputAttributeDescription>);
+    GraphicsPipeline& addInputBindingDescription(Span<const vk::VertexInputBindingDescription>);
     GraphicsPipeline& setTopology(vk::PrimitiveTopology);
 private:
     vk::RenderPass m_pass;

@@ -99,7 +99,7 @@ void WPShaderValueUpdater::UpdateUniforms(SceneNode* pNode, sprite_map_t& sprite
         }
         if (nodeData.puppet && info.has_BONES) {
             auto data = nodeData.puppet->genFrame(nodeData.puppet_layers, m_scene->frameTime);
-            updateOp(G_BONES, Span<float> { data[0].data(), data.size() * 16 });
+            updateOp(G_BONES, Span<const float> { data[0].data(), data.size() * 16 });
         }
     }
 

@@ -10,7 +10,12 @@ namespace wallpaper
 
 class WPPuppet {
 public:
-    enum class PlayMode { Loop, Mirror, Single };
+    enum class PlayMode
+    {
+        Loop,
+        Mirror,
+        Single
+    };
     struct Bone {
         Eigen::Affine3f transform { Eigen::Affine3f::Identity() };
         uint32_t        parent { 0xFFFFFFFFu };
@@ -67,8 +72,8 @@ public:
     std::vector<Bone>      bones;
     std::vector<Animation> anims;
 
-    Span<Eigen::Affine3f> genFrame(std::vector<AnimationLayer>&, double time);
-    void                  prepared();
+    Span<const Eigen::Affine3f> genFrame(std::vector<AnimationLayer>&, double time);
+    void                        prepared();
 
 private:
     struct AnimationLayer_in {

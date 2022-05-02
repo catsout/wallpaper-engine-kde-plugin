@@ -302,7 +302,7 @@ static bool GetReflectedInfo(glslang::TProgram& pro, ShaderReflected& ref, const
 	return true;
 };
 
-bool wallpaper::vulkan::CompileAndLinkShaderUnits(Span<ShaderCompUnit> compUnits, const ShaderCompOpt& opt, std::vector<Uni_ShaderSpv>& spvs, ShaderReflected* reflectd) {
+bool wallpaper::vulkan::CompileAndLinkShaderUnits(Span<const ShaderCompUnit> compUnits, const ShaderCompOpt& opt, std::vector<Uni_ShaderSpv>& spvs, ShaderReflected* reflectd) {
     glslang::TProgram program;
     EShMessages emsg;
     SetMessageOptions(opt, emsg);

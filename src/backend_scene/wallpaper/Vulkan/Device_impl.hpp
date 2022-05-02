@@ -16,8 +16,8 @@ void enumateDeviceExts(const vk::PhysicalDevice& gpu, wallpaper::Set<std::string
 }
 
 vk::Result CreateDevice(Instance& instance,
-	Span<vk::DeviceQueueCreateInfo> queueCreateInfos,
-	Span<std::string_view> deviceExts,
+	Span<const vk::DeviceQueueCreateInfo> queueCreateInfos,
+	Span<const std::string_view> deviceExts,
 	vk::Device* device) {
 	
 	std::vector<const char*> exts_names_c;
@@ -38,7 +38,7 @@ vk::Result CreateDevice(Instance& instance,
 }
 
 
-bool Device::CheckGPU(vk::PhysicalDevice gpu, Span<Extension> exts, vk::SurfaceKHR surface) {
+bool Device::CheckGPU(vk::PhysicalDevice gpu, Span<const Extension> exts, vk::SurfaceKHR surface) {
 	std::vector<vk::DeviceQueueCreateInfo> queues;
 	auto props = gpu.getQueueFamilyProperties();
 
@@ -116,7 +116,7 @@ std::vector<vk::DeviceQueueCreateInfo> Device::ChooseDeviceQueue(vk::SurfaceKHR 
 	return queues;
 }
 
-bool Device::Create(Instance& inst, Span<Extension> exts, vk::Extent2D extent, Device& device) {
+bool Device::Create(Instance& inst, Span<const Extension> exts, vk::Extent2D extent, Device& device) {
 	device.m_gpu = inst.gpu();
 	device.m_limits = inst.gpu().getProperties().limits;
 	device.set_out_extent(extent);

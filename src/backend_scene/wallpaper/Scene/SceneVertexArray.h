@@ -37,7 +37,7 @@ public:
     SceneVertexArray(const SceneVertexArray&) = delete;
 
     bool AddVertex(const float*);
-    bool SetVertex(std::string_view name, Span<float> data);
+    bool SetVertex(std::string_view name, Span<const float> data);
     bool SetVertexs(std::size_t index, std::size_t count, const float* data);
 
     const float* Data() const { return m_pData; }

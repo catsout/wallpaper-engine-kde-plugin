@@ -15,7 +15,7 @@ public:
     vk::Format format() const;
     vk::Extent2D extent() const;
     vk::PresentModeKHR presentMode() const;
-    Span<ImageParameters> images() const;
+    Span<const ImageParameters> images() const;
 private:
     vk::SwapchainKHR m_handle;
 	vk::SurfaceFormatKHR m_format;

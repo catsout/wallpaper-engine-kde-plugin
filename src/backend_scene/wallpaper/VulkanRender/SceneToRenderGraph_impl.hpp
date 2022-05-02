@@ -71,7 +71,7 @@ static void TraverseNode(const std::function<void(SceneNode*)>& func, SceneNode*
 }
 
 static void CheckAndSetSprite(Scene& scene, vulkan::CustomShaderPass::Desc& desc,
-                              Span<std::string> texs) {
+                              Span<const std::string> texs) {
     for (uint i = 0; i < texs.size(); i++) {
         auto& tex = texs[i];
         if (! tex.empty() && ! IsSpecTex(tex) && scene.textures.count(tex) != 0) {
