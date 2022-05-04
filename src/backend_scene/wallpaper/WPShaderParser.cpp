@@ -214,7 +214,10 @@ std::size_t FindIncludeInsertPos(const std::string& src, std::size_t startPos) {
         return p.find_first_of('\n', pos) + 1;
     };
 
-    std::size_t mainPos = src.find("void main(");
+    std::size_t mainPos  = src.find("void main(");
+    bool        two_main = src.find("void main(", mainPos + 2) != std::string::npos;
+    if (two_main) return 0;
+
     std::size_t pos;
     {
         const std::regex reAfters(R"(\n(attribute|varying|uniform|struct) )");

@@ -26,6 +26,7 @@ void ParticleSubSystem::Emitt() {
                         .time_pass = particleTime };
 
     for (auto& p : info.particles) {
+        ParticleModify::MarkOld(p);
         if (! ParticleModify::LifetimeOk(p)) {
             i++;
             continue;

@@ -91,3 +91,10 @@ SceneVertexArray::GetAttrOffsetMap() const {
     }
     return result;
 }
+
+bool SceneVertexArray::GetOption(std::string_view name) const {
+    return exists(m_options, name) && m_options.at(std::string(name));
+}
+void SceneVertexArray::SetOption(std::string_view name, bool value) {
+    m_options[std::string(name)] = value;
+}

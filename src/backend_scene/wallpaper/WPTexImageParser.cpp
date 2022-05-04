@@ -6,6 +6,8 @@
 #include "SpriteAnimation.hpp"
 #include "Algorism.h"
 #include "Fs/VFS.h"
+#include "Utils/BitFlags.hpp"
+
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
@@ -47,36 +49,20 @@ TextureFormat ToTexFormate(int type) {
         return TextureFormat::RGBA8;
     }
 }
-struct WPTexFlag {
-    static constexpr int                             Num { 6 };
-    static constexpr const std::array<uint32_t, Num> Masks { 1u,       1u << 1,  1u << 2,
-                                                             1u << 20, 1u << 21, 1u << 22 };
+
+enum class WPTexFlagEnum : uint32_t
+{
     // true for no bilinear
-    bool noInterpolation { false };
+    noInterpolation = 0,
     // true for no repeat
-    bool clampUVs { false };
-    bool sprite { false };
+    clampUVs = 1,
+    sprite   = 2,
 
-    bool compo1 { false };
-    bool compo2 { false };
-    bool compo3 { false };
+    compo1 = 20,
+    compo2 = 21,
+    compo3 = 22
 };
-
-WPTexFlag LoadFlags(uint32_t value) {
-    WPTexFlag                         flags;
-    std::array<bool*, WPTexFlag::Num> values({
-        &flags.noInterpolation,
-        &flags.clampUVs,
-        &flags.sprite,
-        &flags.compo1,
-        &flags.compo2,
-        &flags.compo3,
-    });
-    for (int i = 0; i < WPTexFlag::Num; i++) {
-        *values[i] = (value & WPTexFlag::Masks[i]) > 0u;
-    }
-    return flags;
-}
+using WPTexFlags = BitFlags<WPTexFlagEnum>;
 
 void LoadHeader(fs::IBinaryStream& file, ImageHeader& header) {
     int32_t unkown;
@@ -84,16 +70,16 @@ void LoadHeader(fs::IBinaryStream& file, ImageHeader& header) {
     header.extraHeader["texi"].val = ReadTexVesion(file);
 
     header.format = ToTexFormate(file.ReadInt32());
-    auto flags    = LoadFlags(file.ReadInt32());
+    WPTexFlags flags(file.ReadUint32());
     {
-        header.isSprite     = flags.sprite;
+        header.isSprite     = flags[WPTexFlagEnum::sprite];
         header.sample.wrapS = header.sample.wrapT =
-            flags.clampUVs ? TextureWrap::CLAMP_TO_EDGE : TextureWrap::REPEAT;
+            flags[WPTexFlagEnum::clampUVs] ? TextureWrap::CLAMP_TO_EDGE : TextureWrap::REPEAT;
         header.sample.minFilter = header.sample.magFilter =
-            flags.noInterpolation ? TextureFilter::NEAREST : TextureFilter::LINEAR;
-        header.extraHeader["compo1"].val = flags.compo1;
-        header.extraHeader["compo2"].val = flags.compo2;
-        header.extraHeader["compo3"].val = flags.compo3;
+            flags[WPTexFlagEnum::noInterpolation] ? TextureFilter::NEAREST : TextureFilter::LINEAR;
+        header.extraHeader["compo1"].val = flags[WPTexFlagEnum::compo1];
+        header.extraHeader["compo2"].val = flags[WPTexFlagEnum::compo2];
+        header.extraHeader["compo3"].val = flags[WPTexFlagEnum::compo3];
     }
 
     /*

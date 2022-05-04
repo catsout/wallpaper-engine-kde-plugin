@@ -7,9 +7,9 @@
 namespace wallpaper
 {
 
-#define BASE_GLTEX_NAMES(ext) \
+#define BASE_GLTEX_NAMES(ext)                                                                      \
     "g_Texture0" #ext, "g_Texture1" #ext, "g_Texture2" #ext, "g_Texture3" #ext, "g_Texture4" #ext, \
-        "g_Texture5" #ext, "g_Texture6" #ext, "g_Texture7" #ext, "g_Texture8" #ext, \
+        "g_Texture5" #ext, "g_Texture6" #ext, "g_Texture7" #ext, "g_Texture8" #ext,                \
         "g_Texture9" #ext, "g_Texture10" #ext, "g_Texture11" #ext, "g_Texture12" #ext
 
 constexpr std::array WE_GLTEX_NAMES { BASE_GLTEX_NAMES() };
@@ -36,10 +36,19 @@ constexpr std::string_view WE_IN_BLENDINDICES { "a_BlendIndices" };
 constexpr std::string_view WE_IN_BLENDWEIGHTS { "a_BlendWeights" };
 
 // particle
+
+constexpr std::string_view WE_IN_POSITIONVEC4 { "a_PositionVec4" };
 constexpr std::string_view WE_IN_COLOR { "a_Color" };
 constexpr std::string_view WE_IN_TEXCOORDVEC4 { "a_TexCoordVec4" };
 constexpr std::string_view WE_IN_TEXCOORDVEC4C1 { "a_TexCoordVec4C1" };
+constexpr std::string_view WE_IN_TEXCOORDVEC4C2 { "a_TexCoordVec4C2" };
+constexpr std::string_view WE_IN_TEXCOORDVEC4C3 { "a_TexCoordVec4C3" };
+constexpr std::string_view WE_IN_TEXCOORDVEC3C2 { "a_TexCoordVec3C2" };
 constexpr std::string_view WE_IN_TEXCOORDC2 { "a_TexCoordC2" };
+constexpr std::string_view WE_IN_TEXCOORDC3 { "a_TexCoordC3" };
+constexpr std::string_view WE_IN_TEXCOORDC4 { "a_TexCoordC4" };
+constexpr std::string_view WE_CB_THICK_FORMAT { "THICKFORMAT" };
+constexpr std::string_view WE_PRENDER_ROPE { "PRENDER_ROPE" };
 
 constexpr std::string_view G_M { "g_ModelMatrix" };
 constexpr std::string_view G_VP { "g_ViewProjectionMatrix" };

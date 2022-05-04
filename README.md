@@ -141,7 +141,6 @@ make
 	- [ ] Visualization
 - [x] Particle System
 	- [x] Renderers
-		- [ ] Rope
 	- [x] Emitters
 		- [ ] Duration 
 	- [x] Initializers

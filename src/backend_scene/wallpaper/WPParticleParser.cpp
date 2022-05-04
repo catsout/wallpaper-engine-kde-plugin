@@ -138,13 +138,15 @@ ParticleInitOp WPParticleParser::genParticleInitOp(const nlohmann::json& wpj, Ra
                 PM::InitSize(p, GetRandomIn(r.min, r.max, rf()));
             };
         } else if (name == "alpharandom") {
-            SingleRandom r = { 1.0f, 1.0f };
+            SingleRandom r = { 0.05f, 1.0f };
             SingleRandom::ReadFromJson(wpj, r);
             return [=](Particle& p, double) {
                 PM::InitAlpha(p, GetRandomIn(r.min, r.max, rf()));
             };
         } else if (name == "velocityrandom") {
             VecRandom r;
+            r.min[0] = r.min[1] = -32.0f;
+            r.max[0] = r.max[1] = 32.0f;
             VecRandom::ReadFromJson(wpj, r);
             return [=](Particle& p, double) {
                 auto result = GenRandomVec3(rf, r.min, r.max);
@@ -152,6 +154,7 @@ ParticleInitOp WPParticleParser::genParticleInitOp(const nlohmann::json& wpj, Ra
             };
         } else if (name == "rotationrandom") {
             VecRandom r;
+            r.max[2] = 2 * M_PI;
             VecRandom::ReadFromJson(wpj, r);
             return [=](Particle& p, double) {
                 auto result = GenRandomVec3(rf, r.min, r.max);
@@ -159,6 +162,8 @@ ParticleInitOp WPParticleParser::genParticleInitOp(const nlohmann::json& wpj, Ra
             };
         } else if (name == "angularvelocityrandom") {
             VecRandom r;
+            r.min[2] = -5.0f;
+            r.max[2] = 5.0f;
             VecRandom::ReadFromJson(wpj, r);
             return [=](Particle& p, double) {
                 auto result = GenRandomVec3(rf, r.min, r.max);
@@ -422,7 +427,7 @@ WPParticleParser::genParticleOperatorOp(const nlohmann::json& wpj, RandomFn rf,
                 for (auto& p : info.particles) {
                     auto     life = PM::LifetimePos(p);
                     Vector3f result;
-                    for (int32_t i = 0; i < 3; i++)
+                    for (uint i = 0; i < 3; i++)
                         result[i] = FadeValueChange(
                             life, vc.starttime, vc.endtime, vc.startvalue[i], vc.endvalue[i]);
                     PM::MutiplyColor(p, result[0], result[1], result[2]);
@@ -488,25 +493,30 @@ WPParticleParser::genParticleOperatorOp(const nlohmann::json& wpj, RandomFn rf,
     };
 }
 
-ParticleEmittOp WPParticleParser::genParticleEmittOp(const wpscene::Emitter& wpe, RandomFn rf) {
+ParticleEmittOp WPParticleParser::genParticleEmittOp(const wpscene::Emitter& wpe, RandomFn rf,
+                                                     bool sort) {
     if (wpe.name == "boxrandom") {
         ParticleBoxEmitterArgs box;
-        box.emitSpeed   = wpe.rate;
-        box.minDistance = wpe.distancemin;
-        box.maxDistance = wpe.distancemax;
-        box.directions  = wpe.directions;
-        box.orgin       = wpe.origin;
-        box.randomFn    = rf;
+        box.emitSpeed     = wpe.rate;
+        box.minDistance   = wpe.distancemin;
+        box.maxDistance   = wpe.distancemax;
+        box.directions    = wpe.directions;
+        box.orgin         = wpe.origin;
+        box.randomFn      = rf;
+        box.one_per_frame = wpe.flags[wpscene::Emitter::FlagEnum::one_per_frame];
+        box.sort          = sort;
         return ParticleBoxEmitterArgs::MakeEmittOp(box);
     } else if (wpe.name == "sphererandom") {
         ParticleSphereEmitterArgs sphere;
-        sphere.emitSpeed   = wpe.rate;
-        sphere.minDistance = wpe.distancemin[0];
-        sphere.maxDistance = wpe.distancemax[0];
-        sphere.directions  = wpe.directions;
-        sphere.orgin       = wpe.origin;
-        sphere.sign        = wpe.sign;
-        sphere.randomFn    = rf;
+        sphere.emitSpeed     = wpe.rate;
+        sphere.minDistance   = wpe.distancemin[0];
+        sphere.maxDistance   = wpe.distancemax[0];
+        sphere.directions    = wpe.directions;
+        sphere.orgin         = wpe.origin;
+        sphere.sign          = wpe.sign;
+        sphere.randomFn      = rf;
+        sphere.one_per_frame = wpe.flags[wpscene::Emitter::FlagEnum::one_per_frame];
+        sphere.sort          = sort;
         return ParticleSphereEmitterArgs::MakeEmittOp(sphere);
     } else
         return [](std::vector<Particle>&, std::vector<ParticleInitOp>&, uint32_t, float) {

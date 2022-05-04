@@ -287,7 +287,7 @@ void CustomShaderPass::prepare(Scene& scene, const Device& device, RenderingReso
                     }
                     if (mesh.IndexCount() > 0) {
                         auto&  indice = mesh.GetIndexArray(0);
-                        size_t count  = (indice.DataCount() * 2) / 3;
+                        size_t count  = (indice.RenderDataCount() * 2) / 3;
                         draw_count    = count * 3;
                         auto& buf     = index_buf;
                         if (! dyn_buf->writeToBuf(buf,

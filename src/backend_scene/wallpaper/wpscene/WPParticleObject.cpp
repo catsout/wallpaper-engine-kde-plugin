@@ -2,13 +2,19 @@
 
 #include "Utils/Logging.h"
 #include "Fs/VFS.h"
+#include "Utils/StringHelper.hpp"
 
 using namespace wallpaper::wpscene;
 
 bool ParticleRender::FromJson(const nlohmann::json& json) {
     GET_JSON_NAME_VALUE(json, "name", name);
+    // ropetrail require subdivition, replaced
     if (name == "ropetrail") name = "spritetrail";
-    if (name == "spritetrail") {
+
+    if (sstart_with(name, "rope")) {
+        GET_JSON_NAME_VALUE_NOWARN(json, "subdivision", subdivision);
+    }
+    if (name == "spritetrail" || name == "ropetrail") {
         GET_JSON_NAME_VALUE_NOWARN(json, "length", length);
         GET_JSON_NAME_VALUE_NOWARN(json, "maxlength", maxlength);
     }
@@ -25,6 +31,11 @@ bool Emitter::FromJson(const nlohmann::json& json) {
     GET_JSON_NAME_VALUE_NOWARN(json, "origin", origin);
     GET_JSON_NAME_VALUE_NOWARN(json, "sign", sign);
     GET_JSON_NAME_VALUE_NOWARN(json, "audioprocessingmode", audioprocessingmode);
+
+    uint32_t _raw_flag { 0 };
+    GET_JSON_NAME_VALUE_NOWARN(json, "flag", _raw_flag);
+    flags = EFlags(_raw_flag);
+
     std::transform(sign.begin(), sign.end(), sign.begin(), [](int32_t v) {
         if (v != 0)
             return v / std::abs(v);
@@ -84,13 +95,10 @@ bool Particle::FromJson(const nlohmann::json& json) {
     GET_JSON_NAME_VALUE(json, "maxcount", maxcount);
     GET_JSON_NAME_VALUE(json, "starttime", starttime);
 
-    int32_t rawflags { 0 };
+    uint32_t rawflags { 0 };
     GET_JSON_NAME_VALUE_NOWARN(json, "flags", rawflags);
-    if (rawflags > 0) {
-        flags.wordspace             = rawflags & 1;
-        flags.spritenoframeblending = rawflags & 2;
-        flags.perspective           = rawflags & 4;
-    }
+    flags = EFlags(rawflags);
+
     return true;
 }
 

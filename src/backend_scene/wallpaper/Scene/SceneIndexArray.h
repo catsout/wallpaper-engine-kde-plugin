@@ -17,6 +17,7 @@ public:
         : m_pData(other.m_pData),
           m_size(other.m_size),
           m_capacity(other.m_capacity),
+          m_render_size(other.m_render_size),
           m_id(other.m_id) {
         other.m_pData = nullptr;
     }
@@ -32,6 +33,11 @@ public:
     const uint32_t* Data() const { return m_pData; }
     std::size_t     DataCount() const { return m_size; }
     std::size_t     DataSizeOf() const { return m_size * Unit_Byte_Size; }
+
+    std::size_t RenderDataCount() const {
+        return m_render_size == 0 || m_render_size > m_size ? m_size : m_render_size;
+    }
+    void SetRenderDataCount(std::size_t val) { m_render_size = val; }
 
     std::size_t CapacityCount() const { return m_capacity; }
     std::size_t CapacitySizeof() const { return m_capacity * Unit_Byte_Size; }
@@ -52,6 +58,8 @@ private:
     uint32_t*   m_pData;
     std::size_t m_size;
     std::size_t m_capacity;
+
+    std::size_t m_render_size;
 
     uint32_t m_id;
 };

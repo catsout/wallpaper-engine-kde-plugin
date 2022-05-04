@@ -141,5 +141,8 @@ inline void Reset(Particle& p) {
     p.size  = p.sizeInit;
     std::memcpy(p.color, p.colorInit, 3 * sizeof(float));
 }
+inline void MarkOld(Particle& p) { p.mark_new = false; }
+
+inline bool IsNew(const Particle& p) { return p.mark_new; }
 }; // namespace ParticleModify
 } // namespace wallpaper

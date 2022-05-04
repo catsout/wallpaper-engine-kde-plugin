@@ -3,6 +3,7 @@
 #include "WPMaterial.h"
 #include <vector>
 #include <array>
+#include "Utils/BitFlags.hpp"
 
 namespace wallpaper
 {
@@ -19,6 +20,7 @@ public:
     std::string name;
     float       length { 0.05f };
     float       maxlength { 10.0f };
+    float       subdivision { 3.0f };
 };
 
 class Initializer {
@@ -31,6 +33,13 @@ public:
 
 class Emitter {
 public:
+    enum class FlagEnum : uint32_t
+    {
+        one_per_frame = 1,
+    };
+    using EFlags = BitFlags<FlagEnum>;
+
+public:
     bool                   FromJson(const nlohmann::json&);
     std::array<float, 3>   directions { 1.0f, 1.0f, 0 };
     std::array<float, 3>   distancemax { 256.0f, 256.0f, 256.0f };
@@ -39,17 +48,21 @@ public:
     std::array<int32_t, 3> sign { 0, 0, 0 };
     uint32_t               audioprocessingmode { 0 };
     int32_t                id;
+    EFlags                 flags;
     std::string            name;
     float                  rate { 5.0f };
 };
 
-struct ParticleFlag {
-    bool wordspace { false };             // 1
-    bool spritenoframeblending { false }; // 2
-    bool perspective { false };           // 4
-};
-
 class Particle {
+public:
+    enum class FlagEnum
+    {
+        wordspace             = 0, // 1
+        spritenoframeblending = 1, // 2
+        perspective           = 2, // 4
+    };
+    using EFlags = BitFlags<FlagEnum>;
+
 public:
     bool                        FromJson(const nlohmann::json&);
     std::vector<Emitter>        emitters;
@@ -60,7 +73,7 @@ public:
     float                       sequencemultiplier;
     uint32_t                    maxcount;
     uint32_t                    starttime;
-    ParticleFlag                flags;
+    EFlags                      flags;
 };
 
 class ParticleInstanceoverride {
@@ -99,8 +112,7 @@ public:
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Initializer, name, max, min);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Emitter, name, distancemax, distancemin, rate, directions);
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ParticleFlag, wordspace, perspective);
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Particle, flags, initializers, operators, emitters);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Particle, initializers, operators, emitters);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(WPParticleObject, name, origin, angles, scale, visible, particle,
                                    particleObj);
 } // namespace wpscene
