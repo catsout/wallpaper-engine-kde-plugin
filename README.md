@@ -85,6 +85,7 @@ sudo make install
 2. Subscribe to some wallpapers on the Workshop
 3. Select the *steamlibrary* folder on the Wallpapers tab of this plugin
 	- The *steamlibrary* which contains the *steamapps* folder
+		- This is usually `~/.local/share/Steam` by default
 	- *Wallpaper Engine* needs to be installed in this *steamlibrary*
 
 ### Restart KDE
