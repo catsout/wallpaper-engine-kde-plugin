@@ -196,8 +196,8 @@ Item {
         }
         const basefilters = {
             IsWindow: true,
-            SkipTaskbar: false,
-            SkipPager: false
+//            SkipTaskbar: false,
+//            SkipPager: false
         };
         const taskFilter = genTaskModelFilter(tasksModel);
         const baseWModel = taskFilter.filterCallback((getproperty) => {

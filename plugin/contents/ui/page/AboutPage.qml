@@ -40,7 +40,11 @@ Flickable {
                         <li>Subscribe to some wallpapers on the Workshop</li>
                         <li>Select the <i>steamlibrary</i> folder on the Wallpapers tab of this plugin
                             <ul>
-                                <li>The <i>steamlibrary</i> which contains the <i>steamapps</i> folder</li>
+                                <li>The <i>steamlibrary</i> which contains the <i>steamapps</i> folder
+                                    <ul>
+                                        <li>This is usually <i>~/.local/share/Steam</i> by default</li>
+                                    </ul>
+                                </li>
                                 <li><i>Wallpaper Engine</i> needs to be installed in this <i>steamlibrary</i></li>
                             </ul>
                         </li>
