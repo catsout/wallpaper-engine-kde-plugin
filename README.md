@@ -129,6 +129,7 @@ make
 - [x] Effect
 	- [x] Mouse position
 	- [x] Parallax
+    - [x] Depth Parallax
 	- [x] ColorBlendMode
 	- [x] PBR light
 	- [ ] Global bloom

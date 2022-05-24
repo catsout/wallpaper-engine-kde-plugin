@@ -41,14 +41,15 @@ void WPShaderValueUpdater::InitUniforms(SceneNode* pNode, const ExistsUniformOp&
     info.has_MVPI               = existsOp(G_MVPI);
     info.has_VP                 = existsOp(G_VP);
 
-    info.has_BONES           = existsOp(G_BONES);
-    info.has_TIME            = existsOp(G_TIME);
-    info.has_DAYTIME         = existsOp(G_DAYTIME);
-    info.has_POINTERPOSITION = existsOp(G_POINTERPOSITION);
-    info.has_TEXELSIZE       = existsOp(G_TEXELSIZE);
-    info.has_TEXELSIZEHALF   = existsOp(G_TEXELSIZEHALF);
-    info.has_SCREEN          = existsOp(G_SCREEN);
-    info.has_LP              = existsOp(G_LP);
+    info.has_BONES            = existsOp(G_BONES);
+    info.has_TIME             = existsOp(G_TIME);
+    info.has_DAYTIME          = existsOp(G_DAYTIME);
+    info.has_POINTERPOSITION  = existsOp(G_POINTERPOSITION);
+	info.has_PARALLAXPOSITION = existsOp(G_PARALLAXPOSITION);
+    info.has_TEXELSIZE        = existsOp(G_TEXELSIZE);
+    info.has_TEXELSIZEHALF    = existsOp(G_TEXELSIZEHALF);
+    info.has_SCREEN           = existsOp(G_SCREEN);
+    info.has_LP               = existsOp(G_LP);
 
     std::accumulate(begin(info.texs), end(info.texs), 0, [&existsOp](uint index, auto& value) {
         value.has_resolution = existsOp(WE_GLTEX_RESOLUTION_NAMES[index]);
@@ -164,6 +165,9 @@ void WPShaderValueUpdater::UpdateUniforms(SceneNode* pNode, sprite_map_t& sprite
         updateOp(G_SCREEN,
                  std::array<float, 3> {
                      m_screen_size[0], m_screen_size[1], m_screen_size[0] / m_screen_size[1] });
+
+	if (info.has_PARALLAXPOSITION)
+        updateOp(G_PARALLAXPOSITION, std::array {m_mousePos[0] * m_parallax.mouseinfluence, (1.0f - m_mousePos[1]) * m_parallax.mouseinfluence});
 
     for (auto& [i, sp] : sprites) {
         const auto& f      = sp.GetAnimateFrame(m_scene->frameTime);

@@ -28,6 +28,7 @@ struct WPUniformInfo {
     bool has_TIME { false };
     bool has_DAYTIME { false };
     bool has_POINTERPOSITION { false };
+    bool has_PARALLAXPOSITION { false };
     bool has_TEXELSIZE { false };
     bool has_TEXELSIZEHALF { false };
     bool has_SCREEN { false };
