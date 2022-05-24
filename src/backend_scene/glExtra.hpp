@@ -23,5 +23,5 @@ private:
 
     bool inited { false };
 
-    wallpaper::TexTiling m_tiling { wallpaper::TexTiling::OPTIMAL };
+    wallpaper::TexTiling m_tiling { wallpaper::TexTiling::LINEAR };
 };

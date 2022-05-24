@@ -59,25 +59,29 @@ bool GlExtra::init(void* get_proc_address(const char*)) {
     do {
         if (inited) break;
         if (! gladLoadGLLoader((GLADloadproc)get_proc_address)) {
-            LOG_ERROR("Failed to initialize GLAD");
+            LOG_ERROR("gl: Failed to initialize GLAD");
             break;
         }
         LOG_INFO("gl: OpenGL version %d.%d loaded", GLVersion.major, GLVersion.minor);
         if (! (GLAD_GL_EXT_memory_object && GLAD_GL_EXT_semaphore)) {
-            LOG_ERROR("EXT_memory_object not available");
+            LOG_ERROR("gl: EXT_memory_object not available");
             break;
+        }
+        bool is_low_gl = !GLAD_GL_VERSION_4_2 && !GLAD_GL_ES_VERSION_3_0;
+        if (is_low_gl) {
+            LOG_INFO("gl: Low opengl version, may not work properly");
         }
         pImpl->uuid = getUUID();
 
         std::string gl_verdor_name { (const char*)glGetString(GL_VENDOR) };
         LOG_INFO("gl: OpenGL vendor string: %s", gl_verdor_name.c_str());
 
-        {
+        if (!is_low_gl) {
             int              num { 0 };
             std::vector<int> tex_tilings;
             glGetInternalformativ(GL_TEXTURE_2D, GL_RGBA8, GL_NUM_TILING_TYPES_EXT, 1, &num);
             if (num <= 0) {
-                LOG_ERROR("can't get texture tiling support info");
+                LOG_ERROR("gl: can't get texture tiling support info");
                 break;
             }
             num = std::min(num, 2);
@@ -99,7 +103,7 @@ bool GlExtra::init(void* get_proc_address(const char*)) {
                 }
             }
             if (! support_optimal && ! support_linear) {
-                LOG_ERROR("no supported tiling mode");
+                LOG_ERROR("gl: no supported tiling mode");
                 break;
             }
 
@@ -115,11 +119,11 @@ bool GlExtra::init(void* get_proc_address(const char*)) {
                 m_tiling = wallpaper::TexTiling::LINEAR;
             }
 
-            if (m_tiling == wallpaper::TexTiling::OPTIMAL) {
-                LOG_INFO("gl: external tex using optimal tiling");
-            } else {
-                LOG_INFO("gl: external tex using linear tiling");
-            }
+        }
+        if (m_tiling == wallpaper::TexTiling::OPTIMAL) {
+            LOG_INFO("gl: external tex using optimal tiling");
+        } else {
+            LOG_INFO("gl: external tex using linear tiling");
         }
 
         inited = true;
