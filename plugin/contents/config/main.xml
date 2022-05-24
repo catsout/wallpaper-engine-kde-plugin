@@ -30,6 +30,10 @@
       <label>Video Pause mode</label>
       <default>0</default>
     </entry>
+    <entry name="PauseFilterByScreen" type="Bool">
+      <label>Filter By Screen</label>
+      <default>true</default>
+    </entry>
     <entry name="SortMode" type="Int">
       <label>Sort mode</label>
       <default>0</default>

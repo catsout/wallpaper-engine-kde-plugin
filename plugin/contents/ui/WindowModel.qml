@@ -65,14 +65,14 @@ Item {
     property string activity
     property var screenGeometry
 
-    property int modePlay: wallpaper.configuration.PauseMode
-    property int resumeTime: wallpaper.configuration.ResumeTime
+    property alias filterByScreen: tasksModel.filterByScreen
+    property alias resumeTime: playTimer.interval
+    property int modePlay
 
     Timer{
         id: playTimer
         running: false
         repeat: false
-        interval: resumeTime
         onTriggered: {
             playVideoWallpaper = true;
         }
@@ -114,7 +114,9 @@ Item {
         filterByVirtualDesktop: true
 
         screenGeometry: wModel.screenGeometry
-        filterByScreen: true
+
+        // in alias
+        // filterByScreen: true
 
         // demandingAttentionSkipsFilters not available here, which may cause, 
         // skip activity filter, so filter activties manually
@@ -224,6 +226,9 @@ Item {
 
 
         switch (modePlay) {
+        case Common.PauseMode.FocusOrMax:
+            playBy(maxWModel.length === 0 && activeModel.length === 0);
+            break;
         case Common.PauseMode.Any:
             playBy(notMinWModel.length === 0);
             break;

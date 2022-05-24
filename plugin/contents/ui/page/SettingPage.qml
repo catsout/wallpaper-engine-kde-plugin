@@ -19,6 +19,7 @@ Flickable {
     property alias cfg_ResumeTime: resumeSpin.value
     property alias cfg_SwitchTimer: randomSpin.value
     property alias cfg_RandomizeWallpaper: ckbox_randomizeWallpaper.checked
+    property alias cfg_PauseFilterByScreen: ckbox_pauseFilterByScreen.checked
 
     property int comboBoxWidth: themeWidth * 24
 
@@ -52,12 +53,16 @@ Flickable {
                     id: pauseMode
                     model: [
                         {
-                            text: "Maximized Window",
-                            value: Common.PauseMode.Max
+                            text: "Focus or Maximized Window",
+                            value: Common.PauseMode.FocusOrMax
                         },
                         {
                             text: "Focus Window",
                             value: Common.PauseMode.Focus
+                        },
+                        {
+                            text: "Maximized Window",
+                            value: Common.PauseMode.Max
                         },
                         {
                             text: "Any Window",
@@ -79,8 +84,14 @@ Flickable {
                         text: "Automatically pauses playback if any/focus/maximized window detected"
                         wrapMode: Text.Wrap
                     }
+               }
+            }
+            OptionItem {
+                text: 'Only check window on current screen'
+                text_color: Theme.textColor
+                actor: Switch {
+                    id: ckbox_pauseFilterByScreen
                 }
- 
             }
             OptionItem {
                 text: 'Display'

@@ -7,6 +7,8 @@ using namespace wallpaper;
 
 #define CHECK_GL_ERROR_IF_DEBUG() CheckGlError(__SHORT_FILE__, __FUNCTION__, __LINE__);
 
+namespace
+{
 inline char const* const GLErrorToStr(GLenum const err) noexcept {
 #define Enum_GLError(glerr) \
     case glerr: return #glerr;
@@ -30,6 +32,7 @@ inline void CheckGlError(const char* file, const char* func, int line) {
     if (err != 0) {
         WallpaperLog(LOGLEVEL_ERROR, file, line, "%s(%d) at %s", GLErrorToStr(err), err, func);
     }
+}
 }
 
 class GlExtra::impl {

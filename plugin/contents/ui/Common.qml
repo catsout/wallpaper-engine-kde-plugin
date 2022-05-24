@@ -8,7 +8,8 @@ QtObject {
         Never,
         Any,
         Max,
-        Focus
+        Focus,
+        FocusOrMax
     }
     enum DisplayMode {
         Aspect,
