@@ -23,8 +23,10 @@ void WPShaderValueUpdater::FrameBegin() {
             (((cTime->tm_hour * 60) + cTime->tm_min) * 60 + cTime->tm_sec) / (24.0f * 60.0f
        * 60.0f);
     */
-    double t = (m_mouseDelayedTime + m_scene->frameTime) / m_parallax.delay;
-    m_mouseDelayedTime += m_scene->frameTime;
+    double new_time = m_mouseDelayedTime + m_scene->frameTime;
+	new_time = new_time > m_parallax.delay ? m_parallax.delay : new_time;
+	m_mouseDelayedTime = new_time;
+    double t = new_time / m_parallax.delay;
     m_mousePos = std::array { (float)algorism::lerp(t, m_mousePos[0], m_mousePosInput[0]),
                               (float)algorism::lerp(t, m_mousePos[1], m_mousePosInput[1]) };
 }
@@ -33,10 +35,6 @@ void WPShaderValueUpdater::FrameEnd() {}
 
 void WPShaderValueUpdater::MouseInput(double x, double y) {
     using namespace std::chrono;
-
-    // drop 1/3 mouse input
-    m_mouseInputCount = (m_mouseInputCount + 1) % 3;
-    if (m_mouseInputCount != 0) return;
 
     auto   now_time = steady_clock::now();
     double new_time = m_mouseDelayedTime -
