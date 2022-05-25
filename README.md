@@ -10,7 +10,6 @@ A wallpaper plugin integrating [wallpaper engine](https://store.steampowered.com
 - Support **scene(2d)**,**video**,**web** wallpaper types
 - Requires *Wallpaper Engine* installed on steam
 - Requires Python 3.3+
-- Requires CMake 3.16+
 - Requires Qt 5.13+ for playing video(no mpv), or mpv instead  
 - Requires Vulkan 1.1+, Opengl [External Memory Object](https://www.khronos.org/registry/OpenGL/extensions/EXT/EXT_external_objects.txt) extension
 - Requires [vulkan driver](https://wiki.archlinux.org/title/Vulkan#Installation) installed  
@@ -127,7 +126,7 @@ make
 	- [x] Composition / Fullscreen
 	- [ ] Text
 - [x] Effect
-	- [x] Mouse position
+	- [x] Mouse position with delay
 	- [x] Parallax
     - [x] Depth Parallax
 	- [x] ColorBlendMode

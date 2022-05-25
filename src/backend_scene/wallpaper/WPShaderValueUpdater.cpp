@@ -3,6 +3,7 @@
 #include "SpriteAnimation.hpp"
 #include "SpecTexs.hpp"
 #include "Utils/ArrayHelper.hpp"
+#include "Utils/Algorism.h"
 
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
@@ -22,13 +23,30 @@ void WPShaderValueUpdater::FrameBegin() {
             (((cTime->tm_hour * 60) + cTime->tm_min) * 60 + cTime->tm_sec) / (24.0f * 60.0f
        * 60.0f);
     */
+    double t = (m_mouseDelayedTime + m_scene->frameTime) / m_parallax.delay;
+    m_mouseDelayedTime += m_scene->frameTime;
+    m_mousePos = std::array { (float)algorism::lerp(t, m_mousePos[0], m_mousePosInput[0]),
+                              (float)algorism::lerp(t, m_mousePos[1], m_mousePosInput[1]) };
 }
 
 void WPShaderValueUpdater::FrameEnd() {}
 
 void WPShaderValueUpdater::MouseInput(double x, double y) {
-    m_mousePos[0] = x;
-    m_mousePos[1] = y;
+    using namespace std::chrono;
+
+    // drop 1/3 mouse input
+    m_mouseInputCount = (m_mouseInputCount + 1) % 3;
+    if (m_mouseInputCount != 0) return;
+
+    auto   now_time = steady_clock::now();
+    double new_time = m_mouseDelayedTime -
+                      duration_cast<duration<double>>(now_time - m_last_mouse_input_time).count();
+    m_mouseDelayedTime = new_time < 0.0f ? 0.0f : new_time;
+
+    m_mousePosInput[0] = x;
+    m_mousePosInput[1] = y;
+
+    m_last_mouse_input_time = now_time;
 }
 
 void WPShaderValueUpdater::InitUniforms(SceneNode* pNode, const ExistsUniformOp& existsOp) {
@@ -45,7 +63,7 @@ void WPShaderValueUpdater::InitUniforms(SceneNode* pNode, const ExistsUniformOp&
     info.has_TIME             = existsOp(G_TIME);
     info.has_DAYTIME          = existsOp(G_DAYTIME);
     info.has_POINTERPOSITION  = existsOp(G_POINTERPOSITION);
-	info.has_PARALLAXPOSITION = existsOp(G_PARALLAXPOSITION);
+    info.has_PARALLAXPOSITION = existsOp(G_PARALLAXPOSITION);
     info.has_TEXELSIZE        = existsOp(G_TEXELSIZE);
     info.has_TEXELSIZEHALF    = existsOp(G_TEXELSIZEHALF);
     info.has_SCREEN           = existsOp(G_SCREEN);
@@ -166,8 +184,10 @@ void WPShaderValueUpdater::UpdateUniforms(SceneNode* pNode, sprite_map_t& sprite
                  std::array<float, 3> {
                      m_screen_size[0], m_screen_size[1], m_screen_size[0] / m_screen_size[1] });
 
-	if (info.has_PARALLAXPOSITION)
-        updateOp(G_PARALLAXPOSITION, std::array {m_mousePos[0] * m_parallax.mouseinfluence, (1.0f - m_mousePos[1]) * m_parallax.mouseinfluence});
+    if (info.has_PARALLAXPOSITION)
+        updateOp(G_PARALLAXPOSITION,
+                 std::array { m_mousePos[0] * m_parallax.mouseinfluence,
+                              (1.0f - m_mousePos[1]) * m_parallax.mouseinfluence });
 
     for (auto& [i, sp] : sprites) {
         const auto& f      = sp.GetAnimateFrame(m_scene->frameTime);

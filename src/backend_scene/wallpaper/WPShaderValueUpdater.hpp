@@ -7,6 +7,7 @@
 #include <array>
 #include <unordered_map>
 #include <cstdint>
+#include <chrono>
 #include "SpriteAnimation.hpp"
 #include "WPPuppet.hpp"
 #include <Eigen/Dense>
@@ -80,7 +81,14 @@ private:
     WPCameraParallax     m_parallax;
     double               m_dayTime { 0.0f };
     std::array<float, 2> m_texelSize { 1.0f / 1920.0f, 1.0f / 1080.0f };
+
     std::array<float, 2> m_mousePos { 0.5f, 0.5f };
+    std::array<float, 2> m_mousePosInput { 0.5f, 0.5f };
+    double               m_mouseDelayedTime { 0.0f };
+    uint                 m_mouseInputCount { 0 };
+
+    std::chrono::time_point<std::chrono::steady_clock> m_last_mouse_input_time;
+
     std::array<float, 2> m_screen_size { 1920, 1080 };
 
     Map<void*, WPShaderValueData> m_nodeDataMap;
