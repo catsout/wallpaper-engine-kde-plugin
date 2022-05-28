@@ -34,6 +34,14 @@
       <label>Filter By Screen</label>
       <default>true</default>
     </entry>
+    <entry name="PauseAcPlugin" type="Bool">
+      <label>Pause Ac Plugin</label>
+      <default>false</default>
+    </entry>
+    <entry name="PauseBatPercent" type="Int">
+      <label>Pause Battery Percent</label>
+      <default>0</default>
+    </entry>
     <entry name="SortMode" type="Int">
       <label>Sort mode</label>
       <default>0</default>

@@ -21,6 +21,9 @@ Flickable {
     property alias cfg_RandomizeWallpaper: ckbox_randomizeWallpaper.checked
     property alias cfg_PauseFilterByScreen: ckbox_pauseFilterByScreen.checked
 
+    property alias cfg_PauseAcPlugin: ckbox_pauseAcPlugin.checked
+    property alias cfg_PauseBatPercent: spin_pauseBatPercent.value
+
     property int comboBoxWidth: themeWidth * 24
 
     Layout.fillWidth: true
@@ -91,6 +94,23 @@ Flickable {
                 text_color: Theme.textColor
                 actor: Switch {
                     id: ckbox_pauseFilterByScreen
+                }
+            }
+            OptionItem {
+                text: 'Pause if AC adapter not plugged in'
+                text_color: Theme.textColor
+                actor: Switch {
+                    id: ckbox_pauseAcPlugin
+                }
+            }
+            OptionItem {
+                text: 'Pause if battery level is below'
+                text_color: Theme.textColor
+                actor: SpinBox {
+                        id: spin_pauseBatPercent
+                        from: 0
+                        to: 100
+                        stepSize: 1
                 }
             }
             OptionItem {

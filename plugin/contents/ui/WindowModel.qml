@@ -69,12 +69,16 @@ Item {
     property alias resumeTime: playTimer.interval
     property int modePlay
 
+    // ---
+    readonly property bool reqPause: _reqPause
+    property bool _reqPause: false
+
     Timer{
         id: playTimer
         running: false
         repeat: false
         onTriggered: {
-            playVideoWallpaper = true;
+            _reqPause = false;
         }
     }
     function play() {
@@ -83,7 +87,7 @@ Item {
     }
     function pause() {
         playTimer.stop();
-        playVideoWallpaper = false;
+        _reqPause = true;
     }
     function playBy(value) {
         if(value) play();

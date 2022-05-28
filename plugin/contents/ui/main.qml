@@ -23,8 +23,12 @@ Rectangle {
     property bool   randomizeWallpaper: wallpaper.configuration.RandomizeWallpaper
     property bool   mouseInput: wallpaper.configuration.MouseInput
     property bool   mpvStats: wallpaper.configuration.MpvStats
+
+    property bool   pauseAcPlugin: wallpaper.configuration.PauseAcPlugin
+    property int   pauseBatPercent: wallpaper.configuration.PauseBatPercent
+
     // auto pause
-    property bool   ok: windowModel.playVideoWallpaper
+    property bool   ok: !windowModel.reqPause && !powerSource.reqPause
 
     property string nowBackend: ""
 
@@ -128,6 +132,14 @@ Rectangle {
         filterByScreen: wallpaper.configuration.PauseFilterByScreen
         modePlay: wallpaper.configuration.PauseMode
         resumeTime: wallpaper.configuration.ResumeTime
+    }
+
+    PowerSource {
+        id: powerSource
+        readonly property bool reqPause: {
+            (background.pauseAcPlugin && !st_ac_plugin_in) ||
+            (background.pauseBatPercent !== 0 && st_battery_has && st_battery_percent < background.pauseBatPercent)
+        }
     }
 
     Pyext {

@@ -28,6 +28,8 @@ ColumnLayout {
     property alias  cfg_SwitchTimer:         settingPage.cfg_SwitchTimer
     property alias  cfg_RandomizeWallpaper:  settingPage.cfg_RandomizeWallpaper
     property alias  cfg_PauseFilterByScreen: settingPage.cfg_PauseFilterByScreen
+    property alias  cfg_PauseAcPlugin:       settingPage.cfg_PauseAcPlugin
+    property alias  cfg_PauseBatPercent:     settingPage.cfg_PauseBatPercent
     property int    cfg_DisplayMode
     property int    cfg_PauseMode
     property int    cfg_VideoBackend
