@@ -195,20 +195,21 @@ std::size_t FindIncludeInsertPos(const std::string& src, std::size_t startPos) {
         return p == std::string::npos ? 0 : p;
     };
     auto search = [](const std::string& p, std::size_t pos, const auto& re) {
+        auto startpos = p.begin() + pos;
         std::smatch match;
-        if (std::regex_search(p.begin() + pos, p.end(), match, re)) {
+        if (startpos < p.end() && std::regex_search(startpos, p.end(), match, re)) {
             return pos + match.position();
         }
         return std::string::npos;
     };
     auto searchLast = [](const std::string& p, const auto& re) {
-        auto        startPos = p.begin();
+        auto        startpos = p.begin();
         std::smatch match;
-        while (std::regex_search(startPos + 1, p.end(), match, re)) {
-            startPos++;
-            startPos += match.position();
+        while (startpos < p.end() && std::regex_search(startpos, p.end(), match, re)) {
+            startpos++;
+            startpos += match.position();
         }
-        return startPos == p.end() ? std::string::npos : startPos - p.begin();
+        return startpos >= p.end() ? std::string::npos : startpos - p.begin();
     };
     auto nextLinePos = [](const std::string& p, std::size_t pos) {
         return p.find_first_of('\n', pos) + 1;
