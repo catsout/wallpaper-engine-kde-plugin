@@ -173,5 +173,9 @@ bool WPImageObject::FromJson(const nlohmann::json& json, fs::VFS& vfs) {
              puppet_layers.push_back(layer);
         }
     }
+    if(json.contains("config")) {
+        const auto& jConf = json.at("config");
+        GET_JSON_NAME_VALUE_NOWARN(jConf, "passthrough", config.passthrough);
+    }
     return true;
 }

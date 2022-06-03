@@ -48,6 +48,9 @@ public:
 
 class WPImageObject {
 public:
+    struct Config {
+        bool passthrough {false};
+    };
     bool                       FromJson(const nlohmann::json&, fs::VFS&);
     int32_t                    id { 0 };
     std::string                name;
@@ -67,6 +70,7 @@ public:
     std::string                alignment { "center" };
     WPMaterial                 material;
     std::vector<WPImageEffect> effects;
+    Config                     config;
 
     std::string                           puppet;
     std::vector<WPPuppet::AnimationLayer> puppet_layers;
