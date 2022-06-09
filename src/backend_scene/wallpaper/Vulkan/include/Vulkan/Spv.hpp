@@ -1,5 +1,8 @@
 #pragma once
-#include "Instance.hpp"
+#include "Type.hpp"
+
+#include <vector>
+#include <memory>
 
 namespace wallpaper
 {
@@ -8,7 +11,7 @@ namespace vulkan
 
 struct ShaderSpv {
     std::string entry_point {"main"};
-    vk::ShaderStageFlagBits stage;
+    ShaderType stage;
     std::vector<unsigned int> spirv;
 };
 

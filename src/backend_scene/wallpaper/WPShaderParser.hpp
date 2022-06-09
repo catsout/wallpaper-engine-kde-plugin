@@ -1,4 +1,5 @@
 #pragma once
+#include "Scene/Scene.h"
 #include "Scene/SceneShader.h"
 #include "Type.hpp"
 
@@ -8,12 +9,12 @@ namespace fs
 {
 class VFS;
 }
-typedef std::unordered_map<std::string, int32_t> Combos;
+using Combos = Map<std::string, int32_t>;
 
 // ui material name to gl uniform name
-typedef std::unordered_map<std::string, std::string> WPAliasValueDict;
+using WPAliasValueDict = Map<std::string, std::string>;
 
-typedef std::vector<std::pair<int32_t, std::string>> WPDefaultTexs;
+using WPDefaultTexs = std::vector<std::pair<int32_t, std::string>>;
 
 struct WPShaderInfo {
     Combos           combos;
@@ -27,13 +28,18 @@ struct WPPreprocessorInfo {
     Map<std::string, std::string> input; // name to line
     Map<std::string, std::string> output;
 
-    Set<uint>   active_tex_slots;
-    std::string result;
+    Set<uint> active_tex_slots;
 };
 
 struct WPShaderTexInfo {
     bool                enabled { false };
     std::array<bool, 3> composEnabled { false, false, false };
+};
+
+struct WPShaderUnit {
+    ShaderType         stage;
+    std::string        src;
+    WPPreprocessorInfo preprocess_info;
 };
 
 class WPShaderParser {
@@ -46,10 +52,8 @@ public:
     static void InitGlslang();
     static void FinalGlslang();
 
-    static void        Preprocessor(const std::string& src, ShaderType, const Combos&,
-                                    WPPreprocessorInfo&);
-    static std::string Finalprocessor(const WPPreprocessorInfo& cur,
-                                      const WPPreprocessorInfo* pre  = nullptr,
-                                      const WPPreprocessorInfo* next = nullptr);
+    static bool CompileToSpv(std::string_view         scene_id, Span<WPShaderUnit>,
+                             std::vector<ShaderCode>& spvs, fs::VFS&, WPShaderInfo*,
+                             Span<const WPShaderTexInfo>);
 };
 } // namespace wallpaper

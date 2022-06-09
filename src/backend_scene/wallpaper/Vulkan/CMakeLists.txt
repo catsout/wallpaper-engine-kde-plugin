@@ -11,6 +11,7 @@ Vma.cpp
 target_link_libraries(${LIB_NAME}
 PUBLIC
 	glslang
+    spirv-reflect
 PRIVATE
 	SPIRV
 	vulkan

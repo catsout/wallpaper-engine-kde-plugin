@@ -9,7 +9,19 @@ using namespace wallpaper::vulkan;
 namespace 
 {
 
-vk::ShaderModule CreateShaderModule(const vk::Device& device, ShaderSpv& spv) {
+inline vk::ShaderStageFlagBits ToVkType(wallpaper::ShaderType stage) {
+    using namespace wallpaper;
+    switch(stage) {
+    case ShaderType::VERTEX: return vk::ShaderStageFlagBits::eVertex;
+    case ShaderType::FRAGMENT: return vk::ShaderStageFlagBits::eFragment;
+    case ShaderType::GEOMETRY: return vk::ShaderStageFlagBits::eGeometry;
+    default:
+        assert(false);
+        return vk::ShaderStageFlagBits::eVertex;
+    }
+}
+
+inline vk::ShaderModule CreateShaderModule(const vk::Device& device, ShaderSpv& spv) {
 	auto& data = spv.spirv;
 	vk::ShaderModuleCreateInfo createinfo;
 	createinfo
@@ -97,7 +109,7 @@ GraphicsPipeline& GraphicsPipeline::setRenderPass(vk::RenderPass pass) {
 }
 
 GraphicsPipeline& GraphicsPipeline::addStage(Uni_ShaderSpv&& spv) {
-    vk::ShaderStageFlagBits stage = spv->stage;
+    vk::ShaderStageFlagBits stage = ::ToVkType(spv->stage);
     m_stage_spv_map[stage] = std::move(spv);
     return *this;
 }
@@ -151,7 +163,7 @@ bool GraphicsPipeline::create(const Device& device, PipelineParameters& pipeline
     for(auto& item:m_stage_spv_map) {
         auto& spv = item.second;
         vk::PipelineShaderStageCreateInfo info;
-        info.setStage(spv->stage)
+        info.setStage(::ToVkType(spv->stage))
             .setModule(CreateShaderModule(device.handle(), *spv))
             .setPName(spv->entry_point.c_str());
         shaderStages.push_back(info);

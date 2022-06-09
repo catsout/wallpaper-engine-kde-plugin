@@ -1,11 +1,15 @@
 #include "WPShaderParser.hpp"
 
+#include "Fs/IBinaryStream.h"
 #include "WPJson.hpp"
 
 #include "wpscene/WPUniform.h"
 #include "Fs/VFS.h"
 #include "Utils/span.hpp"
-#include "Vulkan/Shader.hpp"
+#include "Utils/Sha.hpp"
+#include "WPCommon.hpp"
+
+#include "Vulkan/ShaderComp.hpp"
 
 #include <regex>
 #include <stack>
@@ -13,7 +17,13 @@
 
 static constexpr std::string_view SHADER_PLACEHOLD { "__SHADER_PLACEHOLD__" };
 
+#define SHADER_DIR    "spvs01"
+#define SHADER_SUFFIX "spvs"
+
 using namespace wallpaper;
+
+namespace
+{
 
 static constexpr const char* pre_shader_code = R"(#version 150
 #define GLSL 1
@@ -59,7 +69,7 @@ out vec4 glOutColor;
 
 )";
 
-std::string LoadGlslInclude(fs::VFS& vfs, const std::string& input) {
+inline std::string LoadGlslInclude(fs::VFS& vfs, const std::string& input) {
     std::string::size_type pos = 0;
     std::string            output;
     std::string::size_type linePos = std::string::npos;
@@ -84,8 +94,8 @@ std::string LoadGlslInclude(fs::VFS& vfs, const std::string& input) {
     return output;
 }
 
-void ParseWPShader(const std::string& src, WPShaderInfo* pWPShaderInfo,
-                   const std::vector<WPShaderTexInfo>& texinfos) {
+inline void ParseWPShader(const std::string& src, WPShaderInfo* pWPShaderInfo,
+                          const std::vector<WPShaderTexInfo>& texinfos) {
     auto&   combos       = pWPShaderInfo->combos;
     auto&   wpAliasDict  = pWPShaderInfo->alias;
     auto&   shadervalues = pWPShaderInfo->svs;
@@ -184,7 +194,7 @@ void ParseWPShader(const std::string& src, WPShaderInfo* pWPShaderInfo,
     }
 }
 
-std::size_t FindIncludeInsertPos(const std::string& src, std::size_t startPos) {
+inline std::size_t FindIncludeInsertPos(const std::string& src, std::size_t startPos) {
     /* rule:
     after attribute/varying/uniform/struct
     befor any func
@@ -195,7 +205,7 @@ std::size_t FindIncludeInsertPos(const std::string& src, std::size_t startPos) {
         return p == std::string::npos ? 0 : p;
     };
     auto search = [](const std::string& p, std::size_t pos, const auto& re) {
-        auto startpos = p.begin() + pos;
+        auto        startpos = p.begin() + pos;
         std::smatch match;
         if (startpos < p.end() && std::regex_search(startpos, p.end(), match, re)) {
             return pos + match.position();
@@ -254,42 +264,7 @@ std::size_t FindIncludeInsertPos(const std::string& src, std::size_t startPos) {
     return NposToZero(pos);
 }
 
-std::string WPShaderParser::PreShaderSrc(fs::VFS& vfs, const std::string& src,
-                                         WPShaderInfo*                       pWPShaderInfo,
-                                         const std::vector<WPShaderTexInfo>& texinfos) {
-    std::string            newsrc(src);
-    std::string::size_type pos = 0;
-    std::string            include;
-    while (pos = src.find("#include", pos), pos != std::string::npos) {
-        auto begin = pos;
-        pos        = src.find_first_of('\n', pos);
-        newsrc.replace(begin, pos - begin, pos - begin, ' ');
-        include.append(src.substr(begin, pos - begin) + "\n");
-    }
-    include = LoadGlslInclude(vfs, include);
-
-    ParseWPShader(include, pWPShaderInfo, texinfos);
-    ParseWPShader(newsrc, pWPShaderInfo, texinfos);
-
-    newsrc.insert(FindIncludeInsertPos(newsrc, 0), include);
-    return newsrc;
-}
-
-std::string WPShaderParser::PreShaderHeader(const std::string& src, const Combos& combos,
-                                            ShaderType type) {
-    std::string pre(pre_shader_code);
-    if (type == ShaderType::VERTEX) pre += pre_shader_code_vert;
-    if (type == ShaderType::FRAGMENT) pre += pre_shader_code_frag;
-    std::string header(pre);
-    for (const auto& c : combos) {
-        std::string cup(c.first);
-        std::transform(c.first.begin(), c.first.end(), cup.begin(), ::toupper);
-        header.append("#define " + cup + " " + std::to_string(c.second) + "\n");
-    }
-    return header + src;
-}
-
-static EShLanguage ToGLSL(ShaderType type) {
+inline EShLanguage ToGLSL(ShaderType type) {
     switch (type) {
     case ShaderType::VERTEX: return EShLangVertex;
     case ShaderType::FRAGMENT: return EShLangFragment;
@@ -297,14 +272,11 @@ static EShLanguage ToGLSL(ShaderType type) {
     return EShLangVertex;
 }
 
-void WPShaderParser::InitGlslang() { glslang::InitializeProcess(); }
-void WPShaderParser::FinalGlslang() { glslang::FinalizeProcess(); }
-
-void WPShaderParser::Preprocessor(const std::string& in_src, ShaderType type, const Combos& combos,
-                                  WPPreprocessorInfo& process_info) {
+inline std::string Preprocessor(const std::string& in_src, ShaderType type, const Combos& combos,
+                                WPPreprocessorInfo& process_info) {
     std::string res;
 
-    std::string src = PreShaderHeader(in_src, combos, type);
+    std::string src = wallpaper::WPShaderParser::PreShaderHeader(in_src, combos, type);
 
     glslang::TShader::ForbidIncluder includer;
     glslang::TShader                 shader(ToGLSL(type));
@@ -344,13 +316,13 @@ void WPShaderParser::Preprocessor(const std::string& in_src, ShaderType type, co
         if (ec != std::errc()) continue;
         process_info.active_tex_slots.insert(slot);
     }
-    process_info.result = std::move(res);
+    return res;
 }
 
-std::string WPShaderParser::Finalprocessor(const WPPreprocessorInfo& cur,
-                                           const WPPreprocessorInfo* pre,
-                                           const WPPreprocessorInfo* next) {
+inline std::string Finalprocessor(const WPShaderUnit& unit, const WPPreprocessorInfo* pre,
+                                  const WPPreprocessorInfo* next) {
     std::string insert_str {};
+    auto&       cur = unit.preprocess_info;
     if (pre != nullptr) {
         for (auto& [k, v] : pre->output) {
             if (! exists(cur.input, k)) {
@@ -368,8 +340,163 @@ std::string WPShaderParser::Finalprocessor(const WPPreprocessorInfo& cur,
         }
     }
     std::regex re_hold(SHADER_PLACEHOLD.data());
+
     // LOG_INFO("insert: %s", insert_str.c_str());
-    return std::regex_replace(
-        std::regex_replace(cur.result, re_hold, insert_str), std::regex(R"(\s+\n)"), "\n");
-    // return std::regex_replace(cur.result, re_hold, insert_str);
+    // return std::regex_replace(
+    //    std::regex_replace(cur.result, re_hold, insert_str), std::regex(R"(\s+\n)"), "\n");
+    return std::regex_replace(unit.src, re_hold, insert_str);
+}
+
+inline std::string GenSha1(Span<const WPShaderUnit> units) {
+    std::string shas;
+    for (auto& unit : units) {
+        shas += utils::genSha1(unit.src);
+    }
+    return utils::genSha1(shas);
+}
+inline std::string GetCachePath(std::string_view scene_id, std::string_view filename) {
+    return std::string("/cache/") + std::string(scene_id) + "/" SHADER_DIR "/" +
+           std::string(filename) + "." SHADER_SUFFIX;
+}
+
+inline bool LoadShaderFromFile(std::vector<ShaderCode>& codes, fs::IBinaryStream& file) {
+    codes.clear();
+    int  ver   = ReadSPVVesion(file);
+    uint count = file.ReadUint32();
+    assert(count <= 16);
+    if (count > 16) return false;
+
+    codes.resize(count);
+    for (uint i = 0; i < count; i++) {
+        auto& c = codes[i];
+
+        uint size = file.ReadUint32();
+        assert(size % 4 == 0);
+        if (size % 4 != 0) return false;
+
+        c.resize(size / 4);
+        file.Read((char*)c.data(), size);
+    }
+    return true;
+}
+
+inline void SaveShaderToFile(Span<const ShaderCode> codes, fs::IBinaryStreamW& file) {
+    char nop[256] { '\0' };
+
+    WriteSPVVesion(file, 1);
+    file.WriteUint32(codes.size());
+    for (const auto& c : codes) {
+        uint size = c.size() * 4;
+        file.WriteUint32(size);
+        file.Write((const char*)c.data(), size);
+    }
+    file.Write(nop, sizeof(nop));
+}
+
+} // namespace
+
+std::string WPShaderParser::PreShaderSrc(fs::VFS& vfs, const std::string& src,
+                                         WPShaderInfo*                       pWPShaderInfo,
+                                         const std::vector<WPShaderTexInfo>& texinfos) {
+    std::string            newsrc(src);
+    std::string::size_type pos = 0;
+    std::string            include;
+    while (pos = src.find("#include", pos), pos != std::string::npos) {
+        auto begin = pos;
+        pos        = src.find_first_of('\n', pos);
+        newsrc.replace(begin, pos - begin, pos - begin, ' ');
+        include.append(src.substr(begin, pos - begin) + "\n");
+    }
+    include = LoadGlslInclude(vfs, include);
+
+    ParseWPShader(include, pWPShaderInfo, texinfos);
+    ParseWPShader(newsrc, pWPShaderInfo, texinfos);
+
+    newsrc.insert(FindIncludeInsertPos(newsrc, 0), include);
+    return newsrc;
+}
+
+std::string WPShaderParser::PreShaderHeader(const std::string& src, const Combos& combos,
+                                            ShaderType type) {
+    std::string pre(pre_shader_code);
+    if (type == ShaderType::VERTEX) pre += pre_shader_code_vert;
+    if (type == ShaderType::FRAGMENT) pre += pre_shader_code_frag;
+    std::string header(pre);
+    for (const auto& c : combos) {
+        std::string cup(c.first);
+        std::transform(c.first.begin(), c.first.end(), cup.begin(), ::toupper);
+        header.append("#define " + cup + " " + std::to_string(c.second) + "\n");
+    }
+    return header + src;
+}
+
+void WPShaderParser::InitGlslang() { glslang::InitializeProcess(); }
+void WPShaderParser::FinalGlslang() { glslang::FinalizeProcess(); }
+
+bool WPShaderParser::CompileToSpv(std::string_view scene_id, Span<WPShaderUnit> units,
+                                  std::vector<ShaderCode>& codes, fs::VFS& vfs,
+                                  WPShaderInfo* shader_info, Span<const WPShaderTexInfo> texs) {
+    std::for_each(units.begin(), units.end(), [shader_info](auto& unit) {
+        unit.src = Preprocessor(unit.src, unit.stage, shader_info->combos, unit.preprocess_info);
+    });
+
+    auto compile = [](Span<WPShaderUnit> units, std::vector<ShaderCode>& codes) {
+        std::vector<vulkan::ShaderCompUnit> vunits(units.size());
+        for (int i = 0; i < units.size(); i++) {
+            auto&               unit     = units[i];
+            auto&               vunit    = vunits[i];
+            WPPreprocessorInfo* pre_info = i - 1 >= 0 ? &units[i - 1].preprocess_info : nullptr;
+            WPPreprocessorInfo* post_info =
+                i + 1 < units.size() ? &units[i + 1].preprocess_info : nullptr;
+
+            unit.src = Finalprocessor(unit, pre_info, post_info);
+
+            vunit.src   = unit.src;
+            vunit.stage = ToGLSL(unit.stage);
+        }
+
+        vulkan::ShaderCompOpt opt;
+        opt.client_ver             = glslang::EShTargetVulkan_1_1;
+        opt.auto_map_bindings      = true;
+        opt.auto_map_locations     = true;
+        opt.relaxed_errors_glsl    = true;
+        opt.relaxed_rules_vulkan   = true;
+        opt.suppress_warnings_glsl = true;
+
+        std::vector<vulkan::Uni_ShaderSpv> spvs(units.size());
+        if (! vulkan::CompileAndLinkShaderUnits(vunits, opt, spvs)) {
+            return false;
+        }
+
+        codes.clear();
+        for (auto& spv : spvs) {
+            codes.emplace_back(std::move(spv->spirv));
+        }
+        return true;
+    };
+
+    bool has_cache_dir = vfs.IsMounted("cache");
+    if (! has_cache_dir) LOG_ERROR("cache not mouted");
+
+    if (has_cache_dir) {
+        std::string sha1            = GenSha1(units);
+        std::string cache_file_path = GetCachePath(scene_id, sha1);
+
+        if (vfs.Contains(cache_file_path)) {
+            auto cache_file = vfs.Open(cache_file_path);
+            if (! cache_file || ! ::LoadShaderFromFile(codes, *cache_file)) {
+                LOG_ERROR("load shader from \'%s\' failed", cache_file_path.c_str());
+                return false;
+            }
+        } else {
+            if (! compile(units, codes)) return false;
+            if (auto cache_file = vfs.OpenW(cache_file_path); cache_file) {
+                ::SaveShaderToFile(codes, *cache_file);
+            }
+        }
+        return true;
+
+    } else {
+        return compile(units, codes);
+    }
 }

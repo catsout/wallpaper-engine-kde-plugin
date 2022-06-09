@@ -8,6 +8,7 @@
 #include "arg.hpp"
 #include "SceneWallpaper.hpp"
 #include "SceneWallpaperSurface.hpp"
+#include "Utils/Platform.hpp"
 
 using namespace std;
 
@@ -85,6 +86,7 @@ int main(int argc, char** argv) {
     psw->setPropertyString(wallpaper::PROPERTY_SOURCE, program.get<std::string>(ARG_SCENE));
     psw->setPropertyBool(wallpaper::PROPERTY_GRAPHIVZ, program.get<bool>(OPT_GRAPHVIZ));
     psw->setPropertyInt32(wallpaper::PROPERTY_FPS, program.get<int32_t>(OPT_FPS));
+    psw->setPropertyString(wallpaper::PROPERTY_CACHE_PATH, wallpaper::platform::GetCachePath("wes"));
 
     glfwSetWindowUserPointer(window, &data);
 

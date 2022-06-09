@@ -18,8 +18,9 @@ private:
     WPPkgFs() = default;
 
 public:
-    bool                           Contains(std::string_view path) const override;
-    std::shared_ptr<IBinaryStream> Open(std::string_view path) override;
+    bool                            Contains(std::string_view path) const override;
+    std::shared_ptr<IBinaryStream>  Open(std::string_view path) override;
+    std::shared_ptr<IBinaryStreamW> OpenW(std::string_view path) override;
 
 private:
     struct PkgFile {

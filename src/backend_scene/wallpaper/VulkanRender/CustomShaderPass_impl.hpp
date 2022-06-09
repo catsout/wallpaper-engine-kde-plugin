@@ -71,7 +71,7 @@ static void UpdateUniform(StagingBuffer* buf, const StagingBufferRef& bufref,
     }
 
     size_t offset    = uni->second.offset;
-    size_t type_size = Sizeof(uni->second.type) * uni->second.num;
+    size_t type_size = sizeof(float) * uni->second.num;
     if (type_size != value_u8.size()) {
         // assert(type_size == value_u8.size());
         ; // to do
@@ -119,41 +119,29 @@ void CustomShaderPass::prepare(Scene& scene, const Device& device, RenderingReso
     DescriptorSetInfo          descriptor_info;
     ShaderReflected            ref;
     {
-        SceneShader&  shader = *(mesh.Material()->customShader.shader);
-        ShaderCompOpt opt;
-        opt.client_ver             = glslang::EShTargetVulkan_1_1;
-        opt.auto_map_bindings      = true;
-        opt.auto_map_locations     = true;
-        opt.relaxed_errors_glsl    = true;
-        opt.relaxed_rules_vulkan   = true;
-        opt.suppress_warnings_glsl = true;
+        SceneShader& shader = *(mesh.Material()->customShader.shader);
 
-        std::vector<ShaderCompUnit> units;
-        if (! shader.vertexCode.empty()) {
-            units.push_back(ShaderCompUnit { .stage = EShLangVertex, .src = shader.vertexCode });
-        }
-        if (! shader.fragmentCode.empty()) {
-            units.push_back(
-                ShaderCompUnit { .stage = EShLangFragment, .src = shader.fragmentCode });
-        }
-        if (! CompileAndLinkShaderUnits(units, opt, spvs, &ref)) {
+        if (! GenReflect(shader.codes, spvs, ref)) {
+            LOG_ERROR("gen spv reflect failed, %s", shader.name.c_str());
             return;
         }
 
         auto& bindings = descriptor_info.bindings;
         bindings.resize(ref.binding_map.size());
+
         /*
         LOG_INFO("----shader------");
         LOG_INFO("%s", shader.name.c_str());
         LOG_INFO("--inputs:");
-        for(auto& i:ref.input_location_map) {
+        for (auto& i : ref.input_location_map) {
             LOG_INFO("%d %s", i.second, i.first.c_str());
         }
         LOG_INFO("--bindings:");
         */
+
         std::transform(
             ref.binding_map.begin(), ref.binding_map.end(), bindings.begin(), [](auto& item) {
-                // LOG_INFO("%d %s", item.second.binding, item.first.c_str());
+                //LOG_INFO("%d %s", item.second.binding, item.first.c_str());
                 return item.second;
             });
 

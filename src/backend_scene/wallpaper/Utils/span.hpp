@@ -2,6 +2,8 @@
 
 #include <cstdint>
 #include <algorithm>
+#include <type_traits>
+#include <utility>
 #include <vector>
 #include <iterator>
 
@@ -13,7 +15,8 @@ public:
     using size_type              = size_t;
     using difference_type        = std::ptrdiff_t;
     using reference              = T&;
-    using const_reference        = const reference;
+    using const_reference        = const T&;
+    using nonconst_reference     = std::remove_const_t<T>&;
     using pointer                = T*;
     using const_pointer          = const pointer;
     using iterator               = T*;
@@ -30,11 +33,18 @@ public:
     /// Construct a span from a single element.
     constexpr Span(reference value) noexcept: ptr { &value }, num { 1 } {}
 
+    /// Define non-const reference construct for const value_type
+    template<typename U = value_type, typename = std::enable_if_t<std::is_const_v<U>>>
+    constexpr Span(nonconst_reference value) noexcept: ptr { &value }, num { 1 } {}
+
     /// Construct a span from a range.
+    // requires std::data(Range&), std::size(Range&)
     template<typename Range>
-    // requires std::data(const Range&)
-    // requires std::size(const Range&)
-    constexpr Span(const Range& range): ptr { std::data(range) }, num { std::size(range) } {}
+    constexpr Span(const Range& range) noexcept
+        : ptr { std::data(range) }, num { std::size(range) } {}
+
+    template<typename Range>
+    constexpr Span(Range& range) noexcept: ptr { std::data(range) }, num { std::size(range) } {}
 
     /// Construct a span from a pointer and a size.
     /// This is inteded for subranges.

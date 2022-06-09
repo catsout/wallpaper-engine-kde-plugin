@@ -50,3 +50,5 @@ std::shared_ptr<IBinaryStream> WPPkgFs::Open(std::string_view path) {
     }
     return nullptr;
 }
+
+std::shared_ptr<IBinaryStreamW> WPPkgFs::OpenW(std::string_view path) { return nullptr; }

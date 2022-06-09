@@ -26,6 +26,10 @@ private:
 		return false;
 	}
 	bool End() const { return m_pos == Size(); }; 
+
+protected:
+    virtual size_t Write_impl(const void* buffer, size_t sizeInByte) { return 0; }
+
 public:
     virtual size_t Read(void* buffer, size_t sizeInByte) {
 		if(End()) return 0;
@@ -36,7 +40,6 @@ public:
 		m_pos += sizeInByte;
 		return m_infs->Read(buffer, sizeInByte);
 	}
-    virtual size_t Write(const void* buffer, size_t sizeInByte) { return 0; }
     virtual char* Gets(char* buffer, size_t sizeStr) { 
 		Read(buffer, sizeStr);
 		return buffer;

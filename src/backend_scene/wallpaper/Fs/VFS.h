@@ -2,6 +2,7 @@
 #include <vector>
 #include <memory>
 #include <string>
+#include <tuple>
 #include "Fs.h"
 #include "Utils/Logging.h"
 #include "Utils/NoCopyMove.hpp"
@@ -60,14 +61,27 @@ public:
 		return false;
 	}
 	std::shared_ptr<IBinaryStream> Open(std::string_view path) {
-		for(auto iter = m_mountedFss.rbegin();iter < m_mountedFss.rend();iter++) {
-			auto& el = *iter;
-			if(MountedFs::InMountPoint(el.mountPoint, path)) {
-				auto mpath = MountedFs::GetPathInMount(el.mountPoint, path);
-				if(el.fs->Contains(mpath))
-					return el.fs->Open(mpath);
-			}
-		}
+        auto find_it = std::find_if(m_mountedFss.rbegin(), m_mountedFss.rend(), [&path](const auto& mfs) {
+			return MountedFs::InMountPoint(mfs.mountPoint, path) && 
+                   mfs.fs->Contains(MountedFs::GetPathInMount(mfs.mountPoint, path));
+        });
+        if(find_it != std::rend(m_mountedFss)) 
+            return find_it->fs->Open(MountedFs::GetPathInMount(find_it->mountPoint, path));
+		LOG_ERROR("not found \"%s\" in vfs", path.data());
+		return nullptr;
+	}
+	std::shared_ptr<IBinaryStreamW> OpenW(std::string_view path) {
+        auto find_it = std::find_if(m_mountedFss.rbegin(), m_mountedFss.rend(), [&path](const auto& mfs) {
+			return MountedFs::InMountPoint(mfs.mountPoint, path) && 
+                   mfs.fs->Contains(MountedFs::GetPathInMount(mfs.mountPoint, path));
+        });
+        if (find_it == std::rend(m_mountedFss)) {
+            find_it = std::find_if(m_mountedFss.rbegin(), m_mountedFss.rend(), [&path](const auto& mfs) {
+			    return MountedFs::InMountPoint(mfs.mountPoint, path);
+            });
+        }
+        if(find_it != std::rend(m_mountedFss))
+            return find_it->fs->OpenW(MountedFs::GetPathInMount(find_it->mountPoint, path));
 		LOG_ERROR("not found \"%s\" in vfs", path.data());
 		return nullptr;
 	}

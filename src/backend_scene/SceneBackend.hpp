@@ -22,6 +22,7 @@ class SceneObject : public QQuickItem {
     Q_PROPERTY(float volume READ volume WRITE setVolume NOTIFY volumeChanged)
     Q_PROPERTY(bool muted READ muted WRITE setMuted)
 public:
+    constexpr static std::string_view CACHE_DIR { "wekde" };
     enum FillMode
     {
         STRETCH,

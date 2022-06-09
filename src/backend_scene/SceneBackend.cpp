@@ -21,6 +21,7 @@
 #include "SceneWallpaper.hpp"
 #include "SceneWallpaperSurface.hpp"
 #include "Type.hpp"
+#include "Utils/Platform.hpp"
 #include <cstdio>
 #include <unistd.h>
 
@@ -171,6 +172,7 @@ SceneObject::SceneObject(QQuickItem* parent)
     : QQuickItem(parent), m_scene(std::make_shared<wallpaper::SceneWallpaper>()) {
     setFlag(ItemHasContents, true);
     m_scene->init();
+    m_scene->setPropertyString(wallpaper::PROPERTY_CACHE_PATH, wallpaper::platform::GetCachePath(CACHE_DIR));
 }
 
 SceneObject::~SceneObject() { _Q_INFO("Destroy sceneobject", ""); }

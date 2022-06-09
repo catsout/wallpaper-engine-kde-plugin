@@ -1,12 +1,19 @@
 #include "Shader.hpp"
 
+#include <cassert>
 #include <glslang/MachineIndependent/iomapper.h>
 #include <glslang/SPIRV/GlslangToSpv.h>
+#include "Spv.hpp"
+#include "TextureCache.hpp"
 #include "Utils/Logging.h"
 #include <cstdlib>
+#include <memory>
 #include <string>
 #include "Utils/StringHelper.hpp"
 #include "Utils/Sha.hpp"
+#include "Utils/MapSet.hpp"
+#include <SPIRV-Reflect/spirv_reflect.h>
+#include <vulkan/vulkan_enums.hpp>
 
 using namespace wallpaper::vulkan;
 
@@ -15,9 +22,144 @@ using namespace wallpaper::vulkan;
 #define _VK_FORMAT_3(s, sign, type, x, y, z)    vk::Format::e##x ##s ##y ##s ##z ##s ##sign ##type;
 #define _VK_FORMAT_4(s, sign, type, x, y, z, w) vk::Format::e##x ##s ##y ##s ##z ##s ##w ##s ##sign ##type;
 
+constexpr int ClientInputSemanticsVersion = 100;
+
+namespace 
+{
+inline wallpaper::ShaderType ToGeneType(vk::ShaderStageFlagBits stage) {
+	switch (stage)
+	{
+    case vk::ShaderStageFlagBits::eVertex: return wallpaper::ShaderType::VERTEX;
+	case vk::ShaderStageFlagBits::eFragment: return wallpaper::ShaderType::FRAGMENT;
+    default:
+        assert(false);
+	    return wallpaper::ShaderType::VERTEX;
+	}
+}
+
+inline vk::ShaderStageFlagBits ToVkType(EShLanguage lan) {
+	switch (lan)
+	{
+	case EShLangVertex: return vk::ShaderStageFlagBits::eVertex;
+	case EShLangFragment: return vk::ShaderStageFlagBits::eFragment;
+    default:
+        assert(false);
+	    return vk::ShaderStageFlagBits::eVertex;
+	}
+}
+
+inline vk::Format ToVkType(SpvReflectFormat type) {
+    return vk::Format((int)type);
+}
+
+inline vk::ShaderStageFlagBits ToVkType(SpvReflectShaderStageFlagBits s) {
+    switch(s) {
+        case SPV_REFLECT_SHADER_STAGE_VERTEX_BIT:
+            return vk::ShaderStageFlagBits::eVertex;
+        case SPV_REFLECT_SHADER_STAGE_FRAGMENT_BIT:
+            return vk::ShaderStageFlagBits::eFragment;
+        default:
+            assert(false);
+            return vk::ShaderStageFlagBits::eVertex;
+    }
+}
+
+template <typename VEC, typename FUNC> 
+bool EnumAllRef(VEC& vec, FUNC&& func) {
+    uint count {0};
+    auto result = func(&count, nullptr);
+    assert(result == SPV_REFLECT_RESULT_SUCCESS);
+    vec.resize(count);
+    result = func(&count, vec.data());
+    assert(result == SPV_REFLECT_RESULT_SUCCESS);
+    return result == SPV_REFLECT_RESULT_SUCCESS;
+}
+
+inline glslang::EShClient getClient(glslang::EShTargetClientVersion ClientVersion) {
+    switch (ClientVersion)
+    {
+    case glslang::EShTargetVulkan_1_0:
+    case glslang::EShTargetVulkan_1_1:
+    case glslang::EShTargetVulkan_1_2:
+        return glslang::EShClientVulkan;
+    case glslang::EShTargetOpenGL_450:
+        return glslang::EShClientOpenGL;
+    default:
+        return glslang::EShClientVulkan;
+    }
+}
+inline glslang::EShTargetLanguageVersion getTargetVersion(glslang::EShTargetClientVersion ClientVersion) { 
+    glslang::EShTargetLanguageVersion TargetVersion;
+    switch (ClientVersion) {
+    case glslang::EShTargetVulkan_1_0:
+        TargetVersion = glslang::EShTargetSpv_1_0;
+        break;
+    case glslang::EShTargetVulkan_1_1:
+        TargetVersion = glslang::EShTargetSpv_1_3;
+        break;
+    case glslang::EShTargetVulkan_1_2:
+        TargetVersion = glslang::EShTargetSpv_1_5;
+        break;
+    case glslang::EShTargetVulkan_1_3:
+        TargetVersion = glslang::EShTargetSpv_1_6;
+        break;
+    case glslang::EShTargetOpenGL_450:
+        TargetVersion = glslang::EShTargetSpv_1_0;
+        break;
+    default:
+        break;
+    }
+    return TargetVersion;
+}
+
+inline bool parse(const ShaderCompUnit& unit, const ShaderCompOpt& opt, EShMessages emsg, glslang::TShader& shader) {
+    auto* data = unit.src.c_str();
+    auto client = getClient(opt.client_ver);
+    shader.setStrings(&data, 1);
+    shader.setEnvInput(opt.hlsl ? glslang::EShSourceHlsl 
+                                : glslang::EShSourceGlsl, EShLanguage::EShLangVertex,
+                       client, ClientInputSemanticsVersion);
+    shader.setEnvClient(client, opt.client_ver);
+    shader.setEnvTarget(glslang::EShTargetLanguage::EShTargetSpv, getTargetVersion(opt.client_ver));
+    if(opt.auto_map_locations)
+        shader.setAutoMapLocations(true);
+    if(opt.auto_map_bindings)
+        shader.setAutoMapBindings(true);
+    if(opt.relaxed_rules_vulkan) {
+		shader.setGlobalUniformBinding(opt.global_uniform_binding);
+        shader.setEnvInputVulkanRulesRelaxed();
+	}
+    const int default_ver = 110; // 100 for es, 110 for desktop
+    TBuiltInResource resource; // = DefaultTBuiltInResource;
+    if (!shader.parse(&resource, default_ver, false, emsg)) {
+		std::string tmp_name = logToTmpfileWithSha1(unit.src, "%s", unit.src.c_str());
+		LOG_ERROR("shader source is at %s", tmp_name.c_str());
+		LOG_ERROR("glslang(parse): %s", shader.getInfoLog());
+        return false;
+    }
+    return true;
+}
+
+inline void SetMessageOptions(const ShaderCompOpt& opt, EShMessages& emsg) {
+    emsg = (EShMessages)(EShMsgDefault | EShMsgSpvRules);
+    if(opt.relaxed_errors_glsl)
+        emsg = (EShMessages)(emsg | EShMsgRelaxedErrors);
+    if(opt.suppress_warnings_glsl)
+        emsg = (EShMessages)(emsg | EShMsgSuppressWarnings);
+    if(getClient(opt.client_ver) == glslang::EShClientVulkan)
+        emsg = (EShMessages)(emsg | EShMsgVulkanRules);
+}
 
 
-const TBuiltInResource wallpaper::vulkan::DefaultTBuiltInResource = {
+inline size_t GetTypeNum(const glslang::TType* type) {
+	size_t num {1};
+	if(type->isArray())  num *= type->getCumulativeArraySize();
+	if(type->isVector()) num *= type->getVectorSize();
+	if(type->isMatrix()) num *= type->getMatrixCols() * type->getMatrixRows();
+	return num;
+}
+}
+const TBuiltInResource wallpaper::vulkan::DefaultTBuiltInResource {
 	/* .MaxLights = */ 32,
 	/* .MaxClipPlanes = */ 6,
 	/* .MaxTextureUnits = */ 32,
@@ -122,116 +264,11 @@ const TBuiltInResource wallpaper::vulkan::DefaultTBuiltInResource = {
 		/* .generalSamplerIndexing = */ 1,
 		/* .generalVariableIndexing = */ 1,
 		/* .generalConstantMatrixVectorIndexing = */ 1,
-	}};
-
-namespace wallpaper 
-{
-
-vk::ShaderStageFlags vulkan::ToVkType(EShLanguageMask mask) {
-	vk::ShaderStageFlags flags {};
-	if(mask & EShLangVertexMask)
-		flags |= vk::ShaderStageFlagBits::eVertex;
-	if(mask & EShLangFragmentMask)
-		flags |= vk::ShaderStageFlagBits::eFragment;
-
-	return flags;
-}
-vk::ShaderStageFlagBits vulkan::ToVkType_Stage(EShLanguage lan) {
-	switch (lan)
-	{
-	case EShLangVertex: return vk::ShaderStageFlagBits::eVertex;
-	case EShLangFragment: return vk::ShaderStageFlagBits::eFragment;
-	}
-	return vk::ShaderStageFlagBits::eVertex;
-}
-}
-
-int ClientInputSemanticsVersion = 100;
-
-static glslang::EShClient getClient(glslang::EShTargetClientVersion ClientVersion) {
-    switch (ClientVersion)
-    {
-    case glslang::EShTargetVulkan_1_0:
-    case glslang::EShTargetVulkan_1_1:
-    case glslang::EShTargetVulkan_1_2:
-        return glslang::EShClientVulkan;
-    case glslang::EShTargetOpenGL_450:
-        return glslang::EShClientOpenGL;
-    default:
-        return glslang::EShClientVulkan;
-    }
-}
-static glslang::EShTargetLanguageVersion getTargetVersion(glslang::EShTargetClientVersion ClientVersion) { 
-    glslang::EShTargetLanguageVersion TargetVersion;
-    switch (ClientVersion) {
-    case glslang::EShTargetVulkan_1_0:
-        TargetVersion = glslang::EShTargetSpv_1_0;
-        break;
-    case glslang::EShTargetVulkan_1_1:
-        TargetVersion = glslang::EShTargetSpv_1_3;
-        break;
-    case glslang::EShTargetVulkan_1_2:
-        TargetVersion = glslang::EShTargetSpv_1_5;
-        break;
-    case glslang::EShTargetVulkan_1_3:
-        TargetVersion = glslang::EShTargetSpv_1_6;
-        break;
-    case glslang::EShTargetOpenGL_450:
-        TargetVersion = glslang::EShTargetSpv_1_0;
-        break;
-    default:
-        break;
-    }
-    return TargetVersion;
-}
-
-static bool parse(const ShaderCompUnit& unit, const ShaderCompOpt& opt, EShMessages emsg, glslang::TShader& shader) {
-    auto* data = unit.src.c_str();
-    auto client = getClient(opt.client_ver);
-    shader.setStrings(&data, 1);
-    shader.setEnvInput(opt.hlsl ? glslang::EShSourceHlsl 
-                                : glslang::EShSourceGlsl, EShLanguage::EShLangVertex,
-                       client, ClientInputSemanticsVersion);
-    shader.setEnvClient(client, opt.client_ver);
-    shader.setEnvTarget(glslang::EShTargetLanguage::EShTargetSpv, getTargetVersion(opt.client_ver));
-    if(opt.auto_map_locations)
-        shader.setAutoMapLocations(true);
-    if(opt.auto_map_bindings)
-        shader.setAutoMapBindings(true);
-    if(opt.relaxed_rules_vulkan) {
-		shader.setGlobalUniformBinding(opt.global_uniform_binding);
-        shader.setEnvInputVulkanRulesRelaxed();
-	}
-    const int default_ver = 110; // 100 for es, 110 for desktop
-    TBuiltInResource resource = DefaultTBuiltInResource;
-    if (!shader.parse(&resource, default_ver, false, emsg)) {
-		std::string tmp_name = logToTmpfileWithSha1(unit.src, "%s", unit.src.c_str());
-		LOG_ERROR("shader source is at %s", tmp_name.c_str());
-		LOG_ERROR("glslang(parse): %s", shader.getInfoLog());
-        return false;
-    }
-    return true;
-}
-
-static void SetMessageOptions(const ShaderCompOpt& opt, EShMessages& emsg) {
-    emsg = (EShMessages)(EShMsgDefault | EShMsgSpvRules);
-    if(opt.relaxed_errors_glsl)
-        emsg = (EShMessages)(emsg | EShMsgRelaxedErrors);
-    if(opt.suppress_warnings_glsl)
-        emsg = (EShMessages)(emsg | EShMsgSuppressWarnings);
-    if(getClient(opt.client_ver) == glslang::EShClientVulkan)
-        emsg = (EShMessages)(emsg | EShMsgVulkanRules);
-}
+}};
 
 
-static size_t GetTypeNum(const glslang::TType* type) {
-	size_t num {1};
-	if(type->isArray())  num *= type->getCumulativeArraySize();
-	if(type->isVector()) num *= type->getVectorSize();
-	if(type->isMatrix()) num *= type->getMatrixCols() * type->getMatrixRows();
-	return num;
-}
 
+/*
 static bool GetReflectedInfo(glslang::TProgram& pro, ShaderReflected& ref, const ShaderCompOpt& opt) {
 	EShReflectionOptions reflect_opt {EShReflectionDefault};
 	if(opt.reflect_all_io_var)
@@ -301,8 +338,100 @@ static bool GetReflectedInfo(glslang::TProgram& pro, ShaderReflected& ref, const
 
 	return true;
 };
+*/
 
-bool wallpaper::vulkan::CompileAndLinkShaderUnits(Span<const ShaderCompUnit> compUnits, const ShaderCompOpt& opt, std::vector<Uni_ShaderSpv>& spvs, ShaderReflected* reflectd) {
+bool wallpaper::vulkan::GenReflect(Span<const std::vector<uint>> codes, std::vector<Uni_ShaderSpv>& spvs, ShaderReflected& ref) {
+    spvs.clear();
+    for(const auto& code:codes) {
+        spv_reflect::ShaderModule spv_ref(code, SPV_REFLECT_MODULE_FLAG_NO_COPY);
+        auto stage = ::ToVkType(spv_ref.GetShaderStage());
+        {
+            Uni_ShaderSpv spv = std::make_unique<ShaderSpv>();
+            spv->stage = ::ToGeneType(stage);
+            spv->spirv = code;
+            spvs.emplace_back(std::move(spv));
+        }
+        std::vector<SpvReflectInterfaceVariable*> inputs;
+        std::vector<SpvReflectDescriptorBinding*> bindings;
+
+        bool ok = EnumAllRef(bindings, [&](auto&& ...args) { return spv_ref.EnumerateDescriptorBindings(args...); });
+        if (!ok) return false;
+
+        vk::DescriptorSetLayoutBinding vkbinding;
+        vkbinding.setStageFlags(stage);
+
+
+        for(auto pb:bindings) {
+            auto& b = *pb;
+            if (!b.accessed) continue;
+
+            auto bind_name = std::string(b.name).empty() && b.type_description->type_name != nullptr ? b.type_description->type_name : b.name;
+
+            if (exists(ref.binding_map, bind_name))  {
+                auto& bind = ref.binding_map[bind_name];
+                bind.setStageFlags(bind.stageFlags | stage);
+                continue;
+            }
+            if (b.descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
+                auto& block = b.block;
+                auto block_name = std::string(block.name).empty() ? bind_name : block.name;
+                ref.blocks.push_back(ShaderReflected::Block{
+                    //.index = i,
+                    .size = block.size,
+                    .name = block.name,
+                    .member_map = {}
+                });
+                auto& ref_block = ref.blocks.front();
+                vkbinding.setBinding(b.binding)
+                    .setDescriptorCount(1)
+                    .setDescriptorType(vk::DescriptorType::eUniformBuffer);
+
+                for (int i=0;i<block.member_count;i++) {
+                    auto& unif = block.members[i];
+                    ShaderReflected::BlockedUniform bunif {};
+                    {
+                        //bunif.num = GetTypeNum(type);
+                        bunif.size = unif.size;
+                        bunif.offset = unif.offset;
+                    }
+                    ref_block.member_map[unif.name] = bunif;
+                }
+            } else if(b.descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) {
+                vkbinding.setBinding(b.binding)
+                    .setDescriptorCount(1)
+                    .setDescriptorType(vk::DescriptorType::eCombinedImageSampler);
+
+            } else {
+                LOG_ERROR("unknown DescriptorBinding %d", b.descriptor_type);
+                return false;
+            }
+
+			ref.binding_map[bind_name] = vkbinding;
+        }
+
+        if (stage == vk::ShaderStageFlagBits::eVertex) {
+            EnumAllRef(inputs, [&](auto&& ...args) { return spv_ref.EnumerateInputVariables(args...); });
+
+            for(auto pinput:inputs) {
+                auto& input = *pinput;
+                if(wallpaper::sstart_with(input.name, "gl_")) continue;
+
+                if(input.location == std::numeric_limits<decltype(input.location)>::max())  {
+                    LOG_ERROR("shader input %s no location", input.name);
+                    return false;
+                }
+                ShaderReflected::Input rinput;
+                rinput.location = input.location;
+                rinput.format = ::ToVkType(input.format);
+
+                ref.input_location_map[input.name] = rinput;
+            }
+        }
+    }
+    return true; 
+}
+
+bool wallpaper::vulkan::CompileAndLinkShaderUnits(Span<const ShaderCompUnit> compUnits, const ShaderCompOpt& opt, std::vector<Uni_ShaderSpv>& spvs) {
     glslang::TProgram program;
     EShMessages emsg;
     SetMessageOptions(opt, emsg);
@@ -325,8 +454,7 @@ bool wallpaper::vulkan::CompileAndLinkShaderUnits(Span<const ShaderCompUnit> com
     glslang::TDefaultGlslIoResolver resolver(*firstIm);
     glslang::TGlslIoMapper ioMapper;
 
-	if(!( program.mapIO(&resolver, &ioMapper) && 
-		(reflectd == nullptr || GetReflectedInfo(program, *reflectd, opt)) )) {
+	if(!( program.mapIO(&resolver, &ioMapper))) {
         LOG_ERROR("glslang(mapIo): %s\n", program.getInfoLog());   
 		return false;
 	}
@@ -334,16 +462,15 @@ bool wallpaper::vulkan::CompileAndLinkShaderUnits(Span<const ShaderCompUnit> com
     spv::SpvBuildLogger logger;
     glslang::SpvOptions spvOptions;
     spvOptions.validate = true;
-    spvOptions.generateDebugInfo = true;
+    spvOptions.generateDebugInfo = false;
 
     spvs.clear();
     for(auto& unit:compUnits) {
         Uni_ShaderSpv spv = std::make_unique<ShaderSpv>();
-        spv->stage = ToVkType_Stage(unit.stage);
+        spv->stage = ::ToGeneType(::ToVkType(unit.stage));
         auto im = program.getIntermediate(unit.stage);
         im->setOriginUpperLeft();
         glslang::GlslangToSpv(*im, spv->spirv, &logger, &spvOptions);
-		//glslang::OutputSpvBin(spv->spirv, (std::to_string((int)spv->stage) + ".spv").c_str());
         spvs.emplace_back(std::move(spv)); 
         
         auto messages = logger.getAllMessages();
@@ -377,16 +504,4 @@ vk::Format wallpaper::vulkan::ToVkType(glslang::TBasicType type, size_t size) {
 	assert(false);
 	return vk::Format::eUndefined;
 #undef FORMAT_SWITCH
-}
-
-size_t wallpaper::vulkan::Sizeof(glslang::TBasicType type) {
-	switch (type)
-	{
-	case glslang::TBasicType::EbtFloat:
-	case glslang::TBasicType::EbtInt:
-		return sizeof(float);
-	}
-	LOG_ERROR("can't get glslang type \"%s\" size", glslang::TType::getBasicString(type));
-	assert(false);
-	return 0;
 }

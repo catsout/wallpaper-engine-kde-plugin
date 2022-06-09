@@ -37,6 +37,8 @@ public:
 	std::unique_ptr<IImageParser> imageParser;
 	std::unique_ptr<fs::VFS> vfs;
 
+    std::string scene_id { "unknown_id" };
+
 	SceneMesh default_effect_mesh;
 
 	ParticleSystem paritileSys;

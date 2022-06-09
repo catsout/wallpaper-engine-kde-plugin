@@ -22,7 +22,8 @@ public:
         ByteOrder::LittleEndian
 #endif
     };
-private:
+
+protected:
     template<typename T>
     T _ReadInt() {
         T x {0};
@@ -35,6 +36,14 @@ private:
         }
         return x;
     }
+    template<typename T>
+    bool _WriteInt(T x) {
+        if(!m_noswap) {
+            x = bswap<T>(x);
+        }
+        return Write_impl(reinterpret_cast<char*>(&x), sizeof(x)) != sizeof(x);
+    }
+
 public:
 	IBinaryStream() = default;
 	virtual ~IBinaryStream() = default;
@@ -86,17 +95,31 @@ public:
 
 public:
     virtual size_t Read(void* buffer, size_t sizeInByte) = 0;
-    virtual size_t Write(const void* buffer, size_t sizeInByte) = 0;
     virtual char* Gets(char* buffer, size_t sizeStr) = 0;
     virtual long Tell() const = 0;
     virtual bool SeekSet(long offset) = 0;
     virtual bool SeekCur(long offset) = 0;
     virtual bool SeekEnd(long offset) = 0;
     virtual std::size_t Size() const = 0;
+
+protected:
+    virtual size_t Write_impl(const void* buffer, size_t sizeInByte) = 0;
+
 private:
     constexpr static ByteOrder default_byte_order {ByteOrder::LittleEndian};
     ByteOrder m_byte_order {default_byte_order};
     bool m_noswap {sys_byte_order == default_byte_order};
+};
+
+
+class IBinaryStreamW : IBinaryStream {
+public:
+    virtual ~IBinaryStreamW() = default;
+    size_t Write(const void* buffer, size_t sizeInByte) {
+        return Write_impl(buffer, sizeInByte);
+    }
+    int32_t WriteInt32(int32_t x) { return _WriteInt<int32_t>(x); }
+    uint32_t WriteUint32(uint32_t x) { return _WriteInt<uint32_t>(x); }
 };
 
 }

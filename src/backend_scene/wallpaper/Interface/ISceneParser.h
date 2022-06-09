@@ -13,6 +13,6 @@ class ISceneParser {
 public:
 	ISceneParser() = default;
 	virtual ~ISceneParser() = default;
-	virtual std::shared_ptr<Scene> Parse(const std::string&, fs::VFS&, audio::SoundManager&) = 0;
+	virtual std::shared_ptr<Scene> Parse(std::string_view scene_id, const std::string&, fs::VFS&, audio::SoundManager&) = 0;
 };
 }

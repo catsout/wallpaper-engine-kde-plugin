@@ -220,7 +220,7 @@ void ParseSpecTexName(std::string& name, const wpscene::WPMaterial& wpmat,
     }
 }
 
-void LoadMaterial(fs::VFS& vfs, const wpscene::WPMaterial& wpmat, Scene* pScene, SceneNode* pNode,
+bool LoadMaterial(fs::VFS& vfs, const wpscene::WPMaterial& wpmat, Scene* pScene, SceneNode* pNode,
                   SceneMaterial* pMaterial, WPShaderValueData* pSvData,
                   WPShaderInfo* pWPShaderInfo = nullptr) {
     auto& svData   = *pSvData;
@@ -237,9 +237,13 @@ void LoadMaterial(fs::VFS& vfs, const wpscene::WPMaterial& wpmat, Scene* pScene,
     auto& shader = materialShader.shader;
     shader       = std::make_shared<SceneShader>();
     shader->name = wpmat.shader;
+
     std::string shaderPath("/assets/shaders/" + wpmat.shader);
-    std::string svCode = fs::GetFileContent(vfs, shaderPath + ".vert");
-    std::string fgCode = fs::GetFileContent(vfs, shaderPath + ".frag");
+
+    std::array sd_units { WPShaderUnit { .stage = ShaderType::VERTEX,
+                                         .src   = fs::GetFileContent(vfs, shaderPath + ".vert") },
+                          WPShaderUnit { .stage = ShaderType::FRAGMENT,
+                                         .src   = fs::GetFileContent(vfs, shaderPath + ".frag") } };
 
     std::vector<WPShaderTexInfo>                 texinfos;
     std::unordered_map<std::string, ImageHeader> texHeaders;
@@ -263,8 +267,9 @@ void LoadMaterial(fs::VFS& vfs, const wpscene::WPMaterial& wpmat, Scene* pScene,
             texinfos.push_back({ true });
     }
 
-    svCode = WPShaderParser::PreShaderSrc(vfs, svCode, pWPShaderInfo, texinfos);
-    fgCode = WPShaderParser::PreShaderSrc(vfs, fgCode, pWPShaderInfo, texinfos);
+    for (auto& unit : sd_units) {
+        unit.src = WPShaderParser::PreShaderSrc(vfs, unit.src, pWPShaderInfo, texinfos);
+    }
 
     shader->default_uniforms = pWPShaderInfo->svs;
 
@@ -309,10 +314,11 @@ void LoadMaterial(fs::VFS& vfs, const wpscene::WPMaterial& wpmat, Scene* pScene,
                                           ? pScene->imageParser->ParseHeader(name)
                                           : texHeaders.at(name);
             if (i == 0) {
+                /*
                 if (texh.format == TextureFormat::R8)
                     fgCode = "#define TEX0FORMAT FORMAT_R8\n" + fgCode;
                 else if (texh.format == TextureFormat::RG8)
-                    fgCode = "#define TEX0FORMAT FORMAT_RG88\n" + fgCode;
+                    fgCode = "#define TEX0FORMAT FORMAT_RG88\n" + fgCode;*/
             }
             if (texh.mipmap_pow2) {
                 resolution = { texh.width, texh.height, texh.mapWidth, texh.mapHeight };
@@ -358,17 +364,15 @@ void LoadMaterial(fs::VFS& vfs, const wpscene::WPMaterial& wpmat, Scene* pScene,
         // pWPShaderInfo->combos.at("LIGHTING");
     }
 
-    WPPreprocessorInfo pre_vert, pre_frag;
-    WPShaderParser::Preprocessor(svCode, ShaderType::VERTEX, pWPShaderInfo->combos, pre_vert);
-    WPShaderParser::Preprocessor(fgCode, ShaderType::FRAGMENT, pWPShaderInfo->combos, pre_frag);
+    if (! WPShaderParser::CompileToSpv(
+            pScene->scene_id, sd_units, shader->codes, vfs, pWPShaderInfo, texinfos)) {
+        return false;
+    }
 
-    shader->vertexCode   = WPShaderParser::Finalprocessor(pre_vert, nullptr, &pre_frag);
-    shader->fragmentCode = WPShaderParser::Finalprocessor(pre_frag, &pre_vert, nullptr);
-    ;
     material.blenmode = ParseBlendMode(wpmat.blending);
 
     for (uint i = 0; i < material.textures.size(); i++) {
-        if (! exists(pre_frag.active_tex_slots, i)) material.textures[i].clear();
+        if (! exists(sd_units[1].preprocess_info.active_tex_slots, i)) material.textures[i].clear();
     }
 
     for (const auto& el : pWPShaderInfo->baseConstSvs) {
@@ -376,6 +380,8 @@ void LoadMaterial(fs::VFS& vfs, const wpscene::WPMaterial& wpmat, Scene* pScene,
     }
     material.customShader = materialShader;
     material.name         = wpmat.shader;
+
+    return true;
 }
 
 void LoadAlignment(SceneNode& node, std::string_view align, Vector2f size) {
@@ -713,7 +719,6 @@ void ParseImageObj(ParseContext& context, wpscene::WPImageObject& img_obj) {
                 continue;
             }
             std::shared_ptr<SceneImageEffect> imgEffect = std::make_shared<SceneImageEffect>();
-            imgEffectLayer->AddEffect(imgEffect);
 
             // this will be replace when resolve, use here to get rt info
             const std::string inRT { effect_ppong_a };
@@ -743,7 +748,7 @@ void ParseImageObj(ParseContext& context, wpscene::WPImageObject& img_obj) {
                     fboMap[wpfbo.name] = rtname;
                 }
             }
-            // load effect commands
+            // load! effect commands
             {
                 for (const auto& el : wpeffobj.commands) {
                     if (el.command != "copy") {
@@ -762,6 +767,8 @@ void ParseImageObj(ParseContext& context, wpscene::WPImageObject& img_obj) {
                                                     .afterpos = el.afterpos });
                 }
             }
+
+            bool eff_mat_ok { true };
 
             for (int32_t i_mat = 0; i_mat < wpeffobj.materials.size(); i_mat++) {
                 wpscene::WPMaterial wpmat = wpeffobj.materials.at(i_mat);
@@ -800,13 +807,16 @@ void ParseImageObj(ParseContext& context, wpscene::WPImageObject& img_obj) {
                     ShaderValue::fromMatrix(Eigen::Matrix4f::Identity());
                 SceneMaterial     material;
                 WPShaderValueData svData;
-                LoadMaterial(vfs,
-                             wpmat,
-                             context.scene.get(),
-                             spEffNode.get(),
-                             &material,
-                             &svData,
-                             &wpEffShaderInfo);
+                if (! LoadMaterial(vfs,
+                                   wpmat,
+                                   context.scene.get(),
+                                   spEffNode.get(),
+                                   &material,
+                                   &svData,
+                                   &wpEffShaderInfo)) {
+                    eff_mat_ok = false;
+                    break;
+                }
 
                 // load glname from alias and load to constvalue
                 LoadConstvalue(material, wpmat, wpEffShaderInfo);
@@ -823,6 +833,12 @@ void ParseImageObj(ParseContext& context, wpscene::WPImageObject& img_obj) {
 
                 context.shader_updater->SetNodeData(spEffNode.get(), svData);
                 imgEffect->nodes.push_back({ matOutRT, spEffNode });
+            }
+
+            if (eff_mat_ok)
+                imgEffectLayer->AddEffect(imgEffect);
+            else {
+                LOG_ERROR("effect \'%s\' failed to load", wpeffobj.name.c_str());
             }
         }
     }
@@ -948,8 +964,8 @@ void ParseLightObj(ParseContext& context, wpscene::WPLightObject& light_obj) {
 }
 } // namespace
 
-std::shared_ptr<Scene> WPSceneParser::Parse(const std::string& buf, fs::VFS& vfs,
-                                            audio::SoundManager& sm) {
+std::shared_ptr<Scene> WPSceneParser::Parse(std::string_view scene_id, const std::string& buf,
+                                            fs::VFS& vfs, audio::SoundManager& sm) {
     nlohmann::json json;
     if (! PARSE_JSON(buf, json)) return nullptr;
     wpscene::WPScene sc;
@@ -1013,6 +1029,8 @@ std::shared_ptr<Scene> WPSceneParser::Parse(const std::string& buf, fs::VFS& vfs
             .bind       = { .enable = true, .name = SpecTex_Default.data() }
         };
     }
+
+    context.scene->scene_id = scene_id;
 
     WPShaderParser::InitGlslang();
 

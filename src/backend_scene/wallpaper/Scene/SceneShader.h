@@ -71,6 +71,8 @@ private:
 using ShaderValues   = Map<std::string, ShaderValue>;
 using ShaderValueMap = ShaderValues;
 
+using ShaderCode = std::vector<unsigned int>;
+
 struct ShaderAttribute {
 public:
     std::string name;
@@ -85,6 +87,10 @@ public:
     std::string vertexCode;
     std::string geometryCode;
     std::string fragmentCode;
+
+    std::vector<ShaderCode> codes;
+
+    std::vector<unsigned int> spirv;
 
     std::vector<ShaderAttribute> attrs;
     ShaderValues                 default_uniforms;

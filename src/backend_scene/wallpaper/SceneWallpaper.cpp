@@ -88,6 +88,7 @@ private:
 
     std::string m_assets;
     std::string m_source;
+    std::string m_cache_path;
     bool        m_gen_graphviz { false };
 
     WPSceneParser                        m_scene_parser;
@@ -256,7 +257,7 @@ void SceneWallpaper::pause() {
     msg->post();
 }
 
-void SceneWallpaper::mouseInput(float x, float y) {
+void SceneWallpaper::mouseInput(double x, double y) {
     m_main_handler->renderHandler()->setMousePos(x, y);
 }
 
@@ -318,6 +319,10 @@ MHANDLER_CMD_IMPL(MainHandler, SET_PROPERTY) {
             float volume { 1.0f };
             msg->findFloat("value", &volume);
             m_sound_manager->SetVolume(volume);
+        } else if (property == PROPERTY_CACHE_PATH) {
+            std::string path;
+            msg->findString("value", &path);
+            m_cache_path = path;
         }
     }
 }
@@ -365,13 +370,20 @@ void MainHandler::loadScene() {
     std::string pkgPath  = pkgPath_fs.native();
     std::string pkgEntry = pkgPath_fs.filename().replace_extension("json").native();
     std::string pkgDir   = pkgPath_fs.parent_path().native();
+    std::string scene_id = pkgPath_fs.parent_path().filename().native();
+
     // load pkgfile
     if (! vfs.Mount("/assets", fs::WPPkgFs::CreatePkgFs(pkgPath))) {
         LOG_INFO("load pkg file %s failed, fallback to use dir", pkgPath.c_str());
         // load pkg dir
         if (! vfs.Mount("/assets", fs::CreatePhysicalFs(pkgDir))) {
-            LOG_ERROR("Can't load pkg directory: %s", pkgDir.c_str());
+            LOG_ERROR("can't load pkg directory: %s", pkgDir.c_str());
             return;
+        }
+    }
+    if (! m_cache_path.empty()) {
+        if (! vfs.Mount("/cache", fs::CreatePhysicalFs(m_cache_path, true), "cache")) {
+            LOG_ERROR("can't load cache directory: %s", m_cache_path.c_str());
         }
     }
 
@@ -389,7 +401,7 @@ void MainHandler::loadScene() {
             LOG_ERROR("Not supported scene type");
             return;
         }
-        scene = m_scene_parser.Parse(scene_src, vfs, *m_sound_manager);
+        scene = m_scene_parser.Parse(scene_id, scene_src, vfs, *m_sound_manager);
         scene->vfs.swap(pVfs);
     }
 

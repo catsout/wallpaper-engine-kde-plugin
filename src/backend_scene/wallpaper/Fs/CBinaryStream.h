@@ -12,18 +12,22 @@ namespace wallpaper
 {
 namespace fs
 {
-class CBinarayStream : public IBinaryStream {
+template <typename TBinaryStream>
+class CBinaryStream : public TBinaryStream {
 public:
-	virtual ~CBinarayStream() {
+	virtual ~CBinaryStream() {
 		std::fclose(m_file);
 	}
 protected:
-	CBinarayStream(std::string_view path, std::FILE* file):m_file(file) {}
+	CBinaryStream(std::string_view path, std::FILE* file):m_file(file) {}
+    virtual size_t Write_impl( const void* buffer, size_t sizeInBytes) override { 
+        return std::fwrite(buffer, sizeInBytes, 1, m_file);
+    }
+
 public:
     virtual size_t Read(void* buffer, size_t sizeInBytes) override {
 		return sizeInBytes * std::fread(buffer, sizeInBytes, 1, m_file);
 	}
-    virtual size_t Write( const void* buffer, size_t sizeInBytes) override { return 0; }
     virtual char* Gets( char* buffer, size_t sizeStr) override {
 		return std::fgets(buffer, sizeStr, m_file);
 	}
@@ -51,15 +55,16 @@ private:
 	std::FILE* m_file;
 };
 
-inline std::shared_ptr<CBinarayStream> CreateCBinaryStream(std::string_view path) {
-	struct Shared : public CBinarayStream {
-		Shared(std::string_view path, std::FILE* file):CBinarayStream(path, file) {};
+template <typename TBinaryStream>
+inline std::shared_ptr<TBinaryStream> t_CreateCBinaryStream(std::string_view path, const char* mode) {
+	struct Shared : public CBinaryStream<TBinaryStream> {
+		Shared(std::string_view path, std::FILE* file):CBinaryStream<TBinaryStream>(path, file) {};
 	};
 	if(std::filesystem::is_directory(path)) {
-		LOG_ERROR("can't open: %s", path.data());
+		LOG_ERROR("can't open: \'%s\', which is a directory", path.data());
 	 	return nullptr;
 	}
-	auto* file = std::fopen(std::string(path).c_str(), "rb");
+	auto* file = std::fopen(std::string(path).c_str(), mode);
 	if(file == NULL) {
 		LOG_ERROR("can't open: %s", path.data());
 		return nullptr;
@@ -67,5 +72,13 @@ inline std::shared_ptr<CBinarayStream> CreateCBinaryStream(std::string_view path
 	auto cb = std::make_shared<Shared>(path, file);
 	return cb;
 }
+
+inline std::shared_ptr<IBinaryStream> CreateCBinaryStream(std::string_view path) {
+    return t_CreateCBinaryStream<IBinaryStream>(path, "rb");
+}
+inline std::shared_ptr<IBinaryStreamW> CreateCBinaryStreamW(std::string_view path) {
+    return t_CreateCBinaryStream<IBinaryStreamW>(path, "wb+");
+}
+
 }
 }
