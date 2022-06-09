@@ -476,7 +476,6 @@ bool WPShaderParser::CompileToSpv(std::string_view scene_id, Span<WPShaderUnit> 
     };
 
     bool has_cache_dir = vfs.IsMounted("cache");
-    if (! has_cache_dir) LOG_ERROR("cache not mouted");
 
     if (has_cache_dir) {
         std::string sha1            = GenSha1(units);

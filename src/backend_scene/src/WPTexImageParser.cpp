@@ -4,7 +4,7 @@
 #include <lz4.h>
 
 #include "SpriteAnimation.hpp"
-#include "Algorism.h"
+#include "Utils/Algorism.h"
 #include "Fs/VFS.h"
 #include "Utils/BitFlags.hpp"
 

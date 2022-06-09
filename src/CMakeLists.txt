@@ -1,5 +1,8 @@
 find_package(Qt5 COMPONENTS Quick Qml REQUIRED)
+
 add_subdirectory(backend_mpv)
+
+SET(BUILD_QML ON CACHE BOOL "")
 add_subdirectory(backend_scene)
 
 set(CMAKE_AUTOMOC ON)
@@ -18,7 +21,7 @@ target_link_libraries(${PROJECT_NAME}
 	Qt5::Quick
 	Qt5::Qml 
 	mpvbackend
-	scenebackend
+	wescene-renderer-qml
 )
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_VISIBILITY_PRESET hidden)
 set_target_properties(${PROJECT_NAME}

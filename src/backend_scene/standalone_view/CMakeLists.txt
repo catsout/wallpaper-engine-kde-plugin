@@ -15,13 +15,7 @@ option(BUILD_QML "Build qml scene viewer" ${BUILD_QML})
 find_package(PkgConfig REQUIRED)
 
 include_directories(../third_party)
-
-if(BUILD_QML)
-    add_subdirectory(.. scenebackend)
-else()
-    add_subdirectory(../third_party third_party)
-    add_subdirectory(../wallpaper wallpaper)
-endif()
+add_subdirectory(.. scenebackend)
 
 pkg_check_modules(GLFW REQUIRED glfw3)
 add_executable(${PROJECT_NAME}
@@ -30,7 +24,7 @@ add_executable(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME}
     PUBLIC 
         ${GLFW_LIBRARIES}
-        wallpaper
+        wescene-renderer
 )
 
 if(BUILD_QML)
@@ -47,7 +41,7 @@ if(BUILD_QML)
     )
     target_link_libraries(${PROJECT_NAME}-qml
         PUBLIC 
-            scenebackend
+        wescene-renderer-qml
     )
     set(CMAKE_AUTOMOC OFF) 
     set(CMAKE_AUTORCC OFF) 

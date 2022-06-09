@@ -10,6 +10,7 @@ constexpr std::string_view OPT_VALID_LAYER = "--valid-layer";
 constexpr std::string_view OPT_GRAPHVIZ    = "--graphviz";
 constexpr std::string_view OPT_FPS         = "--fps";
 constexpr std::string_view OPT_RESOLUTION  = "--resolution";
+constexpr std::string_view OPT_CACHE_PATH  = "--cache-path";
 
 struct Resolution {
 	uint w;
@@ -41,6 +42,12 @@ void setAndParseArg(argparse::ArgumentParser& arg, int argc, char** argv) {
         .default_value(false)
         .implicit_value(true)
         .nargs(0)
+        .append();
+
+    arg.add_argument("-C", OPT_CACHE_PATH)
+        .help("generate graphviz of render graph, output to 'graph.dot'")
+        .default_value(std::string())
+        .nargs(1)
         .append();
 
     arg.add_argument("-R", OPT_RESOLUTION)

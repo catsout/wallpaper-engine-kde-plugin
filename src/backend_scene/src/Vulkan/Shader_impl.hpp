@@ -130,11 +130,13 @@ inline bool parse(const ShaderCompUnit& unit, const ShaderCompOpt& opt, EShMessa
         shader.setEnvInputVulkanRulesRelaxed();
 	}
     const int default_ver = 110; // 100 for es, 110 for desktop
-    TBuiltInResource resource; // = DefaultTBuiltInResource;
+    TBuiltInResource resource = DefaultTBuiltInResource;
     if (!shader.parse(&resource, default_ver, false, emsg)) {
 		std::string tmp_name = logToTmpfileWithSha1(unit.src, "%s", unit.src.c_str());
+        LOG_INFO("--- shader compile failed ---");
 		LOG_ERROR("shader source is at %s", tmp_name.c_str());
 		LOG_ERROR("glslang(parse): %s", shader.getInfoLog());
+        LOG_INFO("--- end ---");
         return false;
     }
     return true;

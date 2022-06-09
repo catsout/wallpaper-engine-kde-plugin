@@ -3,7 +3,7 @@
 #include <array>
 #include <cstdint>
 
-#include "span.hpp"
+#include "Utils/span.hpp"
 #include "ExSwapchain.hpp"
 
 class GlExtra {

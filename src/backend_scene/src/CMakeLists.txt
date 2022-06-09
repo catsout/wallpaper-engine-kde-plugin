@@ -1,5 +1,3 @@
-project(wallpaper)
-set(CMAKE_CXX_STANDARD 17)
 
 find_package(OpenGL REQUIRED)
 find_package(Threads REQUIRED)
@@ -74,10 +72,8 @@ set_property(TARGET ${PROJECT_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
 target_link_libraries(${PROJECT_NAME}
 PRIVATE
 	${InteralLib}
-	OpenGL::GL
 	${LZ4_LIBRARIES}
 	${CMAKE_THREAD_LIBS_INIT}
 	${CMAKE_DL_LIBS}
-	glad
 )
-target_include_directories(${PROJECT_NAME} PUBLIC . Utils Swapchain)
+target_include_directories(${PROJECT_NAME} PUBLIC . Swapchain)

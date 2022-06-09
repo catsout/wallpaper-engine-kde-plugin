@@ -383,7 +383,9 @@ void MainHandler::loadScene() {
     }
     if (! m_cache_path.empty()) {
         if (! vfs.Mount("/cache", fs::CreatePhysicalFs(m_cache_path, true), "cache")) {
-            LOG_ERROR("can't load cache directory: %s", m_cache_path.c_str());
+            LOG_ERROR("can't load cache folder: %s", m_cache_path.c_str());
+        } else {
+            LOG_INFO("cache folder: %s", m_cache_path.c_str());
         }
     }
 
