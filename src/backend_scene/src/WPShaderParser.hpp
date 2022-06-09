@@ -9,7 +9,7 @@ namespace fs
 {
 class VFS;
 }
-using Combos = Map<std::string, int32_t>;
+using Combos = Map<std::string, std::string>;
 
 // ui material name to gl uniform name
 using WPAliasValueDict = Map<std::string, std::string>;

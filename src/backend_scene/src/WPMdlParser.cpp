@@ -204,8 +204,8 @@ void WPMdlParser::GenPuppetMesh(SceneMesh& mesh, const WPMdl& mdl) {
 }
 
 void WPMdlParser::AddPuppetShaderInfo(WPShaderInfo& info, const WPMdl& mdl) {
-    info.combos["SKINNING"]  = 1;
-    info.combos["BONECOUNT"] = mdl.puppet->bones.size();
+    info.combos["SKINNING"]  = "1";
+    info.combos["BONECOUNT"] = std::to_string(mdl.puppet->bones.size());
 }
 
 void WPMdlParser::AddPuppetMatInfo(wpscene::WPMaterial& mat, const WPMdl& mdl) {

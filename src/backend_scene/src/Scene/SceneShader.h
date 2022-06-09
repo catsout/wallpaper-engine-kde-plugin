@@ -83,14 +83,14 @@ struct SceneShader {
 public:
     uint32_t    id;
     std::string name;
-
+    
+    /*
     std::string vertexCode;
     std::string geometryCode;
     std::string fragmentCode;
+    */
 
     std::vector<ShaderCode> codes;
-
-    std::vector<unsigned int> spirv;
 
     std::vector<ShaderAttribute> attrs;
     ShaderValues                 default_uniforms;

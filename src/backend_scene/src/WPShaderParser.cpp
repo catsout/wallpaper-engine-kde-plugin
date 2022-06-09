@@ -1,6 +1,7 @@
 #include "WPShaderParser.hpp"
 
 #include "Fs/IBinaryStream.h"
+#include "Utils/Logging.h"
 #include "WPJson.hpp"
 
 #include "wpscene/WPUniform.h"
@@ -14,6 +15,7 @@
 #include <regex>
 #include <stack>
 #include <charconv>
+#include <string>
 
 static constexpr std::string_view SHADER_PLACEHOLD { "__SHADER_PLACEHOLD__" };
 
@@ -121,7 +123,7 @@ inline void ParseWPShader(const std::string& src, WPShaderInfo* pWPShaderInfo,
                     int32_t     value = 0;
                     GET_JSON_NAME_VALUE(combo_json, "combo", name);
                     GET_JSON_NAME_VALUE(combo_json, "default", value);
-                    combos[name] = value;
+                    combos[name] = std::to_string(value);
                 }
             }
         } else if (line.find("uniform ") != std::string::npos) {
@@ -145,15 +147,15 @@ inline void ParseWPShader(const std::string& src, WPShaderInfo* pWPShaderInfo,
                         STRTONUM(name.substr(9), index);
                         if (! wput.default_.empty()) defTexs.push_back({ index, wput.default_ });
                         if (! wput.combo.empty()) {
-                            int32_t value { 1 };
-                            if (index >= texcount) value = 0;
-                            combos[wput.combo] = value;
+                            if (index >= texcount)
+                                combos[wput.combo] = "0";
+                            else combos[wput.combo] = "1";
                         }
                         if (index < texcount && texinfos[index].enabled) {
                             auto& compos = texinfos[index].composEnabled;
                             int   num    = std::min(compos.size(), wput.components.size());
                             for (int i = 0; i < num; i++) {
-                                if (compos[i]) combos[wput.components[i].combo] = 1;
+                                if (compos[i]) combos[wput.components[i].combo] = "1";
                             }
                         }
 
@@ -174,9 +176,8 @@ inline void ParseWPShader(const std::string& src, WPShaderInfo* pWPShaderInfo,
                         }
                         if (sv_json.contains("combo")) {
                             std::string name;
-                            int32_t     value = 1;
                             GET_JSON_NAME_VALUE(sv_json, "combo", name);
-                            combos[name] = value;
+                            combos[name] = "1";
                         }
                     }
                     if (defines.back()[0] != 'g') {
@@ -278,10 +279,12 @@ inline std::string Preprocessor(const std::string& in_src, ShaderType type, cons
 
     std::string src = wallpaper::WPShaderParser::PreShaderHeader(in_src, combos, type);
 
+
     glslang::TShader::ForbidIncluder includer;
     glslang::TShader                 shader(ToGLSL(type));
     const EShMessages emsg { (EShMessages)(EShMsgDefault | EShMsgSpvRules | EShMsgRelaxedErrors |
                                            EShMsgSuppressWarnings | EShMsgVulkanRules) };
+
     auto*             data = src.c_str();
     shader.setStrings(&data, 1);
     shader.preprocess(&vulkan::DefaultTBuiltInResource,
@@ -292,6 +295,7 @@ inline std::string Preprocessor(const std::string& in_src, ShaderType type, cons
                       emsg,
                       &res,
                       includer);
+
 
     std::regex re_io(R"(.+\s(in|out)\s[\s\w]+\s(\w+)\s*;)", std::regex::ECMAScript);
     for (auto it = std::sregex_iterator(res.begin(), res.end(), re_io);
@@ -412,6 +416,7 @@ std::string WPShaderParser::PreShaderSrc(fs::VFS& vfs, const std::string& src,
     ParseWPShader(include, pWPShaderInfo, texinfos);
     ParseWPShader(newsrc, pWPShaderInfo, texinfos);
 
+
     newsrc.insert(FindIncludeInsertPos(newsrc, 0), include);
     return newsrc;
 }
@@ -425,7 +430,11 @@ std::string WPShaderParser::PreShaderHeader(const std::string& src, const Combos
     for (const auto& c : combos) {
         std::string cup(c.first);
         std::transform(c.first.begin(), c.first.end(), cup.begin(), ::toupper);
-        header.append("#define " + cup + " " + std::to_string(c.second) + "\n");
+        if(c.second.empty()) {
+            LOG_ERROR("combo '%s' can't be empty", cup.c_str());
+            continue;
+        }
+        header.append("#define " + cup + " " + c.second + "\n");
     }
     return header + src;
 }
@@ -436,9 +445,12 @@ void WPShaderParser::FinalGlslang() { glslang::FinalizeProcess(); }
 bool WPShaderParser::CompileToSpv(std::string_view scene_id, Span<WPShaderUnit> units,
                                   std::vector<ShaderCode>& codes, fs::VFS& vfs,
                                   WPShaderInfo* shader_info, Span<const WPShaderTexInfo> texs) {
+
+
     std::for_each(units.begin(), units.end(), [shader_info](auto& unit) {
         unit.src = Preprocessor(unit.src, unit.stage, shader_info->combos, unit.preprocess_info);
     });
+
 
     auto compile = [](Span<WPShaderUnit> units, std::vector<ShaderCode>& codes) {
         std::vector<vulkan::ShaderCompUnit> vunits(units.size());
@@ -464,6 +476,7 @@ bool WPShaderParser::CompileToSpv(std::string_view scene_id, Span<WPShaderUnit> 
         opt.suppress_warnings_glsl = true;
 
         std::vector<vulkan::Uni_ShaderSpv> spvs(units.size());
+
         if (! vulkan::CompileAndLinkShaderUnits(vunits, opt, spvs)) {
             return false;
         }
