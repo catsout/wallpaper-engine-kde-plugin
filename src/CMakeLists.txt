@@ -13,6 +13,7 @@ add_library(${PROJECT_NAME}
 	SHARED
 	plugin.cpp
 	MouseGrabber.cpp
+    PluginInfo.cpp
 	qmldir
 )
 

@@ -1,5 +1,5 @@
 import QtQuick 2.5
-import com.github.catsout.wallpaperEngineKde 1.1
+import com.github.catsout.wallpaperEngineKde 1.2
 import ".."
 
 Item{
@@ -39,7 +39,7 @@ Item{
     // mute
     // volume
     // fun:setProperty(name,value)
-    MpvObject {
+    Mpv {
         id: player
         anchors.fill: parent
         mute: background.mute

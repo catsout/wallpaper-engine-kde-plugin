@@ -87,6 +87,27 @@ Flickable {
                 onClicked: Qt.openUrlExternally(Common.repo_url)
             }
         }
+
+        OptionItem {
+            text: 'Version'
+            text_color: Theme.textColor
+            icon: '../../images/tag.svg'
+            contentBottom: ColumnLayout {
+                Text {
+                    Layout.fillWidth: true
+                    color: Theme.disabledTextColor
+                    text: `
+                        <ul>
+                        <li>${Common.version}</li>
+                        <li>plugin lib: ${plugin_info.version}</li>
+                        </ul>
+                    `
+                    wrapMode: Text.Wrap
+                    textFormat: Text.RichText
+                }
+            }
+        }
+ 
         OptionItem {
             text: 'Lib Checking'
             text_color: Theme.textColor

@@ -4,8 +4,9 @@
 #include "MpvBackend.hpp"
 #include "SceneBackend.hpp"
 #include "MouseGrabber.hpp"
+#include "PluginInfo.hpp"
 
-constexpr std::array<uint, 2> WPVersion { 1, 1 };
+constexpr std::array<uint, 2> WPVer { 1, 2 };
 
 class Port : public QQmlExtensionPlugin {
     Q_OBJECT
@@ -14,10 +15,11 @@ class Port : public QQmlExtensionPlugin {
 public:
     void registerTypes(const char* uri) override {
         if (strcmp(uri, "com.github.catsout.wallpaperEngineKde") != 0) return;
-        qmlRegisterType<MouseGrabber>(uri, WPVersion[0], WPVersion[1], "MouseGrabber");
-        qmlRegisterType<scenebackend::SceneObject>(uri, WPVersion[0], WPVersion[1], "SceneViewer");
+        qmlRegisterType<wekde::PluginInfo>(uri, WPVer[0], WPVer[1], "PluginInfo");
+        qmlRegisterType<wekde::MouseGrabber>(uri, WPVer[0], WPVer[1], "MouseGrabber");
+        qmlRegisterType<scenebackend::SceneObject>(uri, WPVer[0], WPVer[1], "SceneViewer");
         std::setlocale(LC_NUMERIC, "C");
-        qmlRegisterType<mpv::MpvObject>(uri, WPVersion[0], WPVersion[1], "MpvObject");
+        qmlRegisterType<mpv::MpvObject>(uri, WPVer[0], WPVer[1], "Mpv");
     }
 };
 

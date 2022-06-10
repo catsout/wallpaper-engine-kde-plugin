@@ -1,5 +1,6 @@
 module com.github.catsout.wallpaperEngineKde
 plugin WallpaperEngineKde
+classname PluginInfo
 classname MouseGrabber
 classname SceneViewer
-classname MpvObject
+classname Mpv

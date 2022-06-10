@@ -68,6 +68,23 @@ ColumnLayout {
         qtwebchannel: Common.checklib_webchannel(root)
     })
 
+
+                    
+    property var plugin_info: {
+        if(!libcheck.wallpaper) {
+            plugin_info = {
+                version: "-",
+                cache_path: null
+            }
+        } else {
+            plugin_info = Qt.createQmlObject(`
+                import QtQuick 2.0;
+                import com.github.catsout.wallpaperEngineKde 1.2
+                PluginInfo {}
+            `, this);
+        }
+    }
+
     property var pyext: {
         if(!libcheck.qtwebsockets) {
             pyext = null
@@ -93,7 +110,6 @@ ColumnLayout {
 
     Component.onDestruction: {
         if(this.pyext) this.pyext.destroy();
-        if(this.wpListModel) this.wpListModel.destroy();
     }
 
     function saveCustomConf() {

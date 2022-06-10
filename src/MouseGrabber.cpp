@@ -3,6 +3,8 @@
 #include <QLoggingCategory>
 #include <QCoreApplication>
 
+using namespace wekde;
+
 MouseGrabber::MouseGrabber(QQuickItem* parent): QQuickItem(parent) {
     setAcceptedMouseButtons(Qt::LeftButton);
     setAcceptHoverEvents(true);

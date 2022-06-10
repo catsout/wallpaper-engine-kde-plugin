@@ -26,6 +26,8 @@ QtObject {
         Mpv
     }
 
+    readonly property string version: '0.5.3'
+
     readonly property string repo_url: 'https://github.com/catsout/wallpaper-engine-kde-plugin'
 
     readonly property var wpitem_template: ({
@@ -237,7 +239,7 @@ QtObject {
     }
 
     function checklib_wallpaper(parentItem) {
-        return checklib('com.github.catsout.wallpaperEngineKde 1.1', parentItem);
+        return checklib('com.github.catsout.wallpaperEngineKde 1.2', parentItem);
     }
 
     function checklib_folderlist(parentItem) {

@@ -172,7 +172,7 @@ SceneObject::SceneObject(QQuickItem* parent)
     : QQuickItem(parent), m_scene(std::make_shared<wallpaper::SceneWallpaper>()) {
     setFlag(ItemHasContents, true);
     m_scene->init();
-    m_scene->setPropertyString(wallpaper::PROPERTY_CACHE_PATH, wallpaper::platform::GetCachePath(CACHE_DIR));
+    m_scene->setPropertyString(wallpaper::PROPERTY_CACHE_PATH, GetDefaultCachePath());
 }
 
 SceneObject::~SceneObject() { _Q_INFO("Destroy sceneobject", ""); }
@@ -282,6 +282,10 @@ void SceneObject::mouseMoveEvent(QMouseEvent* event) {
 void SceneObject::hoverMoveEvent(QHoverEvent* event) {
     auto pos = event->posF();
     m_scene->mouseInput(pos.x() / width(), pos.y() / height());
+}
+
+std::string SceneObject::GetDefaultCachePath() {
+    return wallpaper::platform::GetCachePath(CACHE_DIR);
 }
 
 #include "SceneBackend.moc"

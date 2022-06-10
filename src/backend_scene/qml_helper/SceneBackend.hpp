@@ -23,6 +23,8 @@ class SceneObject : public QQuickItem {
     Q_PROPERTY(bool muted READ muted WRITE setMuted)
 public:
     constexpr static std::string_view CACHE_DIR { "wescene-renderer" };
+    static std::string GetDefaultCachePath();
+
     enum FillMode
     {
         STRETCH,

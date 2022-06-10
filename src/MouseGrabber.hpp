@@ -5,6 +5,9 @@
 #include <QHoverEvent>
 #include <QPointer>
 
+namespace wekde
+{
+
 class MouseGrabber : public QQuickItem
 {
     Q_OBJECT
@@ -41,3 +44,4 @@ private:
 	bool m_forceCapture {false};
     QPointer<QQuickItem> m_target {nullptr};
 };
+}

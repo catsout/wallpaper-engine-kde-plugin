@@ -4,9 +4,11 @@ import QtQuick.Layouts 1.5
 
 import ".."
 import "../components"
+import "../utils.mjs" as Utils
 
 import org.kde.plasma.core 2.0 as PlasmaCore
 import org.kde.plasma.components 3.0 as PlasmaComponents
+import org.kde.kirigami 2.6 as Kirigami
 
 Flickable {
     id: settingTab
@@ -329,6 +331,46 @@ Flickable {
                     }
                 }
 
+            }
+            OptionItem {
+                text: 'Shader cache'
+                text_color: Theme.textColor
+                icon: '../../images/information-outline.svg'
+                actor: Kirigami.ActionToolBar {
+                    Layout.fillWidth: true
+                    alignment: Qt.AlignRight
+                    flat: false
+                    actions: [
+                        Kirigami.Action {
+                            text: 'Show'
+                            tooltip: 'Show in file manager'
+                            onTriggered: {
+                                if(plugin_info.cache_path)
+                                    Qt.openUrlExternally(plugin_info.cache_path);
+                            }
+                        }
+                    ]
+                }
+                contentBottom: ColumnLayout {
+                    Text {
+                        Layout.fillWidth: true
+                        property string cache_path: Common.urlNative(plugin_info.cache_path)
+
+                        color: Theme.disabledTextColor
+                        text: plugin_info.cache_path
+                        ? `${cache_path} - ${cache_size}`
+                        : `Not available`
+
+                        property string cache_size: {
+                            if(pyext) {
+                                pyext.get_dir_size(this.cache_path).then(res => {
+                                    this.cache_size = Utils.prettyBytes(res);
+                                }).catch(reason => console.error(reason));
+                            }
+                            return "? MB";
+                        }
+                    }
+                }
             }
         }
     }
