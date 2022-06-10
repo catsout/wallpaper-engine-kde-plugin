@@ -55,7 +55,7 @@ Rectangle {
         if(type_changed) wallpaperType = type;
         if(path_changed) wallpaperPath = path;
 
-        if(type_changed || is_infobackend) {
+        if(type_changed || is_infobackend || !source) {
             loadBackend();
         } else if(path_changed) {
             backendLoader.item.source = path;
@@ -260,6 +260,7 @@ Rectangle {
         let qmlsource = "";
         let properties = {};
 
+    
         // check source
         if(!background.source) {
             backendLoader.loadInfoShow("Source is empty. The config may be broken.");
