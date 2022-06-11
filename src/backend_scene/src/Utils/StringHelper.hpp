@@ -12,4 +12,8 @@ constexpr bool send_with(std::string_view str, std::string_view end) {
            str.compare(str.size() - end.size(), end.size(), end, 0, end.size()) == 0;
 }
 
+inline std::string_view sview_nullsafe(const char* const s) {
+    return std::string_view(s != nullptr ? s : "");
+}
+
 } // namespace wallpaper
