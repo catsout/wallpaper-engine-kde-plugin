@@ -13,7 +13,6 @@
 #include "Utils/Sha.hpp"
 #include "Utils/MapSet.hpp"
 #include <SPIRV-Reflect/spirv_reflect.h>
-#include <vulkan/vulkan_enums.hpp>
 
 using namespace wallpaper::vulkan;
 

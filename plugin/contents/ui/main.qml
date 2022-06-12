@@ -120,6 +120,11 @@ Rectangle {
                         anchors.fill: parent
                     }
             `, screenGrid);
+            /*
+            console.error(Common.genItemListStr(Window.contentItem, "  ", function(item) {
+                return `${item} {z: ${item.z}, w: ${item.width}, h: ${item.height}}`;
+            }));
+            */
             return true;
        }
        return false;

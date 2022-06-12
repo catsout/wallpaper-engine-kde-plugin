@@ -286,6 +286,16 @@ QtObject {
         }
         return null;
     }
+    function genItemListStr(item, indent0, tostr) {
+        function gen(item, indent) {
+            let res = `${indent}${tostr(item)}\n`
+            for (let i = 0; i < item.children.length; i++) {
+                res += gen(item.children[i], indent + indent0); 
+            }
+            return res;
+        }
+        return gen(item, "");
+    }
     function createVolumeFade(qobj, volume, changePlayerVolum) {
         const timer = Qt.createQmlObject(`import QtQuick 2.0; Timer {
             property real volume
