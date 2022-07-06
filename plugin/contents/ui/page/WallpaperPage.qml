@@ -147,6 +147,9 @@ RowLayout {
                 id: picViewLoader
                 Layout.fillWidth: true
                 Layout.fillHeight: true
+                
+                // over wite the implicitWidth to 0
+                Layout.preferredHeight: 0
 
                 asynchronous: false
                 sourceComponent: picViewCom
