@@ -71,6 +71,7 @@ signals:
     void fpsChanged();
     void fillModeChanged();
     void volumeChanged();
+    void firstFrame();
 
 private:
     QUrl m_source;

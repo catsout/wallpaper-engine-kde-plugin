@@ -23,6 +23,7 @@
 #include "Type.hpp"
 #include "Utils/Platform.hpp"
 #include <cstdio>
+#include <qobjectdefs.h>
 #include <unistd.h>
 
 using namespace scenebackend;
@@ -74,7 +75,8 @@ public:
           m_scene(scene),
           m_enable_valid(valid),
           m_eatFrameOp(eatFrameOp),
-          m_window(window) {
+          m_window(window),
+          m_first_frame(false) {
         // texture node must have a texture, so use the default 0 texture.
         m_texture      = createTextureFromGl(0, QSize(64, 64), window);
         m_init_texture = m_texture;
@@ -108,15 +110,24 @@ public:
         info.width              = w;
         info.height             = h;
         info.redraw_callback    = [this]() {
-            emit this->redraw();
+            Q_EMIT this->redraw();
         };
+
+        auto cb = std::make_shared<wallpaper::FirstFrameCallback>([this]() {
+            m_first_frame = true;
+            Q_EMIT this->redraw();
+        });
+        m_scene->setPropertyObject(wallpaper::PROPERTY_FIRST_FRAME_CALLBACK, cb);
         // this send to looper, not in this thread
         m_scene->initVulkan(info);
     }
+
+    void emitSceneFirstFrame() { Q_EMIT sceneFirstFrame(); }
 signals:
     void textureInUse();
     void nodeDestroyed();
     void redraw();
+    void sceneFirstFrame();
 
 public slots:
     void newTexture() {
@@ -144,7 +155,12 @@ public slots:
 
             setTexture(m_texture);
             markDirty(DirtyMaterial);
-            emit textureInUse();
+            Q_EMIT textureInUse();
+
+            bool expected = true;
+            if (m_first_frame.compare_exchange_strong(expected, false)) {
+                Q_EMIT sceneFirstFrame();
+            }
         }
     }
 
@@ -152,11 +168,13 @@ private:
     sp_scene_t m_scene;
     bool       m_enable_valid;
 
-    QSGTexture*   m_init_texture;
-    QSGTexture*   m_texture;
-    EatFrameOp    m_eatFrameOp;
-    QQuickWindow* m_window;
-    GlExtra       m_glex;
+    QSGTexture*       m_init_texture;
+    QSGTexture*       m_texture;
+    EatFrameOp        m_eatFrameOp;
+    QQuickWindow*     m_window;
+    std::atomic<bool> m_first_frame;
+
+    GlExtra m_glex;
 
     struct ExTex {
         // int fd;
@@ -198,6 +216,7 @@ QSGNode* SceneObject::updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData*) {
                 node,
                 &TextureNode::newTexture,
                 Qt::DirectConnection);
+        connect(node, &TextureNode::sceneFirstFrame, this, &SceneObject::firstFrame);
     }
 
     node->setRect(boundingRect());

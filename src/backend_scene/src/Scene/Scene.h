@@ -11,59 +11,60 @@
 #include "Utils/NoCopyMove.hpp"
 #include "Fs/VFS.h"
 
-
 namespace wallpaper
 {
 
-namespace fs{
-	class VFS;
+namespace fs
+{
+class VFS;
 }
-class Scene : NoCopy,NoMove {
+class Scene : NoCopy, NoMove {
 public:
-	Scene():paritileSys(*this),
-		sceneGraph(std::make_shared<SceneNode>()) {};
-	~Scene() = default;
+    Scene(): paritileSys(*this), sceneGraph(std::make_shared<SceneNode>()) {};
+    ~Scene() = default;
 
-	std::unordered_map<std::string, SceneTexture> textures;
-	std::unordered_map<std::string, SceneRenderTarget> renderTargets;
+    std::unordered_map<std::string, SceneTexture>      textures;
+    std::unordered_map<std::string, SceneRenderTarget> renderTargets;
 
-	std::unordered_map<std::string, std::shared_ptr<SceneCamera>> cameras;
-	std::unordered_map<std::string, std::vector<std::string>> linkedCameras;
+    std::unordered_map<std::string, std::shared_ptr<SceneCamera>> cameras;
+    std::unordered_map<std::string, std::vector<std::string>>     linkedCameras;
 
-	std::vector<std::unique_ptr<SceneLight>> lights;
+    std::vector<std::unique_ptr<SceneLight>> lights;
 
-	std::shared_ptr<SceneNode> sceneGraph;	
-	std::unique_ptr<IShaderValueUpdater> shaderValueUpdater;
-	std::unique_ptr<IImageParser> imageParser;
-	std::unique_ptr<fs::VFS> vfs;
+    std::shared_ptr<SceneNode>           sceneGraph;
+    std::unique_ptr<IShaderValueUpdater> shaderValueUpdater;
+    std::unique_ptr<IImageParser>        imageParser;
+    std::unique_ptr<fs::VFS>             vfs;
 
     std::string scene_id { "unknown_id" };
 
-	SceneMesh default_effect_mesh;
+    bool first_frame_ok { false };
 
-	ParticleSystem paritileSys;
+    SceneMesh default_effect_mesh;
 
-	SceneCamera* activeCamera;
+    ParticleSystem paritileSys;
 
-	uint16_t ortho[2] {1920, 1080}; // w, h
-	std::array<float, 3> clearColor {1.0f, 1.0f, 1.0f};
+    SceneCamera* activeCamera;
 
-	double elapsingTime {0.0f}, frameTime {0.0f};
-	void PassFrameTime(double t) {
-		frameTime = t;
-		elapsingTime += t;
-	}
+    uint16_t             ortho[2] { 1920, 1080 }; // w, h
+    std::array<float, 3> clearColor { 1.0f, 1.0f, 1.0f };
 
-	void UpdateLinkedCamera(const std::string& name) {
-		if(linkedCameras.count(name) != 0) {
-			auto& cams = linkedCameras.at(name);
-			for(auto& cam:cams) {
-				if(cameras.count(cam) != 0) {
-					cameras.at(cam)->Clone(*cameras.at(name));
-					cameras.at(cam)->Update();
-				}
-			}
-		}
-	}
+    double elapsingTime { 0.0f }, frameTime { 0.0f };
+    void   PassFrameTime(double t) {
+          frameTime = t;
+          elapsingTime += t;
+    }
+
+    void UpdateLinkedCamera(const std::string& name) {
+        if (linkedCameras.count(name) != 0) {
+            auto& cams = linkedCameras.at(name);
+            for (auto& cam : cams) {
+                if (cameras.count(cam) != 0) {
+                    cameras.at(cam)->Clone(*cameras.at(name));
+                    cameras.at(cam)->Update();
+                }
+            }
+        }
+    }
 };
-}
+} // namespace wallpaper

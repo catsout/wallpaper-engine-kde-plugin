@@ -32,6 +32,8 @@ class MpvObject : public QQuickFramebufferObject {
     Q_PROPERTY(QString logfile READ logfile WRITE setLogfile)
     Q_PROPERTY(int volume READ volume WRITE setVolume)
 
+    friend class MpvRender;
+
 public:
     static void on_update(void* ctx);
 
@@ -66,11 +68,13 @@ public slots:
     bool     setProperty(const QString& name, const QVariant& value);
     QVariant getProperty(const QString& name, bool* ok = nullptr) const;
     void     initCallback();
+    void     checkAndEmitFirstFrame();
 
 signals:
     void initFinished();
     void statusChanged();
     void sourceChanged();
+    void firstFrame();
 
 private:
     bool   inited = false;
@@ -80,6 +84,7 @@ private:
 private:
     mpv_handle*                m_mpv { nullptr };
     std::shared_ptr<MpvHandle> m_shared_mpv { nullptr };
+    bool                       m_first_frame { true };
 };
 } // namespace mpv
 

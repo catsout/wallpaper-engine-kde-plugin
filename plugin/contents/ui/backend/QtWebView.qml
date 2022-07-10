@@ -127,6 +127,7 @@ Item {
                     webItem.play();
                     webItem.pause();
                 }
+                background.sig_backendFirstFrame('QtWebEngine');
             }
         }
 
@@ -142,7 +143,7 @@ Item {
         }
 
         Component.onCompleted: {
-            background.nowBackend = "QtWebEngine";
+            background.nowBackend = 'QtWebEngine';
         }
 
     }

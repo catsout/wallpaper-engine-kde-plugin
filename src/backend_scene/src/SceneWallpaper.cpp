@@ -48,6 +48,7 @@ public:
         CMD_LOAD_SCENE,
         CMD_SET_PROPERTY,
         CMD_STOP,
+        CMD_FIRST_FRAME,
         CMD_NO
     };
 
@@ -68,12 +69,14 @@ public:
                 CASE_CMD(SET_PROPERTY);
                 CASE_CMD(LOAD_SCENE);
                 CASE_CMD(STOP);
+                CASE_CMD(FIRST_FRAME);
             default: break;
             }
         }
     }
 
     void sendCmdLoadScene();
+    void sendFirstFrameOk();
     bool isGenGraphviz() const { return m_gen_graphviz; }
 
 private:
@@ -82,6 +85,7 @@ private:
     MHANDLER_CMD(LOAD_SCENE);
     MHANDLER_CMD(SET_PROPERTY);
     MHANDLER_CMD(STOP);
+    MHANDLER_CMD(FIRST_FRAME);
 
 private:
     bool m_inited { false };
@@ -93,6 +97,7 @@ private:
 
     WPSceneParser                        m_scene_parser;
     std::unique_ptr<audio::SoundManager> m_sound_manager;
+    FirstFrameCallback                   m_first_frame_callback;
 
 private:
     std::shared_ptr<looper::Looper> m_main_loop;
@@ -169,6 +174,11 @@ private:
 
             m_scene->shaderValueUpdater->FrameEnd();
             // fps_counter.RegisterFrame();
+
+            if (! m_scene->first_frame_ok) {
+                m_scene->first_frame_ok = true;
+                main_handler.sendFirstFrameOk();
+            }
         }
         frame_timer.FrameEnd();
     }
@@ -184,7 +194,8 @@ private:
     MHANDLER_CMD(SET_SCENE) {
         if (msg->findObject("scene", &m_scene)) {
             decltype(m_rg) old_rg = std::move(m_rg);
-            m_rg                  = sceneToRenderGraph(*m_scene);
+
+            m_rg = sceneToRenderGraph(*m_scene);
 
             if (main_handler.isGenGraphviz()) m_rg->ToGraphviz("graph.dot");
             m_render->compileRenderGraph(*m_scene, *m_rg);
@@ -204,7 +215,6 @@ private:
 public:
     FrameTimer frame_timer;
     FpsCounter fps_counter;
-    ;
 
 private:
     std::shared_ptr<Scene>                m_scene { nullptr };
@@ -274,6 +284,7 @@ BASIC_TYPE(Bool, bool);
 BASIC_TYPE(Int32, int32_t);
 BASIC_TYPE(Float, float);
 BASIC_TYPE(String, std::string);
+BASIC_TYPE(Object, std::shared_ptr<void>);
 
 ExSwapchain* SceneWallpaper::exSwapchain() const {
     return m_main_handler->renderHandler()->exSwapchain();
@@ -323,6 +334,10 @@ MHANDLER_CMD_IMPL(MainHandler, SET_PROPERTY) {
             std::string path;
             msg->findString("value", &path);
             m_cache_path = path;
+        } else if (property == PROPERTY_FIRST_FRAME_CALLBACK) {
+            std::shared_ptr<FirstFrameCallback> cb;
+            msg->findObject("value", &cb);
+            m_first_frame_callback = *cb;
         }
     }
 }
@@ -341,6 +356,10 @@ MHANDLER_CMD_IMPL(MainHandler, STOP) {
         msg_r->setBool("value", stop);
         msg_r->post();
     }
+}
+
+MHANDLER_CMD_IMPL(MainHandler, FIRST_FRAME) {
+    if (m_first_frame_callback) m_first_frame_callback();
 }
 
 void MainHandler::loadScene() {
@@ -407,14 +426,28 @@ void MainHandler::loadScene() {
         scene->vfs.swap(pVfs);
     }
 
-    auto msg = looper::Message::create(0, m_render_handler);
-    addMsgCmd(*msg, RenderHandler::CMD::CMD_SET_SCENE);
-    msg->setObject("scene", scene);
-    msg->post();
+    {
+        auto msg = looper::Message::create(0, m_render_handler);
+        addMsgCmd(*msg, RenderHandler::CMD::CMD_SET_SCENE);
+        msg->setObject("scene", scene);
+        msg->post();
+    }
+    
+    // draw first frame
+    {
+        auto msg = looper::Message::create(0, m_render_handler);
+        addMsgCmd(*msg, RenderHandler::CMD::CMD_DRAW);
+        msg->post();
+    }
 }
 void MainHandler::sendCmdLoadScene() {
     auto msg = looper::Message::create(0, shared_from_this());
     addMsgCmd(*msg, MainHandler::CMD::CMD_LOAD_SCENE);
+    msg->post();
+}
+void MainHandler::sendFirstFrameOk() {
+    auto msg = looper::Message::create(0, shared_from_this());
+    addMsgCmd(*msg, MainHandler::CMD::CMD_FIRST_FRAME);
     msg->post();
 }
 

@@ -33,10 +33,17 @@ Item{
             player.setAcceptMouse(true);
             player.setAcceptHover(true);
         }
+
+        Connections {
+            ignoreUnknownSignals: true
+            onFirstFrame: {
+                background.sig_backendFirstFrame('scene');
+            }
+        }
     }
 
     Component.onCompleted: {
-        background.nowBackend = "scene";
+        background.nowBackend = 'scene';
         sceneItem.displayModeChanged();
     }
     function play() {

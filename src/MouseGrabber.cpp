@@ -42,23 +42,23 @@ void MouseGrabber::sendEvent(QObject* target, QEvent* event) {
 
 void MouseGrabber::sendMouseEvent(QMouseEvent* event) {
     if (m_target) {
-        QMouseEvent* temp = new QMouseEvent(event->type(),
-                                            mapToItem(m_target, event->localPos()),
-                                            event->screenPos(),
-                                            event->button(),
-                                            event->buttons(),
-                                            event->modifiers());
-        QCoreApplication::postEvent(m_target, temp);
+        QMouseEvent temp = QMouseEvent(event->type(),
+                                       mapToItem(m_target, event->localPos()),
+                                       event->screenPos(),
+                                       event->button(),
+                                       event->buttons(),
+                                       event->modifiers());
+        QCoreApplication::sendEvent(m_target, &temp);
     }
 }
 
 void MouseGrabber::sendHoverEvent(QHoverEvent* event) {
     if (m_target) {
-        QHoverEvent* temp = new QHoverEvent(event->type(),
-                                            mapToItem(m_target, event->posF()),
-                                            mapToItem(m_target, event->oldPosF()),
-                                            event->modifiers());
-        QCoreApplication::postEvent(m_target, temp);
+        QHoverEvent temp = QHoverEvent(event->type(),
+                                       mapToItem(m_target, event->posF()),
+                                       mapToItem(m_target, event->oldPosF()),
+                                       event->modifiers());
+        QCoreApplication::sendEvent(m_target, &temp);
     }
 }
 

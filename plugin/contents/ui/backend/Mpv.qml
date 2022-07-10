@@ -44,9 +44,15 @@ Item{
         anchors.fill: parent
         mute: background.mute
         volume: 0
+        Connections {
+            ignoreUnknownSignals: true
+            onFirstFrame: {
+                background.sig_backendFirstFrame('mpv');
+            }
+        }
     }
     Component.onCompleted:{
-        background.nowBackend = "mpv";
+        background.nowBackend = 'mpv';
         videoItem.displayModeChanged();
     }
 

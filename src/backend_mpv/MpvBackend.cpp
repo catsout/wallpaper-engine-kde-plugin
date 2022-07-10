@@ -18,6 +18,8 @@
 #include <array>
 #include <functional>
 #include <memory>
+#include <qobjectdefs.h>
+#include <sys/stat.h>
 
 #if defined(__linux__) || defined(__FreeBSD__)
 //#ifdef ENABLE_X11
@@ -58,10 +60,10 @@ void* get_proc_address_mpv(void* ctx, const char* name) {
 int CreateMpvContex(mpv_handle* mpv, mpv_render_context** mpv_gl) {
     mpv_opengl_init_params gl_init_params { get_proc_address_mpv, nullptr };
     mpv_render_param       params[] { { MPV_RENDER_PARAM_API_TYPE,
-                                  const_cast<char*>(MPV_RENDER_API_TYPE_OPENGL) },
-                                { MPV_RENDER_PARAM_OPENGL_INIT_PARAMS, &gl_init_params },
-                                { MPV_RENDER_PARAM_INVALID, nullptr },
-                                { MPV_RENDER_PARAM_INVALID, nullptr } };
+                                        const_cast<char*>(MPV_RENDER_API_TYPE_OPENGL) },
+                                      { MPV_RENDER_PARAM_OPENGL_INIT_PARAMS, &gl_init_params },
+                                      { MPV_RENDER_PARAM_INVALID, nullptr },
+                                      { MPV_RENDER_PARAM_INVALID, nullptr } };
 
 #if defined(__linux__) || defined(__FreeBSD__)
     if (QGuiApplication::platformName().contains("xcb")) {
@@ -187,6 +189,8 @@ void MpvObject::setSource(const QUrl& source) {
     if (result) {
         m_source = source;
         Q_EMIT sourceChanged();
+
+        m_first_frame = false;
     }
 }
 
@@ -249,12 +253,18 @@ public slots:
      * members
      */
     void synchronize(QQuickFramebufferObject* item) override {
+        MpvObject* mpv_obj = static_cast<MpvObject*>(item);
+
         if (m_mpv_context == nullptr) {
             // mpv_set_wakeup_callback(m_mpv_handle, on_mpv_events, nullptr);
             if (CreateMpvContex(m_mpv, &m_mpv_context) >= 0) {
                 mpv_render_context_set_update_callback(m_mpv_context, on_mpv_redraw, this);
                 Q_EMIT this->inited();
             }
+        }
+
+        if (Dirty()) {
+            mpv_obj->checkAndEmitFirstFrame();
         }
         m_window->resetOpenGLState();
     }
@@ -304,6 +314,13 @@ MpvObject::MpvObject(QQuickItem* parent)
 }
 
 MpvObject::~MpvObject() {}
+
+void MpvObject::checkAndEmitFirstFrame() {
+    if (! m_first_frame) {
+        m_first_frame = true;
+        Q_EMIT firstFrame();
+    }
+}
 
 QQuickFramebufferObject::Renderer* MpvObject::createRenderer() const {
     window()->setPersistentOpenGLContext(true);

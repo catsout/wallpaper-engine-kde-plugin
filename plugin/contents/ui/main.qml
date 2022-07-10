@@ -40,6 +40,13 @@ Rectangle {
     property string wallpaperPath
     property string wallpaperType
 
+    signal sig_backendFirstFrame(string backname);
+    onSig_backendFirstFrame: {
+        console.error(`backend ${backname} first frame`);
+        // if (wallpaper.hasOwnPropety('repaintNeeded'))
+        //    wallpaper.repaintNeeded();
+    }
+
     Component.onDestruction: {
         if(mouseHooker) {
             mouseHooker.destroy();

@@ -1,6 +1,7 @@
 #pragma once
 #include <memory>
 #include <string_view>
+#include <functional>
 #include "Type.hpp"
 #include "Utils/span.hpp"
 #include "Swapchain/ExSwapchain.hpp"
@@ -8,14 +9,17 @@
 namespace wallpaper
 {
 
-constexpr std::string_view PROPERTY_SOURCE     = "source";
-constexpr std::string_view PROPERTY_ASSETS     = "assets";
-constexpr std::string_view PROPERTY_FPS        = "fps";
-constexpr std::string_view PROPERTY_FILLMODE   = "fillmode";
-constexpr std::string_view PROPERTY_GRAPHIVZ   = "graphivz";
-constexpr std::string_view PROPERTY_VOLUME     = "volume";
-constexpr std::string_view PROPERTY_MUTED      = "muted";
-constexpr std::string_view PROPERTY_CACHE_PATH = "cache_path";
+using FirstFrameCallback = std::function<void()>;
+
+constexpr std::string_view PROPERTY_SOURCE               = "source";
+constexpr std::string_view PROPERTY_ASSETS               = "assets";
+constexpr std::string_view PROPERTY_FPS                  = "fps";
+constexpr std::string_view PROPERTY_FILLMODE             = "fillmode";
+constexpr std::string_view PROPERTY_GRAPHIVZ             = "graphivz";
+constexpr std::string_view PROPERTY_VOLUME               = "volume";
+constexpr std::string_view PROPERTY_MUTED                = "muted";
+constexpr std::string_view PROPERTY_CACHE_PATH           = "cache_path";
+constexpr std::string_view PROPERTY_FIRST_FRAME_CALLBACK = "first_frame_callback";
 
 #include "Utils/NoCopyMove.hpp"
 class MainHandler;
@@ -38,6 +42,7 @@ public:
     void setPropertyInt32(std::string_view, int32_t);
     void setPropertyFloat(std::string_view, float);
     void setPropertyString(std::string_view, std::string);
+    void setPropertyObject(std::string_view, std::shared_ptr<void>);
 
     ExSwapchain* exSwapchain() const;
 
