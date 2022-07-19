@@ -47,8 +47,7 @@ struct WPShaderValueData {
     // index + name
     std::vector<std::pair<int32_t, std::string>> renderTargets;
 
-    std::vector<WPPuppet::AnimationLayer> puppet_layers;
-    std::shared_ptr<WPPuppet>             puppet;
+    WPPuppetLayer puppet_layer;
 };
 
 struct WPCameraParallax {

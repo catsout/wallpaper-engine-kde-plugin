@@ -642,8 +642,8 @@ void ParseImageObj(ParseContext& context, wpscene::WPImageObject& img_obj) {
                 puppet_effect.materials.push_back(puppet_mat);
                 wpimgobj.effects.push_back(puppet_effect);
             } else {
-                svData.puppet        = puppet->puppet;
-                svData.puppet_layers = wpimgobj.puppet_layers;
+                svData.puppet_layer = WPPuppetLayer(puppet->puppet);
+                svData.puppet_layer.prepared(wpimgobj.puppet_layers);
                 WPMdlParser::GenPuppetMesh(mesh, *puppet);
             }
         }
@@ -825,8 +825,8 @@ void ParseImageObj(ParseContext& context, wpscene::WPImageObject& img_obj) {
                 {
                     svData.parallaxDepth = { wpimgobj.parallaxDepth[0], wpimgobj.parallaxDepth[1] };
                     if (puppet && wpmat.use_puppet) {
-                        svData.puppet        = puppet->puppet;
-                        svData.puppet_layers = wpimgobj.puppet_layers;
+                        svData.puppet_layer = WPPuppetLayer(puppet->puppet);
+                        svData.puppet_layer.prepared(wpimgobj.puppet_layers);
                     }
                 }
                 spMesh->AddMaterial(std::move(material));

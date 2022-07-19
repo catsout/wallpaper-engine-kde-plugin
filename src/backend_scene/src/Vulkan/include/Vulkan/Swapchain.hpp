@@ -7,21 +7,24 @@ namespace wallpaper
 namespace vulkan
 {
 class ImageParameters;
+class VmaImageParameters;
 class Device;
 class Swapchain {
 public:
-    static bool Create(Device&, vk::SurfaceKHR, vk::Extent2D, Swapchain&);
-    const vk::SwapchainKHR& handle() const;
-    vk::Format format() const;
-    vk::Extent2D extent() const;
-    vk::PresentModeKHR presentMode() const;
+    static bool                 Create(Device&, VkSurfaceKHR, VkExtent2D, Swapchain&);
+    const vvk::SwapchainKHR&    handle() const;
+    VkFormat                    format() const;
+    VkExtent2D                  extent() const;
+    VkPresentModeKHR            presentMode() const;
     Span<const ImageParameters> images() const;
+
 private:
-    vk::SwapchainKHR m_handle;
-	vk::SurfaceFormatKHR m_format;
-	vk::Extent2D m_extent;
-    vk::PresentModeKHR m_present_mode;
-	std::vector<ImageParameters> m_images;
+    vvk::SwapchainKHR            m_handle;
+    VkSurfaceFormatKHR           m_format;
+    VkExtent2D                   m_extent;
+    VkPresentModeKHR             m_present_mode;
+    std::vector<ImageParameters> m_images;
+    std::vector<vvk::ImageView>  m_imageviews;
 };
-}   
-}
+} // namespace vulkan
+} // namespace wallpaper

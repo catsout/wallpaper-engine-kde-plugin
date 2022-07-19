@@ -37,7 +37,6 @@ bool GetJsonValue(const nlohmann::json& json, typename utils::is_std_array<T>::t
 
 template<typename T>
 bool GetJsonValue(const nlohmann::json& json, T& value) {
-    ;
     if (json.contains("value"))
         value = json.at("value").get<T>();
     else

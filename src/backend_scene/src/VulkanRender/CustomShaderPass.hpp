@@ -26,7 +26,7 @@ public:
 
         // -----prepared
         // vulkan texs
-        std::vector<ImageSlots> vk_textures;
+        std::vector<ImageSlotsRef> vk_textures;
         std::vector<int>        vk_tex_binding;
         ImageParameters         vk_output;
 
@@ -37,9 +37,9 @@ public:
         StagingBufferRef              ubo_buf;
 
         // pipeline
-        vk::ClearValue     clear_value;
+        VkClearValue       clear_value;
         bool               blending { false };
-        vk::Framebuffer    fb;
+        vvk::Framebuffer   fb;
         PipelineParameters pipeline;
         uint32_t           draw_count { 0 };
 

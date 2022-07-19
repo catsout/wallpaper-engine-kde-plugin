@@ -10,58 +10,61 @@ namespace vulkan
 {
 
 struct PipelineParameters {
-	vk::Pipeline handle;
-	vk::PipelineLayout layout;
-  vk::RenderPass pass;
-  std::vector<vk::DescriptorSetLayout> descriptor_layouts;
+    vvk::Pipeline       handle;
+    vvk::PipelineLayout layout;
+    vvk::RenderPass     pass;
+
+    std::vector<vvk::DescriptorSetLayout> descriptor_layouts;
 };
 
 struct DescriptorSetInfo {
-  bool push_descriptor {false};
-  std::vector<vk::DescriptorSetLayoutBinding> bindings;
+    bool push_descriptor { false };
+
+    std::vector<VkDescriptorSetLayoutBinding> bindings;
 };
 
 class Device;
 
-class GraphicsPipeline {
+class GraphicsPipeline : NoCopy, NoMove {
 public:
     GraphicsPipeline();
     ~GraphicsPipeline();
 
     void toDefault();
-    bool create(const Device&, PipelineParameters&);
+    bool create(const Device&, vvk::RenderPass&, PipelineParameters&);
 
-    vk::PipelineMultisampleStateCreateInfo   multisample;
-    vk::PipelineRasterizationStateCreateInfo raster;
-    vk::PipelineDepthStencilStateCreateInfo  depth;
+    VkPipelineMultisampleStateCreateInfo   multisample {};
+    VkPipelineRasterizationStateCreateInfo raster {};
+    VkPipelineDepthStencilStateCreateInfo  depth {};
 
-    ShaderSpv* getShaderSpv(vk::ShaderStageFlagBits) const;
+    ShaderSpv*  getShaderSpv(VkShaderStageFlagBits) const;
     const auto& pass() const { return m_pass; }
 
-    GraphicsPipeline& setColorBlendStates(Span<const vk::PipelineColorBlendAttachmentState>);
-    GraphicsPipeline& setLogicOp(bool enable, vk::LogicOp);
+    GraphicsPipeline& setColorBlendStates(Span<const VkPipelineColorBlendAttachmentState>);
+    GraphicsPipeline& setLogicOp(bool enable, VkLogicOp);
 
     // required after default
-    GraphicsPipeline& setRenderPass(vk::RenderPass);
+    GraphicsPipeline& setRenderPass(vvk::RenderPass);
     GraphicsPipeline& addDescriptorSetInfo(Span<const DescriptorSetInfo>);
     GraphicsPipeline& addStage(Uni_ShaderSpv&&);
-    GraphicsPipeline& addInputAttributeDescription(Span<const vk::VertexInputAttributeDescription>);
-    GraphicsPipeline& addInputBindingDescription(Span<const vk::VertexInputBindingDescription>);
-    GraphicsPipeline& setTopology(vk::PrimitiveTopology);
+    GraphicsPipeline& addInputAttributeDescription(Span<const VkVertexInputAttributeDescription>);
+    GraphicsPipeline& addInputBindingDescription(Span<const VkVertexInputBindingDescription>);
+    GraphicsPipeline& setTopology(VkPrimitiveTopology);
+
 private:
-    vk::RenderPass m_pass;
+    vvk::RenderPass m_pass;
 
-    vk::PipelineInputAssemblyStateCreateInfo m_input_assembly;
-    std::vector<vk::VertexInputBindingDescription> m_input_bind_descriptions;
-    std::vector<vk::VertexInputAttributeDescription> m_input_attr_descriptions;
+    VkPipelineInputAssemblyStateCreateInfo         m_input_assembly {};
+    std::vector<VkVertexInputBindingDescription>   m_input_bind_descriptions;
+    std::vector<VkVertexInputAttributeDescription> m_input_attr_descriptions;
 
-    vk::PipelineViewportStateCreateInfo m_view;
-    vk::PipelineColorBlendStateCreateInfo m_color;
-    std::vector<vk::DynamicState> m_dynamic_states;
-    std::vector<vk::PipelineColorBlendAttachmentState> m_color_attachments;
-    std::vector<DescriptorSetInfo> m_descriptor_set_infos;
-    Map<vk::ShaderStageFlagBits, Uni_ShaderSpv> m_stage_spv_map;
+    VkPipelineViewportStateCreateInfo                m_view;
+    VkPipelineColorBlendStateCreateInfo              m_color;
+    std::vector<VkDynamicState>                      m_dynamic_states;
+    std::vector<VkPipelineColorBlendAttachmentState> m_color_attachments;
+    std::vector<DescriptorSetInfo>                   m_descriptor_set_infos;
+    Map<VkShaderStageFlagBits, Uni_ShaderSpv>        m_stage_spv_map;
 };
 
-}
-}
+} // namespace vulkan
+} // namespace wallpaper

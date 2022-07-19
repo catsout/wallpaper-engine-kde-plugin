@@ -1,12 +1,13 @@
 #pragma once
 
+// policy class
+
 struct NoCopy {
   protected:
 	NoCopy()  = default;
 	~NoCopy() = default;
 
 	NoCopy(const NoCopy& rhs) = delete;
-
 	NoCopy& operator=(const NoCopy& rhs) = delete;
 };
 
@@ -16,6 +17,5 @@ struct NoMove {
 	~NoMove() = default;
 
 	NoMove(NoMove&& rhs) = delete;
-
 	NoMove& operator=(NoMove&& rhs) = delete;
 };

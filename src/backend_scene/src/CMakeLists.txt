@@ -51,7 +51,13 @@ add_library(${PROJECT_NAME}
 	Utils/FpsCounter.cpp
 	Utils/Algorism.cpp	
 	Utils/Sha.cpp
+    Utils/DynamicLibrary.cpp
 
+    VulkanRender/CopyPass.cpp
+    VulkanRender/CustomShaderPass.cpp
+    VulkanRender/FinPass.cpp
+    VulkanRender/PrePass.cpp
+    VulkanRender/SceneToRenderGraph.cpp
 	VulkanRender/VulkanRender.cpp
 
 	WPParticleParser.cpp

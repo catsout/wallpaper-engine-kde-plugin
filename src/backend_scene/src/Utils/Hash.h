@@ -1,7 +1,5 @@
 #include <functional>
 
-namespace wallpaper
-{
 namespace utils 
 {
 
@@ -17,8 +15,6 @@ inline void hash_combine_fast(std::size_t &seed, const T &val) {
     seed ^= std::hash<T>()(val) << 1u;
 }
 
-
-}
 }
 
 

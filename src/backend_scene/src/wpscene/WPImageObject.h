@@ -49,7 +49,7 @@ public:
 class WPImageObject {
 public:
     struct Config {
-        bool passthrough {false};
+        bool passthrough { false };
     };
     bool                       FromJson(const nlohmann::json&, fs::VFS&);
     int32_t                    id { 0 };
@@ -72,8 +72,8 @@ public:
     std::vector<WPImageEffect> effects;
     Config                     config;
 
-    std::string                           puppet;
-    std::vector<WPPuppet::AnimationLayer> puppet_layers;
+    std::string                                puppet;
+    std::vector<WPPuppetLayer::AnimationLayer> puppet_layers;
 };
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(WPEffectFbo, name, scale);

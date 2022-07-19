@@ -1,11 +1,20 @@
 include_directories(include/Vulkan)
+include_directories(include/vkk)
 
 set(LIB_NAME wpVulkan)
 
 add_library(${LIB_NAME}
 STATIC
 Instance.cpp
+Device.cpp
+GraphicsPipeline.cpp
+Shader.cpp
+StagingBuffer.cpp
+Swapchain.cpp
+TextureCache.cpp
+Parameters.cpp
 Vma.cpp
+vulkan_wrapper.cpp
 )
 
 target_link_libraries(${LIB_NAME}

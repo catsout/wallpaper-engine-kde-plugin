@@ -23,11 +23,11 @@ void WPShaderValueUpdater::FrameBegin() {
             (((cTime->tm_hour * 60) + cTime->tm_min) * 60 + cTime->tm_sec) / (24.0f * 60.0f
        * 60.0f);
     */
-    double new_time = m_mouseDelayedTime + m_scene->frameTime;
-	new_time = new_time > m_parallax.delay ? m_parallax.delay : new_time;
-	m_mouseDelayedTime = new_time;
-    double t = new_time / m_parallax.delay;
-    m_mousePos = std::array { (float)algorism::lerp(t, m_mousePos[0], m_mousePosInput[0]),
+    double new_time    = m_mouseDelayedTime + m_scene->frameTime;
+    new_time           = new_time > m_parallax.delay ? m_parallax.delay : new_time;
+    m_mouseDelayedTime = new_time;
+    double t           = new_time / m_parallax.delay;
+    m_mousePos         = std::array { (float)algorism::lerp(t, m_mousePos[0], m_mousePosInput[0]),
                               (float)algorism::lerp(t, m_mousePos[1], m_mousePosInput[1]) };
 }
 
@@ -114,8 +114,8 @@ void WPShaderValueUpdater::UpdateUniforms(SceneNode* pNode, sprite_map_t& sprite
                 updateOp(WE_GLTEX_MIPMAPINFO_NAMES[el.first], (float)rt.mipmap_level);
             }
         }
-        if (nodeData.puppet && info.has_BONES) {
-            auto data = nodeData.puppet->genFrame(nodeData.puppet_layers, m_scene->frameTime);
+        if (nodeData.puppet_layer.hasPuppet() && info.has_BONES) {
+            auto data = nodeData.puppet_layer.genFrame(m_scene->frameTime);
             updateOp(G_BONES, Span<const float> { data[0].data(), data.size() * 16 });
         }
     }

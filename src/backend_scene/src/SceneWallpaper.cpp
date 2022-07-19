@@ -193,8 +193,7 @@ private:
     }
     MHANDLER_CMD(SET_SCENE) {
         if (msg->findObject("scene", &m_scene)) {
-            decltype(m_rg) old_rg = std::move(m_rg);
-
+            if (m_rg) m_render->clearLastRenderGraph();
             m_rg = sceneToRenderGraph(*m_scene);
 
             if (main_handler.isGenGraphviz()) m_rg->ToGraphviz("graph.dot");
@@ -217,10 +216,12 @@ public:
     FpsCounter fps_counter;
 
 private:
-    std::shared_ptr<Scene>                m_scene { nullptr };
-    std::unique_ptr<rg::RenderGraph>      m_rg { nullptr };
+    std::shared_ptr<Scene> m_scene { nullptr };
+
     std::unique_ptr<vulkan::VulkanRender> m_render;
-    FillMode                              m_fillmode { FillMode::ASPECTCROP };
+    std::unique_ptr<rg::RenderGraph>      m_rg { nullptr };
+
+    FillMode m_fillmode { FillMode::ASPECTCROP };
 
     std::atomic<std::array<float, 2>> m_mouse_pos { std::array { 0.5f, 0.5f } };
 };
@@ -365,6 +366,8 @@ MHANDLER_CMD_IMPL(MainHandler, FIRST_FRAME) {
 void MainHandler::loadScene() {
     if (m_source.empty() || m_assets.empty()) return;
 
+    LOG_INFO("loading scene: %s", m_source.c_str());
+
     if (! m_sound_manager->IsInited()) {
         m_sound_manager->Init();
         m_sound_manager->Play();
@@ -432,7 +435,7 @@ void MainHandler::loadScene() {
         msg->setObject("scene", scene);
         msg->post();
     }
-    
+
     // draw first frame
     {
         auto msg = looper::Message::create(0, m_render_handler);

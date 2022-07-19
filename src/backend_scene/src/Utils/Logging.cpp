@@ -20,9 +20,9 @@ void WallpaperLog(int level, const char* file, int line, const char* fmt, ...) {
     std::fflush(stderr);
 }
 
-std::string logToTmpfileWithSha1(Span<const char> in, const char* fmt, ...) {
+std::string logToTmpfileWithSha1(std::span<const char> in, const char* fmt, ...) {
     std::va_list          args;
-    std::string           name   = wallpaper::utils::genSha1(in);
+    std::string           name   = utils::genSha1(in);
     std::filesystem::path fspath = std::filesystem::temp_directory_path() / name;
     std::string           path   = fspath.native();
     auto*                 file   = std::fopen(path.c_str(), "w+");

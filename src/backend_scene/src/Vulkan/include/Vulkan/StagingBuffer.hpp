@@ -15,59 +15,58 @@ class StagingBuffer;
 
 class StagingBufferRef {
 public:
-    vk::DeviceSize size {0};
-    vk::DeviceSize offset {0};
+    VkDeviceSize size { 0 };
+    VkDeviceSize offset { 0 };
 
-    operator bool() const {
-        return m_allocation != VK_NULL_HANDLE;
-    }
+    operator bool() const { return m_allocation != VK_NULL_HANDLE; }
 
 private:
     friend class StagingBuffer;
     VmaVirtualAllocation m_allocation {};
-    size_t m_virtual_index {0};
+    size_t               m_virtual_index { 0 };
 };
 
-class StagingBuffer : NoCopy,NoMove {
+class StagingBuffer : NoCopy, NoMove {
 public:
-    StagingBuffer(const Device&, vk::DeviceSize size, vk::BufferUsageFlags);
+    StagingBuffer(const Device&, VkDeviceSize size, VkBufferUsageFlags);
     ~StagingBuffer();
 
     bool allocate();
     void destroy();
 
-    bool allocateSubRef(vk::DeviceSize size, StagingBufferRef&, vk::DeviceSize alignment=1);
+    bool allocateSubRef(VkDeviceSize size, StagingBufferRef&, VkDeviceSize alignment = 1);
     void unallocateSubRef(const StagingBufferRef&);
-    bool writeToBuf(const StagingBufferRef&, Span<uint8_t>, size_t offset=0);
+    bool writeToBuf(const StagingBufferRef&, Span<uint8_t>, size_t offset = 0);
+    bool fillBuf(const StagingBufferRef& ref, size_t offset, size_t size, uint8_t c);
 
-    bool recordUpload(vk::CommandBuffer&);
+    bool recordUpload(vvk::CommandBuffer&);
 
-    const vk::Buffer& gpuBuf() const;
+    VkBuffer gpuBuf() const;
+
 private:
     struct VirtualBlock {
-        VmaVirtualBlock handle  {};
-        bool            enabled {false};
-        size_t          index   {0};
-        vk::DeviceSize  offset  {0};
-        vk::DeviceSize  size    {0};
+        VmaVirtualBlock handle {};
+        bool            enabled { false };
+        size_t          index { 0 };
+        VkDeviceSize    offset { 0 };
+        VkDeviceSize    size { 0 };
     };
 
-    vk::Result mapStageBuf();
-    VirtualBlock* newVirtualBlock(vk::DeviceSize);
-    bool increaseBuf(vk::DeviceSize);
-
+    VkResult      mapStageBuf();
+    VirtualBlock* newVirtualBlock(VkDeviceSize);
+    bool          increaseBuf(VkDeviceSize);
 
     const Device& m_device;
-    vk::DeviceSize m_size_step;
+    VkDeviceSize  m_size_step;
 
-    vk::BufferUsageFlags m_usage;
+    VkBufferUsageFlags m_usage;
 
-    void* m_stage_raw {nullptr};
+    void*                     m_stage_raw { nullptr };
     std::vector<VirtualBlock> m_virtual_blocks {};
 
-    BufferParameters m_stage_buf;
-    BufferParameters m_gpu_buf;
+    VmaBufferParameters m_stage_buf;
+    VmaBufferParameters m_gpu_buf;
 };
 
-}  
-}
+} // namespace vulkan
+} // namespace wallpaper

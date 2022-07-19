@@ -19,18 +19,18 @@ public:
     struct Desc {
         // in
         const std::string_view result { SpecTex_Default };
-        vk::Format             present_format;
-        vk::ImageLayout        present_layout;
+        VkFormat               present_format;
+        VkImageLayout          present_layout;
         uint32_t               present_queue_index;
 
         // prepared
         ImageParameters vk_result;
         ImageParameters vk_present;
-        vk::ImageLayout render_layout;
-        vk::ClearValue  clear_value;
+        VkImageLayout   render_layout;
+        VkClearValue    clear_value;
 
         StagingBufferRef   vertex_buf;
-        vk::Framebuffer    fb;
+        vvk::Framebuffer   fb;
         PipelineParameters pipeline;
     };
 
@@ -38,8 +38,8 @@ public:
     virtual ~FinPass();
 
     void setPresent(ImageParameters);
-    void setPresentLayout(vk::ImageLayout);
-    void setPresentFormat(vk::Format);
+    void setPresentLayout(VkImageLayout);
+    void setPresentFormat(VkFormat);
     void setPresentQueueIndex(uint32_t);
 
     void prepare(Scene&, const Device&, RenderingResources&) override;

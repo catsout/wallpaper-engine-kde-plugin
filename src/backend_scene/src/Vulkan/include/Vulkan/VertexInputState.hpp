@@ -8,11 +8,11 @@ namespace vulkan
 {
 
 struct VertexInputState {
-    vk::PipelineInputAssemblyStateCreateInfo input_assembly;
-    vk::PipelineVertexInputStateCreateInfo input;
-    std::vector<vk::VertexInputBindingDescription> bind_descriptions;
-    std::vector<vk::VertexInputAttributeDescription> attr_descriptions;
+    VkPipelineInputAssemblyStateCreateInfo         input_assembly;
+    VkPipelineVertexInputStateCreateInfo           input;
+    std::vector<VkVertexInputBindingDescription>   bind_descriptions;
+    std::vector<VkVertexInputAttributeDescription> attr_descriptions;
 };
 
-}
-}
+} // namespace vulkan
+} // namespace wallpaper

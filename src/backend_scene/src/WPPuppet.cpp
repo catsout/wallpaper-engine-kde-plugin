@@ -36,36 +36,15 @@ void WPPuppet::prepared() {
             }
         }
     }
-}
-
-Span<const Eigen::Affine3f> WPPuppet::genFrame(std::vector<AnimationLayer>& layers, double time) {
-    m_layers_in.resize(layers.size());
-    float blend = 1.0f;
-    std::transform(
-        layers.rbegin(), layers.rend(), m_layers_in.rbegin(), [&blend, time, this](auto& layer) {
-            float cur_blend { 0.0f };
-            auto  it = std::find_if(anims.begin(), anims.end(), [&layer](auto& a) {
-                return layer.id == a.id;
-            });
-            bool  ok = it != anims.end() && layer.visible;
-            Animation::InterpolationInfo info;
-
-            if (ok) {
-                cur_blend = blend * layer.blend;
-                blend *= 1.0f - layer.blend;
-                blend = blend < 0.0f ? 0.0f : blend;
-
-                layer.cur_time += time * layer.rate;
-                info = it->getInterpolationInfo(&(layer.cur_time));
-            }
-
-            return AnimationLayer_in { .layer       = &layer,
-                                       .blend       = cur_blend,
-                                       .anim        = ok ? &(*it) : nullptr,
-                                       .interp_info = info };
-        });
 
     m_final_affines.resize(bones.size());
+}
+
+std::span<const Eigen::Affine3f> WPPuppet::genFrame(WPPuppetLayer& puppet_layer,
+                                                    double         time) noexcept {
+    double global_blend = puppet_layer.m_global_blend;
+
+    puppet_layer.updateInterpolation(time);
 
     for (uint i = 0; i < m_final_affines.size(); i++) {
         const auto& bone   = bones[i];
@@ -76,13 +55,14 @@ Span<const Eigen::Affine3f> WPPuppet::genFrame(std::vector<AnimationLayer>& laye
         const Affine3f parent =
             bone.noParent() ? Affine3f::Identity() : m_final_affines[bone.parent];
 
-        Vector3f    trans { bone.transform.translation() * blend };
-        Vector3f    scale { Vector3f::Ones() * blend };
+        Vector3f    trans { bone.transform.translation() * global_blend };
+        Vector3f    scale { Vector3f::Ones() * global_blend };
         Quaternionf quat { Quaternionf::Identity() };
 
         double cur_blend { 0.0f };
-        for (auto& layer : m_layers_in) {
-            if (layer.anim == nullptr || ! layer.layer->visible) continue;
+        for (auto& layer : puppet_layer.m_layers) {
+            auto& alayer = layer.anim_layer;
+            if (layer.anim == nullptr || ! alayer.visible) continue;
             assert(i < layer.anim->bframes_array.size());
             if (i >= layer.anim->bframes_array.size()) continue;
 
@@ -137,3 +117,50 @@ WPPuppet::Animation::getInterpolationInfo(double* cur_time) const {
 
     return _info;
 }
+
+void WPPuppetLayer::prepared(std::span<AnimationLayer> alayers) {
+    m_layers.resize(alayers.size());
+    double& blend = m_global_blend;
+    std::transform(
+        alayers.rbegin(), alayers.rend(), m_layers.rbegin(), [&blend, this](const auto& layer) {
+            float       cur_blend { 0.0f };
+            const auto& anims = m_puppet->anims;
+
+            auto it = std::find_if(anims.begin(), anims.end(), [&layer](auto& a) {
+                return layer.id == a.id;
+            });
+            bool ok = it != anims.end() && layer.visible;
+
+            if (ok) {
+                cur_blend = blend * layer.blend;
+                blend *= 1.0f - layer.blend;
+                blend = blend < 0.0f ? 0.0f : blend;
+
+                // layer.cur_time += time * layer.rate;
+                // info = it->getInterpolationInfo(&(layer.cur_time));
+            }
+
+            return Layer {
+                .anim_layer = layer,
+                .blend      = cur_blend,
+                .anim       = ok ? std::addressof(*it) : nullptr,
+            };
+        });
+}
+
+std::span<const Eigen::Affine3f> WPPuppetLayer::genFrame(double time) noexcept {
+    return m_puppet->genFrame(*this, time);
+}
+
+void WPPuppetLayer::updateInterpolation(double time) noexcept {
+    for (auto& layer : m_layers) {
+        if (layer) {
+            layer.anim_layer.cur_time += time * layer.anim_layer.rate;
+            layer.interp_info = layer.anim->getInterpolationInfo(&(layer.anim_layer.cur_time));
+        }
+    }
+}
+
+WPPuppetLayer::WPPuppetLayer(std::shared_ptr<WPPuppet> pup): m_puppet(pup) {}
+WPPuppetLayer::WPPuppetLayer()  = default;
+WPPuppetLayer::~WPPuppetLayer() = default;

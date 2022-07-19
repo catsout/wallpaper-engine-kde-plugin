@@ -1,7 +1,7 @@
 #pragma once
 
-#include "span.hpp"
 #include <string>
+#include <span>
 
 #define __SHORT_FILE__ __FILE__
 #if 1
@@ -32,4 +32,4 @@ enum
 
 void WallpaperLog(int level, const char* file, int line, const char* fmt, ...);
 
-std::string logToTmpfileWithSha1(Span<const char>, const char* fmt, ...);
+std::string logToTmpfileWithSha1(std::span<const char>, const char* fmt, ...);

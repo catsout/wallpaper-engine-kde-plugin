@@ -16,11 +16,11 @@ public:
     struct Desc {
         // in
         const std::string_view result { SpecTex_Default };
-        const vk::ImageLayout  layout { vk::ImageLayout::eShaderReadOnlyOptimal };
+        const VkImageLayout    layout { VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL };
 
         // prepared
         ImageParameters vk_result;
-        vk::ClearValue  clear_value;
+        VkClearValue    clear_value;
     };
 
     PrePass(const Desc&);

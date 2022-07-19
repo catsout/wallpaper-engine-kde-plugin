@@ -14,9 +14,9 @@ class Image;
 namespace vulkan
 {
 
-vk::Format             ToVkType(TextureFormat);
-vk::SamplerAddressMode ToVkType(TextureWrap);
-vk::Filter             ToVkType(TextureFilter);
+VkFormat             ToVkType(TextureFormat);
+VkSamplerAddressMode ToVkType(TextureWrap);
+VkFilter             ToVkType(TextureFilter);
 
 enum class TexUsage
 {
@@ -42,34 +42,35 @@ public:
     TextureCache(const Device&);
     ~TextureCache();
 
-    void Destroy();
     void Clear();
 
-    vk::ResultValue<ExImageParameters> CreateExTex(uint32_t witdh, uint32_t height, vk::Format,
-                                                   vk::ImageTiling);
-    vk::ResultValue<ImageSlots>        CreateTex(Image&);
+    std::optional<ExImageParameters> CreateExTex(uint32_t witdh, uint32_t height, VkFormat,
+                                                 VkImageTiling);
+    ImageSlotsRef                      CreateTex(Image&);
 
-    vk::ResultValue<ImageParameters> Query(std::string_view key, TextureKey content_hash,
-                                           bool persist = false);
-    void                             MarkShareReady(std::string_view key);
+    std::optional<ImageParameters> Query(std::string_view key, TextureKey content_hash,
+                                         bool persist = false);
 
-    void RecGenerateMipmaps(vk::CommandBuffer& cmd, const ImageParameters& image) const;
+    void MarkShareReady(std::string_view key);
+
+    void RecGenerateMipmaps(vvk::CommandBuffer& cmd, const ImageParameters& image) const;
 
 private:
-    vk::ResultValue<ImageParameters> CreateTex(TextureKey);
-    void                             allocateCmd();
-    vk::CommandBuffer                m_tex_cmd;
+    std::optional<VmaImageParameters> CreateTex(TextureKey);
+    void                              allocateCmd();
+    vvk::CommandBuffers               m_tex_cmds;
+    vvk::CommandBuffer                m_tex_cmd;
 
     const Device&                m_device;
     Map<std::string, ImageSlots> m_tex_map;
 
     struct QueryTex {
-        int              index { 0 };
-        bool             share_ready { false };
-        bool             persist { false };
-        TexHash          content_hash;
-        ImageParameters  image;
-        Set<std::string> query_keys;
+        int                index { 0 };
+        bool               share_ready { false };
+        bool               persist { false };
+        TexHash            content_hash;
+        VmaImageParameters image;
+        Set<std::string>   query_keys;
     };
     std::vector<std::unique_ptr<QueryTex>> m_query_texs;
     Map<std::string, QueryTex*>            m_query_map;

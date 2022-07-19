@@ -36,7 +36,7 @@ TextureFormat ToTexFormate(int type) {
         DXT1 = 7,
         RG88 = 8,
         R8 = 9,
-*/
+    */
     switch (type) {
     case 0: return TextureFormat::RGBA8;
     case 4: return TextureFormat::BC3;
@@ -155,7 +155,7 @@ std::shared_ptr<Image> WPTexImageParser::Parse(const std::string& name) {
                 LZ4_compressed    = file.ReadInt32() == 1;
                 decompressed_size = file.ReadInt32();
             }
-            int32_t src_size = file.ReadInt32();
+            uint32_t src_size = file.ReadUint32();
             if (src_size <= 0 || mipmap.width <= 0 || mipmap.height <= 0 || decompressed_size < 0)
                 return nullptr;
             char* result;

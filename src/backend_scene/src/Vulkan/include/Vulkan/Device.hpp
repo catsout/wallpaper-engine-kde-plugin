@@ -17,9 +17,8 @@ public:
     Device();
     ~Device();
 
-    static bool Create(Instance&, Span<const Extension> exts, vk::Extent2D extent, Device&);
-    static bool CheckGPU(vk::PhysicalDevice gpu, Span<const Extension> exts,
-                         vk::SurfaceKHR surface);
+    static bool Create(Instance&, Span<const Extension> exts, VkExtent2D extent, Device&);
+    static bool CheckGPU(vvk::PhysicalDevice gpu, Span<const Extension> exts, VkSurfaceKHR surface);
 
     void Destroy();
 
@@ -29,11 +28,11 @@ public:
     const auto& handle() const { return m_device; }
     const auto& gpu() const { return m_gpu; }
     const auto& limits() const { return m_limits; }
-    const auto& vma_allocator() const { return m_allocator; }
+    const auto& vma_allocator() const { return *m_allocator; }
     const auto& cmd_pool() const { return m_command_pool; }
     const auto& swapchain() const { return m_swapchain; }
     const auto& out_extent() const { return m_extent; }
-    void        set_out_extent(vk::Extent2D v) { m_extent = v; }
+    void        set_out_extent(VkExtent2D v) { m_extent = v; }
 
     bool supportExt(std::string_view) const;
 
@@ -44,26 +43,28 @@ public:
     void DestroyPipeline(const PipelineParameters&) const;
     void DestroyExImageParameters(const ExImageParameters& image) const;
 
-    vk::DeviceSize GetUsage() const;
+    VkDeviceSize GetUsage() const;
 
 private:
-    std::vector<vk::DeviceQueueCreateInfo> ChooseDeviceQueue(vk::SurfaceKHR = {});
+    std::vector<VkDeviceQueueCreateInfo> ChooseDeviceQueue(VkSurfaceKHR = {});
 
-    vk::Device               m_device;
-    vk::PhysicalDevice       m_gpu;
-    vk::PhysicalDeviceLimits m_limits;
-    Set<std::string>         m_extensions;
+    vvk::DeviceDispatch     dld;
+    vvk::Device             m_device;
+    vvk::PhysicalDevice     m_gpu;
+    vvk::VmaAllocatorHandle m_allocator;
+
+    VkPhysicalDeviceLimits m_limits;
+    Set<std::string>       m_extensions;
 
     Swapchain m_swapchain;
-    // c struct
-    VmaAllocator    m_allocator {};
-    vk::CommandPool m_command_pool;
+
+    vvk::CommandPool m_command_pool;
 
     QueueParameters m_graphics_queue;
     QueueParameters m_present_queue;
 
     // output extent
-    vk::Extent2D m_extent { 1, 1 };
+    VkExtent2D m_extent { 1, 1 };
 
     std::unique_ptr<TextureCache> m_tex_cache;
 };

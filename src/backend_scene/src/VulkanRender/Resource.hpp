@@ -9,14 +9,14 @@ namespace vulkan
 {
 
 struct RenderingResources {
-    vk::CommandBuffer command;
+    vvk::CommandBuffer command;
 
-	vk::Semaphore sem_swap_wait_image;
-	vk::Semaphore sem_swap_finish;
-	vk::Fence fence_frame;
+    vvk::Semaphore sem_swap_wait_image;
+    vvk::Semaphore sem_swap_finish;
+    vvk::Fence     fence_frame;
 
-	StagingBuffer* vertex_buf;
-	StagingBuffer* dyn_buf;
+    StagingBuffer* vertex_buf;
+    StagingBuffer* dyn_buf;
 };
-}
-}
+} // namespace vulkan
+} // namespace wallpaper

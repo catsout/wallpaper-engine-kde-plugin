@@ -2,11 +2,14 @@
 #include <cstdint>
 #include <vector>
 #include <string>
+#include <memory>
+#include <span>
 #include <Eigen/Geometry>
-#include "Utils/span.hpp"
 
 namespace wallpaper
 {
+
+class WPPuppetLayer;
 
 class WPPuppet {
 public:
@@ -60,29 +63,55 @@ public:
         InterpolationInfo getInterpolationInfo(double* cur_time) const;
     };
 
+public:
+    std::vector<Bone>      bones;
+    std::vector<Animation> anims;
+
+    std::span<const Eigen::Affine3f> genFrame(WPPuppetLayer&, double time) noexcept;
+    void                             prepared();
+
+private:
+    std::vector<Eigen::Affine3f> m_final_affines;
+};
+
+class WPPuppetLayer {
+    friend class WPPuppet;
+
+public:
+    WPPuppetLayer();
+    WPPuppetLayer(std::shared_ptr<WPPuppet>);
+    ~WPPuppetLayer();
+
+    bool hasPuppet() const { return (bool)m_puppet; };
+
     struct AnimationLayer {
-        uint16_t id { 0 };
+        uint32_t id { 0 };
         float    rate { 1.0f };
         float    blend { 1.0f };
         bool     visible { true };
         double   cur_time { 0.0f };
     };
 
-public:
-    std::vector<Bone>      bones;
-    std::vector<Animation> anims;
+    void prepared(std::span<AnimationLayer>);
 
-    Span<const Eigen::Affine3f> genFrame(std::vector<AnimationLayer>&, double time);
-    void                        prepared();
+    std::span<const Eigen::Affine3f> genFrame(double time) noexcept;
+
+    void updateInterpolation(double time) noexcept;
 
 private:
-    struct AnimationLayer_in {
-        AnimationLayer*              layer;
-        float                        blend;
-        Animation*                   anim { nullptr };
-        Animation::InterpolationInfo interp_info;
+    struct Layer {
+        AnimationLayer                         anim_layer;
+        float                                  blend;
+        const WPPuppet::Animation*             anim { nullptr };
+        WPPuppet::Animation::InterpolationInfo interp_info;
+
+        operator bool() const noexcept { return anim != nullptr; };
     };
-    std::vector<Eigen::Affine3f>   m_final_affines;
-    std::vector<AnimationLayer_in> m_layers_in;
+
+    double m_global_blend { 1.0f };
+
+    std::vector<Layer>        m_layers;
+    std::shared_ptr<WPPuppet> m_puppet;
 };
+
 } // namespace wallpaper

@@ -25,8 +25,11 @@ struct UserData {
 extern "C" {
 void framebuffer_size_callback(GLFWwindow*, int width, int height) {}
 
-void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
+void mouse_button_callback(GLFWwindow* win, int button, int action, int mods) {
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+        UserData* data = static_cast<UserData*>(glfwGetWindowUserPointer(win));
+        data->psw->setPropertyString(wallpaper::PROPERTY_SOURCE,
+                                     "431960/2807856301/scene.pkg");
     }
 }
 
@@ -44,7 +47,7 @@ void updateCallback() {
 int main(int argc, char** argv) {
     argparse::ArgumentParser program("scene-viewer");
     setAndParseArg(program, argc, argv);
-	auto [w_width, w_height] = program.get<Resolution>(OPT_RESOLUTION);
+    auto [w_width, w_height] = program.get<Resolution>(OPT_RESOLUTION);
 
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -89,10 +92,8 @@ int main(int argc, char** argv) {
     psw->setPropertyInt32(wallpaper::PROPERTY_FPS, program.get<int32_t>(OPT_FPS));
 
     std::string cache_path = program.get<std::string>(OPT_CACHE_PATH);
-    if (cache_path.empty())
-        cache_path = wallpaper::platform::GetCachePath("wescene-renderer");
+    if (cache_path.empty()) cache_path = wallpaper::platform::GetCachePath("wescene-renderer");
     psw->setPropertyString(wallpaper::PROPERTY_CACHE_PATH, cache_path);
-
 
     glfwSetWindowUserPointer(window, &data);
 

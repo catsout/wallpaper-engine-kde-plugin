@@ -13,49 +13,68 @@
 
 using namespace wallpaper::vulkan;
 
-CustomShaderPass::CustomShaderPass(const Desc& desc): m_desc(desc) {};
+CustomShaderPass::CustomShaderPass(const Desc& desc) {
+    m_desc.node        = desc.node;
+    m_desc.textures    = desc.textures;
+    m_desc.output      = desc.output;
+    m_desc.sprites_map = desc.sprites_map;
+};
 CustomShaderPass::~CustomShaderPass() {}
 
-vk::RenderPass CreateRenderPass(const vk::Device& device, vk::Format format,
-                                vk::AttachmentLoadOp loadOp) {
-    vk::AttachmentDescription attachment;
-    attachment.setFormat(format)
-        .setSamples(vk::SampleCountFlagBits::e1)
-        .setLoadOp(loadOp)
-        .setStoreOp(vk::AttachmentStoreOp::eStore)
-        .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
-        .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
-        .setInitialLayout(vk::ImageLayout::eUndefined)
-        .setFinalLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
-    if (loadOp == vk::AttachmentLoadOp::eLoad) {
-        attachment.initialLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+std::optional<vvk::RenderPass> CreateRenderPass(const vvk::Device& device, VkFormat format,
+                                                VkAttachmentLoadOp loadOp,
+                                                VkImageLayout      finalLayout) {
+    VkAttachmentDescription attachment {
+        .format         = format,
+        .samples        = VK_SAMPLE_COUNT_1_BIT,
+        .loadOp         = loadOp, // VK_ATTACHMENT_LOAD_OP_CLEAR,
+        .storeOp        = VK_ATTACHMENT_STORE_OP_STORE,
+        .stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+        .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+        .initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED,
+        .finalLayout    = finalLayout, // ShaderReadOnlyOptimal
+    };
+
+    if (loadOp == VK_ATTACHMENT_LOAD_OP_LOAD) {
+        attachment.initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     }
 
-    vk::AttachmentReference attachment_ref;
-    attachment_ref.setAttachment(0).setLayout(vk::ImageLayout::eColorAttachmentOptimal);
+    VkAttachmentReference attachment_ref {
+        .attachment = 0,
+        .layout     = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+    };
 
-    vk::SubpassDescription subpass;
-    subpass.setPipelineBindPoint(vk::PipelineBindPoint::eGraphics)
-        .setColorAttachmentCount(1)
-        .setPColorAttachments(&attachment_ref);
+    VkSubpassDescription subpass {
+        .pipelineBindPoint    = VK_PIPELINE_BIND_POINT_GRAPHICS,
+        .colorAttachmentCount = 1,
+        .pColorAttachments    = &attachment_ref,
+    };
 
-    vk::SubpassDependency dependency;
-    dependency.setSrcSubpass(VK_SUBPASS_EXTERNAL)
-        .setDstSubpass(0)
-        .setSrcStageMask(vk::PipelineStageFlagBits::eFragmentShader)
-        .setSrcAccessMask({})
-        .setDstStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput)
-        .setDstAccessMask(vk::AccessFlagBits::eColorAttachmentRead |
-                          vk::AccessFlagBits::eColorAttachmentWrite);
+    VkSubpassDependency dependency {
+        .srcSubpass    = VK_SUBPASS_EXTERNAL,
+        .dstSubpass    = 0,
+        .srcStageMask  = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+        .dstStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+        .srcAccessMask = {},
+        .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+    };
 
-    vk::RenderPassCreateInfo creatinfo;
-    creatinfo.setAttachmentCount(1)
-        .setPAttachments(&attachment)
-        .setSubpassCount(1)
-        .setPSubpasses(&subpass)
-        .setDependencyCount(1)
-        .setPDependencies(&dependency);
-    return device.createRenderPass(creatinfo).value;
+    VkRenderPassCreateInfo creatinfo {
+        .sType           = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
+        .attachmentCount = 1,
+        .pAttachments    = &attachment,
+        .subpassCount    = 1,
+        .pSubpasses      = &subpass,
+        .dependencyCount = 1,
+        .pDependencies   = &dependency,
+    };
+    vvk::RenderPass pass;
+    if (auto res = device.CreateRenderPass(creatinfo, pass); res == VK_SUCCESS) {
+        return pass;
+    } else {
+        VVK_CHECK(res);
+        return std::nullopt;
+    }
 }
 
 static void UpdateUniform(StagingBuffer* buf, const StagingBufferRef& bufref,
@@ -85,32 +104,33 @@ void CustomShaderPass::prepare(Scene& scene, const Device& device, RenderingReso
         auto& tex_name = m_desc.textures[i];
         if (tex_name.empty()) continue;
 
-        vk::ResultValue<ImageSlots> rv { vk::Result::eIncomplete, {} };
+        ImageSlotsRef img_slots;
         if (IsSpecTex(tex_name)) {
             if (scene.renderTargets.count(tex_name) == 0) continue;
-            auto& rt       = scene.renderTargets.at(tex_name);
-            auto  rv_paras = device.tex_cache().Query(tex_name, ToTexKey(rt), ! rt.allowReuse);
-            rv.result      = rv_paras.result;
-            rv.value       = ImageSlots { { rv_paras.value }, 0 };
+            auto& rt  = scene.renderTargets.at(tex_name);
+            auto  opt = device.tex_cache().Query(tex_name, ToTexKey(rt), ! rt.allowReuse);
+            if (! opt.has_value()) continue;
+            img_slots.slots = { opt.value() };
         } else {
             auto image = scene.imageParser->Parse(tex_name);
             if (image) {
-                rv = device.tex_cache().CreateTex(*image);
+                img_slots = device.tex_cache().CreateTex(*image);
             } else {
                 LOG_ERROR("parse tex \"%s\" failed", tex_name.c_str());
             }
         }
-        VK_CHECK_RESULT(rv.result);
-        if (rv.result == vk::Result::eSuccess) m_desc.vk_textures[i] = rv.value;
+        m_desc.vk_textures[i] = img_slots;
     }
     {
         auto& tex_name = m_desc.output;
         assert(IsSpecTex(tex_name));
         assert(scene.renderTargets.count(tex_name) > 0);
         auto& rt = scene.renderTargets.at(tex_name);
-        auto  rv = device.tex_cache().Query(tex_name, ToTexKey(rt), ! rt.allowReuse);
-        VK_CHECK_RESULT_VOID_RE(rv.result);
-        if (rv.result == vk::Result::eSuccess) m_desc.vk_output = rv.value;
+        if (auto opt = device.tex_cache().Query(tex_name, ToTexKey(rt), ! rt.allowReuse);
+            opt.has_value()) {
+            m_desc.vk_output = opt.value();
+        } else
+            return;
     }
 
     SceneMesh& mesh = *(m_desc.node->Mesh());
@@ -141,7 +161,7 @@ void CustomShaderPass::prepare(Scene& scene, const Device& device, RenderingReso
 
         std::transform(
             ref.binding_map.begin(), ref.binding_map.end(), bindings.begin(), [](auto& item) {
-                //LOG_INFO("%d %s", item.second.binding, item.first.c_str());
+                // LOG_INFO("%d %s", item.second.binding, item.first.c_str());
                 return item.second;
             });
 
@@ -154,30 +174,34 @@ void CustomShaderPass::prepare(Scene& scene, const Device& device, RenderingReso
     }
 
     m_desc.draw_count = 0;
-    std::vector<vk::VertexInputBindingDescription>   bind_descriptions;
-    std::vector<vk::VertexInputAttributeDescription> attr_descriptions;
+    std::vector<VkVertexInputBindingDescription>   bind_descriptions;
+    std::vector<VkVertexInputAttributeDescription> attr_descriptions;
     {
         m_desc.dyn_vertex = mesh.Dynamic();
         m_desc.vertex_bufs.resize(mesh.VertexCount());
-        for (int i = 0; i < mesh.VertexCount(); i++) {
+
+        for (uint i = 0; i < mesh.VertexCount(); i++) {
             const auto& vertex    = mesh.GetVertexArray(i);
             auto        attrs_map = vertex.GetAttrOffsetMap();
 
-            vk::VertexInputBindingDescription bind_desc;
-            bind_desc.setStride(vertex.OneSizeOf())
-                .setInputRate(vk::VertexInputRate::eVertex)
-                .setBinding(i);
+            VkVertexInputBindingDescription bind_desc {
+                .binding   = i,
+                .stride    = (uint32_t)vertex.OneSizeOf(),
+                .inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
+            };
             bind_descriptions.push_back(bind_desc);
+
             for (auto& item : ref.input_location_map) {
                 auto& name   = item.first;
                 auto& input  = item.second;
                 uint  offset = exists(attrs_map, name) ? attrs_map[name].offset : 0;
 
-                vk::VertexInputAttributeDescription attr_desc;
-                attr_desc.setBinding(i)
-                    .setLocation(input.location)
-                    .setFormat(input.format)
-                    .setOffset(offset);
+                VkVertexInputAttributeDescription attr_desc {
+                    .location = input.location,
+                    .binding  = i,
+                    .format   = input.format,
+                    .offset   = offset,
+                };
                 attr_descriptions.push_back(attr_desc);
             }
             {
@@ -207,47 +231,56 @@ void CustomShaderPass::prepare(Scene& scene, const Device& device, RenderingReso
         }
     }
     {
-        vk::PipelineColorBlendAttachmentState color_blend;
-        vk::AttachmentLoadOp                  loadOp { vk::AttachmentLoadOp::eDontCare };
+        VkPipelineColorBlendAttachmentState color_blend;
+        VkAttachmentLoadOp                  loadOp { VK_ATTACHMENT_LOAD_OP_DONT_CARE };
         {
-            vk::ColorComponentFlags colorMask = vk::ColorComponentFlagBits::eR |
-                                                vk::ColorComponentFlagBits::eG |
-                                                vk::ColorComponentFlagBits::eB;
+            VkColorComponentFlags colorMask =
+                VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT;
             bool alpha =
                 ! (m_desc.node->Camera().empty() || sstart_with(m_desc.node->Camera(), "global"));
-            if (alpha) colorMask |= vk::ColorComponentFlagBits::eA;
-            color_blend.setColorWriteMask(colorMask);
+
+            if (alpha) colorMask |= VK_COLOR_COMPONENT_A_BIT;
+            color_blend.colorWriteMask = colorMask;
+
             auto blendmode = mesh.Material()->blenmode;
             SetBlend(blendmode, color_blend);
             m_desc.blending = color_blend.blendEnable;
 
             SetAttachmentLoadOp(blendmode, loadOp);
         }
-        auto pass = CreateRenderPass(device.handle(), vk::Format::eR8G8B8A8Unorm, loadOp);
+        auto opt = CreateRenderPass(device.handle(),
+                                    VK_FORMAT_R8G8B8A8_UNORM,
+                                    loadOp,
+                                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        if (! opt.has_value()) return;
+        auto& pass = opt.value();
+
         descriptor_info.push_descriptor = true;
         GraphicsPipeline pipeline;
         pipeline.toDefault();
-        pipeline.setRenderPass(pass)
-            .addDescriptorSetInfo(descriptor_info)
+        pipeline.addDescriptorSetInfo(descriptor_info)
             .setColorBlendStates(color_blend)
-            .setTopology(m_desc.index_buf ? vk::PrimitiveTopology::eTriangleList
-                                          : vk::PrimitiveTopology::eTriangleStrip)
+            .setTopology(m_desc.index_buf ? VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
+                                          : VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP)
             .addInputBindingDescription(bind_descriptions)
             .addInputAttributeDescription(attr_descriptions);
         for (auto& spv : spvs) pipeline.addStage(std::move(spv));
 
-        pipeline.create(device, m_desc.pipeline);
+        if (! pipeline.create(device, pass, m_desc.pipeline)) return;
     }
 
     {
-        vk::FramebufferCreateInfo info;
-        info.setRenderPass(m_desc.pipeline.pass)
-            .setAttachmentCount(1)
-            .setPAttachments(&m_desc.vk_output.view)
-            .setWidth(m_desc.vk_output.extent.width)
-            .setHeight(m_desc.vk_output.extent.height)
-            .setLayers(1);
-        VK_CHECK_RESULT_VOID_RE(device.handle().createFramebuffer(&info, nullptr, &m_desc.fb));
+        VkFramebufferCreateInfo info {
+            .sType           = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
+            .pNext           = nullptr,
+            .renderPass      = *m_desc.pipeline.pass,
+            .attachmentCount = 1,
+            .pAttachments    = &m_desc.vk_output.view,
+            .width           = m_desc.vk_output.extent.width,
+            .height          = m_desc.vk_output.extent.height,
+            .layers          = 1,
+        };
+        VVK_CHECK_VOID_RE(device.handle().CreateFramebuffer(info, m_desc.fb));
     }
 
     if (! ref.blocks.empty()) {
@@ -323,6 +356,8 @@ void CustomShaderPass::prepare(Scene& scene, const Device& device, RenderingReso
         };
         shader_updater->InitUniforms(node, exists_unf_op);
 
+        // memset uniform buf
+        buf->fillBuf(*bufref, 0, bufref->size, 0);
         {
             auto&      default_values = mesh.Material()->customShader.shader->default_uniforms;
             auto&      const_values   = mesh.Material()->customShader.constValues;
@@ -340,7 +375,7 @@ void CustomShaderPass::prepare(Scene& scene, const Device& device, RenderingReso
 
     {
         auto& sc           = scene.clearColor;
-        m_desc.clear_value = vk::ClearValue(std::array { sc[0], sc[1], sc[2], 1.0f });
+        m_desc.clear_value = VkClearValue { sc[0], sc[1], sc[2], 1.0f };
     }
     for (auto& tex : releaseTexs()) {
         device.tex_cache().MarkShareReady(tex);
@@ -351,99 +386,113 @@ void CustomShaderPass::prepare(Scene& scene, const Device& device, RenderingReso
 void CustomShaderPass::execute(const Device& device, RenderingResources& rr) {
     if (m_desc.update_op) m_desc.update_op();
 
-    auto&                     cmd    = rr.command;
-    auto&                     outext = m_desc.vk_output.extent;
-    vk::ImageSubresourceRange base_range;
-    base_range.setAspectMask(vk::ImageAspectFlagBits::eColor)
-        .setBaseArrayLayer(0)
-        .setBaseMipLevel(0)
-        .setLayerCount(VK_REMAINING_ARRAY_LAYERS)
-        .setLevelCount(VK_REMAINING_MIP_LEVELS);
-
+    auto&                   cmd    = rr.command;
+    auto&                   outext = m_desc.vk_output.extent;
+    VkImageSubresourceRange base_srang {
+        .aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT,
+        .baseMipLevel   = 0,
+        .levelCount     = VK_REMAINING_ARRAY_LAYERS,
+        .baseArrayLayer = 0,
+        .layerCount     = VK_REMAINING_MIP_LEVELS,
+    };
     for (int i = 0; i < m_desc.vk_textures.size(); i++) {
         auto& slot    = m_desc.vk_textures[i];
         int   binding = m_desc.vk_tex_binding[i];
         if (binding < 0) continue;
         if (slot.slots.empty()) continue;
-        auto&                   img = slot.getActive();
-        vk::DescriptorImageInfo desc_img { img.sampler,
-                                           img.view,
-                                           vk::ImageLayout::eShaderReadOnlyOptimal };
-        vk::WriteDescriptorSet  wset;
-        wset.setDstSet({})
-            .setDstBinding(binding)
-            .setDescriptorCount(1)
-            .setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
-            .setPImageInfo(&desc_img);
-        cmd.pushDescriptorSetKHR(
-            vk::PipelineBindPoint::eGraphics, m_desc.pipeline.layout, 0, 1, &wset);
-        vk::ImageMemoryBarrier imb;
-        imb.setSrcAccessMask(vk::AccessFlagBits::eMemoryRead)
-            .setDstAccessMask(vk::AccessFlagBits::eShaderRead)
-            .setOldLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
-            .setNewLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
-            .setImage(img.handle)
-            .setSubresourceRange(base_range);
-        cmd.pipelineBarrier(vk::PipelineStageFlagBits::eFragmentShader,
-                            vk::PipelineStageFlagBits::eFragmentShader,
-                            vk::DependencyFlagBits::eByRegion,
-                            0,
-                            nullptr,
-                            0,
-                            nullptr,
-                            1,
-                            &imb);
+        auto&                 img = slot.getActive();
+        VkDescriptorImageInfo desc_img { img.sampler,
+                                         img.view,
+                                         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL };
+        VkWriteDescriptorSet  wset {
+             .sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+             .pNext           = nullptr,
+             .dstSet          = {},
+             .dstBinding      = (uint32_t)binding,
+             .descriptorCount = 1,
+             .descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+             .pImageInfo      = &desc_img,
+        };
+        cmd.PushDescriptorSetKHR(VK_PIPELINE_BIND_POINT_GRAPHICS, *m_desc.pipeline.layout, 0, wset);
+
+        VkImageMemoryBarrier imb {
+            .sType            = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+            .pNext            = nullptr,
+            .srcAccessMask    = VK_ACCESS_MEMORY_READ_BIT,
+            .dstAccessMask    = VK_ACCESS_SHADER_READ_BIT,
+            .oldLayout        = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            .newLayout        = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            .image            = img.handle,
+            .subresourceRange = base_srang,
+        };
+
+        cmd.PipelineBarrier(VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                            VK_DEPENDENCY_BY_REGION_BIT,
+                            imb);
     }
 
     if (m_desc.ubo_buf) {
-        vk::DescriptorBufferInfo desc_buf { rr.dyn_buf->gpuBuf(),
-                                            m_desc.ubo_buf.offset,
-                                            m_desc.ubo_buf.size };
-        vk::WriteDescriptorSet   wset;
-        wset.setDstSet({})
-            .setDstBinding(0)
-            .setDescriptorCount(1)
-            .setDescriptorType(vk::DescriptorType::eUniformBuffer)
-            .setPBufferInfo(&desc_buf);
-        cmd.pushDescriptorSetKHR(
-            vk::PipelineBindPoint::eGraphics, m_desc.pipeline.layout, 0, 1, &wset);
+        VkDescriptorBufferInfo desc_buf {
+            rr.dyn_buf->gpuBuf(),
+            m_desc.ubo_buf.offset,
+            m_desc.ubo_buf.size,
+        };
+        VkWriteDescriptorSet wset {
+            .sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+            .pNext           = nullptr,
+            .dstSet          = {},
+            .dstBinding      = 0,
+            .descriptorCount = 1,
+            .descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            .pBufferInfo     = &desc_buf,
+        };
+        cmd.PushDescriptorSetKHR(VK_PIPELINE_BIND_POINT_GRAPHICS, *m_desc.pipeline.layout, 0, wset);
     }
 
-    vk::RenderPassBeginInfo pass_begin_info;
-    pass_begin_info.setRenderPass(m_desc.pipeline.pass)
-        .setFramebuffer(m_desc.fb)
-        .setClearValueCount(1)
-        .setPClearValues(&m_desc.clear_value)
-        .renderArea.setExtent({ outext.width, outext.height })
-        .setOffset(vk::Offset2D(0.0f, 0.0f));
-    cmd.beginRenderPass(pass_begin_info, vk::SubpassContents::eInline);
+    VkRenderPassBeginInfo pass_begin_info {
+        .sType       = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+        .pNext       = nullptr,
+        .renderPass  = *m_desc.pipeline.pass,
+        .framebuffer = *m_desc.fb,
+        .renderArea =
+            VkRect2D {
+                .offset = { 0, 0 },
+                .extent = { outext.width, outext.height },
+            },
+        .clearValueCount = 1,
+        .pClearValues    = &m_desc.clear_value,
+    };
+    cmd.BeginRenderPass(pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
 
-    cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, m_desc.pipeline.handle);
-    vk::Viewport viewport;
-    viewport.setX(0)
-        .setY(outext.height)
-        .setMinDepth(0.0f)
-        .setMaxDepth(1.0f)
-        .setWidth(outext.width)
-        .setHeight(-(float)outext.height);
-    vk::Rect2D scissor({ 0, 0 }, { outext.width, outext.height });
-    cmd.setViewport(0, 1, &viewport);
-    cmd.setScissor(0, 1, &scissor);
+    cmd.BindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, *m_desc.pipeline.handle);
+    VkViewport viewport {
+        .x        = 0,
+        .y        = (float)outext.height,
+        .width    = (float)outext.width,
+        .height   = -(float)outext.height,
+        .minDepth = 0.0f,
+        .maxDepth = 1.0f,
+    };
+    VkRect2D scissor { { 0, 0 }, { outext.width, outext.height } };
 
-    auto& gpu_buf = m_desc.dyn_vertex ? rr.dyn_buf->gpuBuf() : rr.vertex_buf->gpuBuf();
+    cmd.SetViewport(0, viewport);
+    cmd.SetScissor(0, scissor);
+
+    auto gpu_buf = m_desc.dyn_vertex ? rr.dyn_buf->gpuBuf() : rr.vertex_buf->gpuBuf();
 
     for (int i = 0; i < m_desc.vertex_bufs.size(); i++) {
         auto& buf = m_desc.vertex_bufs[i];
-        cmd.bindVertexBuffers(i, 1, &gpu_buf, &buf.offset);
+        cmd.BindVertexBuffers(i, 1, &gpu_buf, &buf.offset);
     }
     if (m_desc.index_buf) {
-        cmd.bindIndexBuffer(gpu_buf, m_desc.index_buf.offset, vk::IndexType::eUint16);
-        cmd.drawIndexed(m_desc.draw_count, 1, 0, 0, 0);
+        cmd.BindIndexBuffer(gpu_buf, m_desc.index_buf.offset, VK_INDEX_TYPE_UINT16);
+        cmd.DrawIndexed(m_desc.draw_count, 1, 0, 0, 0);
     } else {
-        cmd.draw(m_desc.draw_count, 1, 0, 0);
+        cmd.Draw(m_desc.draw_count, 1, 0, 0);
     }
 
-    cmd.endRenderPass();
+    cmd.EndRenderPass();
 }
 
 void CustomShaderPass::destory(const Device& device, RenderingResources& rr) {
@@ -455,8 +504,6 @@ void CustomShaderPass::destory(const Device& device, RenderingResources& rr) {
         }
     }
     rr.dyn_buf->unallocateSubRef(m_desc.ubo_buf);
-    device.DestroyPipeline(m_desc.pipeline);
-    device.handle().destroyFramebuffer(m_desc.fb);
 }
 
 void CustomShaderPass::setDescTex(uint index, std::string_view tex_key) {

@@ -165,7 +165,7 @@ bool WPImageObject::FromJson(const nlohmann::json& json, fs::VFS& vfs) {
     }
     if(json.contains("animationlayers")) {
         for(const auto& jLayer:json.at("animationlayers")) {
-             WPPuppet::AnimationLayer layer;
+             WPPuppetLayer::AnimationLayer layer;
              GET_JSON_NAME_VALUE(jLayer, "animation", layer.id);
              GET_JSON_NAME_VALUE(jLayer, "blend", layer.blend);
              GET_JSON_NAME_VALUE(jLayer, "rate", layer.rate);
