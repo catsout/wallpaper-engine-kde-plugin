@@ -24,6 +24,7 @@ PUBLIC
 PRIVATE
 	SPIRV
 	vulkan
+    wpScene
 	pthread
 	dl
 )

@@ -23,6 +23,8 @@ struct WPUniformInfo {
     bool has_AM { false };
     bool has_MVP { false };
     bool has_MVPI { false };
+    bool has_ETVP { false };
+    bool has_ETVPI { false };
     bool has_VP { false };
 
     bool has_BONES { false };

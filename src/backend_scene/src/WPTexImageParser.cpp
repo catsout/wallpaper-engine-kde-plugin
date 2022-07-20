@@ -1,6 +1,7 @@
 #include "WPTexImageParser.hpp"
 
 #include "WPCommon.hpp"
+#include <cstdint>
 #include <lz4.h>
 
 #include "SpriteAnimation.hpp"
@@ -16,6 +17,22 @@
 
 using namespace wallpaper;
 
+enum class WPTexFlagEnum : uint32_t
+{
+    // true for no bilinear
+    noInterpolation = 0,
+    // true for no repeat
+    clampUVs = 1,
+    sprite   = 2,
+
+    compo1 = 20,
+    compo2 = 21,
+    compo3 = 22
+};
+using WPTexFlags = BitFlags<WPTexFlagEnum>;
+
+namespace
+{
 char* Lz4Decompress(const char* src, int size, int decompressed_size) {
     char* dst       = new char[decompressed_size];
     int   load_size = LZ4_decompress_safe(src, dst, size, decompressed_size);
@@ -49,21 +66,6 @@ TextureFormat ToTexFormate(int type) {
         return TextureFormat::RGBA8;
     }
 }
-
-enum class WPTexFlagEnum : uint32_t
-{
-    // true for no bilinear
-    noInterpolation = 0,
-    // true for no repeat
-    clampUVs = 1,
-    sprite   = 2,
-
-    compo1 = 20,
-    compo2 = 21,
-    compo3 = 22
-};
-using WPTexFlags = BitFlags<WPTexFlagEnum>;
-
 void LoadHeader(fs::IBinaryStream& file, ImageHeader& header) {
     int32_t unkown;
     header.extraHeader["texv"].val = ReadTexVesion(file);
@@ -110,6 +112,13 @@ void LoadHeader(fs::IBinaryStream& file, ImageHeader& header) {
     if (header.extraHeader["texb"].val == 3) header.type = static_cast<ImageType>(file.ReadInt32());
 }
 
+void SetHeaderPow2(ImageHeader& header, int32_t mip_0_w, int32_t mip_0_h) {
+    header.mipmap_pow2   = algorism::IsPowOfTwo(mip_0_w) || algorism::IsPowOfTwo(mip_0_h);
+    header.mipmap_larger = mip_0_w * mip_0_h > header.mapWidth * header.mapHeight;
+}
+
+} // namespace
+
 std::shared_ptr<Image> WPTexImageParser::Parse(const std::string& name) {
     std::string            path    = "/assets/materials/" + name + ".tex";
     std::shared_ptr<Image> img_ptr = std::make_shared<Image>();
@@ -140,12 +149,7 @@ std::shared_ptr<Image> WPTexImageParser::Parse(const std::string& name) {
             if (i_mipmap == 0) {
                 img_slot.width  = mipmap.width;
                 img_slot.height = mipmap.height;
-                /*
-                LOG_INFO("1: %dx%d, 2: %dx%d, 3: %dx%d, level: %d", img.header.width,
-                img.header.height, img.header.mapWidth, img.header.mapHeight,
-                    mipmap.width,mipmap.height,
-                    mipmap_count);
-                */
+                SetHeaderPow2(img.header, mipmap.width, mipmap.height);
             }
 
             bool    LZ4_compressed    = false;
@@ -273,7 +277,7 @@ ImageHeader WPTexImageParser::ParseHeader(const std::string& name) {
         int     mipmap_count = file.ReadInt32();
         int32_t width        = file.ReadInt32();
         int32_t height       = file.ReadInt32();
-        header.mipmap_pow2   = algorism::IsPowOfTwo(width * height);
+        SetHeaderPow2(header, width, height);
     }
     return header;
 }

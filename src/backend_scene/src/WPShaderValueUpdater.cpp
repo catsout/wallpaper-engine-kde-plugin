@@ -1,4 +1,6 @@
 #include "WPShaderValueUpdater.hpp"
+#include "Eigen/src/Core/Matrix.h"
+#include "Eigen/src/Geometry/Transform.h"
 #include "Scene/Scene.h"
 #include "SpriteAnimation.hpp"
 #include "SpecTexs.hpp"
@@ -55,7 +57,10 @@ void WPShaderValueUpdater::InitUniforms(SceneNode* pNode, const ExistsUniformOp&
     info.has_AM                 = existsOp(G_AM);
     info.has_MVP                = existsOp(G_MVP);
     info.has_MVPI               = existsOp(G_MVPI);
-    info.has_VP                 = existsOp(G_VP);
+    info.has_ETVP               = existsOp(G_ETVP);
+    info.has_ETVPI              = existsOp(G_ETVPI);
+
+    info.has_VP = existsOp(G_VP);
 
     info.has_BONES            = existsOp(G_BONES);
     info.has_TIME             = existsOp(G_TIME);
@@ -120,11 +125,13 @@ void WPShaderValueUpdater::UpdateUniforms(SceneNode* pNode, sprite_map_t& sprite
         }
     }
 
-    bool reqMI   = info.has_MI;
-    bool reqM    = info.has_M;
-    bool reqAM   = info.has_AM;
-    bool reqMVP  = info.has_MVP;
-    bool reqMVPI = info.has_MVPI;
+    bool reqMI    = info.has_MI;
+    bool reqM     = info.has_M;
+    bool reqAM    = info.has_AM;
+    bool reqMVP   = info.has_MVP;
+    bool reqMVPI  = info.has_MVPI;
+    bool reqETVP  = info.has_ETVP;
+    bool reqETVPI = info.has_ETVPI;
 
     Matrix4d viewProTrans = camera->GetViewProjectionMatrix();
 
@@ -161,6 +168,14 @@ void WPShaderValueUpdater::UpdateUniforms(SceneNode* pNode, sprite_map_t& sprite
             updateOp(G_MVP, ShaderValue::fromMatrix(mvpTrans));
             if (reqMVPI) updateOp(G_MVPI, ShaderValue::fromMatrix(mvpTrans.inverse()));
         }
+        if (reqETVP || reqETVPI) {
+            Vector3d nodePos = pNode->Translate().cast<double>();
+            nodePos.z()      = 1.0f;
+            Matrix4d etvpTrans =
+                viewProTrans * modelTrans * Affine3d(Eigen::Scaling(nodePos)).matrix();
+            if (reqETVPI) updateOp(G_ETVP, ShaderValue::fromMatrix(etvpTrans));
+            if (reqETVPI) updateOp(G_ETVPI, ShaderValue::fromMatrix(etvpTrans.inverse()));
+        }
     }
 
     //	g_EffectTextureProjectionMatrix
@@ -182,10 +197,13 @@ void WPShaderValueUpdater::UpdateUniforms(SceneNode* pNode, sprite_map_t& sprite
                  std::array<float, 3> {
                      m_screen_size[0], m_screen_size[1], m_screen_size[0] / m_screen_size[1] });
 
-    if (info.has_PARALLAXPOSITION)
-        updateOp(G_PARALLAXPOSITION,
-                 std::array { m_mousePos[0] * m_parallax.mouseinfluence,
-                              (1.0f - m_mousePos[1]) * m_parallax.mouseinfluence });
+    if (info.has_PARALLAXPOSITION) {
+        Vector2f para =
+            Vector2f { 0.5f, 0.5f } +
+            (Scaling(1.0f, -1.0f) * (Vector2f(&m_mousePos[0])) - Vector2f { 0.5f, 0.5f }) *
+                m_parallax.mouseinfluence;
+        updateOp(G_PARALLAXPOSITION, std::array { para[0], para[1] });
+    }
 
     for (auto& [i, sp] : sprites) {
         const auto& f      = sp.GetAnimateFrame(m_scene->frameTime);
