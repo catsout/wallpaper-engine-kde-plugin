@@ -169,12 +169,14 @@ void WPShaderValueUpdater::UpdateUniforms(SceneNode* pNode, sprite_map_t& sprite
             if (reqMVPI) updateOp(G_MVPI, ShaderValue::fromMatrix(mvpTrans.inverse()));
         }
         if (reqETVP || reqETVPI) {
+            /*
             Vector3d nodePos = pNode->Translate().cast<double>();
             nodePos.z()      = 1.0f;
             Matrix4d etvpTrans =
                 viewProTrans * modelTrans * Affine3d(Eigen::Scaling(nodePos)).matrix();
             if (reqETVPI) updateOp(G_ETVP, ShaderValue::fromMatrix(etvpTrans));
             if (reqETVPI) updateOp(G_ETVPI, ShaderValue::fromMatrix(etvpTrans.inverse()));
+            */
         }
     }
 
