@@ -31,15 +31,22 @@ constexpr uint32_t singile_indices = 2 * 3;
 constexpr uint32_t singile_bone_frame = 4 * 9;
 
 bool WPMdlParser::Parse(std::string_view path, fs::VFS& vfs, WPMdl& mdl) {
-    auto pfile = vfs.Open("/assets/" + std::string(path));
+    auto str_path = std::string(path);
+    auto pfile    = vfs.Open("/assets/" + str_path);
     if (! pfile) return false;
     auto& f = *pfile;
 
-    mdl.mdlv           = ReadMDLVesion(f);
-    int32_t num_uknown = f.ReadInt32();
-    int32_t num1       = f.ReadInt32();
-    int32_t num2       = f.ReadInt32();
-    mdl.mat_json_file  = f.ReadStr();
+    mdl.mdlv = ReadMDLVesion(f);
+
+    int32_t mdl_flag = f.ReadInt32();
+    if (mdl_flag == 9) {
+        LOG_INFO("puppet '%s' is not complete, ignore", str_path.c_str());
+        return false;
+    };
+    int32_t num1 = f.ReadInt32(); // 1
+    int32_t num2 = f.ReadInt32(); // 1
+
+    mdl.mat_json_file = f.ReadStr();
     // 0
     f.ReadInt32();
 
@@ -71,30 +78,22 @@ bool WPMdlParser::Parse(std::string_view path, fs::VFS& vfs, WPMdl& mdl) {
     }
 
     mdl.mdls = ReadMDLVesion(f);
-    // unknown
-    f.ReadInt32();
+
+    size_t bones_file_end = f.ReadUint32();
 
     uint16_t bones_num = f.ReadUint16();
     // 1 byte
-    f.ReadUint8();
+    uint16_t unk1 = f.ReadUint16();
 
     mdl.puppet  = std::make_shared<WPPuppet>();
     auto& bones = mdl.puppet->bones;
     auto& anims = mdl.puppet->anims;
 
-    // uint16 unk
-    // int32
-    // int32
-    // int32 size
-    // mat4x3 bnoes
-    // vec3 bone pos
-    // int32
     bones.resize(bones_num);
     for (uint i = 0; i < bones_num; i++) {
-        auto&       bone      = bones[i];
-        std::string unk_extra = f.ReadStr();
-        f.ReadUint8();
-        int32_t unk2 = f.ReadInt32();
+        auto&       bone = bones[i];
+        std::string name = f.ReadStr();
+        int32_t     unk2 = f.ReadInt32();
 
         bone.parent = f.ReadUint32();
         assert(bone.parent < i || bone.noParent());
@@ -111,18 +110,51 @@ bool WPMdlParser::Parse(std::string_view path, fs::VFS& vfs, WPMdl& mdl) {
         for (auto row : bone.transform.matrix().colwise()) {
             for (auto& x : row) x = f.ReadFloat();
         }
+
+        std::string bone_simulation_json = f.ReadStr();
         /*
         auto trans = bone.transform.translation();
         LOG_INFO("trans: %f %f %f", trans[0], trans[1], trans[2]);
         */
     }
 
-    // 1 byte
-    f.ReadUint8();
+    if (mdl.mdls > 1) {
+        int16_t unk = f.ReadInt16();
+        if (unk != 0) {
+            LOG_INFO("puppet: one unk is not 0, may be wrong");
+        }
+
+        uint8_t has_trans = f.ReadUint8();
+        if (has_trans) {
+            for (uint i = 0; i < bones_num; i++)
+                for (uint j = 0; j < 16; j++) f.ReadFloat(); // mat
+        }
+        uint32_t size_unk = f.ReadUint32();
+        for (uint i = 0; i < size_unk; i++)
+            for (int j = 0; j < 3; j++) f.ReadUint32();
+
+        uint32_t unk2 = f.ReadUint32();
+
+        uint8_t has_offset_trans = f.ReadUint8();
+        if (has_offset_trans) {
+            for (uint i = 0; i < bones_num; i++) {
+                for (uint j = 0; j < 3; j++) f.ReadFloat();  // like pos
+                for (uint j = 0; j < 16; j++) f.ReadFloat(); // mat
+            }
+        }
+
+        uint8_t has_index = f.ReadUint8();
+        if (has_index) {
+            for (uint i = 0; i < bones_num; i++) {
+                f.ReadUint32();
+            }
+        }
+    }
 
     mdl.mdla = ReadMDLVesion(f);
     if (mdl.mdla != 0) {
-        f.ReadInt32();
+        uint end_size = f.ReadUint32();
+
         uint anim_num = f.ReadUint32();
         anims.resize(anim_num);
         for (auto& anim : anims) {
@@ -165,12 +197,12 @@ bool WPMdlParser::Parse(std::string_view path, fs::VFS& vfs, WPMdl& mdl) {
     }
     mdl.puppet->prepared();
 
-    LOG_INFO("----puppet----");
-    LOG_INFO("mdlv: %d\nmdls: %d\nmdla: %d", mdl.mdlv, mdl.mdls, mdl.mdla);
-    LOG_INFO("%s", mdl.mat_json_file.c_str());
-    LOG_INFO("vertex: %d", mdl.vertexs.size());
-    LOG_INFO("bones: %d", mdl.puppet->bones.size());
-    LOG_INFO("anims: %d", mdl.puppet->anims.size());
+    LOG_INFO("read puppet: mdlv: %d, nmdls: %d, mdla: %d, bones: %d, anims: %d",
+             mdl.mdlv,
+             mdl.mdls,
+             mdl.mdla,
+             mdl.puppet->bones.size(),
+             mdl.puppet->anims.size());
     return true;
 }
 
