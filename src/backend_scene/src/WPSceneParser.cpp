@@ -317,7 +317,7 @@ bool LoadMaterial(fs::VFS& vfs, const wpscene::WPMaterial& wpmat, Scene* pScene,
                 else if (texh.format == TextureFormat::RG8)
                     pWPShaderInfo->combos["TEX0FORMAT"] = "FORMAT_RG88";
             }
-            if (texh.mipmap_pow2) {
+            if (texh.mipmap_larger) {
                 resolution = { texh.width, texh.height, texh.mapWidth, texh.mapHeight };
             } else {
                 resolution = { texh.mapWidth, texh.mapHeight, texh.mapWidth, texh.mapHeight };
