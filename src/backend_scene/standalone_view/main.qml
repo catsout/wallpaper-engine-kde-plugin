@@ -14,11 +14,10 @@ Item {
         fps: 15
     }
     Timer {
-        running: true
+        running: false
         repeat: false
-        interval: 1000*8
+        interval: 1000*5
         onTriggered: {
-            renderer.source = 'file:///var/home/out/Documents/myGit/wallpaper/src/backend_scene/standalone_view/build/431960/2807856301/scene.pkg';
         }
     } 
 }

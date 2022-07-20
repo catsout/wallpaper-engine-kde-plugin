@@ -28,8 +28,7 @@ void framebuffer_size_callback(GLFWwindow*, int width, int height) {}
 void mouse_button_callback(GLFWwindow* win, int button, int action, int mods) {
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
         UserData* data = static_cast<UserData*>(glfwGetWindowUserPointer(win));
-        data->psw->setPropertyString(wallpaper::PROPERTY_SOURCE,
-                                     "431960/2807856301/scene.pkg");
+        // data->psw->setPropertyString(wallpaper::PROPERTY_SOURCE,
     }
 }
 

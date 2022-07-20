@@ -19,8 +19,9 @@ endif ()
 include_directories(.)
 
 add_subdirectory(Audio)
-add_subdirectory(Vulkan)
 add_subdirectory(Looper)
+add_subdirectory(Scene)
+add_subdirectory(Vulkan)
 add_subdirectory(RenderGraph)
 
 add_library(${PROJECT_NAME}
@@ -38,13 +39,6 @@ add_library(${PROJECT_NAME}
 	Particle/ParticleSystem.cpp
 	Particle/ParticleEmitter.cpp
 	Particle/WPParticleRawGener.cpp
-	Scene/Scene.cpp
-	Scene/SceneIndexArray.cpp
-	Scene/SceneVertexArray.cpp
-	Scene/SceneCamera.cpp
-	Scene/SceneNode.cpp
-	Scene/SceneShader.cpp
-	Scene/SceneImageEffectLayer.cpp
 
 	Utils/Logging.cpp
 	Utils/FrameTimer.cpp
@@ -72,7 +66,7 @@ add_library(${PROJECT_NAME}
 	SceneWallpaper.cpp	
 )
 
-set(InteralLib wpAudio wpVulkan wpRGraph wpLooper)
+set(InteralLib wpAudio wpVulkan wpRGraph wpLooper wpScene)
 
 set_property(TARGET ${PROJECT_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
 target_link_libraries(${PROJECT_NAME}

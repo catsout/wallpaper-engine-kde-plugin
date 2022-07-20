@@ -4,10 +4,12 @@
 #include <string>
 #include <unordered_map>
 #include <algorithm>
+#include <span>
+
 #include <Eigen/Dense>
 
-#include "Utils/span.hpp"
 #include "Utils/MapSet.hpp"
+#include "Utils/ArrayHelper.hpp"
 
 namespace wallpaper
 {
@@ -22,27 +24,18 @@ public:
     ShaderValue()  = default;
     ~ShaderValue() = default;
 
-    ShaderValue(const ShaderValue&) = default;
+    ShaderValue(const ShaderValue&)            = default;
     ShaderValue& operator=(const ShaderValue&) = default;
 
-    ShaderValue(const value_type& value) noexcept: m_value { value }, m_size { 1 } {}
+    ShaderValue(const value_type& value) noexcept { fromSpan(spanone { value }); }
     template<typename Range>
     ShaderValue(const Range& range) noexcept {
         fromSpan(range);
     }
     ShaderValue(const value_type* ptr, std::size_t num) noexcept { fromSpan({ ptr, num }); }
 
-    void fromSpan(Span<const float> s) noexcept {
-        m_size    = (size_t)s.size();
-        m_dynamic = s.size() > m_value.size();
-        if (m_dynamic) {
-            m_dvalue.resize(m_size);
-            std::copy(s.begin(), s.end(), m_dvalue.begin());
-        } else
-            std::copy(s.begin(), s.end(), m_value.begin());
-    }
     static ShaderValue fromMatrix(const Eigen::Ref<const Eigen::MatrixXf>& mat) {
-        return ShaderValue(Span { mat.data(), (size_t)mat.size() });
+        return ShaderValue(std::span { mat.data(), (size_t)mat.size() });
     }
     static ShaderValue fromMatrix(const Eigen::Ref<const Eigen::MatrixXd>& mat) {
         const Eigen::Ref<const Eigen::MatrixXf>& matf = mat.cast<float>();
@@ -58,7 +51,9 @@ public:
     void setSize(size_t v) noexcept { m_size = std::min(v, (size_t)_value().size()); }
 
 private:
-    Span<const float> _value() const noexcept {
+    void fromSpan(std::span<const value_type> s) noexcept;
+
+    std::span<const value_type> _value() const noexcept {
         if (m_dynamic) return m_dvalue;
         return m_value;
     }
@@ -83,7 +78,7 @@ struct SceneShader {
 public:
     uint32_t    id;
     std::string name;
-    
+
     /*
     std::string vertexCode;
     std::string geometryCode;
