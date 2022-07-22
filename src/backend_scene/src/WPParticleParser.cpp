@@ -5,6 +5,7 @@
 #include <memory>
 #include <algorithm>
 #include <cmath>
+#include <functional>
 
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
@@ -370,13 +371,17 @@ WPParticleParser::genParticleOperatorOp(const nlohmann::json& wpj, RandomFn rf,
             GET_JSON_NAME_VALUE_NOWARN(wpj, "drag", drag);
             GET_JSON_NAME_VALUE_NOWARN(wpj, "gravity", gravity);
             Vector3d vecG = Vector3f(gravity.data()).cast<double>();
-            return [=](const ParticleInfo& info) {
+            auto lambda = [drag, speed](auto && vecG, const ParticleInfo& info) {
                 for (auto& p : info.particles) {
                     Vector3d acc =
                         algorism::DragForce(PM::GetVelocity(p).cast<double>(), drag) + vecG;
                     PM::Accelerate(p, speed * acc, info.time_pass);
                     PM::MoveByTime(p, info.time_pass);
                 }
+            };
+
+            return [vecG = std::move(vecG), f = std::move(lambda)](const ParticleInfo & inf) -> ParticleOperatorOp {
+                f(vecG, inf);
             };
         } else if (name == "angularmovement") {
             float                drag { 0.0f };

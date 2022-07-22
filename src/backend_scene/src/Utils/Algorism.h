@@ -49,7 +49,7 @@ namespace  algorism {
 		//return -0.5f * speed*speed * strength * density;
 		return -speed * strength * density;
 	}
-	inline Eigen::Vector3d DragForce(Eigen::Vector3d v, double strength, double density=1.0f) {
+	inline Eigen::Vecr3d DragForce(Eigen::Vector3d v, double strength, double density=1.0f) {
 		return v.normalized()*DragForce(v.norm(), strength, density);
 	}
 
