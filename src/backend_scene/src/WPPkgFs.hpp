@@ -1,8 +1,6 @@
 #pragma once
 
 #include <unordered_map>
-
-#include "Fs/CBinaryStream.h"
 #include "Fs/Fs.h"
 
 namespace wallpaper

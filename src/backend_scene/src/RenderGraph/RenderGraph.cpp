@@ -1,8 +1,10 @@
-#include "RenderGraph.hpp"
-#include "Utils/Logging.h"
-
 #include <cassert>
 #include <algorithm>
+
+#include "RenderGraph.hpp"
+
+#include "Utils/Logging.h"
+#include "Pass.hpp"
 
 using namespace wallpaper::rg;
 

@@ -1,4 +1,6 @@
 #pragma once
+#include <memory>
+
 #include "IBinaryStream.h"
 #include "Utils/NoCopyMove.hpp"
 

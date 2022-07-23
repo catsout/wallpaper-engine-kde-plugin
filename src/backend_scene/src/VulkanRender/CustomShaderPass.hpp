@@ -8,6 +8,7 @@
 #include "Vulkan/StagingBuffer.hpp"
 #include "Vulkan/GraphicsPipeline.hpp"
 #include "SpriteAnimation.hpp"
+#include "Interface/IShaderValueUpdater.h"
 
 namespace wallpaper
 {
@@ -27,8 +28,8 @@ public:
         // -----prepared
         // vulkan texs
         std::vector<ImageSlotsRef> vk_textures;
-        std::vector<int>        vk_tex_binding;
-        ImageParameters         vk_output;
+        std::vector<int>           vk_tex_binding;
+        ImageParameters            vk_output;
 
         // bufs
         bool                          dyn_vertex { false };

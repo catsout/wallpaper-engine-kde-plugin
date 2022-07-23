@@ -3,6 +3,8 @@
 #include "Utils/Logging.h"
 #include "RenderGraph/RenderGraph.hpp"
 #include "Scene/Scene.h"
+#include "Interface/IShaderValueUpdater.h"
+
 #include "Utils/Algorism.h"
 
 #include <glslang/Public/ShaderLang.h>

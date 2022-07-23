@@ -1,5 +1,6 @@
 #include "WPSceneParser.hpp"
 #include "WPJson.hpp"
+
 #include "Utils/String.h"
 #include "Utils/Logging.h"
 #include "Utils/Algorism.h"
@@ -10,10 +11,12 @@
 
 #include "WPShaderParser.hpp"
 #include "WPTexImageParser.hpp"
-#include "Particle/WPParticleRawGener.h"
 #include "WPParticleParser.hpp"
 #include "WPSoundParser.hpp"
 #include "WPMdlParser.hpp"
+
+#include "Particle/WPParticleRawGener.h"
+#include "Particle/ParticleSystem.h"
 
 #include "WPShaderValueUpdater.hpp"
 #include "wpscene/WPImageObject.h"
@@ -465,7 +468,7 @@ void InitContext(ParseContext& context, fs::VFS& vfs, wpscene::WPScene& sc) {
     context.vfs              = &vfs;
     auto& scene              = *context.scene;
     scene.imageParser        = std::make_unique<WPTexImageParser>(&vfs);
-    scene.paritileSys.gener  = std::make_unique<WPParticleRawGener>();
+    scene.paritileSys->gener = std::make_unique<WPParticleRawGener>();
     scene.shaderValueUpdater = std::make_unique<WPShaderValueUpdater>(&scene);
     GenCardMesh(scene.default_effect_mesh, { 2, 2 });
     context.shader_updater = static_cast<WPShaderValueUpdater*>(scene.shaderValueUpdater.get());
@@ -919,7 +922,7 @@ void ParseParticleObj(ParseContext& context, wpscene::WPParticleObject& particle
         SetParticleMesh(mesh, wppartobj.particleObj, maxcount, thick_format);
     const auto& wpemitter   = wppartobj.particleObj.emitters[0];
     auto        particleSub = std::make_unique<ParticleSubSystem>(
-        context.scene->paritileSys,
+        *context.scene->paritileSys,
         spMesh,
         maxcount,
         wppartobj.instanceoverride.rate,
@@ -946,7 +949,7 @@ void ParseParticleObj(ParseContext& context, wpscene::WPParticleObject& particle
         *particleSub, wppartobj.particleObj, wppartobj.instanceoverride, context.randomFn);
     LoadOperator(*particleSub, wppartobj.particleObj, wppartobj.instanceoverride, context.randomFn);
 
-    context.scene->paritileSys.subsystems.emplace_back(std::move(particleSub));
+    context.scene->paritileSys->subsystems.emplace_back(std::move(particleSub));
     mesh.AddMaterial(std::move(material));
     spNode->AddMesh(spMesh);
     context.shader_updater->SetNodeData(spNode.get(), svData);

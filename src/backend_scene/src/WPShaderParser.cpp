@@ -8,6 +8,7 @@
 #include "Fs/VFS.h"
 #include "Utils/span.hpp"
 #include "Utils/Sha.hpp"
+#include "Utils/String.h"
 #include "WPCommon.hpp"
 
 #include "Vulkan/ShaderComp.hpp"

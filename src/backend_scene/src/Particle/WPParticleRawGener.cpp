@@ -1,7 +1,9 @@
 #include "WPParticleRawGener.h"
+
 #include <cstring>
 #include <Eigen/Dense>
 #include <array>
+
 #include "SpecTexs.hpp"
 #include "ParticleModify.h"
 #include "Utils/Logging.h"

@@ -18,10 +18,14 @@ endif ()
 
 include_directories(.)
 
+add_subdirectory(Fs)
+add_subdirectory(Utils)
 add_subdirectory(Audio)
-add_subdirectory(Looper)
 add_subdirectory(Scene)
+add_subdirectory(Looper)
 add_subdirectory(Vulkan)
+add_subdirectory(Particle)
+add_subdirectory(VulkanRender)
 add_subdirectory(RenderGraph)
 
 add_library(${PROJECT_NAME}
@@ -35,24 +39,6 @@ add_library(${PROJECT_NAME}
 	wpscene/WPMaterial.cpp
 	wpscene/WPScene.cpp
 	wpscene/WPLightObject.cpp
-	Particle/ParticleModify.cpp
-	Particle/ParticleSystem.cpp
-	Particle/ParticleEmitter.cpp
-	Particle/WPParticleRawGener.cpp
-
-	Utils/Logging.cpp
-	Utils/FrameTimer.cpp
-	Utils/FpsCounter.cpp
-	Utils/Algorism.cpp	
-	Utils/Sha.cpp
-    Utils/DynamicLibrary.cpp
-
-    VulkanRender/CopyPass.cpp
-    VulkanRender/CustomShaderPass.cpp
-    VulkanRender/FinPass.cpp
-    VulkanRender/PrePass.cpp
-    VulkanRender/SceneToRenderGraph.cpp
-	VulkanRender/VulkanRender.cpp
 
 	WPParticleParser.cpp
 	WPShaderParser.cpp
@@ -66,14 +52,16 @@ add_library(${PROJECT_NAME}
 	SceneWallpaper.cpp	
 )
 
-set(InteralLib wpAudio wpVulkan wpRGraph wpLooper wpScene)
+set(InteralLib wpAudio wpLooper wpVulkanRender wpFs wpScene wpVulkan wpRGraph wpParticle)
 
-set_property(TARGET ${PROJECT_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
 target_link_libraries(${PROJECT_NAME}
-PRIVATE
+    PUBLIC
+    wpUtils
+    PRIVATE
 	${InteralLib}
 	${LZ4_LIBRARIES}
 	${CMAKE_THREAD_LIBS_INIT}
 	${CMAKE_DL_LIBS}
 )
 target_include_directories(${PROJECT_NAME} PUBLIC . Swapchain)
+set_property(TARGET ${PROJECT_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)

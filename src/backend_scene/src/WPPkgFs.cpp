@@ -1,6 +1,7 @@
 #include "WPPkgFs.hpp"
 #include "Utils/Logging.h"
 #include "Fs/LimitedBinaryStream.h"
+#include "Fs/CBinaryStream.h"
 #include <vector>
 
 using namespace wallpaper::fs;

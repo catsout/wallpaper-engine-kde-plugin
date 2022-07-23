@@ -8,6 +8,8 @@
 #include "Utils/FpsCounter.h"
 #include "WPSceneParser.hpp"
 #include "Scene/Scene.h"
+#include "Particle/ParticleSystem.h"
+#include "Interface/IShaderValueUpdater.h"
 
 #include "Fs/VFS.h"
 #include "Fs/PhysicalFs.h"
@@ -166,7 +168,7 @@ private:
                 auto pos = m_mouse_pos.load();
                 m_scene->shaderValueUpdater->MouseInput(pos[0], pos[1]);
             }
-            m_scene->paritileSys.Emitt();
+            m_scene->paritileSys->Emitt();
 
             m_render->drawFrame(*m_scene);
 

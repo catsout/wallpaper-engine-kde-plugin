@@ -1,6 +1,5 @@
 #pragma once
 #include "ParticleEmitter.h"
-#include "Scene/SceneMesh.h"
 #include "Interface/IParticleRawGener.h"
 #include "Utils/NoCopyMove.hpp"
 
@@ -20,13 +19,8 @@ class ParticleSystem;
 class ParticleSubSystem : NoCopy, NoMove {
 public:
     ParticleSubSystem(ParticleSystem& p, std::shared_ptr<SceneMesh> sm, uint32_t maxcount,
-                      float rate, ParticleRawGenSpecOp specOp)
-        : parent(p),
-          m_mesh(sm),
-          m_maxcount(maxcount),
-          m_rate(rate),
-          m_genSpecOp(specOp),
-          m_time(0) {};
+                      float rate, ParticleRawGenSpecOp specOp);
+    ~ParticleSubSystem();
 
     void Emitt();
 

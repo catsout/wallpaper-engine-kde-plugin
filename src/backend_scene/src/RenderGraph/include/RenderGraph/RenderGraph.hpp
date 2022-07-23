@@ -1,9 +1,8 @@
 #pragma once
 
-#include "Pass.hpp"
-#include "TexNode.hpp"
 #include "PassNode.hpp"
 
+#include "TexNode.hpp"
 #include "Utils/MapSet.hpp"
 #include "Utils/span.hpp"
 
@@ -12,6 +11,7 @@ namespace wallpaper
 namespace rg
 {
 
+class Pass;
 class RenderGraph;
 class RenderGraphBuilder {
 public:

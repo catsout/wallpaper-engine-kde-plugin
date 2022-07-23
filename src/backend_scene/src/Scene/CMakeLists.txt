@@ -1,9 +1,8 @@
-include_directories(include/Scene)
-
 set(LIB_NAME wpScene)
 
 add_library(${LIB_NAME}
 STATIC
+
 Scene.cpp
 SceneCamera.cpp
 SceneImageEffectLayer.cpp
@@ -14,8 +13,11 @@ SceneShader.cpp
 )
 
 target_link_libraries(${LIB_NAME}
+PUBLIC
+    wpUtils
 PRIVATE
-	dl
+    wpFs
+    wpParticle
 )
-target_include_directories(${LIB_NAME} PUBLIC include)
+target_include_directories(${LIB_NAME} PUBLIC include PRIVATE include/Scene)
 set_property(TARGET ${LIB_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)

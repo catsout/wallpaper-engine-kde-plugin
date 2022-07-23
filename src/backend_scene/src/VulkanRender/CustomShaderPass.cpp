@@ -8,6 +8,7 @@
 #include "Utils/AutoDeletor.hpp"
 #include "Resource.hpp"
 #include "PassCommon.hpp"
+#include "Interface/IImageParser.h"
 
 #include <cassert>
 

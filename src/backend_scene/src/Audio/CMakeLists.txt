@@ -1,9 +1,15 @@
-include_directories(include)
-add_library(wpAudio
+set(LIB_NAME wpAudio)
+
+add_library(${LIB_NAME}
     STATIC
     SoundManager.cpp
 )
 
-target_link_libraries(wpAudio)
-target_include_directories(wpAudio PUBLIC include)
-set_property(TARGET wpAudio PROPERTY POSITION_INDEPENDENT_CODE ON)
+target_link_libraries(${LIB_NAME}
+PUBLIC
+    wpUtils
+PRIVATE
+    wpFs
+)
+target_include_directories(${LIB_NAME} PUBLIC include PRIVATE include/Audio)
+set_property(TARGET ${LIB_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)

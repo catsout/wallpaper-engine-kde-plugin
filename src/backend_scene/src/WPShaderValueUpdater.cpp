@@ -12,6 +12,7 @@
 #include <iostream>
 #include <chrono>
 #include <ctime>
+#include <numeric>
 
 using namespace wallpaper;
 using namespace Eigen;

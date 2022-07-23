@@ -5,6 +5,7 @@
 #include <vector>
 #include <memory>
 #include <Eigen/Dense>
+
 #include "WPPuppet.hpp"
 
 namespace wallpaper

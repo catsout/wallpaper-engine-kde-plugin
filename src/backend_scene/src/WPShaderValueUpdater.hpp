@@ -1,16 +1,17 @@
 #pragma once
-#include "Interface/IShaderValueUpdater.h"
-#include "Utils/MapSet.hpp"
-
 #include <memory>
 #include <vector>
 #include <array>
 #include <unordered_map>
 #include <cstdint>
 #include <chrono>
+
+#include <Eigen/Dense>
+
+#include "Interface/IShaderValueUpdater.h"
+#include "Utils/MapSet.hpp"
 #include "SpriteAnimation.hpp"
 #include "WPPuppet.hpp"
-#include <Eigen/Dense>
 
 namespace wallpaper
 {

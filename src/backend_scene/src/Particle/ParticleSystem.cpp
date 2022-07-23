@@ -1,9 +1,17 @@
 #include "ParticleSystem.h"
 #include "Scene/Scene.h"
 #include "ParticleModify.h"
+#include "Scene/SceneMesh.h"
+
 #include <algorithm>
 
 using namespace wallpaper;
+
+ParticleSubSystem::ParticleSubSystem(ParticleSystem& p, std::shared_ptr<SceneMesh> sm,
+                                     uint32_t maxcount, float rate, ParticleRawGenSpecOp specOp)
+    : parent(p), m_mesh(sm), m_maxcount(maxcount), m_rate(rate), m_genSpecOp(specOp), m_time(0) {};
+
+ParticleSubSystem::~ParticleSubSystem() = default;
 
 void ParticleSubSystem::AddEmitter(ParticleEmittOp&& em) { m_emiters.emplace_back(em); }
 
