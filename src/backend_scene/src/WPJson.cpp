@@ -72,33 +72,36 @@ inline bool _GetJsonValue(const char* file, const char* func, int line, const nl
 }
 
 template<typename T>
-bool GetJsonValue(const char* file, const char* func, int line, const nlohmann::json& json,
-                  T& value, bool has_name, std::string_view name_view, bool warn) {
+typename JsonTemplateTypeCheck<T>::type
+GetJsonValue(const char* file, const char* func, int line, const nlohmann::json& json, T& value,
+             bool has_name, std::string_view name_view, bool warn) {
     std::string name { name_view };
-    if (! json.contains(name)) {
-        if (warn)
-            WallpaperLog(
-                LOGLEVEL_INFO, file, line, "read json \"%s\" not a key at %s", name.data(), func);
-        return false;
-    } else if (json.at(name).is_null()) {
-        if (warn)
-            WallpaperLog(
-                LOGLEVEL_INFO, func, line, "read json \"%s\" is null at %s", name.data(), func);
-        return false;
+    if(has_name) {
+        if (! json.contains(name)) {
+            if (warn)
+                WallpaperLog(
+                    LOGLEVEL_INFO, "", 0, "read json \"%s\" not a key at %s(%s:%d)", name.data(), func, file, line);
+            return false;
+        } else if (json.at(name).is_null()) {
+            if (warn)
+                WallpaperLog(
+                    LOGLEVEL_INFO, "", 0, "read json \"%s\" is null at %s(%s:%d)", name.data(), func, file, line);
+            return false;
+        }
     }
     return _GetJsonValue<T>(
-        file, func, line, json.at(name), value, warn, name.empty() ? nullptr : name.c_str());
+        file, func, line, has_name ? json.at(name) : json, value, warn, name.empty() ? nullptr : name.c_str());
 }
 
-#define T_IMPL_GET_JSON(TYPE)                                                                     \
-    template typename JsonTemplateTypeCheck<TYPE>::type GetJsonValue<TYPE>(const char*,           \
-                                                                           const char*,           \
-                                                                           int,                   \
-                                                                           const nlohmann::json&, \
-                                                                           TYPE&,                 \
-                                                                           bool,                  \
-                                                                           std::string_view,      \
-                                                                           bool);
+#define T_IMPL_GET_JSON(TYPE)                                                            \
+    template JsonTemplateTypeCheck<TYPE>::type GetJsonValue<TYPE>(const char*,           \
+                                                                  const char*,           \
+                                                                  int,                   \
+                                                                  const nlohmann::json&, \
+                                                                  TYPE&,                 \
+                                                                  bool,                  \
+                                                                  std::string_view,      \
+                                                                  bool);
 
 T_IMPL_GET_JSON(bool);
 T_IMPL_GET_JSON(int32_t);
