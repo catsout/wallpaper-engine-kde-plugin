@@ -24,7 +24,7 @@ void CopyPass::prepare(Scene& scene, const Device& device, RenderingResources& r
 
     std::array<std::string, 2>      textures    = { m_desc.src, m_desc.dst };
     std::array<ImageParameters*, 2> vk_textures = { &m_desc.vk_src, &m_desc.vk_dst };
-    for (int i = 0; i < textures.size(); i++) {
+    for (usize i = 0; i < textures.size(); i++) {
         auto& tex_name = textures[i];
         if (tex_name.empty()) continue;
 

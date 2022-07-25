@@ -15,6 +15,23 @@ if (ENDIAN)
 	add_compile_definitions(WP_BIG_ENDIAN)
 endif ()
 
+set(warn_opts
+    -Wall
+    -Wextra
+    -Wpedantic
+    -Wconversion
+    -Wsign-conversion
+    -Wno-unused-variable
+CACHE INTERNAL "")
+
+# set global compile option
+add_compile_options(
+    $<$<CONFIG:Debug>:-fsanitize=address>
+)
+
+add_link_options(
+    $<$<CONFIG:Debug>:-fsanitize=address>
+)
 
 include_directories(.)
 

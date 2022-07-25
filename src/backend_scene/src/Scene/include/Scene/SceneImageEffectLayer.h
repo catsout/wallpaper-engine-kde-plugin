@@ -4,6 +4,7 @@
 #include <memory>
 #include <cstdint>
 #include <string>
+#include "Core/Literals.hpp"
 #include "Type.hpp"
 
 namespace wallpaper
@@ -26,7 +27,7 @@ struct SceneImageEffect {
         CmdType     cmd { CmdType::Copy };
         std::string dst;
         std::string src;
-        uint32_t    afterpos { 0 }; // start at 1, 0 for begin at all
+        i32         afterpos { 0 }; // start at 1, 0 for begin at all
     };
     std::vector<Command>            commands;
     std::list<SceneImageEffectNode> nodes;

@@ -157,7 +157,7 @@ bool VulkanRender::Impl::init(RenderInitInfo info) {
     }
     {
         auto surface   = *m_instance.surface();
-        auto check_gpu = [&info, &device_exts, surface](const vvk::PhysicalDevice& gpu) {
+        auto check_gpu = [&device_exts, surface](const vvk::PhysicalDevice& gpu) {
             return Device::CheckGPU(gpu, device_exts, surface);
         };
         if (! m_instance.ChoosePhysicalDevice(check_gpu, info.uuid)) return false;
@@ -244,11 +244,6 @@ void VulkanRender::Impl::destroy() {
         m_vertex_buf->destroy();
         m_dyn_buf->destroy();
 
-        if (m_ex_swapchain) {
-            for (auto& exh : m_ex_swapchain->handles()) {
-                m_device->DestroyExImageParameters(exh.image);
-            }
-        }
         m_device->Destroy();
     }
     m_instance.Destroy();
@@ -405,8 +400,8 @@ void VulkanRender::Impl::setRenderTargetSize(Scene& scene, rg::RenderGraph& rg) 
     for (auto& item : scene.renderTargets) {
         auto& rt = item.second;
         if (rt.bind.enable && rt.bind.screen) {
-            rt.width  = rt.bind.scale * ext.width;
-            rt.height = rt.bind.scale * ext.height;
+            rt.width  = (i32)(rt.bind.scale * ext.width);
+            rt.height = (i32)(rt.bind.scale * ext.height);
         }
     }
     for (auto& item : scene.renderTargets) {
@@ -417,8 +412,8 @@ void VulkanRender::Impl::setRenderTargetSize(Scene& scene, rg::RenderGraph& rg) 
             LOG_ERROR("unknonw render target bind: %s", rt.bind.name.c_str());
             continue;
         }
-        rt.width  = rt.bind.scale * bind_rt->second.width;
-        rt.height = rt.bind.scale * bind_rt->second.height;
+        rt.width  = (i32)(rt.bind.scale * bind_rt->second.width);
+        rt.height = (i32)(rt.bind.scale * bind_rt->second.height);
     }
     for (auto& item : scene.renderTargets) {
         auto& rt = item.second;
@@ -431,7 +426,7 @@ void VulkanRender::Impl::setRenderTargetSize(Scene& scene, rg::RenderGraph& rg) 
                 2u;
         }
     }
-    scene.shaderValueUpdater->SetScreenSize(ext.width, ext.height);
+    scene.shaderValueUpdater->SetScreenSize((i32)ext.width, (i32)ext.height);
 }
 
 void VulkanRender::Impl::UpdateCameraFillMode(wallpaper::Scene&   scene,

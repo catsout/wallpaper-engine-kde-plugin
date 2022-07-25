@@ -16,7 +16,8 @@ class Span {
 public:
     using value_type             = T;
     using u32                    = uint32_t;
-    using size_type              = u32;
+    using size_type              = std::size_t;
+    using size_type_out          = u32;
     using difference_type        = std::ptrdiff_t;
     using reference              = T&;
     using const_reference        = const T&;
@@ -56,7 +57,7 @@ public:
 
     constexpr pointer data() const noexcept { return ptr; }
 
-    constexpr size_type size() const noexcept { return num; }
+    constexpr size_type_out size() const noexcept { return static_cast<size_type_out>(num); }
 
     constexpr bool empty() const noexcept { return num == 0; }
 
@@ -75,8 +76,8 @@ public:
     */
 
 private:
-    pointer     ptr { nullptr };
-    std::size_t num { 0 };
+    pointer   ptr { nullptr };
+    size_type num { 0 };
 };
 
 template<typename T, typename R>

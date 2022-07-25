@@ -261,7 +261,7 @@ void Destroy(VkInstance instance, VkSurfaceKHR handle, const InstanceDispatch& d
 
 VkResult Free(VkDevice device, VkCommandPool pool, Span<VkCommandBuffer> allos,
               const DeviceDispatch& dld) noexcept {
-    dld.vkFreeCommandBuffers(device, pool, allos.size(), allos.data());
+    dld.vkFreeCommandBuffers(device, pool, (uint32_t)allos.size(), allos.data());
     return VK_SUCCESS;
 }
 

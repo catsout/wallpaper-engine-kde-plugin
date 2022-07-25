@@ -139,6 +139,7 @@ public:
                 CASE_CMD(SET_FILLMODE);
                 CASE_CMD(SET_SCENE);
                 CASE_CMD(INIT_VULKAN);
+            default: break;
             }
         }
     }
@@ -147,7 +148,7 @@ public:
 
     bool renderInited() const { return m_render->inited(); }
 
-    void setMousePos(float x, float y) { m_mouse_pos.store(std::array { x, y }); }
+    void setMousePos(double x, double y) { m_mouse_pos.store(std::array { (float)x, (float)y }); }
 
 private:
     MHANDLER_CMD(STOP) {

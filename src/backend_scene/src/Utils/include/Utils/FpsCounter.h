@@ -3,18 +3,22 @@
 #include <chrono>
 #include <functional>
 
-namespace wallpaper {
+#include "Core/Literals.hpp"
+
+namespace wallpaper
+{
 
 class FpsCounter {
 public:
-	FpsCounter();
-	uint32_t Fps() const { return m_fps; };
-	uint32_t FrameCount() const { return m_frameCount; };
-	void RegisterFrame();
+    FpsCounter();
+    u32  Fps() const { return m_fps; };
+    u32  FrameCount() const { return m_frameCount; };
+    void RegisterFrame();
+
 private:
-	uint32_t m_fps;
-	uint32_t m_frameCount;
-	std::chrono::time_point<std::chrono::steady_clock> m_startTime;
+    u32                                                m_fps;
+    u32                                                m_frameCount;
+    std::chrono::time_point<std::chrono::steady_clock> m_startTime;
 };
 
-}
+} // namespace wallpaper

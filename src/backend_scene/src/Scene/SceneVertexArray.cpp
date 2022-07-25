@@ -57,13 +57,13 @@ bool SceneVertexArray::SetVertex(std::string_view name, Span<const float> data) 
     uint32_t offset = 0;
     for (const auto& el : m_attributes) {
         if (el.name == name) {
-            uint32_t typeSize = SceneVertexArray::TypeCount(el.type);
-            uint32_t count    = data.size() / typeSize;
+            usize typeSize = SceneVertexArray::TypeCount(el.type);
+            usize count    = data.size() / typeSize;
             if (m_capacity < count * m_oneSize) return false;
             if (m_size < count * m_oneSize) m_size = count * m_oneSize;
 
-            for (uint32_t i = 0; i < data.size(); i += typeSize) {
-                uint32_t num = i / typeSize;
+            for (usize i = 0; i < data.size(); i += typeSize) {
+                usize num = i / typeSize;
                 std::memcpy(m_pData + offset + num * m_oneSize, &data[i], typeSize * sizeof(float));
             }
             return true;
@@ -84,7 +84,7 @@ bool SceneVertexArray::SetVertexs(std::size_t index, std::size_t count, const fl
 Map<std::string, SceneVertexArray::SceneVertexAttributeOffset>
 SceneVertexArray::GetAttrOffsetMap() const {
     Map<std::string, SceneVertexArray::SceneVertexAttributeOffset> result;
-    uint                                                           offset { 0 };
+    usize                                                          offset { 0 };
     for (const auto& attr : m_attributes) {
         result[attr.name] = (SceneVertexAttributeOffset { .attr = attr, .offset = offset });
         offset += SceneVertexArray::RealAttributeSize(attr) * sizeof(float);

@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <functional>
 
+#include "Core/Literals.hpp"
 #include "Type.hpp"
 #include "SpriteAnimation.hpp"
 #include "Scene/SceneTexture.h"
@@ -21,9 +22,9 @@ union ImageExtra {
 typedef std::unique_ptr<uint8_t, std::function<void(uint8_t*)>> ImageDataPtr;
 
 struct ImageData {
-    uint32_t     width;
-    uint32_t     height;
-    uint32_t     size;
+    i32          width;
+    i32          height;
+    isize        size;
     ImageDataPtr data;
     ImageData() = default;
 };
@@ -31,17 +32,18 @@ struct ImageData {
 struct ImageHeader {
     // these two size is not for tex, just come from we
     // using Slot's size for tex
-    uint16_t width;
-    uint16_t height;
-    uint16_t mapWidth;
-    uint16_t mapHeight;
+    i32 width;
+    i32 height;
+    i32 mapWidth;
+    i32 mapHeight;
 
     bool mipmap_larger { false };
     bool mipmap_pow2 { false };
 
     ImageType     type { ImageType::UNKNOWN };
     TextureFormat format;
-    uint32_t      count;
+    i32           count;
+
     bool          isSprite;
     TextureSample sample;
 
@@ -53,11 +55,12 @@ struct ImageHeader {
 // slot is one singal image
 struct Image : NoCopy, NoMove {
     struct Slot {
-        uint16_t               width;
-        uint16_t               height;
+        i32 width;
+        i32 height;
+
         std::vector<ImageData> mipmaps;
 
-        operator bool() { return width * height * mipmaps.size() > 0; }
+        operator bool() { return width * height * std::ssize(mipmaps) > 0; }
     };
     ImageHeader       header;
     std::vector<Slot> slots;

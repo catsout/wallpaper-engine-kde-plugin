@@ -6,8 +6,9 @@ namespace wallpaper
 {
 namespace vulkan
 {
-class ImageParameters;
-class VmaImageParameters;
+struct ImageParameters;
+struct VmaImageParameters;
+
 class Device;
 class Swapchain {
 public:

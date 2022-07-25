@@ -28,7 +28,7 @@ public:
         // -----prepared
         // vulkan texs
         std::vector<ImageSlotsRef> vk_textures;
-        std::vector<int>           vk_tex_binding;
+        std::vector<i32>           vk_tex_binding;
         ImageParameters            vk_output;
 
         // bufs
@@ -42,7 +42,7 @@ public:
         bool               blending { false };
         vvk::Framebuffer   fb;
         PipelineParameters pipeline;
-        uint32_t           draw_count { 0 };
+        u32                draw_count { 0 };
 
         // uniforms
         std::function<void()> update_op;
@@ -51,7 +51,7 @@ public:
     CustomShaderPass(const Desc&);
     virtual ~CustomShaderPass();
 
-    void setDescTex(uint index, std::string_view tex_key);
+    void setDescTex(u32 index, std::string_view tex_key);
 
     void prepare(Scene&, const Device&, RenderingResources&) override;
     void execute(const Device&, RenderingResources&) override;

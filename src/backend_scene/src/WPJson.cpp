@@ -12,7 +12,7 @@ bool ParseJson(const char* file, const char* func, int line, const std::string& 
     try {
         result = nlohmann::json::parse(source);
     } catch (nlohmann::json::parse_error& e) {
-        WallpaperLog(LOGLEVEL_INFO, func, line, "parse json, %s", e.what());
+        WallpaperLog(LOGLEVEL_ERROR, file, line, "parse json(%s), %s", func, e.what());
         return false;
     }
     return true;
@@ -47,6 +47,8 @@ inline bool _GetJsonValue(const nlohmann::json& json, T& value) {
 template<typename T>
 inline bool _GetJsonValue(const char* file, const char* func, int line, const nlohmann::json& json,
                           T& value, bool warn, const char* name) {
+    (void)warn;
+
     using njson = nlohmann::json;
     std::string nameinfo;
     if (name != nullptr) nameinfo = std::string("(key: ") + name + ")";
@@ -76,21 +78,38 @@ typename JsonTemplateTypeCheck<T>::type
 GetJsonValue(const char* file, const char* func, int line, const nlohmann::json& json, T& value,
              bool has_name, std::string_view name_view, bool warn) {
     std::string name { name_view };
-    if(has_name) {
+    if (has_name) {
         if (! json.contains(name)) {
             if (warn)
-                WallpaperLog(
-                    LOGLEVEL_INFO, "", 0, "read json \"%s\" not a key at %s(%s:%d)", name.data(), func, file, line);
+                WallpaperLog(LOGLEVEL_INFO,
+                             "",
+                             0,
+                             "read json \"%s\" not a key at %s(%s:%d)",
+                             name.data(),
+                             func,
+                             file,
+                             line);
             return false;
         } else if (json.at(name).is_null()) {
             if (warn)
-                WallpaperLog(
-                    LOGLEVEL_INFO, "", 0, "read json \"%s\" is null at %s(%s:%d)", name.data(), func, file, line);
+                WallpaperLog(LOGLEVEL_INFO,
+                             "",
+                             0,
+                             "read json \"%s\" is null at %s(%s:%d)",
+                             name.data(),
+                             func,
+                             file,
+                             line);
             return false;
         }
     }
-    return _GetJsonValue<T>(
-        file, func, line, has_name ? json.at(name) : json, value, warn, name.empty() ? nullptr : name.c_str());
+    return _GetJsonValue<T>(file,
+                            func,
+                            line,
+                            has_name ? json.at(name) : json,
+                            value,
+                            warn,
+                            name.empty() ? nullptr : name.c_str());
 }
 
 #define T_IMPL_GET_JSON(TYPE)                                                            \

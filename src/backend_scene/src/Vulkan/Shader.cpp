@@ -14,6 +14,7 @@
 #include "Utils/MapSet.hpp"
 #include <SPIRV-Reflect/spirv_reflect.h>
 
+using namespace wallpaper;
 using namespace wallpaper::vulkan;
 
 #define _VK_FORMAT_1(s, sign, type, x)          VK_FORMAT_##x##s##sign##type;
@@ -73,7 +74,7 @@ inline glslang::EShClient getClient(glslang::EShTargetClientVersion ClientVersio
 }
 inline glslang::EShTargetLanguageVersion
 getTargetVersion(glslang::EShTargetClientVersion ClientVersion) {
-    glslang::EShTargetLanguageVersion TargetVersion;
+    glslang::EShTargetLanguageVersion TargetVersion { glslang::EShTargetSpv_1_0 };
     switch (ClientVersion) {
     case glslang::EShTargetVulkan_1_0: TargetVersion = glslang::EShTargetSpv_1_0; break;
     case glslang::EShTargetVulkan_1_1: TargetVersion = glslang::EShTargetSpv_1_3; break;
@@ -123,8 +124,8 @@ inline void SetMessageOptions(const ShaderCompOpt& opt, EShMessages& emsg) {
         emsg = (EShMessages)(emsg | EShMsgVulkanRules);
 }
 
-inline size_t GetTypeNum(const glslang::TType* type) {
-    size_t num { 1 };
+inline i32 GetTypeNum(const glslang::TType* type) {
+    i32 num { 1 };
     if (type->isArray()) num *= type->getCumulativeArraySize();
     if (type->isVector()) num *= type->getVectorSize();
     if (type->isMatrix()) num *= type->getMatrixCols() * type->getMatrixRows();
@@ -315,7 +316,7 @@ bool wallpaper::vulkan::GenReflect(Span<const std::vector<uint>> codes,
     spvs.clear();
     for (const auto& code : codes) {
         spv_reflect::ShaderModule spv_ref(code, SPV_REFLECT_MODULE_FLAG_NO_COPY);
-        auto                      stage = ::ToVkType(spv_ref.GetShaderStage());
+        VkShaderStageFlagBits     stage = ::ToVkType(spv_ref.GetShaderStage());
         {
             Uni_ShaderSpv spv = std::make_unique<ShaderSpv>();
             spv->stage        = ::ToGeneType(stage);
@@ -359,7 +360,7 @@ bool wallpaper::vulkan::GenReflect(Span<const std::vector<uint>> codes,
                 vkbinding.descriptorCount = 1;
                 vkbinding.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 
-                for (int i = 0; i < block.member_count; i++) {
+                for (u32 i = 0; i < block.member_count; i++) {
                     auto&                           unif = block.members[i];
                     ShaderReflected::BlockedUniform bunif {};
                     {
@@ -471,6 +472,7 @@ VkFormat wallpaper::vulkan::ToVkType(glslang::TBasicType type, size_t size) {
     case glslang::TBasicType::EbtFloat: FORMAT_SWITCH(size, 32, S, FLOAT);
     case glslang::TBasicType::EbtInt: FORMAT_SWITCH(size, 32, S, INT);
     case glslang::TBasicType::EbtUint: FORMAT_SWITCH(size, 32, U, INT);
+    default: break;
     }
     LOG_ERROR("can't covert glslang type \"%s\" of size %d to vulkan format",
               glslang::TType::getBasicString(type),

@@ -104,7 +104,7 @@ ShaderSpv* GraphicsPipeline::getShaderSpv(VkShaderStageFlagBits stage) const {
 GraphicsPipeline&
 GraphicsPipeline::setColorBlendStates(Span<const VkPipelineColorBlendAttachmentState> stats) {
     m_color_attachments     = { stats.begin(), stats.end() };
-    m_color.attachmentCount = m_color_attachments.size();
+    m_color.attachmentCount = (u32)m_color_attachments.size();
     m_color.pAttachments    = m_color_attachments.data();
     return *this;
 }
@@ -167,7 +167,7 @@ bool GraphicsPipeline::create(const Device& device, vvk::RenderPass& pass,
         VkDescriptorSetLayoutCreateFlags flags {};
         if (info.push_descriptor) flags |= VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR;
 
-        create_info.bindingCount = info.bindings.size();
+        create_info.bindingCount = (u32)info.bindings.size();
         create_info.pBindings    = info.bindings.data();
         create_info.flags        = flags;
         vvk::DescriptorSetLayout layout;

@@ -43,8 +43,8 @@ bool WPMdlParser::Parse(std::string_view path, fs::VFS& vfs, WPMdl& mdl) {
         LOG_INFO("puppet '%s' is not complete, ignore", str_path.c_str());
         return false;
     };
-    int32_t num1 = f.ReadInt32(); // 1
-    int32_t num2 = f.ReadInt32(); // 1
+    f.ReadInt32(); // unk, 1
+    f.ReadInt32(); // unk, 1
 
     mdl.mat_json_file = f.ReadStr();
     // 0
@@ -80,10 +80,11 @@ bool WPMdlParser::Parse(std::string_view path, fs::VFS& vfs, WPMdl& mdl) {
     mdl.mdls = ReadMDLVesion(f);
 
     size_t bones_file_end = f.ReadUint32();
+    (void)bones_file_end;
 
     uint16_t bones_num = f.ReadUint16();
     // 1 byte
-    uint16_t unk1 = f.ReadUint16();
+    f.ReadUint16(); // unk
 
     mdl.puppet  = std::make_shared<WPPuppet>();
     auto& bones = mdl.puppet->bones;
@@ -93,7 +94,7 @@ bool WPMdlParser::Parse(std::string_view path, fs::VFS& vfs, WPMdl& mdl) {
     for (uint i = 0; i < bones_num; i++) {
         auto&       bone = bones[i];
         std::string name = f.ReadStr();
-        int32_t     unk2 = f.ReadInt32();
+        f.ReadInt32(); // unk
 
         bone.parent = f.ReadUint32();
         assert(bone.parent < i || bone.noParent());
@@ -133,7 +134,7 @@ bool WPMdlParser::Parse(std::string_view path, fs::VFS& vfs, WPMdl& mdl) {
         for (uint i = 0; i < size_unk; i++)
             for (int j = 0; j < 3; j++) f.ReadUint32();
 
-        uint32_t unk2 = f.ReadUint32();
+        f.ReadUint32(); // unk
 
         uint8_t has_offset_trans = f.ReadUint8();
         if (has_offset_trans) {
@@ -154,6 +155,7 @@ bool WPMdlParser::Parse(std::string_view path, fs::VFS& vfs, WPMdl& mdl) {
     mdl.mdla = ReadMDLVesion(f);
     if (mdl.mdla != 0) {
         uint end_size = f.ReadUint32();
+        (void)end_size;
 
         uint anim_num = f.ReadUint32();
         anims.resize(anim_num);
@@ -167,7 +169,7 @@ bool WPMdlParser::Parse(std::string_view path, fs::VFS& vfs, WPMdl& mdl) {
             anim.name   = f.ReadStr();
             anim.mode   = ToPlayMode(f.ReadStr());
             anim.fps    = f.ReadFloat();
-            anim.length = f.ReadUint32();
+            anim.length = f.ReadInt32();
             f.ReadInt32();
 
             uint32_t b_num = f.ReadUint32();
@@ -242,6 +244,6 @@ void WPMdlParser::AddPuppetShaderInfo(WPShaderInfo& info, const WPMdl& mdl) {
 
 void WPMdlParser::AddPuppetMatInfo(wpscene::WPMaterial& mat, const WPMdl& mdl) {
     mat.combos["SKINNING"]  = 1;
-    mat.combos["BONECOUNT"] = mdl.puppet->bones.size();
+    mat.combos["BONECOUNT"] = (i32)mdl.puppet->bones.size();
     mat.use_puppet          = true;
 }

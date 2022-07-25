@@ -5,10 +5,10 @@
 using namespace wallpaper;
 using namespace Eigen;
 
-static Quaternionf ToQuaternion(Vector3f euler) {
-    const std::array<Vector3f, 3> axis { Vector3f::UnitX(), Vector3f::UnitY(), Vector3f::UnitZ() };
-    return AngleAxis<float>(euler.z(), axis[2]) * AngleAxis<float>(euler.y(), axis[1]) *
-           AngleAxis<float>(euler.x(), axis[0]);
+static Quaterniond ToQuaternion(Vector3f euler) {
+    const std::array<Vector3d, 3> axis { Vector3d::UnitX(), Vector3d::UnitY(), Vector3d::UnitZ() };
+    return AngleAxis<double>(euler.z(), axis[2]) * AngleAxis<double>(euler.y(), axis[1]) *
+           AngleAxis<double>(euler.x(), axis[0]);
 };
 
 void WPPuppet::prepared() {
@@ -57,9 +57,10 @@ std::span<const Eigen::Affine3f> WPPuppet::genFrame(WPPuppetLayer& puppet_layer,
 
         Vector3f    trans { bone.transform.translation() * global_blend };
         Vector3f    scale { Vector3f::Ones() * global_blend };
-        Quaternionf quat { Quaternionf::Identity() };
+        Quaterniond quat { Quaterniond::Identity() };
 
-        double cur_blend { 0.0f };
+        // double cur_blend { 0.0f };
+
         for (auto& layer : puppet_layer.m_layers) {
             auto& alayer = layer.anim_layer;
             if (layer.anim == nullptr || ! alayer.visible) continue;
@@ -67,8 +68,8 @@ std::span<const Eigen::Affine3f> WPPuppet::genFrame(WPPuppetLayer& puppet_layer,
             if (i >= layer.anim->bframes_array.size()) continue;
 
             auto&  info    = layer.interp_info;
-            auto&  frame_a = layer.anim->bframes_array[i].frames[info.frame_a];
-            auto&  frame_b = layer.anim->bframes_array[i].frames[info.frame_b];
+            auto&  frame_a = layer.anim->bframes_array[i].frames[(usize)info.frame_a];
+            auto&  frame_b = layer.anim->bframes_array[i].frames[(usize)info.frame_b];
             double one_t   = 1.0f - info.t;
 
             quat = frame_a.quaternion.slerp(info.t, frame_b.quaternion)
@@ -77,7 +78,7 @@ std::span<const Eigen::Affine3f> WPPuppet::genFrame(WPPuppetLayer& puppet_layer,
             scale += layer.blend * (frame_a.scale * one_t + frame_b.scale * info.t);
         }
         affine.pretranslate(trans);
-        affine.rotate(quat);
+        affine.rotate(quat.cast<float>());
         affine.scale(scale);
         affine = parent * affine;
     }
@@ -89,14 +90,14 @@ std::span<const Eigen::Affine3f> WPPuppet::genFrame(WPPuppetLayer& puppet_layer,
 }
 
 static constexpr void genInterpolationInfo(WPPuppet::Animation::InterpolationInfo& info,
-                                           double& cur, uint length, double frame_time,
+                                           double& cur, u32 length, double frame_time,
                                            double max_time) {
     cur          = std::fmod(cur, max_time);
     double _rate = cur / frame_time;
 
     info.frame_a = ((uint)_rate) % length;
     info.frame_b = (info.frame_a + 1) % length;
-    info.t       = _rate - info.frame_a;
+    info.t       = _rate - (double)info.frame_a;
 }
 
 WPPuppet::Animation::InterpolationInfo
@@ -105,12 +106,12 @@ WPPuppet::Animation::getInterpolationInfo(double* cur_time) const {
     auto&             _cur_time = *cur_time;
 
     if (mode == PlayMode::Loop || mode == PlayMode::Single) {
-        genInterpolationInfo(_info, _cur_time, length, frame_time, max_time);
+        genInterpolationInfo(_info, _cur_time, (u32)length, frame_time, max_time);
     } else if (mode == PlayMode::Mirror) {
         const auto _get_frame = [this](auto f) {
             return f >= length ? (length - 1) - (f - length) : f;
         };
-        genInterpolationInfo(_info, _cur_time, length * 2.0f, frame_time, max_time * 2.0f);
+        genInterpolationInfo(_info, _cur_time, (u32)length * 2, frame_time, max_time * 2.0f);
         _info.frame_a = _get_frame(_info.frame_a);
         _info.frame_b = _get_frame(_info.frame_b);
     }
@@ -123,7 +124,7 @@ void WPPuppetLayer::prepared(std::span<AnimationLayer> alayers) {
     double& blend = m_global_blend;
     std::transform(
         alayers.rbegin(), alayers.rend(), m_layers.rbegin(), [&blend, this](const auto& layer) {
-            float       cur_blend { 0.0f };
+            double      cur_blend { 0.0f };
             const auto& anims = m_puppet->anims;
 
             auto it = std::find_if(anims.begin(), anims.end(), [&layer](auto& a) {

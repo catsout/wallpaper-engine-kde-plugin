@@ -37,7 +37,7 @@ VkSurfaceFormatKHR chooseSwapSurfaceFormat(Span<const VkSurfaceFormatKHR> availa
 }
 
 VkExtent2D GetSwapChainExtent(VkSurfaceCapabilitiesKHR& surface_capabilities, VkExtent2D ext) {
-    if (surface_capabilities.currentExtent.width == -1) {
+    if (surface_capabilities.currentExtent.width == 0) {
         auto min = surface_capabilities.minImageExtent;
         auto max = surface_capabilities.maxImageExtent;
         if (ext.width < min.width) {

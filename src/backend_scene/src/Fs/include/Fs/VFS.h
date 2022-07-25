@@ -3,6 +3,7 @@
 #include <memory>
 #include <string>
 #include <tuple>
+#include <algorithm>
 #include "Fs.h"
 #include "Utils/Logging.h"
 #include "Utils/NoCopyMove.hpp"

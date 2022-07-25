@@ -75,7 +75,7 @@ StagingBuffer::VirtualBlock* StagingBuffer::newVirtualBlock(VkDeviceSize nsize) 
         m_virtual_blocks.push_back({});
         it         = m_virtual_blocks.end() - 1;
         it->size   = nsize > m_size_step ? nsize : m_size_step;
-        it->index  = std::distance(m_virtual_blocks.begin(), it);
+        it->index  = (size_t)std::distance(m_virtual_blocks.begin(), it);
         it->offset = offset;
     }
     auto& block = *it;

@@ -6,6 +6,7 @@
 #include <cassert>
 #include <string_view>
 #include <functional>
+#include "Core/Literals.hpp"
 #include "Utils/span.hpp"
 #include "Utils/Logging.h"
 #include "Utils/MapSet.hpp"

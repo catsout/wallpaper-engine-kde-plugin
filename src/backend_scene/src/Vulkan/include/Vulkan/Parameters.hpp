@@ -100,11 +100,11 @@ struct ImageSlots : NoCopy {
 struct ImageSlotsRef {
     std::vector<ImageParameters> slots;
 
-    int active { 0 };
+    idx active { 0 };
 
     auto& getActive() const {
-        if (active >= slots.size()) return slots[0];
-        return slots[active];
+        if (active > 0 && active >= std::ssize(slots)) return slots[0];
+        return slots[(usize)active];
     }
     ImageSlotsRef();
     ~ImageSlotsRef();

@@ -45,15 +45,6 @@ vvk::DebugUtilsMessenger SetupDebugCallback(vvk::Instance& instance) {
     });
 }
 
-void LoadBasicVkFunc() {
-    /*
-    vk::DynamicLoader         dl;
-    PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr =
-        dl.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
-    VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
-    */
-}
-
 VkResult CreatInstance(vvk::Instance* inst, Span<const std::string_view> exts,
                        Span<const std::string_view> layers, vvk::InstanceDispatch& dld) {
     VkApplicationInfo app_info {

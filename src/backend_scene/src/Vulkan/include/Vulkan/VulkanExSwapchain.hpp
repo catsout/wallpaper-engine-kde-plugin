@@ -37,8 +37,8 @@ public:
         for (auto& h : m_handles) {
             auto& handle  = h.handle;
             handle        = ExHandle(index++);
-            handle.width  = h.image.extent.width;
-            handle.height = h.image.extent.height;
+            handle.width  = (i32)h.image.extent.width;
+            handle.height = (i32)h.image.extent.height;
             handle.fd     = h.image.fd;
             handle.size   = h.image.mem_reqs.size;
         }
@@ -53,7 +53,9 @@ public:
 
     const auto& handles() const { return m_handles; }
 
-    ExImageParameters& GetInprogressImage() { return m_handles.at((*inprogress()).id()).image; }
+    ExImageParameters& GetInprogressImage() {
+        return m_handles.at((usize)(*inprogress()).id()).image;
+    }
 
     constexpr VkFormat format() const { return VK_FORMAT_R8G8B8A8_UNORM; };
 

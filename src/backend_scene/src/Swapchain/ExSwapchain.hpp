@@ -12,19 +12,19 @@ enum class TexTiling
 };
 
 struct ExHandle {
-    int           fd;
-    std::uint32_t width;
-    std::uint32_t height;
-    std::size_t   size;
+    int         fd;
+    int32_t     width;
+    int32_t     height;
+    std::size_t size;
     // format rgba8
 
     ExHandle() = default;
     ExHandle(int id): m_id(id) {};
 
-    int id() const { return m_id; }
+    int32_t id() const { return m_id; }
 
 private:
-    int m_id { 0 };
+    int32_t m_id { 0 };
 };
 
 // class ExSwapchain : public TripleSwapchain<ExHandle> {};

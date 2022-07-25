@@ -8,6 +8,7 @@
 
 #include <Eigen/Dense>
 
+#include "Core/Core.hpp"
 #include "Interface/IShaderValueUpdater.h"
 #include "Utils/MapSet.hpp"
 #include "SpriteAnimation.hpp"
@@ -48,7 +49,7 @@ struct WPUniformInfo {
 struct WPShaderValueData {
     std::array<float, 2> parallaxDepth { 0.0f, 0.0f };
     // index + name
-    std::vector<std::pair<int32_t, std::string>> renderTargets;
+    std::vector<std::pair<usize, std::string>> renderTargets;
 
     WPPuppetLayer puppet_layer;
 };
@@ -76,7 +77,7 @@ public:
     void SetNodeData(void*, const WPShaderValueData&);
     void SetCameraParallax(const WPCameraParallax& value) { m_parallax = value; }
 
-    void SetScreenSize(uint16_t w, uint16_t h) override { m_screen_size = { (float)w, (float)h }; }
+    void SetScreenSize(i32 w, i32 h) override { m_screen_size = { (float)w, (float)h }; }
 
 private:
     Scene*               m_scene;

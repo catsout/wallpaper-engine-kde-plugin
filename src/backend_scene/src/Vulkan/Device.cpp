@@ -167,28 +167,6 @@ VkDeviceSize Device::GetUsage() const {
 
 void Device::Destroy() { VVK_CHECK(m_device.WaitIdle()); }
 
-void Device::DestroyBuffer(const BufferParameters& buf) const {
-    // if (buf.handle) vmaDestroyBuffer(m_allocator, *buf.handle, buf.allocation);
-}
-void Device::DestroyImageParameters(const ImageParameters& image) const {
-    // m_device.destroySampler(image.sampler);
-    // m_device.destroyImageView(image.view);
-    // if (image.handle) vmaDestroyImage(m_allocator, image.handle, image.allocation);
-}
-void Device::DestroyExImageParameters(const ExImageParameters& image) const {
-    // m_device.destroySampler(image.sampler);
-    // m_device.destroyImageView(image.view);
-    // m_device.destroyImage(image.handle);
-    // m_device.freeMemory(image.mem);
-}
-
-void Device::DestroyPipeline(const PipelineParameters& pipe) const {
-    // m_device.destroyPipeline(pipe.handle);
-    // m_device.destroyPipelineLayout(pipe.layout);
-    // m_device.destroyRenderPass(pipe.pass);
-    // for (auto& d : pipe.descriptor_layouts) m_device.destroyDescriptorSetLayout(d);
-}
-
 Device::Device(): m_tex_cache(std::make_unique<TextureCache>(*this)) {}
 Device::~Device() {};
 

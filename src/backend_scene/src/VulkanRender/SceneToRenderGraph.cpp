@@ -12,15 +12,14 @@ using namespace wallpaper;
 namespace wallpaper::rg
 {
 
-static void doCopy(RenderGraphBuilder& builder, vulkan::CopyPass::Desc& desc, TexNode* in,
-                   TexNode* out) {
+void doCopy(RenderGraphBuilder& builder, vulkan::CopyPass::Desc& desc, TexNode* in, TexNode* out) {
     builder.read(in);
     builder.write(out);
 
     desc.src = in->key();
     desc.dst = out->key();
 }
-static void addCopyPass(RenderGraph& rgraph, TexNode* in, TexNode* out) {
+void addCopyPass(RenderGraph& rgraph, TexNode* in, TexNode* out) {
     rgraph.addPass<vulkan::CopyPass>(
         "copy",
         PassNode::Type::Copy,
@@ -29,7 +28,7 @@ static void addCopyPass(RenderGraph& rgraph, TexNode* in, TexNode* out) {
         });
 }
 
-static void addCopyPass(RenderGraph& rgraph, const TexNode::Desc& in, const TexNode::Desc& out) {
+void addCopyPass(RenderGraph& rgraph, const TexNode::Desc& in, const TexNode::Desc& out) {
     rgraph.addPass<vulkan::CopyPass>(
         "copy",
         PassNode::Type::Copy,
@@ -40,7 +39,7 @@ static void addCopyPass(RenderGraph& rgraph, const TexNode::Desc& in, const TexN
         });
 }
 
-static TexNode* addCopyPass(RenderGraph& rgraph, TexNode* in, TexNode::Desc* out_desc = nullptr) {
+TexNode* addCopyPass(RenderGraph& rgraph, TexNode* in, TexNode::Desc* out_desc = nullptr) {
     TexNode* copy { nullptr };
     rgraph.addPass<vulkan::CopyPass>(
         "copy",
@@ -72,7 +71,7 @@ static void TraverseNode(const std::function<void(SceneNode*)>& func, SceneNode*
 
 static void CheckAndSetSprite(Scene& scene, vulkan::CustomShaderPass::Desc& desc,
                               Span<const std::string> texs) {
-    for (uint i = 0; i < texs.size(); i++) {
+    for (usize i = 0; i < texs.size(); i++) {
         auto& tex = texs[i];
         if (! tex.empty() && ! IsSpecTex(tex) && scene.textures.count(tex) != 0) {
             const auto& stex = scene.textures.at(tex);
@@ -86,7 +85,7 @@ static void CheckAndSetSprite(Scene& scene, vulkan::CustomShaderPass::Desc& desc
 struct DelayLinkInfo {
     rg::NodeID id;
     rg::NodeID link_id;
-    size_t     tex_index;
+    i32        tex_index;
 };
 
 struct ExtraInfo {
@@ -97,15 +96,14 @@ struct ExtraInfo {
     bool                       use_mipmap_framebuffer { false };
 };
 
-static void ToGraphPass(SceneNode* node, std::string_view output, uint32_t imgId,
-                        ExtraInfo& extra) {
+static void ToGraphPass(SceneNode* node, std::string_view output, i32 imgId, ExtraInfo& extra) {
     auto& rgraph = *extra.rgraph;
     auto& scene  = *extra.scene;
 
     auto loadEffect = [node, &rgraph, &scene, &extra](SceneImageEffectLayer* effs) {
         effs->ResolveEffect(scene.default_effect_mesh, "effect");
 
-        for (int32_t i = 0; i < effs->EffectCount(); i++) {
+        for (usize i = 0; i < effs->EffectCount(); i++) {
             auto& eff     = effs->GetEffect(i);
             auto  cmdItor = eff->commands.begin();
             auto  cmdEnd  = eff->commands.end();
@@ -149,7 +147,7 @@ static void ToGraphPass(SceneNode* node, std::string_view output, uint32_t imgId
             pdesc.node       = node;
             pdesc.output     = output;
             CheckAndSetSprite(scene, pdesc, material->textures);
-            for (uint i = 0; i < material->textures.size(); i++) {
+            for (usize i = 0; i < material->textures.size(); i++) {
                 const auto&  url = material->textures[i];
                 rg::TexNode* input { nullptr };
                 if (url.empty()) {
@@ -158,7 +156,7 @@ static void ToGraphPass(SceneNode* node, std::string_view output, uint32_t imgId
                 } else if (IsSpecLinkTex(url)) {
                     auto id = ParseLinkTex(url);
                     extra.link_info.push_back(
-                        DelayLinkInfo { .id = pass.ID(), .link_id = id, .tex_index = i });
+                        DelayLinkInfo { .id = pass.ID(), .link_id = id, .tex_index = (i32)i });
                     pdesc.textures.emplace_back("");
                     continue;
                 } else {
@@ -168,8 +166,7 @@ static void ToGraphPass(SceneNode* node, std::string_view output, uint32_t imgId
                     desc.type = ! IsSpecTex(url) ? rg::TexNode::TexType::Imported
                                                  : rg::TexNode::TexType::Temp;
                     input     = builder.createTexNode(desc);
-					if (IsSpecTex(url))
-                        builder.markVirtualWrite(input);
+                    if (IsSpecTex(url)) builder.markVirtualWrite(input);
                     if (sstart_with(url, WE_MIP_MAPPED_FRAME_BUFFER))
                         extra.use_mipmap_framebuffer = true;
                 }
@@ -190,7 +187,7 @@ static void ToGraphPass(SceneNode* node, std::string_view output, uint32_t imgId
                                       true);
             builder.write(output_node);
             if (output == SpecTex_Default) {
-                extra.id_link_map[imgId] = output_node;
+                extra.id_link_map[(usize)imgId] = output_node;
             }
         });
 
@@ -218,12 +215,12 @@ std::unique_ptr<rg::RenderGraph> wallpaper::sceneToRenderGraph(Scene& scene) {
 
                 auto* link_tex_node = extra.id_link_map.at(info.link_id);
                 auto  copy_desc     = link_tex_node->genDesc();
-                copy_desc.key       = GenLinkTex(info.link_id);
+                copy_desc.key       = GenLinkTex((idx)info.link_id);
                 copy_desc.name      = copy_desc.key;
 
                 auto new_in = rg::addCopyPass(*rgraph, link_tex_node, &copy_desc);
                 builder.read(new_in);
-                pass.setDescTex(info.tex_index, new_in->key());
+                pass.setDescTex((u32)info.tex_index, new_in->key());
                 return true;
             });
     }

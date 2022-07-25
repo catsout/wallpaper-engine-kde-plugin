@@ -8,7 +8,6 @@
 namespace wallpaper
 {
 
-class Device;
 class Image;
 
 namespace vulkan
@@ -27,8 +26,8 @@ enum class TexUsage
 using TexHash = std::size_t;
 
 struct TextureKey {
-    uint16_t      width;
-    uint16_t      height;
+    i32           width;
+    i32           height;
     TexUsage      usage;
     TextureFormat format;
     TextureSample sample;
@@ -46,7 +45,7 @@ public:
 
     std::optional<ExImageParameters> CreateExTex(uint32_t witdh, uint32_t height, VkFormat,
                                                  VkImageTiling);
-    ImageSlotsRef                      CreateTex(Image&);
+    ImageSlotsRef                    CreateTex(Image&);
 
     std::optional<ImageParameters> Query(std::string_view key, TextureKey content_hash,
                                          bool persist = false);
@@ -65,7 +64,7 @@ private:
     Map<std::string, ImageSlots> m_tex_map;
 
     struct QueryTex {
-        int                index { 0 };
+        idx                index { 0 };
         bool               share_ready { false };
         bool               persist { false };
         TexHash            content_hash;
