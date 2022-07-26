@@ -1,6 +1,7 @@
 #include "WPMdlParser.hpp"
 #include "Fs/VFS.h"
 #include "Fs/IBinaryStream.h"
+#include "Fs/MemBinaryStream.h"
 #include "WPCommon.hpp"
 #include "Utils/Logging.h"
 #include "Scene/SceneMesh.h"
@@ -33,8 +34,9 @@ constexpr uint32_t singile_bone_frame = 4 * 9;
 bool WPMdlParser::Parse(std::string_view path, fs::VFS& vfs, WPMdl& mdl) {
     auto str_path = std::string(path);
     auto pfile    = vfs.Open("/assets/" + str_path);
+    auto memfile  = fs::MemBinaryStream(*pfile);
     if (! pfile) return false;
-    auto& f = *pfile;
+    auto& f = memfile;
 
     mdl.mdlv = ReadMDLVesion(f);
 
