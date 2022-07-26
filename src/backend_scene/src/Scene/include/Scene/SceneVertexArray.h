@@ -5,6 +5,8 @@
 #include <string_view>
 #include "Utils/MapSet.hpp"
 #include "Utils/span.hpp"
+
+#include "Core/Literals.hpp"
 #include "Type.hpp"
 
 namespace wallpaper
@@ -19,15 +21,15 @@ public:
     };
     struct SceneVertexAttributeOffset {
         SceneVertexAttribute attr;
-        uint                 offset;
+        usize                offset;
     };
 
     SceneVertexArray(const std::vector<SceneVertexAttribute>& attrs, const std::size_t count);
     ~SceneVertexArray();
 
     SceneVertexArray(SceneVertexArray&& other)
-        : m_pData(other.m_pData),
-          m_attributes(other.m_attributes),
+        : m_attributes(other.m_attributes),
+          m_pData(other.m_pData),
           m_oneSize(other.m_oneSize),
           m_size(other.m_size),
           m_capacity(other.m_capacity),

@@ -3,17 +3,18 @@
 #include <cstdint>
 #include <cstddef>
 #include "Utils/span.hpp"
+#include "Utils/NoCopyMove.hpp"
 
 namespace wallpaper
 {
-class SceneIndexArray {
+class SceneIndexArray : NoCopy {
     constexpr static size_t Unit_Byte_Size { sizeof(uint32_t) };
 
 public:
     SceneIndexArray(std::size_t indexCount);
     SceneIndexArray(Span<const uint32_t> data);
 
-    SceneIndexArray(SceneIndexArray&& other)
+    SceneIndexArray(SceneIndexArray&& other) noexcept
         : m_pData(other.m_pData),
           m_size(other.m_size),
           m_capacity(other.m_capacity),
@@ -21,7 +22,6 @@ public:
           m_id(other.m_id) {
         other.m_pData = nullptr;
     }
-    SceneIndexArray(const SceneIndexArray&) = delete;
     ~SceneIndexArray() {
         if (m_pData != nullptr) delete[] m_pData;
     }

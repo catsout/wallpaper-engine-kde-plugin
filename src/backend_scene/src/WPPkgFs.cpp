@@ -1,17 +1,25 @@
 #include "WPPkgFs.hpp"
 #include "Utils/Logging.h"
 #include "Fs/LimitedBinaryStream.h"
+#include "Fs/CBinaryStream.h"
 #include <vector>
 
+using namespace wallpaper;
 using namespace wallpaper::fs;
 
-static std::string ReadSizedString(IBinaryStream& f) {
-    uint32_t    len = f.ReadUint32();
+namespace
+{
+std::string ReadSizedString(IBinaryStream& f) {
+    idx ilen = f.ReadInt32();
+    assert(ilen >= 0);
+
+    usize       len = (usize)ilen;
     std::string result;
     result.resize(len);
     f.Read(result.data(), len);
     return result;
 }
+} // namespace
 
 std::unique_ptr<WPPkgFs> WPPkgFs::CreatePkgFs(std::string_view pkgpath) {
     auto ppkg = fs::CreateCBinaryStream(pkgpath);
@@ -22,16 +30,16 @@ std::unique_ptr<WPPkgFs> WPPkgFs::CreatePkgFs(std::string_view pkgpath) {
     LOG_INFO("pkg version: %s", ver.data());
 
     std::vector<PkgFile> pkgfiles;
-    int                  entryCount = pkg.ReadInt32();
-    for (int i = 0; i < entryCount; i++) {
+    i32                  entryCount = pkg.ReadInt32();
+    for (i32 i = 0; i < entryCount; i++) {
         std::string path   = "/" + ReadSizedString(pkg);
-        uint32_t    offset = pkg.ReadUint32();
-        uint32_t    length = pkg.ReadUint32();
+        idx         offset = pkg.ReadInt32();
+        idx         length = pkg.ReadInt32();
         pkgfiles.push_back({ path, offset, length });
     }
-    auto pkgfs          = std::unique_ptr<WPPkgFs>(new WPPkgFs());
-    pkgfs->m_pkgPath    = pkgpath;
-    uint32_t headerSize = pkg.Tell();
+    auto pkgfs       = std::unique_ptr<WPPkgFs>(new WPPkgFs());
+    pkgfs->m_pkgPath = pkgpath;
+    idx headerSize   = pkg.Tell();
     for (auto& el : pkgfiles) {
         el.offset += headerSize;
         pkgfs->m_files.insert({ el.path, el });
@@ -51,4 +59,4 @@ std::shared_ptr<IBinaryStream> WPPkgFs::Open(std::string_view path) {
     return nullptr;
 }
 
-std::shared_ptr<IBinaryStreamW> WPPkgFs::OpenW(std::string_view path) { return nullptr; }
+std::shared_ptr<IBinaryStreamW> WPPkgFs::OpenW(std::string_view) { return nullptr; }

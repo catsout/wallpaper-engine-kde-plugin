@@ -5,20 +5,24 @@
 
 #define __SHORT_FILE__ __FILE__
 #if 1
+
 #    undef __SHORT_FILE__
-#    define __SHORT_FILE__                                             \
-        ({                                                             \
-            constexpr const char* const p = past_last_slash(__FILE__); \
-            p;                                                         \
+#    define __SHORT_FILE__   past_last_slash(__FILE__)
+/*
+        ({                                                       \
+            constexpr const char* p = past_last_slash(__FILE__); \
+            p;                                                   \
         })
-static constexpr const char* const past_last_slash(const char* const path, const int pos = 0,
-                                                   const int last_slash = 0) {
+*/
+static constexpr const char* past_last_slash(const char* const path, const int pos = 0,
+                                             const int last_slash = 0) {
     if (path[pos] == '\0') return &path[last_slash];
     if (path[pos] == '/')
         return past_last_slash(path, pos + 1, pos + 1);
     else
         return past_last_slash(path, pos + 1, last_slash);
 }
+
 #endif
 
 enum

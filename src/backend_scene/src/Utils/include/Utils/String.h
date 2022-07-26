@@ -5,6 +5,7 @@
 #include <string>
 #include <string_view>
 #include <exception>
+#include <stdexcept>
 #include "Logging.h"
 #include "Identity.hpp"
 
@@ -14,14 +15,14 @@ namespace utils
 {
 
 template<typename TNum>
-void _StrToNum(std::string_view s, TNum& num) {}
+void _StrToNum(std::string_view, TNum&) {}
 template<>
 inline void _StrToNum<int32_t>(std::string_view s, int32_t& num) {
     num = std::stoi(std::string(s));
 }
 template<>
 inline void _StrToNum<uint32_t>(std::string_view s, uint32_t& num) {
-    num = std::stoul(std::string(s));
+    num = (uint32_t)std::stoul(std::string(s));
 }
 template<>
 inline void _StrToNum<float>(std::string_view s, float& num) {

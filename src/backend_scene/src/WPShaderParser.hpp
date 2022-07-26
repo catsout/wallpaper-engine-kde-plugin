@@ -14,7 +14,7 @@ using Combos = Map<std::string, std::string>;
 // ui material name to gl uniform name
 using WPAliasValueDict = Map<std::string, std::string>;
 
-using WPDefaultTexs = std::vector<std::pair<int32_t, std::string>>;
+using WPDefaultTexs = std::vector<std::pair<i32, std::string>>;
 
 struct WPShaderInfo {
     Combos           combos;

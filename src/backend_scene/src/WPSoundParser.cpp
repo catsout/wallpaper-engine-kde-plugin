@@ -32,17 +32,17 @@ public:
         PlaybackMode mode { PlaybackMode::Loop };
     };
     WPSoundStream(const std::vector<std::string>& paths, fs::VFS& vfs, Config c)
-        : m_soundPaths(paths), vfs(vfs), m_config(c) {};
+        : vfs(vfs), m_config(c), m_soundPaths(paths) {};
     virtual ~WPSoundStream() = default;
 
-    uint32_t NextPcmData(void* pData, uint32_t frameCount) override {
+    uint64_t NextPcmData(void* pData, uint32_t frameCount) override {
         // first
         if (! m_curActive) {
             Switch();
         }
 
         // loop
-        uint32_t frameReads = m_curActive->NextPcmData(pData, frameCount);
+        uint64_t frameReads = m_curActive->NextPcmData(pData, frameCount);
         if (frameReads == 0) {
             Switch();
             frameReads = m_curActive->NextPcmData(pData, frameCount);
@@ -86,7 +86,7 @@ void WPSoundParser::Parse(const wpscene::WPSoundObject& obj, fs::VFS& vfs,
                                    .volume  = obj.volume > 1.0f ? 1.0f : obj.volume,
                                    .mode    = ToPlaybackMode(obj.playbackmode) };
 
-    auto ss     = std::make_unique<WPSoundStream>(obj.sound, vfs, config);
-    auto ss_raw = ss.get();
+    auto ss = std::make_unique<WPSoundStream>(obj.sound, vfs, config);
+    // auto ss_raw = ss.get();
     sm.MountStream(std::move(ss));
 }

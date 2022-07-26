@@ -3,7 +3,7 @@ project(wescene-renderer)
 find_package(PkgConfig REQUIRED)
 
 
-include_directories(third_party)
+include_directories(SYSTEM third_party)
 add_subdirectory(third_party)
 add_subdirectory(src)
 

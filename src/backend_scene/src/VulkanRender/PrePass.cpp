@@ -7,17 +7,18 @@ using namespace wallpaper::vulkan;
 PrePass::PrePass(const Desc&) {}
 PrePass::~PrePass() {}
 
-static TextureKey ToTexKey(wallpaper::SceneRenderTarget rt) {
-    return TextureKey { .width  = rt.width,
-                        .height = rt.height,
-                        .usage  = {},
-                        .format = wallpaper::TextureFormat::RGBA8,
-                        .sample = rt.sample };
+namespace
+{
+TextureKey ToTexKey(wallpaper::SceneRenderTarget rt) {
+    return TextureKey {
+        .width  = rt.width,
+        .height = rt.height,
+        .usage  = {},
+        .format = wallpaper::TextureFormat::RGBA8,
+        .sample = rt.sample,
+    };
 }
-
-// void FinPass::setPresentQueueIndex(uint32_t i) {
-//	m_desc.present_queue_index = i;
-// }
+} // namespace
 
 void PrePass::prepare(Scene& scene, const Device& device, RenderingResources& rr) {
     {

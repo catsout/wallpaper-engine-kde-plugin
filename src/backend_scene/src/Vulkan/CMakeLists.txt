@@ -1,7 +1,6 @@
-include_directories(include/Vulkan)
-include_directories(include/vkk)
-
 set(LIB_NAME wpVulkan)
+
+find_package(Vulkan REQUIRED)
 
 add_library(${LIB_NAME}
 STATIC
@@ -21,12 +20,11 @@ target_link_libraries(${LIB_NAME}
 PUBLIC
 	glslang
     spirv-reflect
+	${Vulkan_LIBRARIES}
+    wpScene
 PRIVATE
 	SPIRV
-	vulkan
-    wpScene
-	pthread
-	dl
 )
-target_include_directories(${LIB_NAME} PUBLIC include)
+target_include_directories(${LIB_NAME} PUBLIC include PRIVATE include/Vulkan include/vkk)
+target_compile_options(${LIB_NAME} PRIVATE ${warn_opts} -Wno-missing-field-initializers)
 set_property(TARGET ${LIB_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)

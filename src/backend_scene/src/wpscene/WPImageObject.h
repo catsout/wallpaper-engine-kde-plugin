@@ -1,5 +1,6 @@
 #pragma once
 #include "WPJson.hpp"
+#include <nlohmann/json.hpp>
 #include "WPMaterial.h"
 #include <vector>
 #include "WPPuppet.hpp"
@@ -21,7 +22,7 @@ public:
     std::string target;
     std::string source;
 
-    uint32_t afterpos { 0 }; // 0 for begin, start from 1
+    i32 afterpos { 0 }; // 0 for begin, start from 1
 };
 
 class WPEffectFbo {

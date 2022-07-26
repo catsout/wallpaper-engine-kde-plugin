@@ -1,9 +1,8 @@
 #pragma once
 
-#include "Pass.hpp"
-#include "TexNode.hpp"
 #include "PassNode.hpp"
 
+#include "TexNode.hpp"
 #include "Utils/MapSet.hpp"
 #include "Utils/span.hpp"
 
@@ -12,6 +11,7 @@ namespace wallpaper
 namespace rg
 {
 
+class Pass;
 class RenderGraph;
 class RenderGraphBuilder {
 public:
@@ -53,7 +53,7 @@ public:
         RenderGraphBuilder builder(*this);
         builder.setWorkPassNode(pass_node);
         return callback(builder, *m_map_pass[pass_node_id]);
-    };
+    }
 
     template<typename TPass, typename CB>
     PassNode* addPass(std::string_view name, PassNode::Type type, CB&& callback) {

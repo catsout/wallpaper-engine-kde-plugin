@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <cstdint>
 #include "WPJson.hpp"
+#include <nlohmann/json.hpp>
 
 namespace wallpaper
 {

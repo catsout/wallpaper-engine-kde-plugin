@@ -8,6 +8,8 @@
 #include "Utils/FpsCounter.h"
 #include "WPSceneParser.hpp"
 #include "Scene/Scene.h"
+#include "Particle/ParticleSystem.h"
+#include "Interface/IShaderValueUpdater.h"
 
 #include "Fs/VFS.h"
 #include "Fs/PhysicalFs.h"
@@ -137,6 +139,7 @@ public:
                 CASE_CMD(SET_FILLMODE);
                 CASE_CMD(SET_SCENE);
                 CASE_CMD(INIT_VULKAN);
+            default: break;
             }
         }
     }
@@ -145,7 +148,7 @@ public:
 
     bool renderInited() const { return m_render->inited(); }
 
-    void setMousePos(float x, float y) { m_mouse_pos.store(std::array { x, y }); }
+    void setMousePos(double x, double y) { m_mouse_pos.store(std::array { (float)x, (float)y }); }
 
 private:
     MHANDLER_CMD(STOP) {
@@ -166,7 +169,7 @@ private:
                 auto pos = m_mouse_pos.load();
                 m_scene->shaderValueUpdater->MouseInput(pos[0], pos[1]);
             }
-            m_scene->paritileSys.Emitt();
+            m_scene->paritileSys->Emitt();
 
             m_render->drawFrame(*m_scene);
 

@@ -1,6 +1,6 @@
 #pragma once
 #include "WPJson.hpp"
-#include "WPMaterial.h"
+#include <nlohmann/json.hpp>
 #include <vector>
 #include "WPPuppet.hpp"
 

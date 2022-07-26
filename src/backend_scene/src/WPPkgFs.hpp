@@ -1,8 +1,6 @@
 #pragma once
 
 #include <unordered_map>
-
-#include "Fs/CBinaryStream.h"
 #include "Fs/Fs.h"
 
 namespace wallpaper
@@ -25,8 +23,9 @@ public:
 private:
     struct PkgFile {
         std::string path;
-        uint32_t    offset { 0 };
-        uint32_t    length { 0 };
+
+        idx offset { 0 };
+        idx length { 0 };
     };
     std::string                              m_pkgPath;
     std::unordered_map<std::string, PkgFile> m_files;

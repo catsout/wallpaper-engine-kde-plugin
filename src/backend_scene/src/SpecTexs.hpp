@@ -1,6 +1,7 @@
 #pragma once
 #include <string_view>
 #include <cstdint>
+#include "Core/Literals.hpp"
 #include "Utils/StringHelper.hpp"
 #include "Utils/String.h"
 
@@ -82,8 +83,6 @@ inline uint32_t ParseLinkTex(const std::string_view name) {
     STRTONUM(sid, result);
     return result;
 }
-inline std::string GenLinkTex(uint32_t id) {
-    return std::string(SpecTex_Link) + std::to_string(id);
-}
+inline std::string GenLinkTex(idx id) { return std::string(SpecTex_Link) + std::to_string(id); }
 
 } // namespace wallpaper

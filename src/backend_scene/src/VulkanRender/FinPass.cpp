@@ -35,9 +35,12 @@ struct VertexInput {
     std::array<float, 2> color;
 };
 
-constexpr std::array<VertexInput, 4> vertex_input = { -1.0f, -1.0f, 0.0f, 0.0f, 1.0f,  -1.0f, 1.0f,
-                                                      0.0f,  0.0f,  0.0f, 1.0f, -1.0f, 0.0f,  1.0f,
-                                                      1.0f,  1.0f,  1.0f, 0.0f, 1.0f,  0.0f };
+constexpr std::array vertex_input = {
+    VertexInput { { -1.0f, -1.0f, 0.0f }, { 0.0f, 1.0f } },
+    VertexInput { { -1.0f, 1.0f, 0.0f }, { 0.0f, 0.0f } },
+    VertexInput { { 1.0f, -1.0f, 0.0f }, { 1.0f, 1.0f } },
+    VertexInput { { 1.0f, 1.0f, 0.0f }, { 1.0f, 0.0f } },
+};
 
 FinPass::FinPass(const Desc&) {}
 FinPass::~FinPass() {}
@@ -173,7 +176,7 @@ void FinPass::prepare(Scene& scene, const Device& device, RenderingResources& rr
 
     {
         auto& sc           = scene.clearColor;
-        m_desc.clear_value = VkClearValue { sc[0], sc[1], sc[2], 1.0f };
+        m_desc.clear_value = VkClearValue { { sc[0], sc[1], sc[2], 1.0f } };
     }
     setPrepared();
 }

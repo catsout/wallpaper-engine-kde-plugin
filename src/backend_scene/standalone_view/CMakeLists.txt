@@ -14,6 +14,10 @@ option(BUILD_QML "Build qml scene viewer" ${BUILD_QML})
 
 find_package(PkgConfig REQUIRED)
 
+add_link_options(
+    $<$<CONFIG:Debug>:-fsanitize=address>
+)
+
 include_directories(../third_party)
 add_subdirectory(.. scenebackend)
 

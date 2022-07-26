@@ -32,15 +32,15 @@ const char* ToString(VkColorSpaceKHR color) noexcept;
 #define VVK_CHECK(f)         VVK_CHECK_ACT(, f)
 #define VVK_CHECK_BOOL_RE(f) VVK_CHECK_ACT(return false, f)
 #define VVK_CHECK_VOID_RE(f) VVK_CHECK_ACT(return, f)
-#define VVK_CHECK_RE(f)      VVK_CHECK_ACT(return res, f)
-#define VVK_CHECK_ACT(act, f)                                    \
-    {                                                            \
-        VkResult res = (f);                                      \
-        if (res != VK_SUCCESS) {                                 \
-            LOG_ERROR("VkResult is \"%s\"", vvk::ToString(res)); \
-            assert(res == VK_SUCCESS);                           \
-            { act; };                                            \
-        }                                                        \
+#define VVK_CHECK_RE(f)      VVK_CHECK_ACT(return _res, f)
+#define VVK_CHECK_ACT(act, f)                                     \
+    {                                                             \
+        VkResult _res = (f);                                      \
+        if (_res != VK_SUCCESS) {                                 \
+            LOG_ERROR("VkResult is \"%s\"", vvk::ToString(_res)); \
+            assert(_res == VK_SUCCESS);                           \
+            { act; };                                             \
+        }                                                         \
     }
 
 namespace vvk
@@ -368,7 +368,8 @@ class Queue : public Handle<VkQueue, NoOwnerLife, DeviceDispatch> {
 public:
     VkResult Submit(Span<VkSubmitInfo> submit_infos,
                     VkFence            fence = VK_NULL_HANDLE) const noexcept {
-        return dld->vkQueueSubmit(handle, submit_infos.size(), submit_infos.data(), fence);
+        return dld->vkQueueSubmit(
+            handle, (uint32_t)submit_infos.size(), submit_infos.data(), fence);
     }
 
     VkResult Present(const VkPresentInfoKHR& present_info) const noexcept {
@@ -610,7 +611,7 @@ public:
     }
 
     void DrawIndexed(uint32_t index_count, uint32_t instance_count, uint32_t first_index,
-                     uint32_t vertex_offset, uint32_t first_instance) const noexcept {
+                     int32_t vertex_offset, uint32_t first_instance) const noexcept {
         dld->vkCmdDrawIndexed(
             handle, index_count, instance_count, first_index, vertex_offset, first_instance);
     }

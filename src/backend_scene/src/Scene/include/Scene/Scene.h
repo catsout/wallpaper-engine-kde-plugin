@@ -5,14 +5,14 @@
 #include "SceneRenderTarget.h"
 #include "SceneNode.h"
 #include "SceneLight.hpp"
-#include "Interface/IShaderValueUpdater.h"
-#include "Interface/IImageParser.h"
-#include "Particle/ParticleSystem.h"
+
 #include "Utils/NoCopyMove.hpp"
-#include "Fs/VFS.h"
 
 namespace wallpaper
 {
+class ParticleSystem;
+class IShaderValueUpdater;
+class IImageParser;
 
 namespace fs
 {
@@ -20,8 +20,8 @@ class VFS;
 }
 class Scene : NoCopy, NoMove {
 public:
-    Scene(): paritileSys(*this), sceneGraph(std::make_shared<SceneNode>()) {};
-    ~Scene() = default;
+    Scene();
+    ~Scene();
 
     std::unordered_map<std::string, SceneTexture>      textures;
     std::unordered_map<std::string, SceneRenderTarget> renderTargets;
@@ -42,11 +42,11 @@ public:
 
     SceneMesh default_effect_mesh;
 
-    ParticleSystem paritileSys;
+    std::unique_ptr<ParticleSystem> paritileSys;
 
     SceneCamera* activeCamera;
 
-    uint16_t             ortho[2] { 1920, 1080 }; // w, h
+    i32                  ortho[2] { 1920, 1080 }; // w, h
     std::array<float, 3> clearColor { 1.0f, 1.0f, 1.0f };
 
     double elapsingTime { 0.0f }, frameTime { 0.0f };

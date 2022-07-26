@@ -1,5 +1,6 @@
 #pragma once
 #include "WPJson.hpp"
+#include <nlohmann/json.hpp>
 #include <string>
 #include <vector>
 #include <cstdint>

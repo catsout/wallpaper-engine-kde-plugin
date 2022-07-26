@@ -8,6 +8,7 @@
 #include "Fs/VFS.h"
 #include "Utils/span.hpp"
 #include "Utils/Sha.hpp"
+#include "Utils/String.h"
 #include "WPCommon.hpp"
 
 #include "Vulkan/ShaderComp.hpp"
@@ -98,11 +99,11 @@ inline std::string LoadGlslInclude(fs::VFS& vfs, const std::string& input) {
 
 inline void ParseWPShader(const std::string& src, WPShaderInfo* pWPShaderInfo,
                           const std::vector<WPShaderTexInfo>& texinfos) {
-    auto&   combos       = pWPShaderInfo->combos;
-    auto&   wpAliasDict  = pWPShaderInfo->alias;
-    auto&   shadervalues = pWPShaderInfo->svs;
-    auto&   defTexs      = pWPShaderInfo->defTexs;
-    int32_t texcount     = texinfos.size();
+    auto& combos       = pWPShaderInfo->combos;
+    auto& wpAliasDict  = pWPShaderInfo->alias;
+    auto& shadervalues = pWPShaderInfo->svs;
+    auto& defTexs      = pWPShaderInfo->defTexs;
+    idx   texcount     = std::ssize(texinfos);
 
     // pos start of line
     std::string::size_type pos = 0, lineEnd = std::string::npos;
@@ -143,18 +144,20 @@ inline void ParseWPShader(const std::string& src, WPShaderInfo* pWPShaderInfo,
                     if (istex) {
                         wpscene::WPUniformTex wput;
                         wput.FromJson(sv_json);
-                        int32_t index { 0 };
+                        i32 index { 0 };
                         STRTONUM(name.substr(9), index);
                         if (! wput.default_.empty()) defTexs.push_back({ index, wput.default_ });
                         if (! wput.combo.empty()) {
                             if (index >= texcount)
                                 combos[wput.combo] = "0";
-                            else combos[wput.combo] = "1";
+                            else
+                                combos[wput.combo] = "1";
                         }
-                        if (index < texcount && texinfos[index].enabled) {
-                            auto& compos = texinfos[index].composEnabled;
-                            int   num    = std::min(compos.size(), wput.components.size());
-                            for (int i = 0; i < num; i++) {
+                        if (index < texcount && texinfos[(usize)index].enabled) {
+                            auto& compos = texinfos[(usize)index].composEnabled;
+
+                            usize num = std::min(std::size(compos), std::size(wput.components));
+                            for (usize i = 0; i < num; i++) {
                                 if (compos[i]) combos[wput.components[i].combo] = "1";
                             }
                         }
@@ -195,21 +198,23 @@ inline void ParseWPShader(const std::string& src, WPShaderInfo* pWPShaderInfo,
     }
 }
 
-inline std::size_t FindIncludeInsertPos(const std::string& src, std::size_t startPos) {
+inline usize FindIncludeInsertPos(const std::string& src, usize startPos) {
     /* rule:
     after attribute/varying/uniform/struct
     befor any func
     not in {}
     not in #if #endif
     */
-    auto NposToZero = [](std::size_t p) {
+    (void)startPos;
+
+    auto NposToZero = [](usize p) {
         return p == std::string::npos ? 0 : p;
     };
-    auto search = [](const std::string& p, std::size_t pos, const auto& re) {
-        auto        startpos = p.begin() + pos;
+    auto search = [](const std::string& p, usize pos, const auto& re) {
+        auto        startpos = p.begin() + (isize)pos;
         std::smatch match;
         if (startpos < p.end() && std::regex_search(startpos, p.end(), match, re)) {
-            return pos + match.position();
+            return pos + (usize)match.position();
         }
         return std::string::npos;
     };
@@ -220,29 +225,29 @@ inline std::size_t FindIncludeInsertPos(const std::string& src, std::size_t star
             startpos++;
             startpos += match.position();
         }
-        return startpos >= p.end() ? std::string::npos : startpos - p.begin();
+        return startpos >= p.end() ? std::string::npos : usize(startpos - p.begin());
     };
-    auto nextLinePos = [](const std::string& p, std::size_t pos) {
+    auto nextLinePos = [](const std::string& p, usize pos) {
         return p.find_first_of('\n', pos) + 1;
     };
 
-    std::size_t mainPos  = src.find("void main(");
-    bool        two_main = src.find("void main(", mainPos + 2) != std::string::npos;
+    usize mainPos  = src.find("void main(");
+    bool  two_main = src.find("void main(", mainPos + 2) != std::string::npos;
     if (two_main) return 0;
 
-    std::size_t pos;
+    usize pos;
     {
         const std::regex reAfters(R"(\n(attribute|varying|uniform|struct) )");
-        std::size_t      afterPos = searchLast(src, reAfters);
+        usize            afterPos = searchLast(src, reAfters);
         if (afterPos != std::string::npos) {
             afterPos = nextLinePos(src, afterPos + 1);
         }
         pos = std::min({ NposToZero(afterPos), mainPos });
     }
     {
-        std::stack<std::size_t> ifStack;
-        std::size_t             nowPos { 0 };
-        const std::regex        reIfs(R"((#if|#endif))");
+        std::stack<usize> ifStack;
+        usize             nowPos { 0 };
+        const std::regex  reIfs(R"((#if|#endif))");
         while (true) {
             auto p = search(src, nowPos + 1, reIfs);
             if (p > mainPos || p == std::string::npos) break;
@@ -250,9 +255,9 @@ inline std::size_t FindIncludeInsertPos(const std::string& src, std::size_t star
                 ifStack.push(p);
             } else {
                 if (ifStack.empty()) break;
-                std::size_t ifp = ifStack.top();
+                usize ifp = ifStack.top();
                 ifStack.pop();
-                std::size_t endp = p;
+                usize endp = p;
                 if (pos > ifp && pos <= endp) {
                     pos = nextLinePos(src, endp + 1);
                 }
@@ -269,8 +274,8 @@ inline EShLanguage ToGLSL(ShaderType type) {
     switch (type) {
     case ShaderType::VERTEX: return EShLangVertex;
     case ShaderType::FRAGMENT: return EShLangFragment;
+    default: return EShLangVertex;
     }
-    return EShLangVertex;
 }
 
 inline std::string Preprocessor(const std::string& in_src, ShaderType type, const Combos& combos,
@@ -279,13 +284,12 @@ inline std::string Preprocessor(const std::string& in_src, ShaderType type, cons
 
     std::string src = wallpaper::WPShaderParser::PreShaderHeader(in_src, combos, type);
 
-
     glslang::TShader::ForbidIncluder includer;
     glslang::TShader                 shader(ToGLSL(type));
     const EShMessages emsg { (EShMessages)(EShMsgDefault | EShMsgSpvRules | EShMsgRelaxedErrors |
                                            EShMsgSuppressWarnings | EShMsgVulkanRules) };
 
-    auto*             data = src.c_str();
+    auto* data = src.c_str();
     shader.setStrings(&data, 1);
     shader.preprocess(&vulkan::DefaultTBuiltInResource,
                       110,
@@ -295,7 +299,6 @@ inline std::string Preprocessor(const std::string& in_src, ShaderType type, cons
                       emsg,
                       &res,
                       includer);
-
 
     std::regex re_io(R"(.+\s(in|out)\s[\s\w]+\s(\w+)\s*;)", std::regex::ECMAScript);
     for (auto it = std::sregex_iterator(res.begin(), res.end(), re_io);
@@ -365,16 +368,17 @@ inline std::string GetCachePath(std::string_view scene_id, std::string_view file
 
 inline bool LoadShaderFromFile(std::vector<ShaderCode>& codes, fs::IBinaryStream& file) {
     codes.clear();
-    int  ver   = ReadSPVVesion(file);
-    uint count = file.ReadUint32();
-    assert(count <= 16);
+    i32 ver = ReadSPVVesion(file);
+
+    usize count = file.ReadUint32();
+    assert(count <= 16 && count >= 0);
     if (count > 16) return false;
 
     codes.resize(count);
-    for (uint i = 0; i < count; i++) {
+    for (usize i = 0; i < count; i++) {
         auto& c = codes[i];
 
-        uint size = file.ReadUint32();
+        u32 size = file.ReadUint32();
         assert(size % 4 == 0);
         if (size % 4 != 0) return false;
 
@@ -388,9 +392,9 @@ inline void SaveShaderToFile(Span<const ShaderCode> codes, fs::IBinaryStreamW& f
     char nop[256] { '\0' };
 
     WriteSPVVesion(file, 1);
-    file.WriteUint32(codes.size());
+    file.WriteUint32((u32)codes.size());
     for (const auto& c : codes) {
-        uint size = c.size() * 4;
+        u32 size = (u32)c.size() * 4;
         file.WriteUint32(size);
         file.Write((const char*)c.data(), size);
     }
@@ -416,7 +420,6 @@ std::string WPShaderParser::PreShaderSrc(fs::VFS& vfs, const std::string& src,
     ParseWPShader(include, pWPShaderInfo, texinfos);
     ParseWPShader(newsrc, pWPShaderInfo, texinfos);
 
-
     newsrc.insert(FindIncludeInsertPos(newsrc, 0), include);
     return newsrc;
 }
@@ -430,7 +433,7 @@ std::string WPShaderParser::PreShaderHeader(const std::string& src, const Combos
     for (const auto& c : combos) {
         std::string cup(c.first);
         std::transform(c.first.begin(), c.first.end(), cup.begin(), ::toupper);
-        if(c.second.empty()) {
+        if (c.second.empty()) {
             LOG_ERROR("combo '%s' can't be empty", cup.c_str());
             continue;
         }
@@ -445,19 +448,18 @@ void WPShaderParser::FinalGlslang() { glslang::FinalizeProcess(); }
 bool WPShaderParser::CompileToSpv(std::string_view scene_id, Span<WPShaderUnit> units,
                                   std::vector<ShaderCode>& codes, fs::VFS& vfs,
                                   WPShaderInfo* shader_info, Span<const WPShaderTexInfo> texs) {
-
+    (void)texs;
 
     std::for_each(units.begin(), units.end(), [shader_info](auto& unit) {
         unit.src = Preprocessor(unit.src, unit.stage, shader_info->combos, unit.preprocess_info);
     });
 
-
     auto compile = [](Span<WPShaderUnit> units, std::vector<ShaderCode>& codes) {
         std::vector<vulkan::ShaderCompUnit> vunits(units.size());
-        for (int i = 0; i < units.size(); i++) {
+        for (usize i = 0; i < units.size(); i++) {
             auto&               unit     = units[i];
             auto&               vunit    = vunits[i];
-            WPPreprocessorInfo* pre_info = i - 1 >= 0 ? &units[i - 1].preprocess_info : nullptr;
+            WPPreprocessorInfo* pre_info = i >= 1 ? &units[i - 1].preprocess_info : nullptr;
             WPPreprocessorInfo* post_info =
                 i + 1 < units.size() ? &units[i + 1].preprocess_info : nullptr;
 

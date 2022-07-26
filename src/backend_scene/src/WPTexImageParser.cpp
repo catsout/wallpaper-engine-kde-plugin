@@ -1,5 +1,6 @@
 #include "WPTexImageParser.hpp"
 
+#include "Type.hpp"
 #include "WPCommon.hpp"
 #include <cstdint>
 #include <lz4.h>
@@ -34,7 +35,7 @@ using WPTexFlags = BitFlags<WPTexFlagEnum>;
 namespace
 {
 char* Lz4Decompress(const char* src, int size, int decompressed_size) {
-    char* dst       = new char[decompressed_size];
+    char* dst       = new char[(usize)decompressed_size];
     int   load_size = LZ4_decompress_safe(src, dst, size, decompressed_size);
     if (load_size < decompressed_size) {
         LOG_ERROR("lz4 decompress failed");
@@ -67,7 +68,6 @@ TextureFormat ToTexFormate(int type) {
     }
 }
 void LoadHeader(fs::IBinaryStream& file, ImageHeader& header) {
-    int32_t unkown;
     header.extraHeader["texv"].val = ReadTexVesion(file);
     header.extraHeader["texi"].val = ReadTexVesion(file);
 
@@ -103,7 +103,8 @@ void LoadHeader(fs::IBinaryStream& file, ImageHeader& header) {
     // in sprite this mean one pic
     header.mapWidth  = file.ReadInt32();
     header.mapHeight = file.ReadInt32();
-    unkown           = file.ReadInt32();
+
+    file.ReadInt32(); // unknown
 
     header.extraHeader["texb"].val = ReadTexVesion(file);
 
@@ -112,8 +113,8 @@ void LoadHeader(fs::IBinaryStream& file, ImageHeader& header) {
     if (header.extraHeader["texb"].val == 3) header.type = static_cast<ImageType>(file.ReadInt32());
 }
 
-void SetHeaderPow2(ImageHeader& header, int32_t mip_0_w, int32_t mip_0_h) {
-    header.mipmap_pow2   = algorism::IsPowOfTwo(mip_0_w) || algorism::IsPowOfTwo(mip_0_h);
+void SetHeaderPow2(ImageHeader& header, i32 mip_0_w, i32 mip_0_h) {
+    header.mipmap_pow2   = algorism::IsPowOfTwo((u32)mip_0_w) || algorism::IsPowOfTwo((u32)mip_0_h);
     header.mipmap_larger = mip_0_w * mip_0_h > header.mapWidth * header.mapHeight;
 }
 
@@ -132,17 +133,20 @@ std::shared_ptr<Image> WPTexImageParser::Parse(const std::string& name) {
     LoadHeader(file, img.header);
 
     // image
-    int32_t image_count = img.header.count;
+    i32 _image_count = img.header.count;
+    if (_image_count < 0) return nullptr;
+    usize image_count = (usize)_image_count;
 
     img.slots.resize(image_count);
-    for (int32_t i_image = 0; i_image < image_count; i_image++) {
+    for (usize i_image = 0; i_image < image_count; i_image++) {
         auto& img_slot = img.slots[i_image];
         auto& mipmaps  = img_slot.mipmaps;
 
-        int mipmap_count = file.ReadInt32();
+        i32   _mipmap_count = file.ReadInt32();
+        usize mipmap_count  = (usize)_mipmap_count;
         mipmaps.resize(mipmap_count);
         // load image
-        for (int32_t i_mipmap = 0; i_mipmap < mipmap_count; i_mipmap++) {
+        for (usize i_mipmap = 0; i_mipmap < mipmap_count; i_mipmap++) {
             auto& mipmap  = mipmaps.at(i_mipmap);
             mipmap.width  = file.ReadInt32();
             mipmap.height = file.ReadInt32();
@@ -159,12 +163,14 @@ std::shared_ptr<Image> WPTexImageParser::Parse(const std::string& name) {
                 LZ4_compressed    = file.ReadInt32() == 1;
                 decompressed_size = file.ReadInt32();
             }
-            uint32_t src_size = file.ReadUint32();
+
+            i32 src_size = file.ReadInt32();
             if (src_size <= 0 || mipmap.width <= 0 || mipmap.height <= 0 || decompressed_size < 0)
                 return nullptr;
+
             char* result;
-            result = new char[src_size];
-            file.Read(result, src_size);
+            result = new char[(usize)src_size];
+            file.Read(result, (usize)src_size);
 
             // is LZ4 compress
             if (LZ4_compressed) {
@@ -180,7 +186,7 @@ std::shared_ptr<Image> WPTexImageParser::Parse(const std::string& name) {
                 }
             }
             // is image container
-            if (img.header.extraHeader["texb"].val == 3 && (int32_t)img.header.type != -1) {
+            if (img.header.extraHeader["texb"].val == 3 && img.header.type != ImageType::UNKNOWN) {
                 int32_t w, h, n;
                 auto*   data =
                     stbi_load_from_memory((const unsigned char*)result, src_size, &w, &h, &n, 4);
@@ -189,12 +195,12 @@ std::shared_ptr<Image> WPTexImageParser::Parse(const std::string& name) {
                 });
                 src_size    = w * h * 4;
             } else {
-                mipmap.data = ImageDataPtr(new uint8_t[src_size], [](uint8_t* data) {
+                mipmap.data = ImageDataPtr(new uint8_t[(usize)src_size], [](uint8_t* data) {
                     delete[] data;
                 });
-                memcpy(mipmap.data.get(), result, src_size * sizeof(uint8_t));
+                std::copy(result, result + src_size, mipmap.data.get());
             }
-            mipmap.size = src_size * sizeof(uint8_t);
+            mipmap.size = src_size * (i32)sizeof(uint8_t);
             delete[] result;
         }
     }
@@ -209,23 +215,28 @@ ImageHeader WPTexImageParser::ParseHeader(const std::string& name) {
     auto& file = *pfile;
 
     LoadHeader(file, header);
-    int32_t image_count = header.count;
+    if (header.count < 0) return header;
+
+    usize image_count = (usize)header.count;
+
     // load sprite info
     if (header.isSprite) {
         // bypass image data, store width and height
         std::vector<std::vector<float>> imageDatas(image_count);
-        for (int32_t i_image = 0; i_image < image_count; i_image++) {
+        for (usize i_image = 0; i_image < image_count; i_image++) {
             int mipmap_count = file.ReadInt32();
             for (int32_t i_mipmap = 0; i_mipmap < mipmap_count; i_mipmap++) {
                 int32_t width  = file.ReadInt32();
                 int32_t height = file.ReadInt32();
                 if (i_mipmap == 0) {
                     imageDatas.at(i_image) = { (float)width, (float)height };
-                    header.mipmap_pow2     = algorism::IsPowOfTwo(width * height);
+                    header.mipmap_pow2     = algorism::IsPowOfTwo((u32)(width * height));
                 }
                 if (header.extraHeader["texb"].val > 1) {
                     int32_t LZ4_compressed    = file.ReadInt32();
                     int32_t decompressed_size = file.ReadInt32();
+                    (void)LZ4_compressed;
+                    (void)decompressed_size;
                 }
                 long src_size = file.ReadInt32();
                 file.SeekCur(src_size);
@@ -238,24 +249,29 @@ ImageHeader WPTexImageParser::ParseHeader(const std::string& name) {
             LOG_ERROR("Unkown texs version");
         }
         if (texs == 3) {
-            int32_t width  = file.ReadInt32();
-            int32_t height = file.ReadInt32();
+            i32 width  = file.ReadInt32();
+            i32 height = file.ReadInt32();
+            (void)width;
+            (void)height;
         }
-        auto& spriteAnim = header.spriteAnim;
+
         for (int32_t i = 0; i < framecount; i++) {
             SpriteFrame sf;
-            sf.imageId         = file.ReadInt32();
-            float spriteWidth  = imageDatas.at(sf.imageId)[0];
-            float spriteHeight = imageDatas.at(sf.imageId)[1];
+            sf.imageId = file.ReadInt32();
+            if (sf.imageId < 0) {
+                LOG_ERROR("get neg imageid");
+            }
+            float spriteWidth  = imageDatas.at((usize)sf.imageId)[0];
+            float spriteHeight = imageDatas.at((usize)sf.imageId)[1];
 
             sf.frametime = file.ReadFloat();
             if (texs == 1) {
-                sf.x        = file.ReadInt32() / spriteWidth;
-                sf.y        = file.ReadInt32() / spriteHeight;
-                sf.xAxis[0] = file.ReadInt32();
-                sf.xAxis[1] = file.ReadInt32();
-                sf.yAxis[0] = file.ReadInt32();
-                sf.yAxis[1] = file.ReadInt32();
+                sf.x        = (float)file.ReadInt32() / spriteWidth;
+                sf.y        = (float)file.ReadInt32() / spriteHeight;
+                sf.xAxis[0] = (float)file.ReadInt32();
+                sf.xAxis[1] = (float)file.ReadInt32();
+                sf.yAxis[0] = (float)file.ReadInt32();
+                sf.yAxis[1] = (float)file.ReadInt32();
             } else {
                 sf.x        = file.ReadFloat() / spriteWidth;
                 sf.y        = file.ReadFloat() / spriteHeight;
@@ -264,8 +280,8 @@ ImageHeader WPTexImageParser::ParseHeader(const std::string& name) {
                 sf.yAxis[0] = file.ReadFloat();
                 sf.yAxis[1] = file.ReadFloat();
             }
-            sf.width  = std::sqrt(std::pow(sf.xAxis[0], 2) + std::pow(sf.xAxis[1], 2));
-            sf.height = std::sqrt(std::pow(sf.yAxis[0], 2) + std::pow(sf.yAxis[1], 2));
+            sf.width  = (float)std::sqrt(std::pow(sf.xAxis[0], 2) + std::pow(sf.xAxis[1], 2));
+            sf.height = (float)std::sqrt(std::pow(sf.yAxis[0], 2) + std::pow(sf.yAxis[1], 2));
             sf.xAxis[0] /= spriteWidth;
             sf.xAxis[1] /= spriteWidth;
             sf.yAxis[0] /= spriteHeight;
@@ -274,9 +290,10 @@ ImageHeader WPTexImageParser::ParseHeader(const std::string& name) {
             header.spriteAnim.AppendFrame(sf);
         }
     } else {
-        int     mipmap_count = file.ReadInt32();
-        int32_t width        = file.ReadInt32();
-        int32_t height       = file.ReadInt32();
+        i32 mipmap_count = file.ReadInt32();
+        (void)mipmap_count;
+        i32 width  = file.ReadInt32();
+        i32 height = file.ReadInt32();
         SetHeaderPow2(header, width, height);
     }
     return header;

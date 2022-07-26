@@ -12,6 +12,7 @@
 #include <iostream>
 #include <chrono>
 #include <ctime>
+#include <numeric>
 
 using namespace wallpaper;
 using namespace Eigen;
@@ -43,8 +44,8 @@ void WPShaderValueUpdater::MouseInput(double x, double y) {
                       duration_cast<duration<double>>(now_time - m_last_mouse_input_time).count();
     m_mouseDelayedTime = new_time < 0.0f ? 0.0f : new_time;
 
-    m_mousePosInput[0] = x;
-    m_mousePosInput[1] = y;
+    m_mousePosInput[0] = (float)x;
+    m_mousePosInput[1] = (float)y;
 
     m_last_mouse_input_time = now_time;
 }
@@ -110,8 +111,7 @@ void WPShaderValueUpdater::UpdateUniforms(SceneNode* pNode, sprite_map_t& sprite
             const auto& unifrom_tex = info.texs[el.first];
 
             if (unifrom_tex.has_resolution) {
-                std::array<uint16_t, 4> resolution_uint(
-                    { rt.width, rt.height, rt.width, rt.height });
+                std::array<i32, 4> resolution_uint({ rt.width, rt.height, rt.width, rt.height });
                 updateOp(WE_GLTEX_RESOLUTION_NAMES[el.first],
                          ShaderValue(array_cast<float>(resolution_uint)));
             }

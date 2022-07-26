@@ -5,6 +5,7 @@
 #include <vector>
 #include <memory>
 #include <Eigen/Dense>
+
 #include "WPPuppet.hpp"
 
 namespace wallpaper
@@ -22,9 +23,9 @@ class VFS;
 };
 
 struct WPMdl {
-    uint mdlv { 13 };
-    uint mdls { 1 };
-    uint mdla { 1 };
+    i32 mdlv { 13 };
+    i32 mdls { 1 };
+    i32 mdla { 1 };
 
     std::string mat_json_file;
     struct Vertex {

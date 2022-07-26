@@ -8,6 +8,7 @@
 #include "Utils/AutoDeletor.hpp"
 #include "Resource.hpp"
 #include "PassCommon.hpp"
+#include "Interface/IImageParser.h"
 
 #include <cassert>
 
@@ -100,7 +101,7 @@ static void UpdateUniform(StagingBuffer* buf, const StagingBufferRef& bufref,
 
 void CustomShaderPass::prepare(Scene& scene, const Device& device, RenderingResources& rr) {
     m_desc.vk_textures.resize(m_desc.textures.size());
-    for (int i = 0; i < m_desc.textures.size(); i++) {
+    for (usize i = 0; i < m_desc.textures.size(); i++) {
         auto& tex_name = m_desc.textures[i];
         if (tex_name.empty()) continue;
 
@@ -165,10 +166,10 @@ void CustomShaderPass::prepare(Scene& scene, const Device& device, RenderingReso
                 return item.second;
             });
 
-        for (int i = 0; i < m_desc.vk_textures.size(); i++) {
-            int binding { -1 };
+        for (usize i = 0; i < m_desc.vk_textures.size(); i++) {
+            i32 binding { -1 };
             if (exists(ref.binding_map, WE_GLTEX_NAMES[i]))
-                binding = ref.binding_map.at(WE_GLTEX_NAMES[i]).binding;
+                binding = (i32)ref.binding_map.at(WE_GLTEX_NAMES[i]).binding;
             m_desc.vk_tex_binding.push_back(binding);
         }
     }
@@ -194,13 +195,13 @@ void CustomShaderPass::prepare(Scene& scene, const Device& device, RenderingReso
             for (auto& item : ref.input_location_map) {
                 auto& name   = item.first;
                 auto& input  = item.second;
-                uint  offset = exists(attrs_map, name) ? attrs_map[name].offset : 0;
+                usize offset = exists(attrs_map, name) ? attrs_map[name].offset : 0;
 
                 VkVertexInputAttributeDescription attr_desc {
                     .location = input.location,
                     .binding  = i,
                     .format   = input.format,
-                    .offset   = offset,
+                    .offset   = (u32)offset,
                 };
                 attr_descriptions.push_back(attr_desc);
             }
@@ -214,13 +215,13 @@ void CustomShaderPass::prepare(Scene& scene, const Device& device, RenderingReso
                     if (! rr.dyn_buf->allocateSubRef(vertex.CapacitySizeOf(), buf)) return;
                 }
             }
-            m_desc.draw_count += vertex.DataSize() / vertex.OneSize();
+            m_desc.draw_count += (u32)(vertex.DataSize() / vertex.OneSize());
         }
 
         if (mesh.IndexCount() > 0) {
             auto&  indice     = mesh.GetIndexArray(0);
             size_t count      = (indice.DataCount() * 2) / 3;
-            m_desc.draw_count = count * 3;
+            m_desc.draw_count = (u32)count * 3;
             auto& buf         = m_desc.index_buf;
             if (! m_desc.dyn_vertex) {
                 if (! rr.vertex_buf->allocateSubRef(indice.CapacitySizeof(), buf)) return;
@@ -299,7 +300,7 @@ void CustomShaderPass::prepare(Scene& scene, const Device& device, RenderingReso
             auto& index_buf   = m_desc.index_buf;
             update_dyn_buf_op = [&mesh, &vertex_bufs, &draw_count, &index_buf, dyn_buf]() {
                 if (mesh.Dirty().exchange(false)) {
-                    for (int i = 0; i < mesh.VertexCount(); i++) {
+                    for (usize i = 0; i < mesh.VertexCount(); i++) {
                         const auto& vertex = mesh.GetVertexArray(i);
                         auto&       buf    = vertex_bufs[i];
                         if (! dyn_buf->writeToBuf(buf,
@@ -309,7 +310,7 @@ void CustomShaderPass::prepare(Scene& scene, const Device& device, RenderingReso
                     if (mesh.IndexCount() > 0) {
                         auto&  indice = mesh.GetIndexArray(0);
                         size_t count  = (indice.RenderDataCount() * 2) / 3;
-                        draw_count    = count * 3;
+                        draw_count    = (u32)count * 3;
                         auto& buf     = index_buf;
                         if (! dyn_buf->writeToBuf(buf,
                                                   { (uint8_t*)indice.Data(), indice.DataSizeOf() }))
@@ -375,7 +376,9 @@ void CustomShaderPass::prepare(Scene& scene, const Device& device, RenderingReso
 
     {
         auto& sc           = scene.clearColor;
-        m_desc.clear_value = VkClearValue { sc[0], sc[1], sc[2], 1.0f };
+        m_desc.clear_value = VkClearValue {
+            .color = { sc[0], sc[1], sc[2], 1.0f },
+        };
     }
     for (auto& tex : releaseTexs()) {
         device.tex_cache().MarkShareReady(tex);
@@ -395,7 +398,7 @@ void CustomShaderPass::execute(const Device& device, RenderingResources& rr) {
         .baseArrayLayer = 0,
         .layerCount     = VK_REMAINING_MIP_LEVELS,
     };
-    for (int i = 0; i < m_desc.vk_textures.size(); i++) {
+    for (usize i = 0; i < m_desc.vk_textures.size(); i++) {
         auto& slot    = m_desc.vk_textures[i];
         int   binding = m_desc.vk_tex_binding[i];
         if (binding < 0) continue;
@@ -481,9 +484,9 @@ void CustomShaderPass::execute(const Device& device, RenderingResources& rr) {
 
     auto gpu_buf = m_desc.dyn_vertex ? rr.dyn_buf->gpuBuf() : rr.vertex_buf->gpuBuf();
 
-    for (int i = 0; i < m_desc.vertex_bufs.size(); i++) {
+    for (usize i = 0; i < m_desc.vertex_bufs.size(); i++) {
         auto& buf = m_desc.vertex_bufs[i];
-        cmd.BindVertexBuffers(i, 1, &gpu_buf, &buf.offset);
+        cmd.BindVertexBuffers((u32)i, 1, &gpu_buf, &buf.offset);
     }
     if (m_desc.index_buf) {
         cmd.BindIndexBuffer(gpu_buf, m_desc.index_buf.offset, VK_INDEX_TYPE_UINT16);
@@ -506,7 +509,7 @@ void CustomShaderPass::destory(const Device& device, RenderingResources& rr) {
     rr.dyn_buf->unallocateSubRef(m_desc.ubo_buf);
 }
 
-void CustomShaderPass::setDescTex(uint index, std::string_view tex_key) {
+void CustomShaderPass::setDescTex(u32 index, std::string_view tex_key) {
     assert(index < m_desc.textures.size());
     if (index >= m_desc.textures.size()) return;
     m_desc.textures[index] = tex_key;

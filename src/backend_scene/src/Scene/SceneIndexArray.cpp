@@ -4,7 +4,7 @@
 using namespace wallpaper;
 
 SceneIndexArray::SceneIndexArray(std::size_t indexCount)
-    : m_capacity(indexCount * 3), m_size(0), m_render_size(0) {
+    : m_size(0), m_capacity(indexCount * 3), m_render_size(0) {
     m_pData = new uint32_t[m_capacity];
     std::memset(m_pData, 0, m_capacity * sizeof(uint32_t));
 }

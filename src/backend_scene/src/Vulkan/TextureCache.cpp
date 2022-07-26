@@ -16,6 +16,7 @@
 #include <cstdio>
 #include <optional>
 
+using namespace wallpaper;
 using namespace wallpaper::vulkan;
 
 namespace wallpaper
@@ -139,7 +140,8 @@ std::optional<vvk::DeviceMemory> AllocateMemory(const vvk::Device& device, vvk::
                                                         .allocationSize  = reqs.size,
                                                         .memoryTypeIndex = i };
             vvk::DeviceMemory    mem;
-            if (auto res = device.AllocateMemory(memory_allocate_info, mem); res == VK_SUCCESS) {
+            VkResult             res = device.AllocateMemory(memory_allocate_info, mem);
+            if (res == VK_SUCCESS) {
                 return mem;
             } else {
                 VVK_CHECK(res);
@@ -225,7 +227,7 @@ std::optional<ExImageParameters> CreateExImage(uint32_t width, uint32_t height, 
 }
 
 inline std::optional<VmaImageParameters>
-CreateImage(const Device& device, VkExtent3D extent, uint miplevel, VkFormat format,
+CreateImage(const Device& device, VkExtent3D extent, u32 miplevel, VkFormat format,
             VkSamplerCreateInfo sampler_info, VkImageUsageFlags usage,
             VmaMemoryUsage mem_usage = VMA_MEMORY_USAGE_GPU_ONLY) {
     VmaImageParameters image;
@@ -324,8 +326,8 @@ inline VkResult CopyImageData(std::span<const BufferParameters> in_bufs,
                     .layerCount     = 1,
                 },
         };
-        for (int i = 0; i < in_bufs.size(); i++) {
-            copy.imageSubresource.mipLevel = i;
+        for (usize i = 0; i < in_bufs.size(); i++) {
+            copy.imageSubresource.mipLevel = (u32)i;
             copy.imageExtent               = in_exts[i];
             cmd.CopyBufferToImage(
                 in_bufs[i].handle, image.handle, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, copy);
@@ -428,7 +430,7 @@ ImageSlotsRef TextureCache::CreateTex(Image& image) {
 
     auto& sam = image.header.sample;
 
-    for (int i = 0; i < image.slots.size(); i++) {
+    for (usize i = 0; i < image.slots.size(); i++) {
         auto& image_paras   = img_slots.slots[i];
         auto& image_slot    = image.slots[i];
         auto  mipmap_levels = image_slot.mipmaps.size();
@@ -454,11 +456,11 @@ ImageSlotsRef TextureCache::CreateTex(Image& image) {
             .unnormalizedCoordinates = (false),
         };
         VkFormat   format = ToVkType(image.header.format);
-        VkExtent3D ext { image_slot.width, image_slot.height, 1 };
+        VkExtent3D ext { (u32)image_slot.width, (u32)image_slot.height, 1 };
 
         if (auto opt = CreateImage(m_device,
                                    ext,
-                                   mipmap_levels,
+                                   (u32)mipmap_levels,
                                    format,
                                    sampler_info,
                                    VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
@@ -470,23 +472,19 @@ ImageSlotsRef TextureCache::CreateTex(Image& image) {
         std::vector<VmaBufferParameters> stage_bufs;
         std::vector<VkExtent3D>          extents;
 
-        for (int j = 0; j < image_slot.mipmaps.size(); j++) {
+        for (usize j = 0; j < image_slot.mipmaps.size(); j++) {
             auto&               image_data = image_slot.mipmaps[j];
             VmaBufferParameters buf;
-            (void)CreateStagingBuffer(m_device.vma_allocator(), image_data.size, buf);
+            (void)CreateStagingBuffer(m_device.vma_allocator(), (u32)image_data.size, buf);
             {
                 void* v_data;
                 VVK_CHECK(buf.handle.MapMemory(&v_data));
-                memcpy(v_data, image_data.data.get(), image_data.size);
+                memcpy(v_data, image_data.data.get(), (u32)image_data.size);
                 buf.handle.UnMapMemory();
             }
             stage_bufs.emplace_back(std::move(buf));
-            extents.push_back(VkExtent3D { image_data.width, image_data.height, 1 });
+            extents.push_back(VkExtent3D { (u32)image_data.width, (u32)image_data.height, 1 });
         }
-        std::span<const BufferParameters> ff =
-            transform<VmaBufferParameters>(stage_bufs, [](const auto& x) {
-                return BufferParameters {};
-            });
 
         CopyImageData(transform<VmaBufferParameters>(stage_bufs,
                                                      [](BufferParameters e) {
@@ -514,7 +512,7 @@ std::optional<VmaImageParameters> TextureCache::CreateTex(TextureKey tex_key) {
     do {
         VkSamplerCreateInfo sam_info = GenSamplerInfo(tex_key);
         VkFormat            format   = ToVkType(tex_key.format);
-        VkExtent3D          ext { tex_key.width, tex_key.height, 1 };
+        VkExtent3D          ext { (u32)tex_key.width, (u32)tex_key.height, 1 };
 
         if (auto opt =
                 CreateImage(m_device,
@@ -580,7 +578,7 @@ std::optional<ImageParameters> TextureCache::Query(std::string_view key, Texture
     auto& query                   = *m_query_texs.back();
     m_query_map[std::string(key)] = &query;
 
-    query.index        = m_query_texs.size() - 1;
+    query.index        = (idx)m_query_texs.size() - 1;
     query.content_hash = tex_hash;
     query.query_keys.insert(std::string(key));
     query.persist = persist;
@@ -623,8 +621,8 @@ void TextureCache::RecGenerateMipmaps(vvk::CommandBuffer& cmd, const ImageParame
                         out_bar);
         */
 
-    uint16_t mipWidth  = image.extent.width;
-    uint16_t mipHeight = image.extent.height;
+    i32 mipWidth  = (i32)image.extent.width;
+    i32 mipHeight = (i32)image.extent.height;
 
     for (uint i = 1; i < image.mipmap_level; i++) {
         barrier.subresourceRange.baseMipLevel = i - 1;

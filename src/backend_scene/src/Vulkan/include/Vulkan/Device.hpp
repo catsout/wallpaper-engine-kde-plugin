@@ -38,11 +38,6 @@ public:
 
     TextureCache& tex_cache() const { return *m_tex_cache; }
 
-    void DestroyBuffer(const BufferParameters&) const;
-    void DestroyImageParameters(const ImageParameters& image) const;
-    void DestroyPipeline(const PipelineParameters&) const;
-    void DestroyExImageParameters(const ExImageParameters& image) const;
-
     VkDeviceSize GetUsage() const;
 
 private:

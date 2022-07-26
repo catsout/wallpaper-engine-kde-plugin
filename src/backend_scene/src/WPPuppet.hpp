@@ -6,6 +6,8 @@
 #include <span>
 #include <Eigen/Geometry>
 
+#include "Core/Literals.hpp"
+
 namespace wallpaper
 {
 
@@ -38,12 +40,12 @@ public:
         Eigen::Vector3f scale;
 
         // prepared
-        Eigen::Quaternionf quaternion;
+        Eigen::Quaterniond quaternion;
     };
     struct Animation {
-        uint32_t    id;
-        float       fps;
-        uint32_t    length;
+        i32         id;
+        double      fps;
+        i32         length;
         PlayMode    mode;
         std::string name;
 
@@ -53,12 +55,12 @@ public:
         std::vector<BoneFrames> bframes_array;
 
         // prepared
-        float max_time;
-        float frame_time;
+        double max_time;
+        double frame_time;
         struct InterpolationInfo {
-            uint32_t frame_a;
-            uint32_t frame_b;
-            double   t;
+            idx    frame_a;
+            idx    frame_b;
+            double t;
         };
         InterpolationInfo getInterpolationInfo(double* cur_time) const;
     };
@@ -85,11 +87,11 @@ public:
     bool hasPuppet() const { return (bool)m_puppet; };
 
     struct AnimationLayer {
-        uint32_t id { 0 };
-        float    rate { 1.0f };
-        float    blend { 1.0f };
-        bool     visible { true };
-        double   cur_time { 0.0f };
+        i32    id { 0 };
+        double rate { 1.0f };
+        double blend { 1.0f };
+        bool   visible { true };
+        double cur_time { 0.0f };
     };
 
     void prepared(std::span<AnimationLayer>);
@@ -101,9 +103,9 @@ public:
 private:
     struct Layer {
         AnimationLayer                         anim_layer;
-        float                                  blend;
+        double                                 blend;
         const WPPuppet::Animation*             anim { nullptr };
-        WPPuppet::Animation::InterpolationInfo interp_info;
+        WPPuppet::Animation::InterpolationInfo interp_info {};
 
         operator bool() const noexcept { return anim != nullptr; };
     };

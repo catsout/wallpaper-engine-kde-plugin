@@ -1,5 +1,6 @@
 #include "WPSceneParser.hpp"
 #include "WPJson.hpp"
+
 #include "Utils/String.h"
 #include "Utils/Logging.h"
 #include "Utils/Algorism.h"
@@ -10,10 +11,12 @@
 
 #include "WPShaderParser.hpp"
 #include "WPTexImageParser.hpp"
-#include "Particle/WPParticleRawGener.h"
 #include "WPParticleParser.hpp"
 #include "WPSoundParser.hpp"
 #include "WPMdlParser.hpp"
+
+#include "Particle/WPParticleRawGener.h"
+#include "Particle/ParticleSystem.h"
 
 #include "WPShaderValueUpdater.hpp"
 #include "wpscene/WPImageObject.h"
@@ -46,8 +49,8 @@ struct ParseContext {
     RandomFn               randomFn;
     std::shared_ptr<Scene> scene;
     WPShaderValueUpdater*  shader_updater;
-    uint16_t               ortho_w;
-    uint16_t               ortho_h;
+    i32                    ortho_w;
+    i32                    ortho_h;
     fs::VFS*               vfs;
 
     ShaderValueMap             global_base_uniforms;
@@ -100,6 +103,7 @@ void GenCardMesh(SceneMesh& mesh, const std::array<uint16_t, 2> size,
 
 void SetParticleMesh(SceneMesh& mesh, const wpscene::Particle& particle, uint32_t count,
                      bool thick_format) {
+    (void)particle;
     std::vector<SceneVertexArray::SceneVertexAttribute> attrs {
         { WE_IN_POSITION.data(), VertexType::FLOAT3 },
         { WE_IN_TEXCOORDVEC4.data(), VertexType::FLOAT4 },
@@ -116,6 +120,7 @@ void SetParticleMesh(SceneMesh& mesh, const wpscene::Particle& particle, uint32_
 
 void SetRopeParticleMesh(SceneMesh& mesh, const wpscene::Particle& particle, uint32_t count,
                          bool thick_format) {
+    (void)particle;
     std::vector<SceneVertexArray::SceneVertexAttribute> attrs {
         { WE_IN_POSITIONVEC4.data(), VertexType::FLOAT4 },
         { WE_IN_TEXCOORDVEC4.data(), VertexType::FLOAT4 },
@@ -182,6 +187,7 @@ BlendMode ParseBlendMode(std::string_view str) {
         // seems disabled is normal
         bm = BlendMode::Normal;
     } else {
+        bm = BlendMode::Normal;
         LOG_ERROR("unknown blending: %s", str.data());
     }
     return bm;
@@ -206,7 +212,7 @@ void ParseSpecTexName(std::string& name, const wpscene::WPMaterial& wpmat,
             if (std::regex_search(name, match, reImgId)) {
                 STRTONUM(std::string(match[1]), wpid);
             }
-            name = GenLinkTex(wpid);
+            name = GenLinkTex((u32)wpid);
         } else if (sstart_with(name, WE_MIP_MAPPED_FRAME_BUFFER)) {
         } else if (sstart_with(name, WE_EFFECT_PPONG_PREFIX)) {
         } else if (sstart_with(name, WE_HALF_COMPO_BUFFER_PREFIX)) {
@@ -221,6 +227,8 @@ void ParseSpecTexName(std::string& name, const wpscene::WPMaterial& wpmat,
 bool LoadMaterial(fs::VFS& vfs, const wpscene::WPMaterial& wpmat, Scene* pScene, SceneNode* pNode,
                   SceneMaterial* pMaterial, WPShaderValueData* pSvData,
                   WPShaderInfo* pWPShaderInfo = nullptr) {
+    (void)pNode;
+
     auto& svData   = *pSvData;
     auto& material = *pMaterial;
 
@@ -238,10 +246,16 @@ bool LoadMaterial(fs::VFS& vfs, const wpscene::WPMaterial& wpmat, Scene* pScene,
 
     std::string shaderPath("/assets/shaders/" + wpmat.shader);
 
-    std::array sd_units { WPShaderUnit { .stage = ShaderType::VERTEX,
-                                         .src   = fs::GetFileContent(vfs, shaderPath + ".vert") },
-                          WPShaderUnit { .stage = ShaderType::FRAGMENT,
-                                         .src   = fs::GetFileContent(vfs, shaderPath + ".frag") } };
+    std::array sd_units { WPShaderUnit {
+                              .stage           = ShaderType::VERTEX,
+                              .src             = fs::GetFileContent(vfs, shaderPath + ".vert"),
+                              .preprocess_info = {},
+                          },
+                          WPShaderUnit {
+                              .stage           = ShaderType::FRAGMENT,
+                              .src             = fs::GetFileContent(vfs, shaderPath + ".frag"),
+                              .preprocess_info = {},
+                          } };
 
     std::vector<WPShaderTexInfo>                 texinfos;
     std::unordered_map<std::string, ImageHeader> texHeaders;
@@ -287,7 +301,7 @@ bool LoadMaterial(fs::VFS& vfs, const wpscene::WPMaterial& wpmat, Scene* pScene,
         }
     }
 
-    for (int32_t i = 0; i < textures.size(); i++) {
+    for (usize i = 0; i < textures.size(); i++) {
         std::string name = textures.at(i);
         ParseSpecTexName(name, wpmat, *pWPShaderInfo);
         material.textures.push_back(name);
@@ -296,7 +310,7 @@ bool LoadMaterial(fs::VFS& vfs, const wpscene::WPMaterial& wpmat, Scene* pScene,
             continue;
         }
 
-        std::array<uint16_t, 4> resolution;
+        std::array<i32, 4> resolution {};
         if (IsSpecTex(name)) {
             if (IsSpecLinkTex(name)) {
                 svData.renderTargets.push_back({ i, name });
@@ -339,7 +353,8 @@ bool LoadMaterial(fs::VFS& vfs, const wpscene::WPMaterial& wpmat, Scene* pScene,
                 if (wpmat.shader == "genericparticle" || wpmat.shader == "genericropeparticle") {
                     pWPShaderInfo->combos["SPRITESHEET"] = "1";
                     pWPShaderInfo->combos["THICKFORMAT"] = "1";
-                    if (algorism::IsPowOfTwo(texh.width) && algorism::IsPowOfTwo(texh.height)) {
+                    if (algorism::IsPowOfTwo((u32)texh.width) &&
+                        algorism::IsPowOfTwo((u32)texh.height)) {
                         pWPShaderInfo->combos["SPRITESHEETBLENDNPOT"] = "1";
                         resolution[2] = resolution[0] - resolution[0] % (int)f1.width;
                         resolution[3] = resolution[1] - resolution[1] % (int)f1.height;
@@ -435,12 +450,12 @@ void ParseCamera(ParseContext& context, wpscene::WPSceneGeneral& general) {
     scene.sceneGraph->AppendChild(context.effect_camera_node);
 
     // global camera
-    scene.cameras["global"] = std::make_shared<SceneCamera>(int32_t(context.ortho_w / general.zoom),
-                                                            int32_t(context.ortho_h / general.zoom),
+    scene.cameras["global"] = std::make_shared<SceneCamera>((context.ortho_w / (i32)general.zoom),
+                                                            (context.ortho_h / (i32)general.zoom),
                                                             -5000.0f,
                                                             5000.0f);
     scene.activeCamera      = scene.cameras.at("global").get();
-    Vector3f cori { context.ortho_w / 2.0f, context.ortho_h / 2.0f, 0 },
+    Vector3f cori { (float)context.ortho_w / 2.0f, (float)context.ortho_h / 2.0f, 0 },
         cscale { 1.0f, 1.0f, 1.0f }, cangle(Vector3f::Zero());
 
     context.global_camera_node = std::make_shared<SceneNode>(cori, cscale, cangle);
@@ -448,7 +463,7 @@ void ParseCamera(ParseContext& context, wpscene::WPSceneGeneral& general) {
     scene.sceneGraph->AppendChild(context.global_camera_node);
 
     scene.cameras["global_perspective"] =
-        std::make_shared<SceneCamera>(context.ortho_w / (float)context.ortho_h,
+        std::make_shared<SceneCamera>((float)context.ortho_w / (float)context.ortho_h,
                                       general.nearz,
                                       general.farz,
                                       algorism::CalculatePersperctiveFov(1000.0f, context.ortho_h));
@@ -465,7 +480,7 @@ void InitContext(ParseContext& context, fs::VFS& vfs, wpscene::WPScene& sc) {
     context.vfs              = &vfs;
     auto& scene              = *context.scene;
     scene.imageParser        = std::make_unique<WPTexImageParser>(&vfs);
-    scene.paritileSys.gener  = std::make_unique<WPParticleRawGener>();
+    scene.paritileSys->gener = std::make_unique<WPParticleRawGener>();
     scene.shaderValueUpdater = std::make_unique<WPShaderValueUpdater>(&scene);
     GenCardMesh(scene.default_effect_mesh, { 2, 2 });
     context.shader_updater = static_cast<WPShaderValueUpdater*>(scene.shaderValueUpdater.get());
@@ -538,6 +553,7 @@ void ParseImageObj(ParseContext& context, wpscene::WPImageObject& img_obj) {
     if (! hasEffect && wpimgobj.fullscreen) return;
 
     bool hasPuppet = ! wpimgobj.puppet.empty();
+    (void)hasPuppet;
 
     bool isCompose = (wpimgobj.image == "models/util/composelayer.json");
     // skip no effect compose layer
@@ -679,8 +695,8 @@ void ParseImageObj(ParseContext& context, wpscene::WPImageObject& img_obj) {
             scene.linkedCameras.at("global").push_back(nodeAddr);
         } else {
             // applly scale to crop
-            int32_t w               = wpimgobj.size[0];
-            int32_t h               = wpimgobj.size[1];
+            i32 w                   = (i32)wpimgobj.size[0];
+            i32 h                   = (i32)wpimgobj.size[1];
             scene.cameras[nodeAddr] = std::make_shared<SceneCamera>(w, h, -1.0f, 1.0f);
             scene.cameras.at(nodeAddr)->AttatchNode(context.effect_camera_node);
         }
@@ -703,9 +719,11 @@ void ParseImageObj(ParseContext& context, wpscene::WPImageObject& img_obj) {
         }
         // set renderTarget for ping-pong operate
         {
-            scene.renderTargets[effect_ppong_a] = { .width      = (uint16_t)wpimgobj.size[0],
-                                                    .height     = (uint16_t)wpimgobj.size[1],
-                                                    .allowReuse = true };
+            scene.renderTargets[effect_ppong_a] = {
+                .width      = (uint16_t)wpimgobj.size[0],
+                .height     = (uint16_t)wpimgobj.size[1],
+                .allowReuse = true,
+            };
             if (wpimgobj.fullscreen) {
                 scene.renderTargets[effect_ppong_a].bind = { .enable = true, .screen = true };
             }
@@ -730,19 +748,21 @@ void ParseImageObj(ParseContext& context, wpscene::WPImageObject& img_obj) {
             std::unordered_map<std::string, std::string> fboMap;
             {
                 fboMap["previous"] = inRT;
-                for (int32_t i = 0; i < wpeffobj.fbos.size(); i++) {
+                for (usize i = 0; i < wpeffobj.fbos.size(); i++) {
                     const auto& wpfbo  = wpeffobj.fbos.at(i);
                     std::string rtname = wpfbo.name + "_" + effaddr;
                     if (wpimgobj.fullscreen) {
                         scene.renderTargets[rtname]      = { 2, 2, true };
-                        scene.renderTargets[rtname].bind = { .enable = true,
-                                                             .screen = true,
-                                                             .scale  = 1.0f / wpfbo.scale };
+                        scene.renderTargets[rtname].bind = {
+                            .enable = true,
+                            .screen = true,
+                            .scale  = 1.0 / wpfbo.scale,
+                        };
                     } else {
                         // i+2 for not override object's rt
                         scene.renderTargets[rtname] = {
-                            .width      = (uint16_t)(wpimgobj.size[0] / wpfbo.scale),
-                            .height     = (uint16_t)(wpimgobj.size[1] / wpfbo.scale),
+                            .width      = (uint16_t)(wpimgobj.size[0] / (float)wpfbo.scale),
+                            .height     = (uint16_t)(wpimgobj.size[1] / (float)wpfbo.scale),
                             .allowReuse = true
                         };
                     }
@@ -771,7 +791,7 @@ void ParseImageObj(ParseContext& context, wpscene::WPImageObject& img_obj) {
 
             bool eff_mat_ok { true };
 
-            for (int32_t i_mat = 0; i_mat < wpeffobj.materials.size(); i_mat++) {
+            for (usize i_mat = 0; i_mat < wpeffobj.materials.size(); i_mat++) {
                 wpscene::WPMaterial wpmat = wpeffobj.materials.at(i_mat);
                 std::string         matOutRT { WE_EFFECT_PPONG_PREFIX_B };
                 if (wpeffobj.passes.size() > i_mat) {
@@ -783,8 +803,9 @@ void ParseImageObj(ParseContext& context, wpscene::WPImageObject& img_obj) {
                             LOG_ERROR("fbo %s not found", el.name.c_str());
                             continue;
                         }
-                        if (wpmat.textures.size() <= el.index) wpmat.textures.resize(el.index + 1);
-                        wpmat.textures[el.index] = fboMap[el.name];
+                        if (wpmat.textures.size() <= (usize)el.index)
+                            wpmat.textures.resize((usize)el.index + 1);
+                        wpmat.textures[(usize)el.index] = fboMap[el.name];
                     }
                     if (! wppass.target.empty()) {
                         if (fboMap.count(wppass.target) == 0) {
@@ -881,14 +902,16 @@ void ParseParticleObj(ParseContext& context, wpscene::WPParticleObject& particle
     maxcount          = maxcount > 4000 ? 4000 : maxcount;
 
     if (hastrail) {
-        float in_SegmentUVTimeOffset            = 0.0f;
-        float in_SegmentMaxCount                = maxcount - 1;
-        shaderInfo.baseConstSvs["g_RenderVar0"] = std::array { wppartRenderer.length,
-                                                               wppartRenderer.maxlength,
-                                                               in_SegmentUVTimeOffset,
-                                                               in_SegmentMaxCount };
-        shaderInfo.combos["THICKFORMAT"]        = "1";
-        shaderInfo.combos["TRAILRENDERER"]      = "1";
+        double in_SegmentUVTimeOffset           = 0.0;
+        double in_SegmentMaxCount               = maxcount - 1.0;
+        shaderInfo.baseConstSvs["g_RenderVar0"] = std::array {
+            (float)wppartRenderer.length,
+            (float)wppartRenderer.maxlength,
+            (float)in_SegmentUVTimeOffset,
+            (float)in_SegmentMaxCount,
+        };
+        shaderInfo.combos["THICKFORMAT"]   = "1";
+        shaderInfo.combos["TRAILRENDERER"] = "1";
     }
 
     if (! wppartobj.particleObj.flags[wpscene::Particle::FlagEnum::spritenoframeblending]) {
@@ -911,15 +934,16 @@ void ParseParticleObj(ParseContext& context, wpscene::WPParticleObject& particle
     auto  animationmode      = ToAnimMode(wppartobj.particleObj.animationmode);
     auto  sequencemultiplier = wppartobj.particleObj.sequencemultiplier;
     bool  hasSprite          = material.hasSprite;
+    (void)hasSprite;
 
     bool thick_format = material.hasSprite || hastrail;
     if (render_rope)
         SetRopeParticleMesh(mesh, wppartobj.particleObj, maxcount, thick_format);
     else
         SetParticleMesh(mesh, wppartobj.particleObj, maxcount, thick_format);
-    const auto& wpemitter   = wppartobj.particleObj.emitters[0];
-    auto        particleSub = std::make_unique<ParticleSubSystem>(
-        context.scene->paritileSys,
+
+    auto particleSub = std::make_unique<ParticleSubSystem>(
+        *context.scene->paritileSys,
         spMesh,
         maxcount,
         wppartobj.instanceoverride.rate,
@@ -946,7 +970,7 @@ void ParseParticleObj(ParseContext& context, wpscene::WPParticleObject& particle
         *particleSub, wppartobj.particleObj, wppartobj.instanceoverride, context.randomFn);
     LoadOperator(*particleSub, wppartobj.particleObj, wppartobj.instanceoverride, context.randomFn);
 
-    context.scene->paritileSys.subsystems.emplace_back(std::move(particleSub));
+    context.scene->paritileSys->subsystems.emplace_back(std::move(particleSub));
     mesh.AddMaterial(std::move(material));
     spNode->AddMesh(spMesh);
     context.shader_updater->SetNodeData(spNode.get(), svData);
@@ -1004,14 +1028,14 @@ std::shared_ptr<Scene> WPSceneParser::Parse(std::string_view scene_id, const std
     }
 
     if (sc.general.orthogonalprojection.auto_) {
-        uint32_t w = 0, h = 0;
+        i32 w = 0, h = 0;
         for (auto& obj : wp_objs) {
             auto* img = std::get_if<wpscene::WPImageObject>(&obj);
             if (img == nullptr) continue;
-            uint32_t size = img->size.at(0) * img->size.at(1);
+            i32 size = (i32)(img->size.at(0) * img->size.at(1));
             if (size > w * h) {
-                w = img->size.at(0);
-                h = img->size.at(1);
+                w = (i32)img->size.at(0);
+                h = (i32)img->size.at(1);
             }
         }
         sc.general.orthogonalprojection.width  = w;
