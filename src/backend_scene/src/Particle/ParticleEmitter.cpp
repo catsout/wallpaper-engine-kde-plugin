@@ -15,7 +15,7 @@ namespace
 {
 inline float GetRandomIn(float min, float max, float random) { return min + (max - min) * random; }
 
-inline std::tuple<uint32_t, bool> FindLastParticle(Span<const Particle> ps, uint32_t last) {
+inline std::tuple<uint32_t, bool> FindLastParticle(std::span<const Particle> ps, uint32_t last) {
     for (uint32_t i = last; i < ps.size(); i++) {
         if (! ParticleModify::LifetimeOk(ps[i])) return { i, true };
     }
@@ -113,15 +113,15 @@ ParticleEmittOp ParticleSphereEmitterArgs::MakeEmittOp(ParticleSphereEmitterArgs
             ParticleModify::MoveTo(p, sp[0], sp[1], sp[2]);
             {
                 ParticleModify::SphereDirectOffset(p,
-                                                   Vector3f::UnitX(),
+                                                   Vector3d::UnitX(),
                                                    std::asin(p.position[0]) -
                                                        std::asin(p.position[0] * a.directions[0]));
                 ParticleModify::SphereDirectOffset(p,
-                                                   Vector3f::UnitY(),
+                                                   Vector3d::UnitY(),
                                                    std::asin(p.position[1]) -
                                                        std::asin(p.position[1] * a.directions[1]));
                 ParticleModify::SphereDirectOffset(p,
-                                                   Vector3f::UnitZ(),
+                                                   Vector3d::UnitZ(),
                                                    std::asin(p.position[2]) -
                                                        std::asin(p.position[2] * a.directions[2]));
             }

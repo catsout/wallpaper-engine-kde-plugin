@@ -6,6 +6,17 @@
 
 using namespace wallpaper::wpscene;
 
+bool ParticleControlpoint::FromJson(const nlohmann::json& json) {
+    GET_JSON_NAME_VALUE(json, "id", id);
+
+    uint32_t _raw_flags { 0 };
+    GET_JSON_NAME_VALUE_NOWARN(json, "flags", _raw_flags);
+    flags = EFlags(_raw_flags);
+
+    GET_JSON_NAME_VALUE_NOWARN(json, "offset", offset);
+    return true;
+};
+
 bool ParticleRender::FromJson(const nlohmann::json& json) {
     GET_JSON_NAME_VALUE(json, "name", name);
     // ropetrail require subdivition, replaced
@@ -31,10 +42,14 @@ bool Emitter::FromJson(const nlohmann::json& json) {
     GET_JSON_NAME_VALUE_NOWARN(json, "origin", origin);
     GET_JSON_NAME_VALUE_NOWARN(json, "sign", sign);
     GET_JSON_NAME_VALUE_NOWARN(json, "audioprocessingmode", audioprocessingmode);
+    GET_JSON_NAME_VALUE_NOWARN(json, "controlpoint", controlpoint);
 
-    uint32_t _raw_flag { 0 };
-    GET_JSON_NAME_VALUE_NOWARN(json, "flag", _raw_flag);
-    flags = EFlags(_raw_flag);
+    if (controlpoint >= 8) LOG_ERROR("wrong controlpoint %d", controlpoint);
+    controlpoint = controlpoint % 8; // limited to 0-7
+
+    uint32_t _raw_flags { 0 };
+    GET_JSON_NAME_VALUE_NOWARN(json, "flags", _raw_flags);
+    flags = EFlags(_raw_flags);
 
     std::transform(sign.begin(), sign.end(), sign.begin(), [](int32_t v) {
         if (v != 0)
@@ -88,6 +103,13 @@ bool Particle::FromJson(const nlohmann::json& json) {
     if (json.contains("operator")) {
         for (const auto& el : json.at("operator")) {
             operators.push_back(el);
+        }
+    }
+    if (json.contains("controlpoint")) {
+        for (const auto& el : json.at("controlpoint")) {
+            ParticleControlpoint pc;
+            pc.FromJson(el);
+            controlpoints.push_back(pc);
         }
     }
     GET_JSON_NAME_VALUE_NOWARN(json, "animationmode", animationmode);

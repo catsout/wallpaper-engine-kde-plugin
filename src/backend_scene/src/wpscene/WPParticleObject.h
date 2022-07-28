@@ -5,6 +5,7 @@
 #include <vector>
 #include <array>
 #include "Utils/BitFlags.hpp"
+#include "Core/Literals.hpp"
 
 namespace wallpaper
 {
@@ -14,6 +15,25 @@ class VFS;
 }
 namespace wpscene
 {
+
+class ParticleControlpoint {
+public:
+    enum class FlagEnum
+    {
+        link_mouse = 0, // 1
+        // this control point will follow the mouse cursor.
+        worldspace = 1, // 2
+        // the control point will always be at the same position in the world, independent from the
+        // position of the particle system.
+    };
+    using EFlags = BitFlags<FlagEnum>;
+
+    bool                 FromJson(const nlohmann::json&);
+    EFlags               flags { 0 };
+    i32                  id { -1 };
+    std::array<float, 3> offset { 0, 0, 0 };
+    // a static offset relative to the position of the particle system.
+};
 
 class ParticleRender {
 public:
@@ -47,7 +67,8 @@ public:
     std::array<float, 3>   distancemin { 0.0f, 0.0f, 0.0f };
     std::array<float, 3>   origin { 0, 0, 0 };
     std::array<int32_t, 3> sign { 0, 0, 0 };
-    uint32_t               audioprocessingmode { 0 };
+    u32                    audioprocessingmode { 0 };
+    i32                    controlpoint { 0 };
     int32_t                id;
     EFlags                 flags;
     std::string            name;
@@ -65,16 +86,17 @@ public:
     using EFlags = BitFlags<FlagEnum>;
 
 public:
-    bool                        FromJson(const nlohmann::json&);
-    std::vector<Emitter>        emitters;
-    std::vector<nlohmann::json> initializers;
-    std::vector<nlohmann::json> operators;
-    std::vector<ParticleRender> renderers;
-    std::string                 animationmode;
-    float                       sequencemultiplier;
-    uint32_t                    maxcount;
-    uint32_t                    starttime;
-    EFlags                      flags;
+    bool                              FromJson(const nlohmann::json&);
+    std::vector<Emitter>              emitters;
+    std::vector<nlohmann::json>       initializers;
+    std::vector<nlohmann::json>       operators;
+    std::vector<ParticleRender>       renderers;
+    std::vector<ParticleControlpoint> controlpoints;
+    std::string                       animationmode;
+    float                             sequencemultiplier;
+    uint32_t                          maxcount;
+    uint32_t                          starttime;
+    EFlags                            flags;
 };
 
 class ParticleInstanceoverride {

@@ -18,14 +18,14 @@ struct WPGOption {
 
 namespace
 {
-inline void AssignVertexTimes(Span<float> dst, Span<const float> src, uint num) {
+inline void AssignVertexTimes(std::span<float> dst, std::span<const float> src, uint num) {
     const uint dst_one_size = dst.size() / num;
     for (uint i = 0; i < num; i++) {
         std::copy(src.begin(), src.end(), dst.begin() + i * dst_one_size);
     }
 }
 
-inline void AssignVertex(Span<float> dst, Span<const float> src, uint num) {
+inline void AssignVertex(std::span<float> dst, std::span<const float> src, uint num) {
     const uint dst_one_size = dst.size() / num;
     const uint src_one_size = src.size() / num;
     for (uint i = 0; i < num; i++) {
@@ -33,7 +33,7 @@ inline void AssignVertex(Span<float> dst, Span<const float> src, uint num) {
     }
 }
 
-inline size_t GenParticleData(Span<const Particle> particles, const ParticleRawGenSpecOp& specOp,
+inline size_t GenParticleData(std::span<const Particle> particles, const ParticleRawGenSpecOp& specOp,
                               WPGOption opt, SceneVertexArray& sv) {
     std::array<float, 32 * 4> storage;
 
@@ -82,7 +82,7 @@ inline size_t GenParticleData(Span<const Particle> particles, const ParticleRawG
     return particles.size();
 }
 
-inline size_t GenRopeParticleData(Span<const Particle>        particles,
+inline size_t GenRopeParticleData(std::span<const Particle>        particles,
                                   const ParticleRawGenSpecOp& specOp, WPGOption opt,
                                   SceneVertexArray& sv) {
     /*

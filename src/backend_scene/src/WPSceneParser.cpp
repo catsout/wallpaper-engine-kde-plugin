@@ -151,6 +151,17 @@ ParticleAnimationMode ToAnimMode(const std::string& str) {
     }
 }
 
+void LoadControlPoint(ParticleSubSystem& pSys, const wpscene::Particle& wp) {
+    std::span<ParticleControlpoint> pcs = pSys.Controlpoints();
+    usize                           s   = std::min(pcs.size(), wp.controlpoints.size());
+    for (usize i = 0; i < s; i++) {
+        pcs[i].offset = Eigen::Vector3d { array_cast<double>(wp.controlpoints[i].offset).data() };
+        pcs[i].link_mouse =
+            wp.controlpoints[i].flags[wpscene::ParticleControlpoint::FlagEnum::link_mouse];
+        pcs[i].worldspace =
+            wp.controlpoints[i].flags[wpscene::ParticleControlpoint::FlagEnum::worldspace];
+    }
+}
 void LoadInitializer(ParticleSubSystem& pSys, const wpscene::Particle& wp,
                      const wpscene::ParticleInstanceoverride& over, RandomFn& randomFn) {
     for (const auto& ini : wp.initializers) {
@@ -954,9 +965,9 @@ void ParseParticleObj(ParseContext& context, wpscene::WPParticleObject& particle
                 return;
             }
             switch (animationmode) {
-            case ParticleAnimationMode::RANDOMONE: lifetime = std::floor(p.lifetimeInit); break;
+            case ParticleAnimationMode::RANDOMONE: lifetime = std::floor(p.init.lifetime); break;
             case ParticleAnimationMode::SEQUENCE:
-                lifetime = (1.0f - (p.lifetime / p.lifetimeInit)) * sequencemultiplier;
+                lifetime = (1.0f - (p.lifetime / p.init.lifetime)) * sequencemultiplier;
                 break;
             }
         });
@@ -969,6 +980,7 @@ void ParseParticleObj(ParseContext& context, wpscene::WPParticleObject& particle
     LoadInitializer(
         *particleSub, wppartobj.particleObj, wppartobj.instanceoverride, context.randomFn);
     LoadOperator(*particleSub, wppartobj.particleObj, wppartobj.instanceoverride, context.randomFn);
+    LoadControlPoint(*particleSub, wppartobj.particleObj);
 
     context.scene->paritileSys->subsystems.emplace_back(std::move(particleSub));
     mesh.AddMaterial(std::move(material));
@@ -1046,10 +1058,11 @@ std::shared_ptr<Scene> WPSceneParser::Parse(std::string_view scene_id, const std
     ParseCamera(context, sc.general);
 
     {
-        context.scene->renderTargets[SpecTex_Default.data()] = { .width  = context.ortho_w,
-                                                                 .height = context.ortho_w,
-                                                                 .bind   = { .enable = true,
-                                                                             .screen = true } };
+        context.scene->renderTargets[SpecTex_Default.data()] = {
+            .width  = context.ortho_w,
+            .height = context.ortho_w,
+            .bind   = { .enable = true, .screen = true },
+        };
         context.scene->renderTargets[WE_MIP_MAPPED_FRAME_BUFFER.data()] = {
             .width      = context.ortho_w,
             .height     = context.ortho_w,
