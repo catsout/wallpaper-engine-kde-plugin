@@ -8,7 +8,7 @@
 using namespace wallpaper;
 
 ParticleSubSystem::ParticleSubSystem(ParticleSystem& p, std::shared_ptr<SceneMesh> sm,
-                                     uint32_t maxcount, float rate, ParticleRawGenSpecOp specOp)
+                                     uint32_t maxcount, double rate, ParticleRawGenSpecOp specOp)
     : parent(p), m_mesh(sm), m_maxcount(maxcount), m_rate(rate), m_genSpecOp(specOp), m_time(0) {};
 
 ParticleSubSystem::~ParticleSubSystem() = default;
@@ -18,6 +18,11 @@ void ParticleSubSystem::AddEmitter(ParticleEmittOp&& em) { m_emiters.emplace_bac
 void ParticleSubSystem::AddInitializer(ParticleInitOp&& ini) { m_initializers.emplace_back(ini); }
 
 void ParticleSubSystem::AddOperator(ParticleOperatorOp&& op) { m_operators.emplace_back(op); }
+
+std::span<const ParticleControlpoint> ParticleSubSystem::Controlpoints() const {
+    return m_controlpoints;
+}
+std::span<ParticleControlpoint> ParticleSubSystem::Controlpoints() { return m_controlpoints; };
 
 void ParticleSubSystem::Emitt() {
     double frameTime    = parent.scene.frameTime;
@@ -29,9 +34,12 @@ void ParticleSubSystem::Emitt() {
     }
 
     uint32_t     i = 0;
-    ParticleInfo info { .particles = { m_particles.data(), m_particles.size() },
-                        .time      = m_time,
-                        .time_pass = particleTime };
+    ParticleInfo info {
+        .particles     = m_particles,
+        .controlpoints = m_controlpoints,
+        .time          = m_time,
+        .time_pass     = particleTime,
+    };
 
     for (auto& p : info.particles) {
         ParticleModify::MarkOld(p);

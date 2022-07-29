@@ -336,11 +336,16 @@ struct FrequencyValue {
 };
 
 struct Turbulence {
-    float phasemin { 0 }; // the minimum time offset of the noise field for a particle.
+    // the minimum time offset of the noise field for a particle.
+    float phasemin { 0 };
+    // the maximum time offset of the noise field for a particle.
     float phasemax { 0 };
+    // the minimum velocity applied to particles.
     float speedmin { 500.0f };
+    // the maximum velocity applied to particles.
     float speedmax { 1000.0f };
-    float timescale { 20.0f }; // how fast the noise field changes shape
+    // how fast the noise field changes shape.
+    float timescale { 20.0f };
 
     std::array<int32_t, 3> mask { 1, 1, 0 };
 
@@ -352,6 +357,54 @@ struct Turbulence {
         GET_JSON_NAME_VALUE_NOWARN(j, "speedmax", v.speedmax);
         GET_JSON_NAME_VALUE_NOWARN(j, "timescale", v.timescale);
         GET_JSON_NAME_VALUE_NOWARN(j, "mask", v.mask);
+        return v;
+    };
+};
+
+struct Vortex {
+    enum class FlagEnum
+    {
+        infinit_axis = 0, // 1
+    };
+    using EFlags = BitFlags<FlagEnum>;
+
+    i32 controlpoint { 0 };
+
+    // anything below this distance receives force multiplied with speed inner.
+    float distanceinner { 500.0f };
+    // anything above this distance receives force multiplied with speed outer.
+    float distanceouter { 650.0f };
+    // amount of force applied to inner ring.
+    float speedinner { 2500.0f };
+    // amount of force applied to outer ring.
+    float speedouter { 0 };
+
+    EFlags flags { 0 };
+
+    // positional offset from the center of the control point.
+    std::array<float, 3> offset { 0.0f, 0.0f, 0.0f };
+
+    // the axis to rotate around.
+    std::array<float, 3> axis { 0.0f, 0.0f, 1.0f };
+
+    static auto ReadFromJson(const nlohmann::json& j) {
+        Vortex v;
+        GET_JSON_NAME_VALUE_NOWARN(j, "controlpoint", v.controlpoint);
+        if (v.controlpoint >= 8) LOG_ERROR("wrong contropoint index %d", v.controlpoint);
+        v.controlpoint %= 8;
+
+        GET_JSON_NAME_VALUE_NOWARN(j, "distanceinner", v.distanceinner);
+        GET_JSON_NAME_VALUE_NOWARN(j, "distanceouter", v.distanceouter);
+        GET_JSON_NAME_VALUE_NOWARN(j, "speedinner", v.speedinner);
+        GET_JSON_NAME_VALUE_NOWARN(j, "speedouter", v.speedouter);
+
+        i32 _flags { 0 };
+        GET_JSON_NAME_VALUE_NOWARN(j, "flags", _flags);
+        v.flags = EFlags(_flags);
+
+        GET_JSON_NAME_VALUE_NOWARN(j, "offset", v.offset);
+        GET_JSON_NAME_VALUE_NOWARN(j, "axis", v.axis);
+
         return v;
     };
 };
@@ -486,6 +539,31 @@ WPParticleParser::genParticleOperatorOp(const nlohmann::json& wpj, RandomFn rf,
                     result[1] *= tur.mask[1];
                     result[2] *= tur.mask[2];
                     PM::Accelerate(p, result, info.time_pass);
+                }
+            };
+        } else if (name == "vortex") {
+            Vortex v = Vortex::ReadFromJson(wpj);
+            return [=](const ParticleInfo& info) {
+                Vector3d offset = info.controlpoints[v.controlpoint].offset +
+                                  (Vector3f { v.offset.data() }).cast<double>();
+                Vector3d axis    = (Vector3f { v.axis.data() }).cast<double>();
+                double   dis_mid = v.distanceouter - v.distanceinner + 0.1f;
+
+                for (auto& p : info.particles) {
+                    Vector3d pos      = p.position.cast<double>();
+                    Vector3d direct   = -axis.cross(pos).normalized();
+                    double   distance = (pos - offset).norm();
+                    if (dis_mid < 0 || distance < v.distanceinner) {
+                        PM::Accelerate(p, direct * v.speedinner, info.time_pass);
+                    }
+                    if (distance > v.distanceouter) {
+                        PM::Accelerate(p, direct * v.speedouter, info.time_pass);
+                    } else if (distance > v.distanceinner) {
+                        double t = (distance - v.distanceinner) / dis_mid;
+                        PM::Accelerate(p,
+                                       direct * algorism::lerp(t, v.speedinner, v.speedouter),
+                                       info.time_pass);
+                    }
                 }
             };
         }

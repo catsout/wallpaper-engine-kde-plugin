@@ -19,7 +19,7 @@ class ParticleSystem;
 class ParticleSubSystem : NoCopy, NoMove {
 public:
     ParticleSubSystem(ParticleSystem& p, std::shared_ptr<SceneMesh> sm, uint32_t maxcount,
-                      float rate, ParticleRawGenSpecOp specOp);
+                      double rate, ParticleRawGenSpecOp specOp);
     ~ParticleSubSystem();
 
     void Emitt();
@@ -27,6 +27,9 @@ public:
     void AddEmitter(ParticleEmittOp&&);
     void AddInitializer(ParticleInitOp&&);
     void AddOperator(ParticleOperatorOp&&);
+
+    std::span<const ParticleControlpoint> Controlpoints() const;
+    std::span<ParticleControlpoint> Controlpoints();
 
 private:
     ParticleSystem&            parent;
@@ -37,10 +40,13 @@ private:
     std::vector<Particle>           m_particles;
     std::vector<ParticleInitOp>     m_initializers;
     std::vector<ParticleOperatorOp> m_operators;
-    ParticleRawGenSpecOp            m_genSpecOp;
-    uint32_t                        m_maxcount;
-    float                           m_rate;
-    double                          m_time;
+
+    std::array<ParticleControlpoint, 8> m_controlpoints;
+
+    ParticleRawGenSpecOp m_genSpecOp;
+    u32                  m_maxcount;
+    double               m_rate;
+    double               m_time;
 };
 
 class Scene;
