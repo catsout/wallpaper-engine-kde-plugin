@@ -100,7 +100,7 @@ Flickable {
                         <ul>
                         <li>plugin: ${Common.version}</li>
                         <li>plugin lib: ${plugin_info.version}</li>
-                        ${Common.version !== plugin_info.version ? "<br><b>warning: The lib version is inconsistent with the plugin version</b>" : ""}
+                        ${Common.version != plugin_info.version ? "<br><b>warning: The lib version is inconsistent with the plugin version</b>" : ""}
                         <li>kde: ${Qt.application.version}</li>
                         <li>python: ${pyext ? pyext.version : '-'}</li>
                         </ul>

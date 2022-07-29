@@ -9,6 +9,7 @@ A wallpaper plugin integrating [wallpaper engine](https://store.steampowered.com
   - Screen Locking is not supported, please not use this plugin in screen locking.  
 - Support **scene(2d)**,**video**,**web** wallpaper types
 - Requires *Wallpaper Engine* installed on steam
+- Requires c++20(gcc 10+)
 - Requires Python 3.3+
 - Requires Qt 5.13+ for playing video(no mpv), or mpv instead  
 - Requires Vulkan 1.1+, Opengl [External Memory Object](https://www.khronos.org/registry/OpenGL/extensions/EXT/EXT_external_objects.txt) extension
@@ -113,12 +114,13 @@ make
 #### open-source libraries
 [argparse](https://github.com/p-ranav/argparse) - Command line argument parser  
 [stb](https://github.com/nothings/stb) - Image loading  
+[vog/sha1](https://github.com/vog/sha1) - SHA-1
 [miniaudio](https://github.com/mackron/miniaudio) - Audio loading and playback  
 [nlohmann/json](https://github.com/nlohmann/json) - Json parsing  
 [Eigen](https://eigen.tuxfamily.org/index.php) - Math operations  
 [glad](https://github.com/Dav1dde/glad) - Opengl loader  
 [glslang](https://github.com/KhronosGroup/glslang) - Glsl to Spv  
-[Vulkan-Hpp](https://github.com/KhronosGroup/Vulkan-Hpp) - Vulkan C++ API  
+[SPIRV-Reflect](https://github.com/KhronosGroup/SPIRV-Reflect) - C/C++ reflection API for SPIR-V bytecode
 [VulkanMemoryAllocator](https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator) - Vulkan memory allocation library  
 #### supported
 - [x] Layer
@@ -126,6 +128,7 @@ make
 	- [x] Composition / Fullscreen
 	- [ ] Text
 - [x] Effect
+    - [x] Basic
 	- [x] Mouse position with delay
 	- [x] Parallax
     - [x] Depth Parallax
@@ -147,8 +150,7 @@ make
 	- [x] Initializers
 	- [x] Operators
 		- [ ] Control Point Force
-		- [ ] Vortex
-	- [ ] Control Points
+	- [x] Control Points
 	- [ ] Children
 - [x] Puppet warp
 - [ ] 3D model
