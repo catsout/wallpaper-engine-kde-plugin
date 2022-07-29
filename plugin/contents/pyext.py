@@ -5,6 +5,7 @@ import websockets
 import json
 import base64
 import math
+import platform
 from pathlib import Path
 
 #import functools;
@@ -41,6 +42,10 @@ class Jsonrpc:
         return json.dumps(result);
 
 jrpc = Jsonrpc();
+
+@jrpc.add_method
+def version():
+    return platform.python_version()
 
 @jrpc.add_method
 def readfile(path):

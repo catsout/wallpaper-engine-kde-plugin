@@ -19,13 +19,24 @@ Item {
         ].join("\n");
         return sh;
     }
-    readonly property bool ok: ws_server.socket.status == WebSocket.Open
+    readonly property bool ok: ws_server.socket && ws_server.socket.status == WebSocket.Open
 
     property string _log
     readonly property string log: _log
 
     property var commands: []
 
+    readonly property string version: _version
+
+    property string _version: {
+        if(ok) {
+            ws_server.jrpc.send("version").then(res => { 
+                this._version = res.result 
+            });
+        }
+        return '-';
+    }
+    
     function readfile(path) {
         return ws_server.jrpc.send("readfile", [path]).then((el) => {
             return Qt.atob(el.result);
