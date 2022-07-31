@@ -10,7 +10,7 @@ import platform
 
 from pathlib import Path
 
-from typing import Callable,Any
+from typing import Callable,Any,Optional
 
 # import functools;
 
@@ -25,7 +25,7 @@ class Main:
 
     def __config_dir(self) -> Path:
         config_name: str = "wekde"
-        xdg_config_home: str | None = os.getenv("XDG_CONFIG_HOME")
+        xdg_config_home: Optional[str] = os.getenv("XDG_CONFIG_HOME")
         if xdg_config_home:
             return Path(xdg_config_home) / config_name
         return Path.home() / ".config" / config_name
@@ -122,7 +122,7 @@ def get_dir_size(path: str, depth: int) -> int:
 
 
 @jrpc.add_method
-def get_folder_list(path: str, _opt: dict = {}) -> dict | None:
+def get_folder_list(path: str, _opt: dict = {}) -> Optional[dict]:
     def gen_item(f: Path) -> dict:
         stat: os.stat_result = f.stat()
         return {"name": f.name, "mtime": math.floor(stat.st_mtime)}
@@ -134,7 +134,7 @@ def get_folder_list(path: str, _opt: dict = {}) -> dict | None:
     def path_filter(p: Path) -> bool:
         return p.is_dir() if opt_only_dir else True
 
-    folder: Path | None = next(
+    folder: Optional[Path] = next(
         filter(lambda p: p.is_dir(), [Path(p) for p in [path, *opt["fallbacks"]]]), None
     )
     if folder is None:
