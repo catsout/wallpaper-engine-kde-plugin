@@ -34,6 +34,8 @@ ColumnLayout {
     property int    cfg_PauseMode
     property int    cfg_VideoBackend
 
+    property bool   cfg_PerOptChanged
+
     //property alias  cfg_UseMpv
     //property string cfg_BackgroundColor: "black"
     //property alias  cfg_FilterMode: wallpaperPage.cfg_FilterMode
@@ -95,6 +97,11 @@ ColumnLayout {
             `, this);
         }
     }
+
+    function saveConfig() {
+        wallpaperPage.saveConfig();
+    }
+
     WallpaperListModel {
         id: wpListModel
         workshopDirs: Common.getProjectDirs(cfg_SteamLibraryPath)

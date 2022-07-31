@@ -94,6 +94,10 @@
       <label>FilterStr</label>
       <default></default>
     </entry>
+    <entry name="PerOptChanged" type="Bool">
+      <label>PerOptChanged</label>
+      <default>false</default>
+    </entry>
     <entry name="CustomConf" type="String">
       <label>CustomConf</label>
       <default></default>

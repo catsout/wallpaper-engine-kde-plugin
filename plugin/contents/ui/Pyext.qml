@@ -48,6 +48,17 @@ Item {
     function get_folder_list(path, opt={}) {
         return ws_server.jrpc.send("get_folder_list", [path, opt]).then(res => res.result);
     }
+    function read_wallpaper_config(id) {
+        return ws_server.jrpc.send("read_wallpaper_config", [id]).then(res => res.result);
+    }
+    function write_wallpaper_config(id, changed) {
+        return ws_server.jrpc.send("write_wallpaper_config", [id, changed]);
+    }
+    function reset_wallpaper_config(id) {
+        return ws_server.jrpc.send("reset_wallpaper_config", [id]);
+    }
+
+
 
     function _createTimer(callback) {
         const timer = Qt.createQmlObject("import QtQuick 2.0; Timer {}", root);

@@ -19,6 +19,10 @@ import org.kde.kquickcontrolsaddons 2.0
 
 RowLayout {
     Layout.fillWidth: true
+
+    function saveConfig() {
+        right_opts.save_changes();
+    }
     
     Control {
         id: left_content
@@ -501,6 +505,201 @@ RowLayout {
                     }
                 }
 
+                Component {
+                    id: right_opt_combox
+                    ComboBox {
+                        property int def_val
+
+                        textRole: "text"
+                        onActivated: {}
+
+                        property int res_val: currentIndex && Common.cbCurrentValue(this)
+                        function finish() {
+                            currentIndex = Common.cbIndexOfValue(this, def_val);
+                        }
+                    }
+                }
+                Component {
+                    id: right_opt_switch
+                    Switch {
+                        property bool def_val
+                        property bool res_val: checked
+                        function finish() {
+                            checked = def_val;
+                        }
+                    }
+                }
+                Component {
+                    id: right_opt_spinbox
+                    SpinBox {
+                        property int def_val
+                        property int res_val: value
+                        function finish() {
+                            value = def_val;
+                        }
+                    }
+                }
+
+                OptionGroup {
+                    id: right_opts
+                    Layout.fillWidth: true
+
+                    readonly property string workshopid: right_content.wpmodel.workshopid
+
+                    property var config_resets: new Set()
+                    property var config_changes: ({})
+                    property var config: ({})
+                    property bool _set_config: {
+                        if (workshopid)
+                            pyext.read_wallpaper_config(workshopid).then(res => { 
+                                this.config = res;
+                            });
+                        return true;
+                    }
+                    function save_changes() {
+                        config_resets.forEach((wid) => {
+                            pyext.reset_wallpaper_config(wid).then(res => {});
+                        });
+                        Object.entries(config_changes).forEach(([wid, cfg]) => {
+                            pyext.write_wallpaper_config(wid, cfg).then(res => {
+                                if(wid == workshopid)
+                                    this.cofnig.update(this.config_changes);
+                                this.config_changes = {};
+                            });
+                        });
+
+                        config_resets.clear();
+                    }
+                    function set_config(key, val) {
+                        if(!key || !workshopid) return;
+
+                        if (!config_changes[workshopid])
+                            config_changes[workshopid] = {}
+                        config_changes[workshopid][key] = val;
+
+                        this.config_changesChanged();
+                        cfg_PerOptChanged = !cfg_PerOptChanged;
+                    }
+                    function reset_config() {
+                        config_resets.add(workshopid);
+                        delete config_changes[workshopid];
+                        config = {}
+                        cfg_PerOptChanged = !cfg_PerOptChanged;
+                    }
+                    function in_config_changes(key) {
+                        return config_changes.hasOwnProperty(workshopid) && config_changes[workshopid].hasOwnProperty(key);
+                    }
+
+                    function get_config_val(key) {
+                        if (in_config_changes(key))
+                            return config_changes[workshopid][key];
+                        if (config.hasOwnProperty(key))
+                            return config[key];
+                        return null;
+                    }
+                    function has_change(key) {
+                        return config.hasOwnProperty(key) || in_config_changes(key);
+                    }
+
+                    header.text: 'Option'
+                    header.text_color: Theme.textColor
+                    header.icon: '../../images/cheveron-down.svg'
+                    header.color: Theme.activeBackgroundColor
+
+                    header.actor: Kirigami.ActionToolBar {
+                        Layout.fillWidth: true
+                        alignment: Qt.AlignRight
+                        flat: true
+                        actions: [
+                            Kirigami.Action {
+                                text: 'Reset'
+                                onTriggered: {
+                                    right_opts.reset_config();
+                                }
+                            }
+                        ]
+                    }
+                    Repeater {
+                        property bool markModel: false;
+                        model: [
+                            {
+                                mark_: markModel,
+                                text: 'Display',
+                                config_key: 'display_mode',
+                                comp: right_opt_combox,
+                                props: {
+                                    model: [
+                                        {
+                                            text: "Keep Aspect Ratio",
+                                            value: Common.DisplayMode.Aspect
+                                        },
+                                        {
+                                            text: "Scale and Crop",
+                                            value: Common.DisplayMode.Crop
+                                        },
+                                        {
+                                            text: "Scale to Fill",
+                                            value: Common.DisplayMode.Scale
+                                        },
+                                    ],
+                                    def_val: cfg_DisplayMode,
+                                }
+                            },
+                            {
+                                text: 'Mute Audio',
+                                config_key: 'mute_audio',
+                                comp: right_opt_switch,
+                                props: {
+                                    def_val: cfg_MuteAudio
+                                },
+                            },
+                            {
+                                text: 'Volume',
+                                config_key: 'volume', 
+                                comp: right_opt_spinbox,
+                                props: {
+                                    def_val: cfg_Volume,
+                                    from: 1,
+                                    to: 100,
+                                    stepSize: 1,
+                                },
+                            },
+
+                        ]
+                        OptionItem {
+                            text: modelData.text
+                            text_color: Theme.textColor
+
+                            property bool is_changed: right_opts.config && 
+                                right_opts.config_changes && 
+                                right_opts.has_change(modelData.config_key)
+
+                            icon: is_changed ? '../../images../../images/edit-pencil.svg' : ''
+                            actor: Loader {
+                                sourceComponent: modelData.comp
+                                onLoaded: {
+                                    Object.entries(modelData.props).forEach(([key, value]) => {
+                                        this.item[key] = value;
+                                    });
+                                    const changed_val = right_opts.get_config_val(modelData.config_key);
+                                    if(changed_val !== null) {
+                                        this.item['def_val'] = changed_val;
+                                    }
+
+                                    this.item.finish();
+                                    this.item.onRes_valChanged.connect(() => {
+                                        right_opts.set_config(modelData.config_key, this.item.res_val);
+                                    });
+                                }
+                            }
+                        }
+                        Component.onCompleted: {
+                            right_opts.onConfigChanged.connect(() => {
+                                markModel = !markModel;
+                            });
+                        }
+                    }
+                }
                 PlasmaComponents.TextArea {
                     Layout.alignment: Qt.AlignTop
                     Layout.fillWidth: true
