@@ -14,6 +14,12 @@ option(BUILD_QML "Build qml scene viewer" ${BUILD_QML})
 
 find_package(PkgConfig REQUIRED)
 
+add_compile_options(
+    $<$<CONFIG:Debug>:-ggdb>
+    $<$<CONFIG:Debug>:-fno-omit-frame-pointer>
+    $<$<CONFIG:Debug>:-fsanitize=address>
+)
+
 add_link_options(
     $<$<CONFIG:Debug>:-fsanitize=address>
 )
