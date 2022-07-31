@@ -34,19 +34,15 @@ struct DeviceDesc {
 };
 
 template<typename TStream>
-class Decoder {
+class Decoder : NoCopy {
 public:
     Decoder(TStream&& s): m_stream(std::move(s)) {}
     ~Decoder() { ma_decoder_uninit(&m_decoder); }
-    Decoder(const Decoder&)            = delete;
-    Decoder& operator=(const Decoder&) = delete;
-    Decoder(Decoder&& o): m_decoder(o.m_decoder), m_stream(std::move(m_stream)) {
-        o.m_decoder = ma_decoder();
-    }
-    Decoder& operator=(Decoder&& o) {
-        m_decoder   = o.m_decoder;
-        m_stream    = std::move(m_stream);
-        o.m_decoder = ma_decoder();
+    Decoder(Decoder&& o) noexcept
+        : m_decoder(std::exchange(o.m_decoder, ma_decoder()), m_stream(std::move(m_stream))) {}
+    Decoder& operator=(Decoder&& o) noexcept {
+        m_decoder = std::exchange(o.m_decoder, ma_decoder());
+        m_stream  = std::move(m_stream);
         return *this;
     }
 
@@ -85,12 +81,10 @@ private:
     TStream    m_stream;
 };
 
-class Channel {
+class Channel : NoCopy {
 public:
-    Channel()                          = default;
-    virtual ~Channel()                 = default;
-    Channel(const Channel&)            = delete;
-    Channel& operator=(const Channel&) = delete;
+    Channel()          = default;
+    virtual ~Channel() = default;
 
     virtual ma_uint64 NextPcmData(void* pData, ma_uint32 frameCount) = 0;
     virtual void      PassDeviceDesc(const DeviceDesc&)              = 0;
@@ -101,7 +95,7 @@ public:
     Device() {}
     ~Device() { UnInit(); }
     Device(Device&& o) noexcept: m_device(std::exchange(o.m_device, ma_device())) {}
-    Device& operator=(Device&& o) {
+    Device& operator=(Device&& o) noexcept {
         m_device = std::exchange(o.m_device, ma_device());
         return *this;
     }
@@ -145,6 +139,7 @@ public:
         if (IsInited()) {
             LOG_INFO("uninit sound device");
         }
+        UnmountAll();
         ma_device_uninit(&m_device); // always do it
     }
     // bool IsStarted() const { return ma_device_is_started(&m_device); }
