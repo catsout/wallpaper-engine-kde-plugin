@@ -114,13 +114,13 @@ make
 #### open-source libraries
 [argparse](https://github.com/p-ranav/argparse) - Command line argument parser  
 [stb](https://github.com/nothings/stb) - Image loading  
-[vog/sha1](https://github.com/vog/sha1) - SHA-1
+[vog/sha1](https://github.com/vog/sha1) - SHA-1  
 [miniaudio](https://github.com/mackron/miniaudio) - Audio loading and playback  
 [nlohmann/json](https://github.com/nlohmann/json) - Json parsing  
 [Eigen](https://eigen.tuxfamily.org/index.php) - Math operations  
 [glad](https://github.com/Dav1dde/glad) - Opengl loader  
 [glslang](https://github.com/KhronosGroup/glslang) - Glsl to Spv  
-[SPIRV-Reflect](https://github.com/KhronosGroup/SPIRV-Reflect) - C/C++ reflection API for SPIR-V bytecode
+[SPIRV-Reflect](https://github.com/KhronosGroup/SPIRV-Reflect) - C/C++ reflection API for SPIR-V bytecode  
 [VulkanMemoryAllocator](https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator) - Vulkan memory allocation library  
 #### supported
 - [x] Layer
