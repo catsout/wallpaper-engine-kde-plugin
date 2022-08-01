@@ -6,26 +6,44 @@ Rectangle {
     id: background
     anchors.fill: parent
     color: wallpaper.configuration.BackgroundColor
+    
     property string steamlibrary: Qt.resolvedUrl(wallpaper.configuration.SteamLibraryPath).toString()
     property string source: Qt.resolvedUrl(wallpaper.configuration.WallpaperSource).toString()
 
-    property string workshopid: wallpaper.configuration.WallpaperWorkShopId
     property string filterStr: wallpaper.configuration.FilterStr
 
-    property int    displayMode: wallpaper.configuration.DisplayMode
     property int    videoBackend: wallpaper.configuration.VideoBackend
     property real   videoRate: wallpaper.configuration.VideoRate
-    property int    volume: wallpaper.configuration.Volume
     property int    switchTimer: wallpaper.configuration.SwitchTimer
     property int    fps: wallpaper.configuration.Fps
 
-    property bool   mute: wallpaper.configuration.MuteAudio
     property bool   randomizeWallpaper: wallpaper.configuration.RandomizeWallpaper
     property bool   mouseInput: wallpaper.configuration.MouseInput
     property bool   mpvStats: wallpaper.configuration.MpvStats
 
     property bool   pauseAcPlugin: wallpaper.configuration.PauseAcPlugin
     property int   pauseBatPercent: wallpaper.configuration.PauseBatPercent
+
+    
+    property var curOpt: ({})
+    property string workshopid: {
+        const wid = wallpaper.configuration.WallpaperWorkShopId;
+        pyext.read_wallpaper_config(wid).then((res) => this.curOpt = res);
+        return wid;
+    }
+    function get_opt_value(key, def) {
+        if(curOpt.hasOwnProperty(key))
+            return curOpt[key];
+        return def;
+    }
+    property int    displayMode: get_opt_value('display_mode', wallpaper.configuration.DisplayMode)
+    property bool   mute: get_opt_value('mute_audio', wallpaper.configuration.MuteAudio)
+    property int    volume: get_opt_value('volume', wallpaper.configuration.Volume)
+
+    property bool   perOptChanged: wallpaper.configuration.PerOptChanged
+    onPerOptChangedChanged: {
+        pyext.read_wallpaper_config(workshopid).then((res) => this.curOpt = res);
+    }
 
     // auto pause
     property bool   ok: !windowModel.reqPause && !powerSource.reqPause
@@ -43,8 +61,8 @@ Rectangle {
     signal sig_backendFirstFrame(string backname);
     onSig_backendFirstFrame: {
         console.error(`backend ${backname} first frame`);
-        // if (wallpaper.hasOwnPropety('repaintNeeded'))
-        //    wallpaper.repaintNeeded();
+        if (wallpaper.hasOwnProperty('repaintNeeded'))
+            wallpaper.repaintNeeded();
     }
 
     Component.onDestruction: {

@@ -26,7 +26,6 @@ Flickable {
     property alias cfg_PauseAcPlugin: ckbox_pauseAcPlugin.checked
     property alias cfg_PauseBatPercent: spin_pauseBatPercent.value
 
-    property int comboBoxWidth: themeWidth * 24
 
     Layout.fillWidth: true
     ScrollBar.vertical: ScrollBar { id: scrollbar }
@@ -54,7 +53,6 @@ Flickable {
                 text_color: Theme.textColor
                 icon: '../../images/pause.svg'
                 actor:  ComboBox {
-                    implicitWidth: comboBoxWidth
                     id: pauseMode
                     model: [
                         {
@@ -121,7 +119,6 @@ Flickable {
                 icon: '../../images/window.svg'
                 actor: ComboBox {
                     id: displayMode
-                    implicitWidth: comboBoxWidth
                     model: [
                         {
                             text: "Keep Aspect Ratio",
@@ -252,7 +249,6 @@ Flickable {
                 text_color: Theme.textColor
                 icon: '../../images/plugin.svg'
                 actor: ComboBox {
-                    implicitWidth: comboBoxWidth
                     model: [
                         {
                             text: "QtMultimedia",
@@ -309,7 +305,6 @@ Flickable {
                 text_color: Theme.textColor
                 icon: '../../images/tuning.svg'
                 actor: RowLayout {
-                    Layout.preferredWidth: displayMode.width
                     Label {
                         Layout.preferredWidth: font.pixelSize * 2
                         text: sliderFps.value.toString()

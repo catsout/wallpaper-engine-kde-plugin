@@ -19,13 +19,24 @@ Item {
         ].join("\n");
         return sh;
     }
-    readonly property bool ok: ws_server.socket.status == WebSocket.Open
+    readonly property bool ok: ws_server.socket && ws_server.socket.status == WebSocket.Open
 
     property string _log
     readonly property string log: _log
 
     property var commands: []
 
+    readonly property string version: _version
+
+    property string _version: {
+        if(ok) {
+            ws_server.jrpc.send("version").then(res => { 
+                this._version = res.result 
+            });
+        }
+        return '-';
+    }
+    
     function readfile(path) {
         return ws_server.jrpc.send("readfile", [path]).then((el) => {
             return Qt.atob(el.result);
@@ -37,6 +48,17 @@ Item {
     function get_folder_list(path, opt={}) {
         return ws_server.jrpc.send("get_folder_list", [path, opt]).then(res => res.result);
     }
+    function read_wallpaper_config(id) {
+        return ws_server.jrpc.send("read_wallpaper_config", [id]).then(res => res.result);
+    }
+    function write_wallpaper_config(id, changed) {
+        return ws_server.jrpc.send("write_wallpaper_config", [id, changed]);
+    }
+    function reset_wallpaper_config(id) {
+        return ws_server.jrpc.send("reset_wallpaper_config", [id]);
+    }
+
+
 
     function _createTimer(callback) {
         const timer = Qt.createQmlObject("import QtQuick 2.0; Timer {}", root);

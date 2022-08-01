@@ -28,6 +28,7 @@ Control {
         id: column_content
         anchors.left: parent.left
         anchors.right: parent.right
+        spacing: 3
 
         OptionItem {
             id: option_header
