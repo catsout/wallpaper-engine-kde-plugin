@@ -16,7 +16,7 @@ namespace wpscene
 
 class WPLightObject {
 public:
-    bool                 FromJson(const nlohmann::json&);
+    bool                 FromJson(const nlohmann::json&, fs::VFS&);
     int32_t              id { 0 };
     std::string          name;
     std::array<float, 3> origin { 0.0f, 0.0f, 0.0f };

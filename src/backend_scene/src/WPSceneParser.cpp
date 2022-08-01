@@ -881,7 +881,6 @@ void ParseImageObj(ParseContext& context, wpscene::WPImageObject& img_obj) {
 void ParseParticleObj(ParseContext& context, wpscene::WPParticleObject& particle) {
     auto& wppartobj = particle;
     auto& vfs       = *context.vfs;
-    if (wppartobj.particleObj.renderers.size() == 0) return;
 
     auto wppartRenderer = wppartobj.particleObj.renderers.at(0);
     bool render_rope    = sstart_with(wppartRenderer.name, "rope");
@@ -1002,6 +1001,17 @@ void ParseLightObj(ParseContext& context, wpscene::WPLightObject& light_obj) {
 
     context.scene->sceneGraph->AppendChild(node);
 }
+
+template<typename T>
+void AddWPObject(std::vector<WPObjectVar>& objs, const nlohmann::json& json_obj, fs::VFS& vfs) {
+    T wpobj;
+    if (! wpobj.FromJson(json_obj, vfs)) {
+        LOG_ERROR("parse scene object failed, name: %s", wpobj.name.c_str());
+        return;
+    }
+    if (! wpobj.visible) return;
+    objs.push_back(wpobj);
+}
 } // namespace
 
 std::shared_ptr<Scene> WPSceneParser::Parse(std::string_view scene_id, const std::string& buf,
@@ -1018,24 +1028,13 @@ std::shared_ptr<Scene> WPSceneParser::Parse(std::string_view scene_id, const std
 
     for (auto& obj : json.at("objects")) {
         if (obj.contains("image") && ! obj.at("image").is_null()) {
-            wpscene::WPImageObject wpimgobj;
-            if (! wpimgobj.FromJson(obj, vfs)) continue;
-            if (! wpimgobj.visible) continue;
-            wp_objs.push_back(wpimgobj);
+            AddWPObject<wpscene::WPImageObject>(wp_objs, obj, vfs);
         } else if (obj.contains("particle") && ! obj.at("particle").is_null()) {
-            wpscene::WPParticleObject wppartobj;
-            if (! wppartobj.FromJson(obj, vfs)) continue;
-            if (! wppartobj.visible) continue;
-            wp_objs.push_back(wppartobj);
+            AddWPObject<wpscene::WPParticleObject>(wp_objs, obj, vfs);
         } else if (obj.contains("sound") && ! obj.at("sound").is_null()) {
-            wpscene::WPSoundObject wpsoundobj;
-            if (! wpsoundobj.FromJson(obj)) continue;
-            wp_objs.push_back(wpsoundobj);
+            AddWPObject<wpscene::WPSoundObject>(wp_objs, obj, vfs);
         } else if (obj.contains("light") && ! obj.at("light").is_null()) {
-            wpscene::WPLightObject wplightobj;
-            if (! wplightobj.FromJson(obj)) continue;
-            if (! wplightobj.visible) continue;
-            wp_objs.push_back(wplightobj);
+            AddWPObject<wpscene::WPLightObject>(wp_objs, obj, vfs);
         }
     }
 

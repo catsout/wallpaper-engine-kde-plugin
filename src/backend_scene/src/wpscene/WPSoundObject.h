@@ -7,6 +7,11 @@
 
 namespace wallpaper
 {
+namespace fs
+{
+class VFS;
+}
+
 namespace wpscene
 {
 
@@ -15,13 +20,17 @@ struct WPSoundObject {
     float                    maxtime { 10.0f };
     float                    mintime { 0.0f };
     float                    volume { 1.0f };
+    bool                     visible { false };
+    std::string              name;
     std::vector<std::string> sound;
 
-    bool FromJson(const nlohmann::json& json) {
+    bool FromJson(const nlohmann::json& json, fs::VFS&) {
         GET_JSON_NAME_VALUE(json, "volume", volume);
         GET_JSON_NAME_VALUE(json, "playbackmode", playbackmode);
         GET_JSON_NAME_VALUE_NOWARN(json, "mintime", mintime);
         GET_JSON_NAME_VALUE_NOWARN(json, "maxtime", maxtime);
+        GET_JSON_NAME_VALUE_NOWARN(json, "visible", visible);
+        GET_JSON_NAME_VALUE_NOWARN(json, "name", name);
         if (! json.contains("sound") || ! json.at("sound").is_array()) {
             return false;
         }
