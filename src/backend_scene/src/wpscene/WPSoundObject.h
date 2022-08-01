@@ -20,7 +20,7 @@ struct WPSoundObject {
     float                    maxtime { 10.0f };
     float                    mintime { 0.0f };
     float                    volume { 1.0f };
-    bool                     visible { false };
+    bool                     visible { true };
     std::string              name;
     std::vector<std::string> sound;
 
