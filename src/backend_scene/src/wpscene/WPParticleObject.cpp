@@ -95,6 +95,12 @@ bool Particle::FromJson(const nlohmann::json& json) {
             renderers.push_back(pr);
         }
     }
+    // add sprite if no renderers
+    if (renderers.empty()) {
+        ParticleRender pr;
+        pr.name = "sprite";
+        renderers.push_back(pr);
+    }
     if (json.contains("initializer")) {
         for (const auto& el : json.at("initializer")) {
             initializers.push_back(el);
