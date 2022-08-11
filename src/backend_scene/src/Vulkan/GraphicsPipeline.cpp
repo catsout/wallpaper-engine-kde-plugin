@@ -102,7 +102,7 @@ ShaderSpv* GraphicsPipeline::getShaderSpv(VkShaderStageFlagBits stage) const {
 }
 
 GraphicsPipeline&
-GraphicsPipeline::setColorBlendStates(Span<const VkPipelineColorBlendAttachmentState> stats) {
+GraphicsPipeline::setColorBlendStates(std::span<const VkPipelineColorBlendAttachmentState> stats) {
     m_color_attachments     = { stats.begin(), stats.end() };
     m_color.attachmentCount = (u32)m_color_attachments.size();
     m_color.pAttachments    = m_color_attachments.data();
@@ -126,7 +126,7 @@ GraphicsPipeline& GraphicsPipeline::addStage(Uni_ShaderSpv&& spv) {
     return *this;
 }
 
-GraphicsPipeline& GraphicsPipeline::addDescriptorSetInfo(Span<const DescriptorSetInfo> info) {
+GraphicsPipeline& GraphicsPipeline::addDescriptorSetInfo(std::span<const DescriptorSetInfo> info) {
     for (auto& i : info) {
         m_descriptor_set_infos.push_back(i);
     }
@@ -134,14 +134,14 @@ GraphicsPipeline& GraphicsPipeline::addDescriptorSetInfo(Span<const DescriptorSe
 }
 
 GraphicsPipeline& GraphicsPipeline::addInputAttributeDescription(
-    Span<const VkVertexInputAttributeDescription> attrs) {
+    std::span<const VkVertexInputAttributeDescription> attrs) {
     for (auto& a : attrs) {
         m_input_attr_descriptions.push_back(a);
     }
     return *this;
 }
-GraphicsPipeline&
-GraphicsPipeline::addInputBindingDescription(Span<const VkVertexInputBindingDescription> binds) {
+GraphicsPipeline& GraphicsPipeline::addInputBindingDescription(
+    std::span<const VkVertexInputBindingDescription> binds) {
     for (auto& b : binds) {
         m_input_bind_descriptions.push_back(b);
     }

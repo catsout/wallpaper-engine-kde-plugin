@@ -12,8 +12,8 @@
 #include <variant>
 #include <array>
 
-#include "Utils/Visitors.hpp"
-#include "Utils/NoCopyMove.hpp"
+#include "Core/Visitors.hpp"
+#include "Core/NoCopyMove.hpp"
 
 namespace wallpaper
 {

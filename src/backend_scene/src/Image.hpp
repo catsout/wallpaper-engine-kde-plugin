@@ -9,7 +9,7 @@
 #include "Type.hpp"
 #include "SpriteAnimation.hpp"
 #include "Scene/SceneTexture.h"
-#include "Utils/NoCopyMove.hpp"
+#include "Core/NoCopyMove.hpp"
 
 namespace wallpaper
 {

@@ -17,8 +17,8 @@ public:
     Device();
     ~Device();
 
-    static bool Create(Instance&, Span<const Extension> exts, VkExtent2D extent, Device&);
-    static bool CheckGPU(vvk::PhysicalDevice gpu, Span<const Extension> exts, VkSurfaceKHR surface);
+    static bool Create(Instance&, std::span<const Extension> exts, VkExtent2D extent, Device&);
+    static bool CheckGPU(vvk::PhysicalDevice gpu, std::span<const Extension> exts, VkSurfaceKHR surface);
 
     void Destroy();
 

@@ -2,7 +2,7 @@
 #include <cstdlib>
 #include <string_view>
 #include <filesystem>
-#include "Utils/StringHelper.hpp"
+#include "Core/StringHelper.hpp"
 
 namespace wallpaper 
 {

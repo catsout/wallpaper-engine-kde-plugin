@@ -115,6 +115,7 @@ make
 [argparse](https://github.com/p-ranav/argparse) - Command line argument parser  
 [stb](https://github.com/nothings/stb) - Image loading  
 [vog/sha1](https://github.com/vog/sha1) - SHA-1  
+[effolkronium/random](https://github.com/effolkronium/random) - Random wrapper for modern C++   
 [miniaudio](https://github.com/mackron/miniaudio) - Audio loading and playback  
 [nlohmann/json](https://github.com/nlohmann/json) - Json parsing  
 [Eigen](https://eigen.tuxfamily.org/index.php) - Math operations  
@@ -152,6 +153,7 @@ make
 		- [ ] Control Point Force
 	- [x] Control Points
 	- [ ] Children
+    - [ ] Audio Response
 - [x] Puppet warp
 - [ ] 3D model
 - [ ] Timeline animations

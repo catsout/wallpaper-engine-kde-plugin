@@ -3,7 +3,7 @@
 #include <utility>
 #include <cassert>
 
-#include "Utils/NoCopyMove.hpp"
+#include "Core/NoCopyMove.hpp"
 #include "Utils/Logging.h"
 
 namespace vvk

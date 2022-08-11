@@ -152,7 +152,7 @@ jrpc.add_method(M.reset_wallpaper_config)
 async def connect(uri):
     async with websockets.connect(uri) as websocket:
         while True:
-            recv = jrpc.handle(await websocket.recv())
+            recv: str = jrpc.handle(await websocket.recv())
             await websocket.send(recv)
 
 if __name__ == "__main__":

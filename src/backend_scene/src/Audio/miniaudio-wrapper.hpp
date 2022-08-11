@@ -9,7 +9,7 @@
 #include <atomic>
 #include <utility>
 #include "Utils/Logging.h"
-#include "Utils/NoCopyMove.hpp"
+#include "Core/NoCopyMove.hpp"
 
 #define MA_NO_WASAPI
 #define MA_NO_DSOUND

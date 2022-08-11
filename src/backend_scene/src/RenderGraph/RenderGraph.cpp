@@ -129,7 +129,7 @@ const PassNode& RenderGraphBuilder::workPassNode() const {
     return *m_passnode_wip;
 }
 
-std::vector<std::vector<TexNode*>> RenderGraph::getLastReadTexs(Span<const NodeID> nodes) const {
+std::vector<std::vector<TexNode*>> RenderGraph::getLastReadTexs(std::span<const NodeID> nodes) const {
     std::vector<std::vector<TexNode*>> res;
     std::vector<Set<NodeID>> nodes_ids;
     // get in

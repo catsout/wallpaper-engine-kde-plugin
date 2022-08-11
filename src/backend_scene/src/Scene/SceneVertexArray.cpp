@@ -53,7 +53,7 @@ bool SceneVertexArray::AddVertex(const float* data) {
     return true;
 }
 
-bool SceneVertexArray::SetVertex(std::string_view name, Span<const float> data) {
+bool SceneVertexArray::SetVertex(std::string_view name, std::span<const float> data) {
     uint32_t offset = 0;
     for (const auto& el : m_attributes) {
         if (el.name == name) {

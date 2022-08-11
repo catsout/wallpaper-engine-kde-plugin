@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <functional>
 #include "Utils/Logging.h"
-#include "Utils/NoCopyMove.hpp"
+#include "Core/NoCopyMove.hpp"
 
 namespace wallpaper
 {

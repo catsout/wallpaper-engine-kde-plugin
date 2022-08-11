@@ -35,7 +35,7 @@ struct ShaderReflected {
     Map<std::string, Input> input_location_map;
 };
 
-bool GenReflect(Span<const std::vector<uint>> codes, std::vector<Uni_ShaderSpv>& spvs,
+bool GenReflect(std::span<const std::vector<uint>> codes, std::vector<Uni_ShaderSpv>& spvs,
                 ShaderReflected& ref);
 } // namespace vulkan
 } // namespace wallpaper

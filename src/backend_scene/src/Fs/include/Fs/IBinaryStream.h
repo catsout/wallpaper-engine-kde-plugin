@@ -3,7 +3,7 @@
 #include <string>
 #include <type_traits>
 #include "Bswap.hpp"
-#include "Utils/NoCopyMove.hpp"
+#include "Core/NoCopyMove.hpp"
 #include "Core/Literals.hpp"
 
 namespace wallpaper

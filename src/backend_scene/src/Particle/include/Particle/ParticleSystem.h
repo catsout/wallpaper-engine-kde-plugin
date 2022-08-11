@@ -1,7 +1,7 @@
 #pragma once
 #include "ParticleEmitter.h"
 #include "Interface/IParticleRawGener.h"
-#include "Utils/NoCopyMove.hpp"
+#include "Core/NoCopyMove.hpp"
 
 #include <memory>
 

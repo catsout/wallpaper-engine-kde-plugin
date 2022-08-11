@@ -1,5 +1,5 @@
 #pragma once
-#include "Utils/NoCopyMove.hpp"
+#include "Core/NoCopyMove.hpp"
 
 namespace wallpaper
 {

@@ -1,11 +1,11 @@
 #pragma once
 #include "SceneWallpaper.hpp"
-#include "Utils/span.hpp"
 
 #include <functional>
 #include <string_view>
 #include <vulkan/vulkan.h>
 #include <cstdint>
+#include <span>
 
 namespace wallpaper
 {
@@ -20,9 +20,9 @@ struct RenderInitInfo {
     bool enable_valid_layer { false };
     bool offscreen { false };
 
-    Span<const std::uint8_t> uuid;
-    TexTiling                offscreen_tiling { TexTiling::OPTIMAL };
-    VulkanSurfaceInfo        surface_info;
+    std::span<const std::uint8_t> uuid;
+    TexTiling                     offscreen_tiling { TexTiling::OPTIMAL };
+    VulkanSurfaceInfo             surface_info;
 
     uint16_t width { 1920 };
     uint16_t height { 1080 };

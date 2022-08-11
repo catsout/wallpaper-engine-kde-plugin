@@ -45,8 +45,8 @@ vvk::DebugUtilsMessenger SetupDebugCallback(vvk::Instance& instance) {
     });
 }
 
-VkResult CreatInstance(vvk::Instance* inst, Span<const std::string_view> exts,
-                       Span<const std::string_view> layers, vvk::InstanceDispatch& dld) {
+VkResult CreatInstance(vvk::Instance* inst, std::span<const std::string_view> exts,
+                       std::span<const std::string_view> layers, vvk::InstanceDispatch& dld) {
     VkApplicationInfo app_info {
         .sType              = VK_STRUCTURE_TYPE_APPLICATION_INFO,
         .pNext              = nullptr,
@@ -85,7 +85,8 @@ void EnumateLayers(wallpaper::Set<std::string>& set, const vvk::InstanceDispatch
 }
 } // namespace
 
-bool Instance::ChoosePhysicalDevice(const CheckGpuOp& checkgpu, Span<const std::uint8_t> uuid) {
+bool Instance::ChoosePhysicalDevice(const CheckGpuOp&             checkgpu,
+                                    std::span<const std::uint8_t> uuid) {
     auto deviceList = m_vinst.EnumeratePhysicalDevices();
 
     VkInstanceCreateInfo crea;
@@ -108,7 +109,7 @@ bool Instance::ChoosePhysicalDevice(const CheckGpuOp& checkgpu, Span<const std::
         auto& props = props2.properties;
         if (uuid.size() > 0) {
             decltype(uuid) device_uuid { device_id_props.deviceUUID };
-            if (uuid == device_uuid) {
+            if (std::equal(uuid.begin(), uuid.end(), device_uuid.begin(), device_uuid.end())) {
                 /*
                 for(const auto& p:device_uuid) {
                     printf("%02x ", p);
@@ -151,14 +152,14 @@ bool Instance::supportLayer(std::string_view name) const { return exists(m_layer
 
 void Instance::Destroy() {}
 
-bool Instance::Create(Instance& inst, Span<const Extension> instExts,
-                      Span<const InstanceLayer> instLayers) {
+bool Instance::Create(Instance& inst, std::span<const Extension> instExts,
+                      std::span<const InstanceLayer> instLayers) {
     vvk::LoadLibrary(inst.m_vklib, inst.m_dld);
     vvk::Load(inst.m_dld);
 
     EnumateExts(inst.m_extensions, inst.m_dld);
     Set<std::string> exts, layers;
-    std::array       test_exts_array { Span<const Extension>(base_inst_exts), instExts };
+    std::array       test_exts_array { std::span<const Extension>(base_inst_exts), instExts };
     for (auto& test_exts : test_exts_array) {
         for (auto& ext : test_exts) {
             bool ok = inst.supportExt(ext.name);
@@ -172,7 +173,7 @@ bool Instance::Create(Instance& inst, Span<const Extension> instExts,
     }
 
     EnumateLayers(inst.m_layers, inst.m_dld);
-    std::array test_layers_array { Span<const InstanceLayer>(base_inst_layers), instLayers };
+    std::array test_layers_array { std::span<const InstanceLayer>(base_inst_layers), instLayers };
     for (auto& test_layers : test_layers_array) {
         for (auto& layer : test_layers) {
             bool ok = inst.supportLayer(layer.name);

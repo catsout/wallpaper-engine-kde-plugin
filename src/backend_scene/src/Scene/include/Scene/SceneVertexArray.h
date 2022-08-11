@@ -3,8 +3,8 @@
 #include <string>
 #include <cstddef>
 #include <string_view>
-#include "Utils/MapSet.hpp"
-#include "Utils/span.hpp"
+#include <span>
+#include "Core/MapSet.hpp"
 
 #include "Core/Literals.hpp"
 #include "Type.hpp"
@@ -39,7 +39,7 @@ public:
     SceneVertexArray(const SceneVertexArray&) = delete;
 
     bool AddVertex(const float*);
-    bool SetVertex(std::string_view name, Span<const float> data);
+    bool SetVertex(std::string_view name, std::span<const float> data);
     bool SetVertexs(std::size_t index, std::size_t count, const float* data);
 
     bool GetOption(std::string_view) const;

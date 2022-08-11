@@ -1,7 +1,6 @@
 #pragma once
 #include "Instance.hpp"
-#include "Utils/span.hpp"
-#include "Utils/MapSet.hpp"
+#include "Core/MapSet.hpp"
 #include "Spv.hpp"
 
 namespace wallpaper
@@ -40,15 +39,15 @@ public:
     ShaderSpv*  getShaderSpv(VkShaderStageFlagBits) const;
     const auto& pass() const { return m_pass; }
 
-    GraphicsPipeline& setColorBlendStates(Span<const VkPipelineColorBlendAttachmentState>);
+    GraphicsPipeline& setColorBlendStates(std::span<const VkPipelineColorBlendAttachmentState>);
     GraphicsPipeline& setLogicOp(bool enable, VkLogicOp);
 
     // required after default
     GraphicsPipeline& setRenderPass(vvk::RenderPass);
-    GraphicsPipeline& addDescriptorSetInfo(Span<const DescriptorSetInfo>);
+    GraphicsPipeline& addDescriptorSetInfo(std::span<const DescriptorSetInfo>);
     GraphicsPipeline& addStage(Uni_ShaderSpv&&);
-    GraphicsPipeline& addInputAttributeDescription(Span<const VkVertexInputAttributeDescription>);
-    GraphicsPipeline& addInputBindingDescription(Span<const VkVertexInputBindingDescription>);
+    GraphicsPipeline& addInputAttributeDescription(std::span<const VkVertexInputAttributeDescription>);
+    GraphicsPipeline& addInputBindingDescription(std::span<const VkVertexInputBindingDescription>);
     GraphicsPipeline& setTopology(VkPrimitiveTopology);
 
 private:

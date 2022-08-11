@@ -1,7 +1,7 @@
 #include "Looper.hpp"
 #include <algorithm>
 
-#include "Utils/Visitors.hpp"
+#include "Core/Visitors.hpp"
 #include "Utils/Logging.h"
 
 #include <cassert>

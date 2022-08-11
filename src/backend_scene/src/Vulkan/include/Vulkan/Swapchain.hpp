@@ -1,6 +1,6 @@
 #pragma once
 #include "Instance.hpp"
-#include "Utils/span.hpp"
+#include <span>
 
 namespace wallpaper
 {
@@ -12,12 +12,12 @@ struct VmaImageParameters;
 class Device;
 class Swapchain {
 public:
-    static bool                 Create(Device&, VkSurfaceKHR, VkExtent2D, Swapchain&);
-    const vvk::SwapchainKHR&    handle() const;
-    VkFormat                    format() const;
-    VkExtent2D                  extent() const;
-    VkPresentModeKHR            presentMode() const;
-    Span<const ImageParameters> images() const;
+    static bool                      Create(Device&, VkSurfaceKHR, VkExtent2D, Swapchain&);
+    const vvk::SwapchainKHR&         handle() const;
+    VkFormat                         format() const;
+    VkExtent2D                       extent() const;
+    VkPresentModeKHR                 presentMode() const;
+    std::span<const ImageParameters> images() const;
 
 private:
     vvk::SwapchainKHR            m_handle;

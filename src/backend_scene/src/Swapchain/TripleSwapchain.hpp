@@ -1,6 +1,6 @@
 #pragma once
 #include <atomic>
-#include "Utils/NoCopyMove.hpp"
+#include "Core/NoCopyMove.hpp"
 
 namespace wallpaper
 {

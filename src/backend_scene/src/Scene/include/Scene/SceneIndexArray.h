@@ -2,8 +2,8 @@
 #include <vector>
 #include <cstdint>
 #include <cstddef>
-#include "Utils/span.hpp"
-#include "Utils/NoCopyMove.hpp"
+#include <span>
+#include "Core/NoCopyMove.hpp"
 
 namespace wallpaper
 {
@@ -12,7 +12,7 @@ class SceneIndexArray : NoCopy {
 
 public:
     SceneIndexArray(std::size_t indexCount);
-    SceneIndexArray(Span<const uint32_t> data);
+    SceneIndexArray(std::span<const uint32_t> data);
 
     SceneIndexArray(SceneIndexArray&& other) noexcept
         : m_pData(other.m_pData),
@@ -26,8 +26,8 @@ public:
         if (m_pData != nullptr) delete[] m_pData;
     }
 
-    void Assign(std::size_t index, Span<const uint32_t> data) { AssignSpan(index, data); }
-    void AssignHalf(std::size_t index, Span<const uint16_t> data) { AssignSpan(index, data); }
+    void Assign(std::size_t index, std::span<const uint32_t> data) { AssignSpan(index, data); }
+    void AssignHalf(std::size_t index, std::span<const uint16_t> data) { AssignSpan(index, data); }
 
     // Get
     const uint32_t* Data() const { return m_pData; }
@@ -49,7 +49,7 @@ private:
     bool IncreaseCheckSet(size_t size);
 
     template<typename T>
-    void AssignSpan(std::size_t index, Span<const T> data) {
+    void AssignSpan(std::size_t index, std::span<const T> data) {
         using in_value_type = T;
         if (! IncreaseCheckSet((index + data.size()) * sizeof(in_value_type))) return;
         std::copy(data.begin(), data.end(), ((in_value_type*)m_pData) + index);

@@ -6,7 +6,7 @@
 #include "SceneNode.h"
 #include "SceneLight.hpp"
 
-#include "Utils/NoCopyMove.hpp"
+#include "Core/NoCopyMove.hpp"
 
 namespace wallpaper
 {

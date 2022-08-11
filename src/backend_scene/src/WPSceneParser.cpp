@@ -4,9 +4,9 @@
 #include "Utils/String.h"
 #include "Utils/Logging.h"
 #include "Utils/Algorism.h"
-#include "Utils/ArrayHelper.hpp"
-#include "Utils/Visitors.hpp"
-#include "Utils/StringHelper.hpp"
+#include "Core/Visitors.hpp"
+#include "Core/StringHelper.hpp"
+#include "Core/ArrayHelper.hpp"
 #include "SpecTexs.hpp"
 
 #include "WPShaderParser.hpp"
@@ -41,12 +41,9 @@
 using namespace wallpaper;
 using namespace Eigen;
 
-typedef std::function<float()> RandomFn;
-
 std::string getAddr(void* p) { return std::to_string(reinterpret_cast<intptr_t>(p)); }
 
 struct ParseContext {
-    RandomFn               randomFn;
     std::shared_ptr<Scene> scene;
     WPShaderValueUpdater*  shader_updater;
     i32                    ortho_w;
@@ -163,26 +160,26 @@ void LoadControlPoint(ParticleSubSystem& pSys, const wpscene::Particle& wp) {
     }
 }
 void LoadInitializer(ParticleSubSystem& pSys, const wpscene::Particle& wp,
-                     const wpscene::ParticleInstanceoverride& over, RandomFn& randomFn) {
+                     const wpscene::ParticleInstanceoverride& over) {
     for (const auto& ini : wp.initializers) {
-        pSys.AddInitializer(WPParticleParser::genParticleInitOp(ini, randomFn));
+        pSys.AddInitializer(WPParticleParser::genParticleInitOp(ini));
     }
     if (over.enabled) pSys.AddInitializer(WPParticleParser::genOverrideInitOp(over));
 }
 void LoadOperator(ParticleSubSystem& pSys, const wpscene::Particle& wp,
-                  const wpscene::ParticleInstanceoverride& over, RandomFn& randomFn) {
+                  const wpscene::ParticleInstanceoverride& over) {
     for (const auto& op : wp.operators) {
-        pSys.AddOperator(WPParticleParser::genParticleOperatorOp(op, randomFn, over));
+        pSys.AddOperator(WPParticleParser::genParticleOperatorOp(op, over));
     }
 }
 void LoadEmitter(ParticleSubSystem& pSys, const wpscene::Particle& wp, float count,
-                 RandomFn& randomFn, bool render_rope) {
+                 bool render_rope) {
     bool sort = render_rope;
     for (const auto& em : wp.emitters) {
         auto newEm = em;
         newEm.rate *= count;
         // newEm.origin[2] -= perspectiveZ;
-        pSys.AddEmitter(WPParticleParser::genParticleEmittOp(newEm, randomFn, sort));
+        pSys.AddEmitter(WPParticleParser::genParticleEmittOp(newEm, sort));
     }
 }
 
@@ -522,14 +519,6 @@ void InitContext(ParseContext& context, fs::VFS& vfs, wpscene::WPScene& sc) {
         cam_para.delay          = sc.general.cameraparallaxdelay;
         cam_para.mouseinfluence = sc.general.cameraparallaxmouseinfluence;
         context.shader_updater->SetCameraParallax(cam_para);
-    }
-
-    {
-        auto ur          = std::make_shared<std::uniform_real_distribution<float>>(0.0f, 1.0f);
-        auto randomSeed  = std::make_shared<std::default_random_engine>();
-        context.randomFn = [randomSeed, ur]() {
-            return (*ur)(*randomSeed);
-        };
     }
 }
 
@@ -971,14 +960,9 @@ void ParseParticleObj(ParseContext& context, wpscene::WPParticleObject& particle
             }
         });
 
-    LoadEmitter(*particleSub,
-                wppartobj.particleObj,
-                wppartobj.instanceoverride.count,
-                context.randomFn,
-                render_rope);
-    LoadInitializer(
-        *particleSub, wppartobj.particleObj, wppartobj.instanceoverride, context.randomFn);
-    LoadOperator(*particleSub, wppartobj.particleObj, wppartobj.instanceoverride, context.randomFn);
+    LoadEmitter(*particleSub, wppartobj.particleObj, wppartobj.instanceoverride.count, render_rope);
+    LoadInitializer(*particleSub, wppartobj.particleObj, wppartobj.instanceoverride);
+    LoadOperator(*particleSub, wppartobj.particleObj, wppartobj.instanceoverride);
     LoadControlPoint(*particleSub, wppartobj.particleObj);
 
     context.scene->paritileSys->subsystems.emplace_back(std::move(particleSub));

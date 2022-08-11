@@ -1,6 +1,5 @@
 #pragma once
-#include "Utils/NoCopyMove.hpp"
-#include "Utils/span.hpp"
+#include "Core/NoCopyMove.hpp"
 #include "Instance.hpp"
 #include "Parameters.hpp"
 #include "vk_mem_alloc.h"
@@ -36,7 +35,7 @@ public:
 
     bool allocateSubRef(VkDeviceSize size, StagingBufferRef&, VkDeviceSize alignment = 1);
     void unallocateSubRef(const StagingBufferRef&);
-    bool writeToBuf(const StagingBufferRef&, Span<uint8_t>, size_t offset = 0);
+    bool writeToBuf(const StagingBufferRef&, std::span<uint8_t>, size_t offset = 0);
     bool fillBuf(const StagingBufferRef& ref, size_t offset, size_t size, uint8_t c);
 
     bool recordUpload(vvk::CommandBuffer&);

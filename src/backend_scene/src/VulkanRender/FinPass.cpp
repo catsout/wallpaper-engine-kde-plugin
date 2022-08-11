@@ -158,9 +158,9 @@ void FinPass::prepare(Scene& scene, const Device& device, RenderingResources& rr
         descriptor_info.push_descriptor = true;
         GraphicsPipeline pipeline;
         pipeline.toDefault();
-        pipeline.addDescriptorSetInfo(descriptor_info)
+        pipeline.addDescriptorSetInfo(spanone { descriptor_info })
             .setTopology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP)
-            .addInputBindingDescription(bind_description)
+            .addInputBindingDescription(spanone { bind_description })
             .addInputAttributeDescription(attr_descriptions);
         for (auto& spv : spvs) pipeline.addStage(std::move(spv));
 

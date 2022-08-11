@@ -19,6 +19,8 @@
 #include "FinPass.hpp"
 #include "Resource.hpp"
 
+#include "Core/ArrayHelper.hpp"
+
 #include <cassert>
 #include <vector>
 #include <cstdint>
@@ -513,7 +515,7 @@ void VulkanRender::Impl::compileRenderGraph(Scene& scene, rg::RenderGraph& rg) {
                        VulkanPass* vpass = static_cast<VulkanPass*>(pass);
                        // LOG_INFO("----release tex");
                        for (auto& tex : texs) {
-                           vpass->addReleaseTexs(tex->key());
+                           vpass->addReleaseTexs(spanone<const std::string_view> { tex->key() });
                            //    LOG_INFO("%s", tex->key().data());
                        }
                        return vpass;

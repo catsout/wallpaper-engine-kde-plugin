@@ -1,7 +1,7 @@
 #pragma once
 #include "Core/Literals.hpp"
-#include "Utils/NoCopyMove.hpp"
-#include "Utils/MapSet.hpp"
+#include "Core/NoCopyMove.hpp"
+#include "Core/MapSet.hpp"
 
 #include <functional>
 #include <string_view>

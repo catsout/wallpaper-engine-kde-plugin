@@ -3,7 +3,7 @@
 #include <charconv>
 #include "Fs/IBinaryStream.h"
 #include "Utils/Logging.h"
-#include "Utils/StringHelper.hpp"
+#include "Core/StringHelper.hpp"
 
 namespace wallpaper
 {

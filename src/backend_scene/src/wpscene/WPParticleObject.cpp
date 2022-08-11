@@ -2,7 +2,7 @@
 
 #include "Utils/Logging.h"
 #include "Fs/VFS.h"
-#include "Utils/StringHelper.hpp"
+#include "Core/StringHelper.hpp"
 
 using namespace wallpaper::wpscene;
 

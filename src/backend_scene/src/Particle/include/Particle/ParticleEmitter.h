@@ -39,7 +39,6 @@ struct ParticleBoxEmitterArgs {
     std::array<float, 3>   maxDistance;
     float                  emitSpeed;
     std::array<float, 3>   orgin;
-    std::function<float()> randomFn;
     bool                   one_per_frame;
     bool                   sort;
 
@@ -53,7 +52,6 @@ struct ParticleSphereEmitterArgs {
     float                  emitSpeed;
     std::array<float, 3>   orgin;
     std::array<int32_t, 3> sign;
-    std::function<float()> randomFn;
     bool                   one_per_frame;
     bool                   sort;
 

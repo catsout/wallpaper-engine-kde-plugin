@@ -2,8 +2,8 @@
 
 #include "Parameters.hpp"
 #include "Type.hpp"
-#include "Utils/NoCopyMove.hpp"
-#include "Utils/MapSet.hpp"
+#include "Core/NoCopyMove.hpp"
+#include "Core/MapSet.hpp"
 
 namespace wallpaper
 {

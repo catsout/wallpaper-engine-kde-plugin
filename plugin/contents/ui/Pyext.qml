@@ -11,10 +11,9 @@ Item {
         const sh = [
             `EXT=${file}`,
             `WKD="no_pyext_file_found"`,
-            "[ -f \"$XDG_DATA_HOME/$EXT\" ] && WKD=\"$XDG_DATA_HOME/$EXT\"", 
-            "[ -f \"$HOME/.local/share/$EXT\" ] && WKD=\"$HOME/.local/share/$EXT\"",
             "[ -f /usr/share/$EXT ] && WKD=/usr/share/$EXT",
-            "[ -f /usr/local/share/$EXT ] && WKD=/usr/local/share/$EXT",
+            "[ -f \"$HOME/.local/share/$EXT\" ] && WKD=\"$HOME/.local/share/$EXT\"",
+            "[ -f \"$XDG_DATA_HOME/$EXT\" ] && WKD=\"$XDG_DATA_HOME/$EXT\"", 
             `exec python3 "$WKD" "${ws_server.url}"`
         ].join("\n");
         return sh;

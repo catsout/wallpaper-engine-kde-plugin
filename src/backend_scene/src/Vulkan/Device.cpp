@@ -18,7 +18,7 @@ void EnumateDeviceExts(const vvk::PhysicalDevice& gpu, wallpaper::Set<std::strin
 
 } // namespace
 
-bool Device::CheckGPU(vvk::PhysicalDevice gpu, Span<const Extension> exts, VkSurfaceKHR surface) {
+bool Device::CheckGPU(vvk::PhysicalDevice gpu, std::span<const Extension> exts, VkSurfaceKHR surface) {
     std::vector<VkDeviceQueueCreateInfo> queues;
     auto                                 props = gpu.GetQueueFamilyProperties();
 
@@ -96,7 +96,7 @@ std::vector<VkDeviceQueueCreateInfo> Device::ChooseDeviceQueue(VkSurfaceKHR surf
     return queues;
 }
 
-bool Device::Create(Instance& inst, Span<const Extension> exts, VkExtent2D extent, Device& device) {
+bool Device::Create(Instance& inst, std::span<const Extension> exts, VkExtent2D extent, Device& device) {
     device.dld      = vvk::DeviceDispatch { inst.inst().Dispatch() };
     device.m_gpu    = inst.gpu();
     device.m_limits = inst.gpu().GetProperties().limits;

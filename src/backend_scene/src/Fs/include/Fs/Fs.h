@@ -2,7 +2,7 @@
 #include <memory>
 
 #include "IBinaryStream.h"
-#include "Utils/NoCopyMove.hpp"
+#include "Core/NoCopyMove.hpp"
 
 namespace wallpaper
 {

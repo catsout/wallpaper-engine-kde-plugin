@@ -4,7 +4,7 @@
 #include "Scene/Scene.h"
 #include "SpriteAnimation.hpp"
 #include "SpecTexs.hpp"
-#include "Utils/ArrayHelper.hpp"
+#include "Core/ArrayHelper.hpp"
 #include "Utils/Algorism.h"
 
 #include <Eigen/Dense>
@@ -121,7 +121,7 @@ void WPShaderValueUpdater::UpdateUniforms(SceneNode* pNode, sprite_map_t& sprite
         }
         if (nodeData.puppet_layer.hasPuppet() && info.has_BONES) {
             auto data = nodeData.puppet_layer.genFrame(m_scene->frameTime);
-            updateOp(G_BONES, Span<const float> { data[0].data(), data.size() * 16 });
+            updateOp(G_BONES, std::span<const float> { data[0].data(), data.size() * 16 });
         }
     }
 

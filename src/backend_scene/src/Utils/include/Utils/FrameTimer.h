@@ -8,7 +8,7 @@
 #include <cstdint>
 #include <chrono>
 
-#include "NoCopyMove.hpp"
+#include "Core/NoCopyMove.hpp"
 
 namespace wallpaper 
 {

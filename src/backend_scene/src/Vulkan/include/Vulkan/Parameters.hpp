@@ -2,7 +2,7 @@
 
 #include "Instance.hpp"
 #include "Swapchain.hpp"
-#include "Utils/NoCopyMove.hpp"
+#include "Core/NoCopyMove.hpp"
 #include "vk_mem_alloc.h"
 #include "vvk/vma_wrapper.hpp"
 

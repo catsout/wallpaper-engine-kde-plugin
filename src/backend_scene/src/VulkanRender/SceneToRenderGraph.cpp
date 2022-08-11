@@ -4,7 +4,7 @@
 #include "RenderGraph/RenderGraph.hpp"
 #include "SpecTexs.hpp"
 #include "Utils/Logging.h"
-#include "Utils/MapSet.hpp"
+#include "Core/MapSet.hpp"
 
 #include "VulkanRender/AllPasses.hpp"
 
@@ -70,7 +70,7 @@ static void TraverseNode(const std::function<void(SceneNode*)>& func, SceneNode*
 }
 
 static void CheckAndSetSprite(Scene& scene, vulkan::CustomShaderPass::Desc& desc,
-                              Span<const std::string> texs) {
+                              std::span<const std::string> texs) {
     for (usize i = 0; i < texs.size(); i++) {
         auto& tex = texs[i];
         if (! tex.empty() && ! IsSpecTex(tex) && scene.textures.count(tex) != 0) {

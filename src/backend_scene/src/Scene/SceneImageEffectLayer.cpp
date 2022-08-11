@@ -2,7 +2,7 @@
 #include "SceneNode.h"
 
 #include "SpecTexs.hpp"
-#include "Utils/StringHelper.hpp"
+#include "Core/StringHelper.hpp"
 
 using namespace wallpaper;
 

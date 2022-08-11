@@ -6,10 +6,10 @@
 #include "Util.hpp"
 
 #include "Image.hpp"
-#include "Utils/MapSet.hpp"
+#include "Core/MapSet.hpp"
+#include "Core/ArrayHelper.hpp"
 #include "Utils/AutoDeletor.hpp"
 #include "Utils/Hash.h"
-#include "Utils/ArrayHelper.hpp"
 #include "include/Vulkan/Parameters.hpp"
 #include "vvk/vulkan_wrapper.hpp"
 

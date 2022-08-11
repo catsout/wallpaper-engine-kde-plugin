@@ -1,5 +1,5 @@
 #pragma once
-#include "Utils/span.hpp"
+#include <span>
 #include "Spv.hpp"
 #include <glslang/Public/ShaderLang.h>
 
@@ -36,7 +36,7 @@ struct ShaderCompOpt {
     bool reflect_all_block_var { false };
 };
 
-bool CompileAndLinkShaderUnits(Span<const ShaderCompUnit> compUnits, const ShaderCompOpt& opt,
+bool CompileAndLinkShaderUnits(std::span<const ShaderCompUnit> compUnits, const ShaderCompOpt& opt,
                                std::vector<Uni_ShaderSpv>& spvs);
 } // namespace vulkan
 } // namespace wallpaper

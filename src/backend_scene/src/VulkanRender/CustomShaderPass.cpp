@@ -10,6 +10,8 @@
 #include "PassCommon.hpp"
 #include "Interface/IImageParser.h"
 
+#include "Core/ArrayHelper.hpp"
+
 #include <cassert>
 
 using namespace wallpaper::vulkan;
@@ -82,9 +84,9 @@ static void UpdateUniform(StagingBuffer* buf, const StagingBufferRef& bufref,
                           const ShaderReflected::Block& block, std::string_view name,
                           const wallpaper::ShaderValue& value) {
     using namespace wallpaper;
-    Span<uint8_t> value_u8 { (uint8_t*)value.data(),
-                             value.size() * sizeof(ShaderValue::value_type) };
-    auto          uni = block.member_map.find(name);
+    std::span<uint8_t> value_u8 { (uint8_t*)value.data(),
+                                  value.size() * sizeof(ShaderValue::value_type) };
+    auto               uni = block.member_map.find(name);
     if (uni == block.member_map.end()) {
         // log
         return;
@@ -259,8 +261,8 @@ void CustomShaderPass::prepare(Scene& scene, const Device& device, RenderingReso
         descriptor_info.push_descriptor = true;
         GraphicsPipeline pipeline;
         pipeline.toDefault();
-        pipeline.addDescriptorSetInfo(descriptor_info)
-            .setColorBlendStates(color_blend)
+        pipeline.addDescriptorSetInfo(spanone { descriptor_info })
+            .setColorBlendStates(spanone { color_blend })
             .setTopology(m_desc.index_buf ? VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
                                           : VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP)
             .addInputBindingDescription(bind_descriptions)

@@ -15,7 +15,7 @@
 
 #include "handle.hpp"
 #include "span.hpp"
-#include "Utils/NoCopyMove.hpp"
+#include "Core/NoCopyMove.hpp"
 #include "Utils/DynamicLibrary.hpp"
 #include "Utils/Logging.h"
 

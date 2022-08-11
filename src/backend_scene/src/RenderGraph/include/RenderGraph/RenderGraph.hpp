@@ -3,8 +3,8 @@
 #include "PassNode.hpp"
 
 #include "TexNode.hpp"
-#include "Utils/MapSet.hpp"
-#include "Utils/span.hpp"
+#include "Core/MapSet.hpp"
+#include <span>
 
 namespace wallpaper
 {
@@ -42,7 +42,7 @@ public:
 
     // all render pass
     std::vector<NodeID>                topologicalOrder() const;
-    std::vector<std::vector<TexNode*>> getLastReadTexs(Span<const NodeID>) const;
+    std::vector<std::vector<TexNode*>> getLastReadTexs(std::span<const NodeID>) const;
 
     void ToGraphviz(std::string_view path) const { m_dg.ToGraphviz(path); };
 

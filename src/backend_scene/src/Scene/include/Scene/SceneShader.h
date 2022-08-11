@@ -8,8 +8,8 @@
 
 #include <Eigen/Dense>
 
-#include "Utils/MapSet.hpp"
-#include "Utils/ArrayHelper.hpp"
+#include "Core/MapSet.hpp"
+#include "Core/ArrayHelper.hpp"
 
 namespace wallpaper
 {

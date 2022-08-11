@@ -6,7 +6,6 @@
 
 #include "wpscene/WPUniform.h"
 #include "Fs/VFS.h"
-#include "Utils/span.hpp"
 #include "Utils/Sha.hpp"
 #include "Utils/String.h"
 #include "WPCommon.hpp"
@@ -170,7 +169,7 @@ inline void ParseWPShader(const std::string& src, WPShaderInfo* pWPShaderInfo,
                             if (value.is_string()) {
                                 std::vector<float> v;
                                 GET_JSON_VALUE(value, v);
-                                sv = Span<const float>(v);
+                                sv = std::span<const float>(v);
                             } else if (value.is_number()) {
                                 sv.setSize(1);
                                 GET_JSON_VALUE(value, sv[0]);
@@ -354,7 +353,7 @@ inline std::string Finalprocessor(const WPShaderUnit& unit, const WPPreprocessor
     return std::regex_replace(unit.src, re_hold, insert_str);
 }
 
-inline std::string GenSha1(Span<const WPShaderUnit> units) {
+inline std::string GenSha1(std::span<const WPShaderUnit> units) {
     std::string shas;
     for (auto& unit : units) {
         shas += utils::genSha1(unit.src);
@@ -388,7 +387,7 @@ inline bool LoadShaderFromFile(std::vector<ShaderCode>& codes, fs::IBinaryStream
     return true;
 }
 
-inline void SaveShaderToFile(Span<const ShaderCode> codes, fs::IBinaryStreamW& file) {
+inline void SaveShaderToFile(std::span<const ShaderCode> codes, fs::IBinaryStreamW& file) {
     char nop[256] { '\0' };
 
     WriteSPVVesion(file, 1);
@@ -445,16 +444,16 @@ std::string WPShaderParser::PreShaderHeader(const std::string& src, const Combos
 void WPShaderParser::InitGlslang() { glslang::InitializeProcess(); }
 void WPShaderParser::FinalGlslang() { glslang::FinalizeProcess(); }
 
-bool WPShaderParser::CompileToSpv(std::string_view scene_id, Span<WPShaderUnit> units,
+bool WPShaderParser::CompileToSpv(std::string_view scene_id, std::span<WPShaderUnit> units,
                                   std::vector<ShaderCode>& codes, fs::VFS& vfs,
-                                  WPShaderInfo* shader_info, Span<const WPShaderTexInfo> texs) {
+                                  WPShaderInfo* shader_info, std::span<const WPShaderTexInfo> texs) {
     (void)texs;
 
     std::for_each(units.begin(), units.end(), [shader_info](auto& unit) {
         unit.src = Preprocessor(unit.src, unit.stage, shader_info->combos, unit.preprocess_info);
     });
 
-    auto compile = [](Span<WPShaderUnit> units, std::vector<ShaderCode>& codes) {
+    auto compile = [](std::span<WPShaderUnit> units, std::vector<ShaderCode>& codes) {
         std::vector<vulkan::ShaderCompUnit> vunits(units.size());
         for (usize i = 0; i < units.size(); i++) {
             auto&               unit     = units[i];

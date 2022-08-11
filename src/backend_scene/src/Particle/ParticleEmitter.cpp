@@ -2,6 +2,10 @@
 #include "ParticleModify.h"
 #include "Utils/Algorism.h"
 #include "Utils/Logging.h"
+#include "Utils/Algorism.h"
+#include "Core/Random.hpp"
+
+#include <Eigen/src/Core/Matrix.h>
 #include <random>
 #include <array>
 #include <tuple>
@@ -13,7 +17,6 @@ typedef std::function<Particle()> SpwanOp;
 
 namespace
 {
-inline float GetRandomIn(float min, float max, float random) { return min + (max - min) * random; }
 
 inline std::tuple<uint32_t, bool> FindLastParticle(std::span<const Particle> ps, uint32_t last) {
     for (uint32_t i = last; i < ps.size(); i++) {
@@ -82,8 +85,7 @@ ParticleEmittOp ParticleBoxEmitterArgs::MakeEmittOp(ParticleBoxEmitterArgs a) {
         auto GenBox = [&]() {
             std::array<float, 3> pos;
             for (int32_t i = 0; i < 3; i++)
-                pos[i] =
-                    GetRandomIn(a.minDistance[i], a.maxDistance[i], (a.randomFn() - 0.5f) * 2.0f);
+                pos[i] = algorism::lerp(Random::get(-1.0, 1.0), a.minDistance[i], a.maxDistance[i]);
             auto p = Particle();
             ParticleModify::MoveTo(p, pos[0], pos[1], pos[2]);
             ParticleModify::MoveMultiply(p, a.directions[0], a.directions[1], a.directions[2]);
@@ -107,27 +109,16 @@ ParticleEmittOp ParticleSphereEmitterArgs::MakeEmittOp(ParticleSphereEmitterArgs
                       double                       timepass) mutable {
         timer += timepass;
         auto GenSphere = [&]() {
-            auto                  p  = Particle();
-            float                 r  = GetRandomIn(a.minDistance, a.maxDistance, a.randomFn());
-            std::array<double, 3> sp = algorism::GenSphere(a.randomFn);
-            ParticleModify::MoveTo(p, sp[0], sp[1], sp[2]);
-            {
-                ParticleModify::SphereDirectOffset(p,
-                                                   Vector3d::UnitX(),
-                                                   std::asin(p.position[0]) -
-                                                       std::asin(p.position[0] * a.directions[0]));
-                ParticleModify::SphereDirectOffset(p,
-                                                   Vector3d::UnitY(),
-                                                   std::asin(p.position[1]) -
-                                                       std::asin(p.position[1] * a.directions[1]));
-                ParticleModify::SphereDirectOffset(p,
-                                                   Vector3d::UnitZ(),
-                                                   std::asin(p.position[2]) -
-                                                       std::asin(p.position[2] * a.directions[2]));
-            }
-            ParticleModify::MoveMultiply(p, r, r, r);
+            auto   p = Particle();
+            double r = algorism::lerp(
+                std::pow(Random::get(0.0, 1.0), 1.0 / 3.0), a.minDistance, a.maxDistance);
+            Eigen::Vector3d sp = algorism::GenSphereSurface([]() {
+                return Random::get(0.0, 1.0);
+            });
+            sp = sp.cwiseProduct(Eigen::Vector3f { a.directions.data() }.cast<double>()) * r;
+            ParticleModify::MoveTo(p, sp);
             ParticleModify::MoveApplySign(p, a.sign[0], a.sign[1], a.sign[2]);
-            ParticleModify::Move(p, a.orgin[0], a.orgin[1], a.orgin[2]);
+            ParticleModify::Move(p, Eigen::Vector3f { a.orgin.data() }.cast<double>());
             return p;
         };
         uint32_t emit_num = GetEmitNum(timer, a.emitSpeed);

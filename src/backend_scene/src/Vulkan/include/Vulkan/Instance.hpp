@@ -5,11 +5,11 @@
 // #include <vulkan/vulkan.hpp>
 #include <cassert>
 #include <string_view>
+#include <span>
 #include <functional>
 #include "Core/Literals.hpp"
-#include "Utils/span.hpp"
 #include "Utils/Logging.h"
-#include "Utils/MapSet.hpp"
+#include "Core/MapSet.hpp"
 
 #include "../vvk/vulkan_wrapper.hpp"
 
@@ -40,8 +40,8 @@ public:
 
     void Destroy();
 
-    static bool Create(Instance&, Span<const Extension>, Span<const InstanceLayer>);
-    bool ChoosePhysicalDevice(const CheckGpuOp& checkgpu, Span<const std::uint8_t> uuid = {});
+    static bool Create(Instance&, std::span<const Extension>, std::span<const InstanceLayer>);
+    bool ChoosePhysicalDevice(const CheckGpuOp& checkgpu, std::span<const std::uint8_t> uuid = {});
 
     const vvk::Instance&       inst() const;
     const vvk::PhysicalDevice& gpu() const;

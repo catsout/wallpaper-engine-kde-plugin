@@ -8,7 +8,7 @@
 #include <string_view>
 
 #include "Core/Literals.hpp"
-#include "Utils/NoCopyMove.hpp"
+#include "Core/NoCopyMove.hpp"
 
 namespace wallpaper
 {

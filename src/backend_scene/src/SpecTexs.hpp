@@ -2,7 +2,7 @@
 #include <string_view>
 #include <cstdint>
 #include "Core/Literals.hpp"
-#include "Utils/StringHelper.hpp"
+#include "Core/StringHelper.hpp"
 #include "Utils/String.h"
 
 namespace wallpaper

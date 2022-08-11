@@ -8,7 +8,7 @@ SceneIndexArray::SceneIndexArray(std::size_t indexCount)
     m_pData = new uint32_t[m_capacity];
     std::memset(m_pData, 0, m_capacity * sizeof(uint32_t));
 }
-SceneIndexArray::SceneIndexArray(Span<const uint32_t> data)
+SceneIndexArray::SceneIndexArray(std::span<const uint32_t> data)
     : m_size(data.size()), m_capacity(m_size), m_render_size(0) {
     auto      dataSize = data.size();
     uint32_t* newdata  = new uint32_t[dataSize];

@@ -21,7 +21,7 @@ bool querySwapChainSupport(const vvk::PhysicalDevice& gpu, VkSurfaceKHR surface,
     return true;
 }
 
-VkSurfaceFormatKHR chooseSwapSurfaceFormat(Span<const VkSurfaceFormatKHR> availableFormats) {
+VkSurfaceFormatKHR chooseSwapSurfaceFormat(std::span<const VkSurfaceFormatKHR> availableFormats) {
     for (const auto& availableFormat : availableFormats) {
         if (availableFormat.format == VK_FORMAT_B8G8R8A8_UNORM ||
             availableFormat.format == VK_FORMAT_R8G8B8A8_UNORM) {
@@ -88,7 +88,7 @@ const vvk::SwapchainKHR& Swapchain::handle() const { return m_handle; }
 VkFormat                 Swapchain::format() const { return m_format.format; };
 VkExtent2D               Swapchain::extent() const { return m_extent; };
 
-Span<const ImageParameters> Swapchain::images() const { return m_images; }
+std::span<const ImageParameters> Swapchain::images() const { return m_images; }
 
 VkPresentModeKHR Swapchain::presentMode() const { return m_present_mode; };
 

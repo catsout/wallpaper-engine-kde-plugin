@@ -4,43 +4,57 @@
 #include <cmath>
 #include <Eigen/Dense>
 
+#include "Core/Literals.hpp"
+
 namespace wallpaper
 {
 namespace algorism
 {
-double CalculatePersperctiveDistance(double fov, double height);
-double CalculatePersperctiveFov(double distence, double height);
+double CalculatePersperctiveDistance(double fov, double height) noexcept;
+double CalculatePersperctiveFov(double distence, double height) noexcept;
 
-constexpr uint32_t PowOfTwo(uint32_t x) {
-    uint32_t pow2 { 8 };
+constexpr u32 PowOfTwo(u32 x) {
+    u32 pow2 { 8 };
     while (pow2 < x) pow2 *= 2;
     return pow2;
 }
 
-constexpr bool IsPowOfTwo(uint32_t x) { return (x > 1) && ((x & (x - 1)) == 0); }
+constexpr bool IsPowOfTwo(u32 x) { return (x > 1) && ((x & (x - 1)) == 0); }
 
-inline std::array<double, 3> GenSphere(const std::function<float()>& random) noexcept {
-    double x1, x2;
-    double m;
-    do {
-        x1 = 1.0f - 2.0f * random();
-        x2 = 1.0f - 2.0f * random();
-        m  = x1 * x1 + x2 * x2;
-    } while (m > 1.0f);
-    return { 2.0f * x1 * std::sqrt(1.0f - m), 2.0f * x2 * std::sqrt(1.0f - m), 1.0f - 2.0f * m };
-}
-inline std::array<double, 3> GenSphereHalf(const std::function<float()>& random) noexcept {
-    double z = 1.0f - 2.0f * random();
-    double r = std::sqrt(1 - std::pow(z, 2));
-    double d = 2 * M_PI * (1.0f - 2.0f * random());
-    return { r * std::cos(d), r * std::sin(d), z };
+inline Eigen::Vector3d sph2cart(const Eigen::Vector3d& sph) {
+    double azimuth   = sph.x();
+    double elevation = sph.y();
+    double radius    = sph.z();
+    return radius * Eigen::Vector3d {
+        std::cos(azimuth) * std::cos(elevation),
+        std::sin(azimuth) * std::cos(elevation),
+        std::sin(elevation),
+    };
 }
 
-inline double DragForce(double speed, double strength, double density) {
+template<typename TFUNC>
+Eigen::Vector3d GenSphereSurface(TFUNC&& random) noexcept {
+    double azimuth   = 2.0 * EIGEN_PI * random();
+    // not uniform distribution
+    double elevation = std::asin(2.0 * random() - 1.0);
+    return sph2cart({
+        azimuth,
+        elevation,
+        1.0,
+    });
+}
+template<typename TFUNC>
+Eigen::Vector3d GenSphereIn(TFUNC&& random) noexcept {
+    // not uniform distribution
+    return std::pow(random(), 1.0 / 3.0) * GenSphereSurface(random);
+}
+
+constexpr double DragForce(double speed, double strength, double density) {
     // return -0.5f * speed*speed * strength * density;
     return -speed * strength * density;
 }
-inline Eigen::Vector3d DragForce(Eigen::Vector3d v, double strength, double density = 1.0f) {
+inline Eigen::Vector3d DragForce(Eigen::Vector3d v, double strength,
+                                 double density = 1.0f) noexcept {
     return v.normalized() * DragForce(v.norm(), strength, density);
 }
 

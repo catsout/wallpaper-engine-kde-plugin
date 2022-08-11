@@ -9,9 +9,9 @@
 #include <cstdlib>
 #include <memory>
 #include <string>
-#include "Utils/StringHelper.hpp"
+#include "Core/StringHelper.hpp"
 #include "Utils/Sha.hpp"
-#include "Utils/MapSet.hpp"
+#include "Core/MapSet.hpp"
 #include <SPIRV-Reflect/spirv_reflect.h>
 
 using namespace wallpaper;
@@ -311,7 +311,7 @@ static bool GetReflectedInfo(glslang::TProgram& pro, ShaderReflected& ref, const
 };
 */
 
-bool wallpaper::vulkan::GenReflect(Span<const std::vector<uint>> codes,
+bool wallpaper::vulkan::GenReflect(std::span<const std::vector<uint>> codes,
                                    std::vector<Uni_ShaderSpv>& spvs, ShaderReflected& ref) {
     spvs.clear();
     for (const auto& code : codes) {
@@ -406,7 +406,7 @@ bool wallpaper::vulkan::GenReflect(Span<const std::vector<uint>> codes,
     return true;
 }
 
-bool wallpaper::vulkan::CompileAndLinkShaderUnits(Span<const ShaderCompUnit>  compUnits,
+bool wallpaper::vulkan::CompileAndLinkShaderUnits(std::span<const ShaderCompUnit>  compUnits,
                                                   const ShaderCompOpt&        opt,
                                                   std::vector<Uni_ShaderSpv>& spvs) {
     glslang::TProgram program;
