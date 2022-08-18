@@ -228,7 +228,7 @@ void WPMdlParser::GenPuppetMesh(SceneMesh& mesh, const WPMdl& mdl) {
     for (uint i = 0; i < mdl.vertexs.size(); i++) {
         auto& v = mdl.vertexs[i];
         to_one(v, one_vert);
-        vertex.SetVertexs(i, 1, one_vert.data());
+        vertex.SetVertexs(i, one_vert);
     }
     std::vector<uint32_t> indices;
     size_t                u16_count = mdl.indices.size() * 3;

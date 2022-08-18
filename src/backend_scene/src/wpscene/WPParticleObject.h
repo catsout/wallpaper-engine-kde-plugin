@@ -67,14 +67,18 @@ public:
     std::array<float, 3>   distancemin { 0.0f, 0.0f, 0.0f };
     std::array<float, 3>   origin { 0, 0, 0 };
     std::array<int32_t, 3> sign { 0, 0, 0 };
+    u32                    instantaneous { 0 };
+    float                  speedmin { 0 };
+    float                  speedmax { 0 };
     u32                    audioprocessingmode { 0 };
     i32                    controlpoint { 0 };
-    int32_t                id;
+    i32                    id;
     EFlags                 flags;
     std::string            name;
     float                  rate { 5.0f };
 };
 
+class ParticleChild;
 class Particle {
 public:
     enum class FlagEnum
@@ -86,17 +90,45 @@ public:
     using EFlags = BitFlags<FlagEnum>;
 
 public:
-    bool                              FromJson(const nlohmann::json&);
+    bool FromJson(const nlohmann::json&, fs::VFS&);
+
     std::vector<Emitter>              emitters;
     std::vector<nlohmann::json>       initializers;
     std::vector<nlohmann::json>       operators;
     std::vector<ParticleRender>       renderers;
     std::vector<ParticleControlpoint> controlpoints;
-    std::string                       animationmode;
-    float                             sequencemultiplier;
-    uint32_t                          maxcount;
-    uint32_t                          starttime;
-    EFlags                            flags;
+
+    WPMaterial material;
+
+    std::vector<ParticleChild> children;
+
+    std::string animationmode;
+    float       sequencemultiplier { 1.0f };
+    uint32_t    maxcount { 1 };
+    uint32_t    starttime { 0 };
+    EFlags      flags { 0 };
+};
+class ParticleChild {
+public:
+    bool FromJson(const nlohmann::json&, fs::VFS&);
+
+    // static
+    // eventfollow
+    // eventspawn
+    // eventdeath
+    std::string type { "static" };
+    std::string name;
+    i32         maxcount { 20 };
+
+    // flags
+    i32   controlpointstartindex { 0 };
+    float probability { 1.0f };
+
+    std::array<float, 3> angles { 0, 0, 0 };
+    std::array<float, 3> origin { 0, 0, 0 };
+    std::array<float, 3> scale { 1.0f, 1.0f, 1.0f };
+
+    Particle obj;
 };
 
 class ParticleInstanceoverride {
@@ -127,8 +159,6 @@ public:
     std::array<float, 2>     parallaxDepth { 0.0f, 0.0f };
     bool                     visible { true };
     std::string              particle;
-    std::string              render;
-    WPMaterial               material;
     Particle                 particleObj;
     ParticleInstanceoverride instanceoverride;
 };

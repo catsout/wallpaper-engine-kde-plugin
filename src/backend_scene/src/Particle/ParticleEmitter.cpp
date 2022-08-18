@@ -18,26 +18,27 @@ typedef std::function<Particle()> SpwanOp;
 namespace
 {
 
-inline std::tuple<uint32_t, bool> FindLastParticle(std::span<const Particle> ps, uint32_t last) {
-    for (uint32_t i = last; i < ps.size(); i++) {
+inline std::tuple<u32, bool> FindLastParticle(std::span<const Particle> ps, u32 last) {
+    for (u32 i = last; i < ps.size(); i++) {
         if (! ParticleModify::LifetimeOk(ps[i])) return { i, true };
     }
     return { 0, false };
 }
 
-inline uint32_t GetEmitNum(double& timer, float speed) {
+inline u32 GetEmitNum(double& timer, float speed) {
     double emitDur = 1.0f / speed;
     if (emitDur > timer) return 0;
-    uint32_t num = timer / emitDur;
+    u32 num = timer / emitDur;
     while (emitDur < timer) timer -= emitDur;
     if (timer < 0) timer = 0;
     return num;
 }
-inline uint32_t Emitt(std::vector<Particle>& particles, uint32_t num, uint32_t maxcount, bool sort,
-                      SpwanOp Spwan) {
-    uint32_t lastPartcle = 0;
-    bool     has_dead    = true;
-    uint32_t i           = 0;
+
+inline u32 Emitt(std::vector<Particle>& particles, u32 num, u32 maxcount, bool sort,
+                 SpwanOp Spwan) {
+    u32  lastPartcle = 0;
+    bool has_dead    = true;
+    u32  i           = 0;
 
     for (i = 0; i < num; i++) {
         if (has_dead) {
@@ -73,27 +74,43 @@ inline Particle Spwan(GenParticleOp gen, std::vector<ParticleInitOp>& inis, doub
     for (auto& el : inis) el(particle, duration);
     return particle;
 }
+
+inline void ApplySign(Eigen::Vector3d& p, int32_t x, int32_t y, int32_t z) noexcept {
+    if (x != 0) {
+        p.x() = std::abs(p.x()) * (float)x;
+    }
+    if (y != 0) {
+        p.y() = std::abs(p.y()) * (float)y;
+    }
+    if (z != 0) {
+        p.z() = std::abs(p.z()) * (float)z;
+    }
+}
 } // namespace
 
 ParticleEmittOp ParticleBoxEmitterArgs::MakeEmittOp(ParticleBoxEmitterArgs a) {
     double timer { 0.0f };
     return [a, timer](std::vector<Particle>&       ps,
                       std::vector<ParticleInitOp>& inis,
-                      uint32_t                     maxcount,
+                      u32                          maxcount,
                       double                       timepass) mutable {
         timer += timepass;
         auto GenBox = [&]() {
-            std::array<float, 3> pos;
+            Eigen::Vector3d pos;
             for (int32_t i = 0; i < 3; i++)
                 pos[i] = algorism::lerp(Random::get(-1.0, 1.0), a.minDistance[i], a.maxDistance[i]);
             auto p = Particle();
-            ParticleModify::MoveTo(p, pos[0], pos[1], pos[2]);
-            ParticleModify::MoveMultiply(p, a.directions[0], a.directions[1], a.directions[2]);
+            pos    = pos.cwiseProduct(Eigen::Vector3f { a.directions.data() }.cast<double>());
+            ParticleModify::MoveTo(p, pos);
+            ParticleModify::ChangeVelocity(p,
+                                           Random::get(a.minSpeed, a.maxSpeed) * pos.normalized());
+
             ParticleModify::Move(p, a.orgin[0], a.orgin[1], a.orgin[2]);
             return p;
         };
-        uint32_t emit_num = GetEmitNum(timer, a.emitSpeed);
-        emit_num          = a.one_per_frame ? 1 : emit_num;
+        u32 emit_num = GetEmitNum(timer, a.emitSpeed);
+        emit_num     = a.one_per_frame ? 1 : emit_num;
+        emit_num     = a.instantaneous > 0 && ps.empty() ? a.instantaneous : emit_num;
         Emitt(ps, emit_num, maxcount, a.sort, [&]() {
             return Spwan(GenBox, inis, 1.0f / a.emitSpeed);
         });
@@ -105,7 +122,7 @@ ParticleEmittOp ParticleSphereEmitterArgs::MakeEmittOp(ParticleSphereEmitterArgs
     double timer { 0.0f };
     return [a, timer](std::vector<Particle>&       ps,
                       std::vector<ParticleInitOp>& inis,
-                      uint32_t                     maxcount,
+                      u32                          maxcount,
                       double                       timepass) mutable {
         timer += timepass;
         auto GenSphere = [&]() {
@@ -116,13 +133,18 @@ ParticleEmittOp ParticleSphereEmitterArgs::MakeEmittOp(ParticleSphereEmitterArgs
                 return Random::get(0.0, 1.0);
             });
             sp = sp.cwiseProduct(Eigen::Vector3f { a.directions.data() }.cast<double>()) * r;
+            ApplySign(sp, a.sign[0], a.sign[1], a.sign[2]);
+
             ParticleModify::MoveTo(p, sp);
-            ParticleModify::MoveApplySign(p, a.sign[0], a.sign[1], a.sign[2]);
+            ParticleModify::ChangeVelocity(p,
+                                           Random::get(a.minSpeed, a.maxSpeed) * sp.normalized());
+
             ParticleModify::Move(p, Eigen::Vector3f { a.orgin.data() }.cast<double>());
             return p;
         };
-        uint32_t emit_num = GetEmitNum(timer, a.emitSpeed);
-        emit_num          = a.one_per_frame ? 1 : emit_num;
+        u32 emit_num = GetEmitNum(timer, a.emitSpeed);
+        emit_num     = a.one_per_frame ? 1 : emit_num;
+        emit_num     = a.instantaneous > 0 && ps.empty() ? a.instantaneous : emit_num;
         Emitt(ps, emit_num, maxcount, a.sort, [&]() {
             return Spwan(GenSphere, inis, 1.0f / a.emitSpeed);
         });

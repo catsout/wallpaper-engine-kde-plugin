@@ -18,4 +18,5 @@ using idx   = std::ptrdiff_t;
 using usize = std::size_t;
 using isize = std::ptrdiff_t;
 
+inline std::intptr_t Ptr2Int(void* p) noexcept { return reinterpret_cast<intptr_t>(p); }
 } // namespace wallpaper

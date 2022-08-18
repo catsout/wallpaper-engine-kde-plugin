@@ -3,7 +3,7 @@
 #include <array>
 #include <cstdint>
 
-#include "Utils/span.hpp"
+#include <span>
 #include "ExSwapchain.hpp"
 
 class GlExtra {
@@ -14,8 +14,8 @@ public:
     uint genExTexture(wallpaper::ExHandle&);
     void deleteTexture(uint);
 
-    Span<const std::uint8_t>   uuid() const;
-    wallpaper::TexTiling tiling() const;
+    std::span<const std::uint8_t> uuid() const;
+    wallpaper::TexTiling     tiling() const;
 
 private:
     class impl;

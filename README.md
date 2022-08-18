@@ -9,7 +9,7 @@ A wallpaper plugin integrating [wallpaper engine](https://store.steampowered.com
   - Screen Locking is not supported, please not use this plugin in screen locking.  
 - Support **scene(2d)**,**video**,**web** wallpaper types
 - Requires *Wallpaper Engine* installed on steam
-- Requires c++20(gcc 10+)
+- Requires C++20(gcc 10+)
 - Requires Python 3.5+
 - Requires Qt 5.13+ for playing video(no mpv), or mpv instead  
 - Requires Vulkan 1.1+, Opengl [External Memory Object](https://www.khronos.org/registry/OpenGL/extensions/EXT/EXT_external_objects.txt) extension
@@ -150,9 +150,9 @@ make
 		- [ ] Duration 
 	- [x] Initializers
 	- [x] Operators
-		- [ ] Control Point Force
 	- [x] Control Points
-	- [ ] Children
+        - [ ] Mouse Follow
+	- [x] Children
     - [ ] Audio Response
 - [x] Puppet warp
 - [ ] 3D model

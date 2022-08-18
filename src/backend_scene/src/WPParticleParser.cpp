@@ -18,19 +18,14 @@ using namespace wallpaper;
 using namespace Eigen;
 namespace PM = ParticleModify;
 
-static std::uniform_real_distribution<float> ur(0.0f, 1.0f);
-
-typedef const std::vector<float>& cFloats;
-typedef std::vector<float>        Floats;
-
 namespace
 {
 
-inline void Color(Particle& p, double, const std::array<float, 3> min,
-                  const std::array<float, 3> max) {
+inline void Color(Particle& p, const std::array<float, 3> min, const std::array<float, 3> max) {
+    double               random = Random::get(0.0, 1.0);
     std::array<float, 3> result;
     for (int32_t i = 0; i < 3; i++) {
-        result[i] = Random::get(min[i], max[i]);
+        result[i] = (float)algorism::lerp(random, min[i], max[i]);
     }
     PM::InitColor(p, result[0], result[1], result[2]);
 }
@@ -109,16 +104,17 @@ ParticleInitOp WPParticleParser::genParticleInitOp(const nlohmann::json& wpj) {
             r.min = { 0.0f, 0.0f, 0.0f };
             r.max = { 255.0f, 255.0f, 255.0f };
             VecRandom::ReadFromJson(wpj, r);
-            return std::bind(Color,
-                             _1,
-                             _2,
-                             mapVertex(r.min,
-                                       [](float x) {
-                                           return x / 255.0f;
-                                       }),
-                             mapVertex(r.max, [](float x) {
-                                 return x / 255.0f;
-                             }));
+
+            return [=](Particle& p, double) {
+                Color(p,
+                      mapVertex(r.min,
+                                [](float x) {
+                                    return x / 255.0f;
+                                }),
+                      mapVertex(r.max, [](float x) {
+                          return x / 255.0f;
+                      }));
+            };
         } else if (name == "lifetimerandom") {
             SingleRandom r = { 0.0f, 1.0f };
             SingleRandom::ReadFromJson(wpj, r);
@@ -585,6 +581,8 @@ WPParticleParser::genParticleOperatorOp(const nlohmann::json&                   
                 }
             };
         } else if (name == "controlpointattract") {
+            break;
+
             ControlPointForce c = ControlPointForce::ReadFromJson(wpj);
             return [=](const ParticleInfo& info) {
                 Vector3d offset = info.controlpoints[c.controlpoint].offset +
@@ -612,6 +610,9 @@ ParticleEmittOp WPParticleParser::genParticleEmittOp(const wpscene::Emitter& wpe
         box.directions    = wpe.directions;
         box.orgin         = wpe.origin;
         box.one_per_frame = wpe.flags[wpscene::Emitter::FlagEnum::one_per_frame];
+        box.instantaneous = wpe.instantaneous;
+        box.minSpeed      = wpe.speedmin;
+        box.maxSpeed      = wpe.speedmax;
         box.sort          = sort;
         return ParticleBoxEmitterArgs::MakeEmittOp(box);
     } else if (wpe.name == "sphererandom") {
@@ -623,6 +624,9 @@ ParticleEmittOp WPParticleParser::genParticleEmittOp(const wpscene::Emitter& wpe
         sphere.orgin         = wpe.origin;
         sphere.sign          = wpe.sign;
         sphere.one_per_frame = wpe.flags[wpscene::Emitter::FlagEnum::one_per_frame];
+        sphere.instantaneous = wpe.instantaneous;
+        sphere.minSpeed      = wpe.speedmin;
+        sphere.maxSpeed      = wpe.speedmax;
         sphere.sort          = sort;
         return ParticleSphereEmitterArgs::MakeEmittOp(sphere);
     } else

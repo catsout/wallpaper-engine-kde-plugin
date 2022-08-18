@@ -310,10 +310,10 @@ void CustomShaderPass::prepare(Scene& scene, const Device& device, RenderingReso
                             return;
                     }
                     if (mesh.IndexCount() > 0) {
-                        auto&  indice = mesh.GetIndexArray(0);
-                        size_t count  = (indice.RenderDataCount() * 2) / 3;
-                        draw_count    = (u32)count * 3;
-                        auto& buf     = index_buf;
+                        auto& indice = mesh.GetIndexArray(0);
+                        u32   count  = (u32)((indice.RenderDataCount() * 2) / 3);
+                        draw_count   = count * 3;
+                        auto& buf = index_buf;
                         if (! dyn_buf->writeToBuf(buf,
                                                   { (uint8_t*)indice.Data(), indice.DataSizeOf() }))
                             return;
@@ -388,7 +388,7 @@ void CustomShaderPass::prepare(Scene& scene, const Device& device, RenderingReso
     setPrepared();
 }
 
-void CustomShaderPass::execute(const Device& device, RenderingResources& rr) {
+void CustomShaderPass::execute(const Device&, RenderingResources& rr) {
     if (m_desc.update_op) m_desc.update_op();
 
     auto&                   cmd    = rr.command;
@@ -500,7 +500,7 @@ void CustomShaderPass::execute(const Device& device, RenderingResources& rr) {
     cmd.EndRenderPass();
 }
 
-void CustomShaderPass::destory(const Device& device, RenderingResources& rr) {
+void CustomShaderPass::destory(const Device&, RenderingResources& rr) {
     m_desc.update_op = {};
     {
         auto& buf = m_desc.dyn_vertex ? rr.dyn_buf : rr.vertex_buf;

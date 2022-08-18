@@ -20,7 +20,7 @@ TextureKey ToTexKey(wallpaper::SceneRenderTarget rt) {
 }
 } // namespace
 
-void PrePass::prepare(Scene& scene, const Device& device, RenderingResources& rr) {
+void PrePass::prepare(Scene& scene, const Device& device, RenderingResources&) {
     {
         auto tex_name = std::string(m_desc.result);
         if (scene.renderTargets.count(tex_name) == 0) return;
@@ -38,7 +38,7 @@ void PrePass::prepare(Scene& scene, const Device& device, RenderingResources& rr
     setPrepared();
 }
 
-void PrePass::execute(const Device& device, RenderingResources& rr) {
+void PrePass::execute(const Device&, RenderingResources& rr) {
     auto&                   cmd = rr.command;
     VkImageSubresourceRange base_srang {
         .aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT,
@@ -85,7 +85,7 @@ void PrePass::execute(const Device& device, RenderingResources& rr) {
                         VK_DEPENDENCY_BY_REGION_BIT,
                         imb);
 }
-void PrePass::destory(const Device& device, RenderingResources&) {
+void PrePass::destory(const Device&, RenderingResources&) {
     setPrepared(false);
     clearReleaseTexs();
 }

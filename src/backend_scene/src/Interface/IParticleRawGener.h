@@ -1,21 +1,25 @@
 #pragma once
-#include <vector>
+#include <span>
+#include <memory>
 #include <functional>
 
 #include "Particle/Particle.h"
 #include "Scene/SceneMesh.h"
 
-namespace wallpaper {
+namespace wallpaper
+{
 struct ParticleRawGenSpec {
-	float* lifetime;	
+    float* lifetime;
 };
-typedef std::function<void(const Particle&, const ParticleRawGenSpec&)> ParticleRawGenSpecOp;
+using ParticleRawGenSpecOp = std::function<void(const Particle&, const ParticleRawGenSpec&)>;
 
+class ParticleInstance;
 class IParticleRawGener {
 public:
-	IParticleRawGener() = default;
-	virtual ~IParticleRawGener() = default;
+    IParticleRawGener()          = default;
+    virtual ~IParticleRawGener() = default;
 
-	virtual void GenGLData(const std::vector<Particle>&, SceneMesh&, ParticleRawGenSpecOp&) = 0; 
+    virtual void GenGLData(std::span<const std::unique_ptr<ParticleInstance>>, SceneMesh&,
+                           ParticleRawGenSpecOp&) = 0;
 };
-}
+} // namespace wallpaper

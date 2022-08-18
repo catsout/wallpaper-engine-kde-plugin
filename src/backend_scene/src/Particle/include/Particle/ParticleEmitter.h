@@ -34,13 +34,16 @@ using ParticleEmittOp = std::function<void(std::vector<Particle>&, std::vector<P
                                            uint32_t maxcount, double timepass)>;
 
 struct ParticleBoxEmitterArgs {
-    std::array<float, 3>   directions;
-    std::array<float, 3>   minDistance;
-    std::array<float, 3>   maxDistance;
-    float                  emitSpeed;
-    std::array<float, 3>   orgin;
-    bool                   one_per_frame;
-    bool                   sort;
+    std::array<float, 3> directions;
+    std::array<float, 3> minDistance;
+    std::array<float, 3> maxDistance;
+    float                emitSpeed;
+    std::array<float, 3> orgin;
+    bool                 one_per_frame;
+    bool                 sort;
+    u32                  instantaneous;
+    float                minSpeed;
+    float                maxSpeed;
 
     static ParticleEmittOp MakeEmittOp(ParticleBoxEmitterArgs);
 };
@@ -54,6 +57,9 @@ struct ParticleSphereEmitterArgs {
     std::array<int32_t, 3> sign;
     bool                   one_per_frame;
     bool                   sort;
+    u32                    instantaneous;
+    float                  minSpeed;
+    float                  maxSpeed;
 
     static ParticleEmittOp MakeEmittOp(ParticleSphereEmitterArgs);
 };

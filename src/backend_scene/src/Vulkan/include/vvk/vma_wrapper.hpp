@@ -85,6 +85,8 @@ public:
     void UnMapMemory() { vmaUnmapMemory(owner.allocator, owner.allocation); }
 };
 
+constexpr inline int empty_int { 0 };
+
 inline VkResult CreateVmaAllocator(const VmaAllocatorCreateInfo& ci,
                                    VmaAllocatorHandle&           allocator_h) noexcept {
     VmaAllocator object;
@@ -102,7 +104,7 @@ inline VkResult CreateBuffer(const VmaAllocator& vma_allocator, const VkBufferCr
 
     auto res = vmaCreateBuffer(
         vma_allocator, &ci, &vma_info, &object, &owner.allocation, &owner.allocationInfo);
-    if (res == VK_SUCCESS) buffer = VmaBuffer(object, owner, 0);
+    if (res == VK_SUCCESS) buffer = VmaBuffer(object, owner, empty_int);
     return res;
 }
 
@@ -114,7 +116,7 @@ inline VkResult CreateImage(const VmaAllocator& vma_allocator, const VkImageCrea
 
     auto res = vmaCreateImage(
         vma_allocator, &ci, &vma_info, &object, &owner.allocation, &owner.allocationInfo);
-    if (res == VK_SUCCESS) vma_img = VmaImage(object, owner, 0);
+    if (res == VK_SUCCESS) vma_img = VmaImage(object, owner, empty_int);
     return res;
 }
 

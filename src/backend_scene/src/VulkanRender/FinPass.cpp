@@ -299,7 +299,7 @@ void FinPass::execute(const Device& device, RenderingResources& rr) {
                             imb);
     }
 }
-void FinPass::destory(const Device& device, RenderingResources& rr) {
+void FinPass::destory(const Device&, RenderingResources& rr) {
     setPrepared(false);
     clearReleaseTexs();
     rr.vertex_buf->unallocateSubRef(m_desc.vertex_buf);

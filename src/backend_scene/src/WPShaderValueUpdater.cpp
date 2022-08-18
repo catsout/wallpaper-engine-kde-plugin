@@ -84,6 +84,8 @@ void WPShaderValueUpdater::UpdateUniforms(SceneNode* pNode, sprite_map_t& sprite
                                           const UpdateUniformOp& updateOp) {
     if (! pNode->Mesh()) return;
 
+    pNode->UpdateTrans();
+
     const SceneCamera* camera;
     std::string_view   cam_name = pNode->Camera();
     if (! pNode->Camera().empty()) {
@@ -139,7 +141,7 @@ void WPShaderValueUpdater::UpdateUniforms(SceneNode* pNode, sprite_map_t& sprite
         updateOp(G_VP, ShaderValue::fromMatrix(viewProTrans));
     }
     if (reqM || reqMVP || reqMI || reqMVPI) {
-        Matrix4d modelTrans = pNode->GetLocalTrans().cast<double>();
+        Matrix4d modelTrans = pNode->ModelTrans();
         if (hasNodeData && cam_name != "effect") {
             const auto& nodeData = m_nodeDataMap.at(pNode);
             if (m_parallax.enable) {

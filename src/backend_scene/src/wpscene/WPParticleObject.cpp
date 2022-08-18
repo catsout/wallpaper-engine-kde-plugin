@@ -6,6 +6,29 @@
 
 using namespace wallpaper::wpscene;
 
+bool ParticleChild::FromJson(const nlohmann::json& json, fs::VFS& vfs) {
+    GET_JSON_NAME_VALUE(json, "name", name);
+    GET_JSON_NAME_VALUE(json, "type", type);
+
+    if (name.empty()) {
+        return false;
+    }
+
+    nlohmann::json jParticle;
+    if (! PARSE_JSON(fs::GetFileContent(vfs, "/assets/" + name), jParticle)) return false;
+
+    if (! obj.FromJson(jParticle, vfs)) return false;
+
+    GET_JSON_NAME_VALUE_NOWARN(json, "maxcount", maxcount);
+    GET_JSON_NAME_VALUE_NOWARN(json, "controlpointstartindex", controlpointstartindex);
+    GET_JSON_NAME_VALUE_NOWARN(json, "probability", probability);
+
+    GET_JSON_NAME_VALUE_NOWARN(json, "origin", origin);
+    GET_JSON_NAME_VALUE_NOWARN(json, "scale", scale);
+    GET_JSON_NAME_VALUE_NOWARN(json, "angles", angles);
+    return true;
+}
+
 bool ParticleControlpoint::FromJson(const nlohmann::json& json) {
     GET_JSON_NAME_VALUE(json, "id", id);
 
@@ -35,6 +58,10 @@ bool ParticleRender::FromJson(const nlohmann::json& json) {
 bool Emitter::FromJson(const nlohmann::json& json) {
     GET_JSON_NAME_VALUE(json, "name", name);
     GET_JSON_NAME_VALUE(json, "id", id);
+
+    GET_JSON_NAME_VALUE_NOWARN(json, "speedmin", speedmin);
+    GET_JSON_NAME_VALUE_NOWARN(json, "speedmax", speedmax);
+    GET_JSON_NAME_VALUE_NOWARN(json, "instantaneous", instantaneous);
     GET_JSON_NAME_VALUE_NOWARN(json, "distancemax", distancemax);
     GET_JSON_NAME_VALUE_NOWARN(json, "distancemin", distancemin);
     GET_JSON_NAME_VALUE_NOWARN(json, "rate", rate);
@@ -78,7 +105,7 @@ bool ParticleInstanceoverride::FromJosn(const nlohmann::json& json) {
     return true;
 };
 
-bool Particle::FromJson(const nlohmann::json& json) {
+bool Particle::FromJson(const nlohmann::json& json, fs::VFS& vfs) {
     if (! json.contains("emitter")) {
         LOG_ERROR("particle no emitter");
         return false;
@@ -118,6 +145,26 @@ bool Particle::FromJson(const nlohmann::json& json) {
             controlpoints.push_back(pc);
         }
     }
+
+    if (json.contains("children")) {
+        for (const auto& el : json.at("children")) {
+            ParticleChild child;
+            if (child.FromJson(el, vfs)) {
+                children.push_back(child);
+            }
+        }
+    }
+    if (json.contains("material")) {
+        std::string matPath;
+        GET_JSON_NAME_VALUE(json, "material", matPath);
+        nlohmann::json jMat;
+        if (! PARSE_JSON(fs::GetFileContent(vfs, "/assets/" + matPath), jMat)) return false;
+        material.FromJson(jMat);
+    } else {
+        LOG_ERROR("particle object no material");
+        return false;
+    }
+
     GET_JSON_NAME_VALUE_NOWARN(json, "animationmode", animationmode);
     GET_JSON_NAME_VALUE_NOWARN(json, "sequencemultiplier", sequencemultiplier);
     GET_JSON_NAME_VALUE(json, "maxcount", maxcount);
@@ -147,16 +194,6 @@ bool WPParticleObject::FromJson(const nlohmann::json& json, fs::VFS& vfs) {
 
     nlohmann::json jParticle;
     if (! PARSE_JSON(fs::GetFileContent(vfs, "/assets/" + particle), jParticle)) return false;
-    if (! particleObj.FromJson(jParticle)) return false;
-    if (jParticle.contains("material")) {
-        std::string matPath;
-        GET_JSON_NAME_VALUE(jParticle, "material", matPath);
-        nlohmann::json jMat;
-        if (! PARSE_JSON(fs::GetFileContent(vfs, "/assets/" + matPath), jMat)) return false;
-        material.FromJson(jMat);
-    } else {
-        LOG_ERROR("particle object no material");
-        return false;
-    }
+    if (! particleObj.FromJson(jParticle, vfs)) return false;
     return true;
 }
