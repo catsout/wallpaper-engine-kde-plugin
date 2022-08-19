@@ -904,10 +904,9 @@ void ParseParticleObj(ParseContext& context, wpscene::WPParticleObject& wppartob
         float       probability { 1.0f };
     };
 
-    wpscene::Particle*                p_particle_obj { nullptr };
-    wpscene::ParticleInstanceoverride override;
-    std::shared_ptr<SceneNode>        spNode;
-    ChildData                         child_data;
+    wpscene::Particle*         p_particle_obj { nullptr };
+    std::shared_ptr<SceneNode> spNode;
+    ChildData                  child_data;
 
     bool is_child = child_ptr.child != nullptr;
     if (is_child) {
@@ -921,11 +920,12 @@ void ParseParticleObj(ParseContext& context, wpscene::WPParticleObject& wppartob
 
     } else {
         p_particle_obj = &wppartobj.particleObj;
-        override       = wppartobj.instanceoverride;
         spNode         = std::make_shared<SceneNode>(Vector3f(wppartobj.origin.data()),
                                              Vector3f(wppartobj.scale.data()),
                                              Vector3f(wppartobj.angles.data()));
     }
+
+    wpscene::ParticleInstanceoverride override = wppartobj.instanceoverride;
 
     auto& particle_obj = *p_particle_obj;
     auto& vfs          = *context.vfs;
