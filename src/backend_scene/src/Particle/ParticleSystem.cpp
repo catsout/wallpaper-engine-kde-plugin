@@ -116,11 +116,12 @@ void ParticleSubSystem::Emitt() {
                 // only update pos once when event_death
                 if (m_spawn_type == SpawnType::EVENT_DEATH) bounded_data.particle_idx = -1;
 
-                bool cur_life_ok = ParticleModify::LifetimeOk(p);
-
                 // death if bounded particle death
-                if (type_has_death) inst->SetDeath(! cur_life_ok && bounded_data.pre_lifetime_ok);
-                bounded_data.pre_lifetime_ok = cur_life_ok;
+                if (! inst->IsDeath() && type_has_death) {
+                    bool cur_life_ok = ParticleModify::LifetimeOk(p);
+                    inst->SetDeath(! cur_life_ok && bounded_data.pre_lifetime_ok);
+                    bounded_data.pre_lifetime_ok = cur_life_ok;
+                }
             }
 
             // death if parent death
@@ -139,7 +140,7 @@ void ParticleSubSystem::Emitt() {
                 emittOp(inst->ParticlesVec(), m_initializers, m_maxcount, particleTime);
             }
         }
-        
+
         // event_death is always death after emitop
         if (m_spawn_type == SpawnType::EVENT_DEATH) inst->SetDeath(true);
 
