@@ -21,7 +21,7 @@ constexpr u32 PowOfTwo(u32 x) {
 
 constexpr bool IsPowOfTwo(u32 x) { return (x > 1) && ((x & (x - 1)) == 0); }
 
-inline Eigen::Vector3d sph2cart(const Eigen::Vector3d& sph) {
+inline Eigen::Vector3d sph2cart(const Eigen::Vector3d& sph) noexcept {
     double azimuth   = sph.x();
     double elevation = sph.y();
     double radius    = sph.z();

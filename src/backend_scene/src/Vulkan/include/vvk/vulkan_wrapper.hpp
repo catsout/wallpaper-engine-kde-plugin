@@ -89,13 +89,10 @@ struct DeviceDispatch : InstanceDispatch {
     PFN_vkCmdBeginDebugUtilsLabelEXT          vkCmdBeginDebugUtilsLabelEXT {};
     PFN_vkCmdBeginQuery                       vkCmdBeginQuery {};
     PFN_vkCmdBeginRenderPass                  vkCmdBeginRenderPass {};
-    PFN_vkCmdBeginTransformFeedbackEXT        vkCmdBeginTransformFeedbackEXT {};
     PFN_vkCmdBindDescriptorSets               vkCmdBindDescriptorSets {};
     PFN_vkCmdBindIndexBuffer                  vkCmdBindIndexBuffer {};
     PFN_vkCmdBindPipeline                     vkCmdBindPipeline {};
-    PFN_vkCmdBindTransformFeedbackBuffersEXT  vkCmdBindTransformFeedbackBuffersEXT {};
     PFN_vkCmdBindVertexBuffers                vkCmdBindVertexBuffers {};
-    PFN_vkCmdBindVertexBuffers2EXT            vkCmdBindVertexBuffers2EXT {};
     PFN_vkCmdBlitImage                        vkCmdBlitImage {};
     PFN_vkCmdClearColorImage                  vkCmdClearColorImage {};
     PFN_vkCmdClearAttachments                 vkCmdClearAttachments {};
@@ -109,7 +106,6 @@ struct DeviceDispatch : InstanceDispatch {
     PFN_vkCmdEndDebugUtilsLabelEXT            vkCmdEndDebugUtilsLabelEXT {};
     PFN_vkCmdEndQuery                         vkCmdEndQuery {};
     PFN_vkCmdEndRenderPass                    vkCmdEndRenderPass {};
-    PFN_vkCmdEndTransformFeedbackEXT          vkCmdEndTransformFeedbackEXT {};
     PFN_vkCmdFillBuffer                       vkCmdFillBuffer {};
     PFN_vkCmdPipelineBarrier                  vkCmdPipelineBarrier {};
     PFN_vkCmdPushConstants                    vkCmdPushConstants {};
@@ -117,24 +113,14 @@ struct DeviceDispatch : InstanceDispatch {
     PFN_vkCmdPushDescriptorSetWithTemplateKHR vkCmdPushDescriptorSetWithTemplateKHR {};
     PFN_vkCmdResolveImage                     vkCmdResolveImage {};
     PFN_vkCmdSetBlendConstants                vkCmdSetBlendConstants {};
-    PFN_vkCmdSetCullModeEXT                   vkCmdSetCullModeEXT {};
     PFN_vkCmdSetDepthBias                     vkCmdSetDepthBias {};
     PFN_vkCmdSetDepthBounds                   vkCmdSetDepthBounds {};
-    PFN_vkCmdSetDepthBoundsTestEnableEXT      vkCmdSetDepthBoundsTestEnableEXT {};
-    PFN_vkCmdSetDepthCompareOpEXT             vkCmdSetDepthCompareOpEXT {};
-    PFN_vkCmdSetDepthTestEnableEXT            vkCmdSetDepthTestEnableEXT {};
-    PFN_vkCmdSetDepthWriteEnableEXT           vkCmdSetDepthWriteEnableEXT {};
     PFN_vkCmdSetEvent                         vkCmdSetEvent {};
-    PFN_vkCmdSetFrontFaceEXT                  vkCmdSetFrontFaceEXT {};
     PFN_vkCmdSetLineWidth                     vkCmdSetLineWidth {};
-    PFN_vkCmdSetPrimitiveTopologyEXT          vkCmdSetPrimitiveTopologyEXT {};
     PFN_vkCmdSetScissor                       vkCmdSetScissor {};
     PFN_vkCmdSetStencilCompareMask            vkCmdSetStencilCompareMask {};
-    PFN_vkCmdSetStencilOpEXT                  vkCmdSetStencilOpEXT {};
     PFN_vkCmdSetStencilReference              vkCmdSetStencilReference {};
-    PFN_vkCmdSetStencilTestEnableEXT          vkCmdSetStencilTestEnableEXT {};
     PFN_vkCmdSetStencilWriteMask              vkCmdSetStencilWriteMask {};
-    PFN_vkCmdSetVertexInputEXT                vkCmdSetVertexInputEXT {};
     PFN_vkCmdSetViewport                      vkCmdSetViewport {};
     PFN_vkCmdWaitEvents                       vkCmdWaitEvents {};
     PFN_vkCreateBuffer                        vkCreateBuffer {};
@@ -194,14 +180,14 @@ struct DeviceDispatch : InstanceDispatch {
     PFN_vkMapMemory                           vkMapMemory {};
     PFN_vkQueueSubmit                         vkQueueSubmit {};
     PFN_vkResetFences                         vkResetFences {};
-    PFN_vkResetQueryPoolEXT                   vkResetQueryPoolEXT {};
-    PFN_vkSetDebugUtilsObjectNameEXT          vkSetDebugUtilsObjectNameEXT {};
-    PFN_vkSetDebugUtilsObjectTagEXT           vkSetDebugUtilsObjectTagEXT {};
     PFN_vkUnmapMemory                         vkUnmapMemory {};
     PFN_vkUpdateDescriptorSetWithTemplateKHR  vkUpdateDescriptorSetWithTemplateKHR {};
     PFN_vkUpdateDescriptorSets                vkUpdateDescriptorSets {};
     PFN_vkWaitForFences                       vkWaitForFences {};
     PFN_vkWaitSemaphoresKHR                   vkWaitSemaphoresKHR {};
+
+    PFN_vkSetDebugUtilsObjectNameEXT vkSetDebugUtilsObjectNameEXT {};
+    PFN_vkSetDebugUtilsObjectTagEXT  vkSetDebugUtilsObjectTagEXT {};
 };
 
 template<typename THandle, typename Type = typename THandle::handle_type>
@@ -782,87 +768,6 @@ public:
                              buffer_barriers.data(),
                              image_barriers.size(),
                              image_barriers.data());
-    }
-
-    void BindVertexBuffers2EXT(uint32_t first_binding, uint32_t binding_count,
-                               const VkBuffer* buffers, const VkDeviceSize* offsets,
-                               const VkDeviceSize* sizes,
-                               const VkDeviceSize* strides) const noexcept {
-        dld->vkCmdBindVertexBuffers2EXT(
-            handle, first_binding, binding_count, buffers, offsets, sizes, strides);
-    }
-
-    void SetCullModeEXT(VkCullModeFlags cull_mode) const noexcept {
-        dld->vkCmdSetCullModeEXT(handle, cull_mode);
-    }
-
-    void SetDepthBoundsTestEnableEXT(bool enable) const noexcept {
-        dld->vkCmdSetDepthBoundsTestEnableEXT(handle, enable ? VK_TRUE : VK_FALSE);
-    }
-
-    void SetDepthCompareOpEXT(VkCompareOp compare_op) const noexcept {
-        dld->vkCmdSetDepthCompareOpEXT(handle, compare_op);
-    }
-
-    void SetDepthTestEnableEXT(bool enable) const noexcept {
-        dld->vkCmdSetDepthTestEnableEXT(handle, enable ? VK_TRUE : VK_FALSE);
-    }
-
-    void SetDepthWriteEnableEXT(bool enable) const noexcept {
-        dld->vkCmdSetDepthWriteEnableEXT(handle, enable ? VK_TRUE : VK_FALSE);
-    }
-
-    void SetFrontFaceEXT(VkFrontFace front_face) const noexcept {
-        dld->vkCmdSetFrontFaceEXT(handle, front_face);
-    }
-
-    void SetLineWidth(float line_width) const noexcept {
-        dld->vkCmdSetLineWidth(handle, line_width);
-    }
-
-    void SetPrimitiveTopologyEXT(VkPrimitiveTopology primitive_topology) const noexcept {
-        dld->vkCmdSetPrimitiveTopologyEXT(handle, primitive_topology);
-    }
-
-    void SetStencilOpEXT(VkStencilFaceFlags face_mask, VkStencilOp fail_op, VkStencilOp pass_op,
-                         VkStencilOp depth_fail_op, VkCompareOp compare_op) const noexcept {
-        dld->vkCmdSetStencilOpEXT(handle, face_mask, fail_op, pass_op, depth_fail_op, compare_op);
-    }
-
-    void SetStencilTestEnableEXT(bool enable) const noexcept {
-        dld->vkCmdSetStencilTestEnableEXT(handle, enable ? VK_TRUE : VK_FALSE);
-    }
-
-    void SetVertexInputEXT(Span<VkVertexInputBindingDescription2EXT>   bindings,
-                           Span<VkVertexInputAttributeDescription2EXT> attributes) const noexcept {
-        dld->vkCmdSetVertexInputEXT(
-            handle, bindings.size(), bindings.data(), attributes.size(), attributes.data());
-    }
-
-    void BindTransformFeedbackBuffersEXT(uint32_t first, uint32_t count, const VkBuffer* buffers,
-                                         const VkDeviceSize* offsets,
-                                         const VkDeviceSize* sizes) const noexcept {
-        dld->vkCmdBindTransformFeedbackBuffersEXT(handle, first, count, buffers, offsets, sizes);
-    }
-
-    void BeginTransformFeedbackEXT(uint32_t first_counter_buffer, uint32_t counter_buffers_count,
-                                   const VkBuffer*     counter_buffers,
-                                   const VkDeviceSize* counter_buffer_offsets) const noexcept {
-        dld->vkCmdBeginTransformFeedbackEXT(handle,
-                                            first_counter_buffer,
-                                            counter_buffers_count,
-                                            counter_buffers,
-                                            counter_buffer_offsets);
-    }
-
-    void EndTransformFeedbackEXT(uint32_t first_counter_buffer, uint32_t counter_buffers_count,
-                                 const VkBuffer*     counter_buffers,
-                                 const VkDeviceSize* counter_buffer_offsets) const noexcept {
-        dld->vkCmdEndTransformFeedbackEXT(handle,
-                                          first_counter_buffer,
-                                          counter_buffers_count,
-                                          counter_buffers,
-                                          counter_buffer_offsets);
     }
 
     void BeginDebugUtilsLabelEXT(const char* label, std::span<float, 4> color) const noexcept {

@@ -70,12 +70,9 @@ bool Load(VkDevice device, DeviceDispatch& dld) noexcept {
     X(vkBindImageMemory);
     X(vkCmdBeginQuery);
     X(vkCmdBeginRenderPass);
-    X(vkCmdBeginTransformFeedbackEXT);
-    X(vkCmdBeginDebugUtilsLabelEXT);
     X(vkCmdBindDescriptorSets);
     X(vkCmdBindIndexBuffer);
     X(vkCmdBindPipeline);
-    X(vkCmdBindTransformFeedbackBuffersEXT);
     X(vkCmdBindVertexBuffers);
     X(vkCmdBlitImage);
     X(vkCmdClearColorImage);
@@ -89,7 +86,6 @@ bool Load(VkDevice device, DeviceDispatch& dld) noexcept {
     X(vkCmdDrawIndexed);
     X(vkCmdEndQuery);
     X(vkCmdEndRenderPass);
-    X(vkCmdEndTransformFeedbackEXT);
     X(vkCmdEndDebugUtilsLabelEXT);
     X(vkCmdFillBuffer);
     X(vkCmdPipelineBarrier);
@@ -106,18 +102,7 @@ bool Load(VkDevice device, DeviceDispatch& dld) noexcept {
     X(vkCmdSetStencilWriteMask);
     X(vkCmdSetViewport);
     X(vkCmdWaitEvents);
-    X(vkCmdBindVertexBuffers2EXT);
-    X(vkCmdSetCullModeEXT);
-    X(vkCmdSetDepthBoundsTestEnableEXT);
-    X(vkCmdSetDepthCompareOpEXT);
-    X(vkCmdSetDepthTestEnableEXT);
-    X(vkCmdSetDepthWriteEnableEXT);
-    X(vkCmdSetFrontFaceEXT);
     X(vkCmdSetLineWidth);
-    X(vkCmdSetPrimitiveTopologyEXT);
-    X(vkCmdSetStencilOpEXT);
-    X(vkCmdSetStencilTestEnableEXT);
-    X(vkCmdSetVertexInputEXT);
     X(vkCmdResolveImage);
     X(vkCreateBuffer);
     X(vkCreateBufferView);
@@ -176,7 +161,6 @@ bool Load(VkDevice device, DeviceDispatch& dld) noexcept {
     X(vkMapMemory);
     X(vkQueueSubmit);
     X(vkResetFences);
-    X(vkResetQueryPoolEXT);
     X(vkSetDebugUtilsObjectNameEXT);
     X(vkSetDebugUtilsObjectTagEXT);
     X(vkUnmapMemory);
