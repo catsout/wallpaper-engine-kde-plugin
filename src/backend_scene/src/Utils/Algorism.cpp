@@ -15,15 +15,40 @@ double algorism::CalculatePersperctiveFov(double distence, double height) noexce
     return angle / Radians(180.0f) * 180.0f;
 }
 
-constexpr double fade(double t) noexcept { return t * t * t * (t * (t * 6 - 15) + 10); }
+namespace
+{
 constexpr double grad(int hash, double x, double y, double z) noexcept {
+    // http://riven8192.blogspot.com/2010/08/calculate-perlinnoise-twice-as-fast.html
+    switch (hash & 0xF) {
+    case 0x0: return x + y;
+    case 0x1: return -x + y;
+    case 0x2: return x - y;
+    case 0x3: return -x - y;
+    case 0x4: return x + z;
+    case 0x5: return -x + z;
+    case 0x6: return x - z;
+    case 0x7: return -x - z;
+    case 0x8: return y + z;
+    case 0x9: return -y + z;
+    case 0xA: return y - z;
+    case 0xB: return -y - z;
+    case 0xC: return y + x;
+    case 0xD: return -y + z;
+    case 0xE: return y - x;
+    case 0xF: return -y - z;
+    default: return 0; // never happens
+    }
+    /*
     int    h = hash & 15;     // CONVERT LO 4 BITS OF HASH CODE
     double u = h < 8 ? x : y, // INTO 12 GRADIENT DIRECTIONS.
         v    = h < 4                ? y
                : h == 12 || h == 14 ? x
                                     : z;
     return ((h & 1) == 0 ? u : -u) + ((h & 2) == 0 ? v : -v);
+    */
 }
+} // namespace
+
 // from https://mrl.cs.nyu.edu/~perlin/noise/
 double algorism::PerlinNoise(double x, double y, double z) noexcept {
     static const unsigned char perm[] = {
@@ -62,12 +87,15 @@ double algorism::PerlinNoise(double x, double y, double z) noexcept {
     int X = (int)floor(x) & 255, // FIND UNIT CUBE THAT
         Y = (int)floor(y) & 255, // CONTAINS POINT.
         Z = (int)floor(z) & 255;
+
     x -= floor(x); // FIND RELATIVE X,Y,Z
     y -= floor(y); // OF POINT IN CUBE.
     z -= floor(z);
-    double u = fade(x), // COMPUTE FADE CURVES
-        v    = fade(y), // FOR EACH OF X,Y,Z.
-        w    = fade(z);
+
+    double u = PerlinEase(x), // COMPUTE FADE CURVES
+        v    = PerlinEase(y), // FOR EACH OF X,Y,Z.
+        w    = PerlinEase(z);
+
     int A = perm[X] + Y, AA = perm[A] + Z, AB = perm[A + 1] + Z,     // HASH COORDINATES OF
         B = perm[X + 1] + Y, BA = perm[B] + Z, BB = perm[B + 1] + Z; // THE 8 CUBE CORNERS,
 

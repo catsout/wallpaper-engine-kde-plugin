@@ -958,7 +958,7 @@ void ParseParticleObj(ParseContext& context, wpscene::WPParticleObject& wppartob
     shaderInfo.baseConstSvs["g_ViewRight"]          = std::array { 1.0f, 0.0f, 0.0f };
 
     u32 maxcount = particle_obj.maxcount;
-    maxcount     = std::min(maxcount, 5000u);
+    maxcount     = std::min(maxcount, 20000u);
 
     if (hastrail) {
         double in_SegmentUVTimeOffset           = 0.0;

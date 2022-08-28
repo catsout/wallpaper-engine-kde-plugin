@@ -129,10 +129,11 @@ ParticleEmittOp ParticleSphereEmitterArgs::MakeEmittOp(ParticleSphereEmitterArgs
             auto   p = Particle();
             double r = algorism::lerp(
                 std::pow(Random::get(0.0, 1.0), 1.0 / 3.0), a.minDistance, a.maxDistance);
-            Eigen::Vector3d sp = algorism::GenSphereSurface([]() {
-                return Random::get(0.0, 1.0);
-            });
-            sp = sp.cwiseProduct(Eigen::Vector3f { a.directions.data() }.cast<double>()) * r;
+            Eigen::Vector3d sp = r * algorism::GenSphereSurfaceNormal(
+                                         [](double u, double o) {
+                                             return Random::get<std::normal_distribution<>>(u, o);
+                                         },
+                                         Eigen::Vector3f { a.directions.data() }.cast<double>());
             ApplySign(sp, a.sign[0], a.sign[1], a.sign[2]);
 
             ParticleModify::MoveTo(p, sp);

@@ -174,7 +174,7 @@ ParticleInitOp WPParticleParser::genParticleInitOp(const nlohmann::json& wpj) {
                 }
                 Vector3f result;
                 do {
-                    result = algorism::CurlNoise(pos.cast<double>()).cast<float>();
+                    result = algorism::CurlNoise(pos.cast<double>()).cast<float>().normalized();
                     pos += result * 0.005f / r.timescale;
                     duration -= 0.01f;
                 } while (duration > 0.01f);
@@ -336,6 +336,8 @@ struct Turbulence {
     // how fast the noise field changes shape.
     float timescale { 20.0f };
 
+    float scale { 0.01f };
+
     std::array<int32_t, 3> mask { 1, 1, 0 };
 
     static auto ReadFromJson(const nlohmann::json& j) {
@@ -346,6 +348,7 @@ struct Turbulence {
         GET_JSON_NAME_VALUE_NOWARN(j, "speedmax", v.speedmax);
         GET_JSON_NAME_VALUE_NOWARN(j, "timescale", v.timescale);
         GET_JSON_NAME_VALUE_NOWARN(j, "mask", v.mask);
+        GET_JSON_NAME_VALUE_NOWARN(j, "scale", v.scale);
         return v;
     };
 };
@@ -542,16 +545,18 @@ WPParticleParser::genParticleOperatorOp(const nlohmann::json&                   
                 }
             };
         } else if (name == "turbulence") {
-            Turbulence tur = Turbulence::ReadFromJson(wpj);
+            Turbulence tur   = Turbulence::ReadFromJson(wpj);
+            double     phase = Random::get(tur.phasemin, tur.phasemax);
+            double     speed = Random::get(tur.speedmin, tur.speedmax);
+
             return [=](const ParticleInfo& info) {
                 for (auto& p : info.particles) {
-                    double   speed  = Random::get(tur.speedmin, tur.speedmax);
-                    double   phase  = Random::get(tur.phasemin, tur.phasemax);
-                    Vector3d pos    = PM::GetPos(p).cast<double>();
-                    Vector3d result = speed * algorism::CurlNoise(pos / tur.timescale / 2.0f);
-                    result[0] *= tur.mask[0];
-                    result[1] *= tur.mask[1];
-                    result[2] *= tur.mask[2];
+                    Vector3d pos = PM::GetPos(p).cast<double>();
+                    pos.x() += phase + tur.timescale * info.time;
+                    Vector3d result = speed * algorism::CurlNoise(pos * tur.scale * 2).normalized();
+                    for (usize i = 0; i < 3; i++) {
+                        if (tur.mask[i] == 0) result[i] = 0;
+                    }
                     PM::Accelerate(p, result, info.time_pass);
                 }
             };
