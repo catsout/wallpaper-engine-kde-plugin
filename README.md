@@ -47,6 +47,15 @@ gst-libav base-devel mpv python3-websockets qt5-declarative qt5-websockets \
 qt5-webchannel plasma-workspace-devel mpv-devel liblz4-devel Vulkan-Headers
 ```
 
+openSUSE:
+```sh
+# You'll need to add the Packman repository first
+sudo zypper in vulkan-devel plasma-framework-devel plasma5-workspace-devel \
+libqt5-qtwebsockets-devel mpv-devel python310-websockets \
+libqt5-qtx11extras-devel liblz4-devel gstreamer-plugins-libav \
+libqt5-qtbase-private-headers-devel
+```
+
 Fedora Kinoite:  
 see [install via rpm-ostree](rpm)
 
