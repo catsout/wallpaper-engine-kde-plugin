@@ -236,6 +236,7 @@ QUrl SceneObject::assets() const { return m_assets; }
 
 int   SceneObject::fps() const { return m_fps; }
 int   SceneObject::fillMode() const { return m_fillMode; }
+float SceneObject::speed() const { return m_speed; }
 float SceneObject::volume() const { return m_volume; }
 bool  SceneObject::muted() const { return m_muted; }
 
@@ -263,6 +264,12 @@ void SceneObject::setFillMode(int value) {
     m_fillMode = value;
     SET_PROPERTY(Int32, wallpaper::PROPERTY_FILLMODE, (int32_t)ToWPFillMode(value));
     Q_EMIT fillModeChanged();
+}
+void SceneObject::setSpeed(float value) {
+    if (m_speed == value) return;
+    m_speed = value;
+    SET_PROPERTY(Float, wallpaper::PROPERTY_SPEED, value);
+    Q_EMIT speedChanged();
 }
 void SceneObject::setVolume(float value) {
     if (m_volume == value) return;

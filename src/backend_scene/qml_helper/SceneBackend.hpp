@@ -19,11 +19,12 @@ class SceneObject : public QQuickItem {
     Q_PROPERTY(QUrl assets READ assets WRITE setAssets)
     Q_PROPERTY(int fps READ fps WRITE setFps NOTIFY fpsChanged)
     Q_PROPERTY(int fillMode READ fillMode WRITE setFillMode NOTIFY fillModeChanged)
+    Q_PROPERTY(float speed READ speed WRITE setSpeed NOTIFY speedChanged)
     Q_PROPERTY(float volume READ volume WRITE setVolume NOTIFY volumeChanged)
     Q_PROPERTY(bool muted READ muted WRITE setMuted)
 public:
     constexpr static std::string_view CACHE_DIR { "wescene-renderer" };
-    static std::string GetDefaultCachePath();
+    static std::string                GetDefaultCachePath();
 
     enum FillMode
     {
@@ -40,11 +41,13 @@ public:
 
     int   fps() const;
     int   fillMode() const;
+    float speed() const;
     float volume() const;
     bool  muted() const;
 
     void setFps(int);
     void setFillMode(int);
+    void setSpeed(float);
     void setVolume(float);
     void setMuted(bool);
 
@@ -70,6 +73,7 @@ signals:
     void sourceChanged();
     void fpsChanged();
     void fillModeChanged();
+    void speedChanged();
     void volumeChanged();
     void firstFrame();
 
@@ -79,6 +83,7 @@ private:
 
     int   m_fps { 15 };
     int   m_fillMode { FillMode::ASPECTCROP };
+    float m_speed { 1.0f };
     float m_volume { 1.0f };
     bool  m_muted { false };
 

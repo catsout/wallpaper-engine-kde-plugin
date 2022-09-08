@@ -15,7 +15,7 @@ Flickable {
     property alias cfg_Fps: sliderFps.value
     property alias cfg_Volume: sliderVol.value
     property alias cfg_MpvStats: ckbox_mpvStats.checked
-    property alias cfg_VideoRate: spin_video_rate.dValue
+    property alias cfg_Speed: spin_speed.dValue
     property alias cfg_MuteAudio: ckbox_muteAudio.checked
     property alias cfg_MouseInput: ckbox_mouseInput.checked
     property alias cfg_ResumeTime: resumeSpin.value
@@ -177,6 +177,7 @@ Flickable {
                         text: "Randomize wallpapers filtered in the 'Wallpapers' page"
                     }
                     RowLayout {
+                        Layout.fillWidth: true
                         visible: ckbox_randomizeWallpaper.checked
                         Label { 
                             id:heightpicker
@@ -194,6 +195,22 @@ Flickable {
                     }
                 }
             }
+
+            OptionItem {
+                text: "Playback Speed"
+                text_color: Theme.textColor
+                icon: '../../images/fast-forward.svg'
+                actor: RowLayout {
+                    DoubleSpinBox {
+                        id: spin_speed
+                        dFrom: 0.1
+                        dTo: 16.0
+                        dStepSize: 0.1
+                    }
+                }
+            }
+
+
             OptionItem {
                 text: "Mute Audio"
                 text_color: Theme.textColor
@@ -267,20 +284,6 @@ Flickable {
                 }
             }
             
-            OptionItem {
-                text: "Video Playback Rate"
-                text_color: Theme.textColor
-                icon: '../../images/fast-forward.svg'
-                actor: RowLayout {
-                    DoubleSpinBox {
-                        id: spin_video_rate
-                        dFrom: 0.1
-                        dTo: 100.0
-                        dStepSize: 0.1
-                    }
-                }
-            }
-
             OptionItem {
                 text: 'Show Mpv Stats'
                 text_color: Theme.textColor

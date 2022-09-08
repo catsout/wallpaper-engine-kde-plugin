@@ -7,7 +7,7 @@ Item{
     anchors.fill: parent
     property alias source: player.source
     readonly property int displayMode: background.displayMode
-    readonly property real videoRate: background.videoRate 
+    readonly property real videoRate: background.speed
     readonly property bool stats: background.mpvStats
     property var volumeFade: Common.createVolumeFade(
         videoItem, 

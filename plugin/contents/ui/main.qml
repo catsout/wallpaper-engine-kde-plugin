@@ -13,7 +13,6 @@ Rectangle {
     property string filterStr: wallpaper.configuration.FilterStr
 
     property int    videoBackend: wallpaper.configuration.VideoBackend
-    property real   videoRate: wallpaper.configuration.VideoRate
     property int    switchTimer: wallpaper.configuration.SwitchTimer
     property int    fps: wallpaper.configuration.Fps
 
@@ -39,6 +38,7 @@ Rectangle {
     property int    displayMode: get_opt_value('display_mode', wallpaper.configuration.DisplayMode)
     property bool   mute: get_opt_value('mute_audio', wallpaper.configuration.MuteAudio)
     property int    volume: get_opt_value('volume', wallpaper.configuration.Volume)
+    property real    speed: get_opt_value('speed', wallpaper.configuration.Speed)
 
     property bool   perOptChanged: wallpaper.configuration.PerOptChanged
     onPerOptChangedChanged: {

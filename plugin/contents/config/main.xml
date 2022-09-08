@@ -86,8 +86,8 @@
       <label>Volume</label>
       <default>100</default>
     </entry>
-    <entry name="VideoRate" type="Double">
-      <label>Video playback rate</label>
+    <entry name="Speed" type="Double">
+      <label>Playback speed</label>
       <default>1.0</default>
     </entry>
     <entry name="FilterStr" type="String">

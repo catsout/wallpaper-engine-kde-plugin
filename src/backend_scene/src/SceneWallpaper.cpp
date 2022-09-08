@@ -34,10 +34,20 @@ using namespace wallpaper;
     void impl_##cl::handle_##cmd(const std::shared_ptr<looper::Message>& msg)
 #define CALL_MHANDLER_CMD(cmd, msg) handle_##cmd(msg)
 
+namespace
+{
 template<typename T>
-static void addMsgCmd(looper::Message& msg, T cmd) {
+void AddMsgCmd(looper::Message& msg, T cmd) {
     msg.setInt32("cmd", (int32_t)cmd);
 }
+template<typename T>
+std::shared_ptr<looper::Message> CreateMsgWithCmd(const std::shared_ptr<looper::Handler>& handler,
+                                                  T                                       cmd) {
+    auto msg = looper::Message::create(0, handler);
+    AddMsgCmd(*msg, cmd);
+    return msg;
+}
+} // namespace
 
 namespace wallpaper
 {
@@ -116,6 +126,7 @@ public:
         CMD_INIT_VULKAN,
         CMD_SET_SCENE,
         CMD_SET_FILLMODE,
+        CMD_SET_SPEED,
         CMD_STOP,
         CMD_DRAW,
         CMD_NO
@@ -138,6 +149,7 @@ public:
                 CASE_CMD(STOP);
                 CASE_CMD(SET_FILLMODE);
                 CASE_CMD(SET_SCENE);
+                CASE_CMD(SET_SPEED);
                 CASE_CMD(INIT_VULKAN);
             default: break;
             }
@@ -173,7 +185,7 @@ private:
 
             m_render->drawFrame(*m_scene);
 
-            m_scene->PassFrameTime(frame_timer.IdeaTime());
+            m_scene->PassFrameTime(frame_timer.IdeaTime() * m_speed);
 
             m_scene->shaderValueUpdater->FrameEnd();
             // fps_counter.RegisterFrame();
@@ -204,6 +216,7 @@ private:
             m_render->UpdateCameraFillMode(*m_scene, m_fillmode);
         }
     }
+    MHANDLER_CMD(SET_SPEED) { msg->findFloat("value", &m_speed); }
     MHANDLER_CMD(INIT_VULKAN) {
         std::shared_ptr<RenderInitInfo> info;
         if (msg->findObject("info", &info)) {
@@ -220,6 +233,7 @@ public:
 
 private:
     std::shared_ptr<Scene> m_scene { nullptr };
+    float                  m_speed { 1.0f };
 
     std::unique_ptr<vulkan::VulkanRender> m_render;
     std::unique_ptr<rg::RenderGraph>      m_rg { nullptr };
@@ -252,21 +266,19 @@ bool SceneWallpaper::init() { return m_main_handler->init(); }
 void SceneWallpaper::initVulkan(const RenderInitInfo& info) {
     m_offscreen                             = info.offscreen;
     std::shared_ptr<RenderInitInfo> sp_info = std::make_shared<RenderInitInfo>(info);
-    auto msg = looper::Message::create(0, m_main_handler->renderHandler());
-    addMsgCmd(*msg, RenderHandler::CMD::CMD_INIT_VULKAN);
+    auto                            msg =
+        CreateMsgWithCmd(m_main_handler->renderHandler(), RenderHandler::CMD::CMD_INIT_VULKAN);
     msg->setObject("info", sp_info);
     msg->post();
 }
 
 void SceneWallpaper::play() {
-    auto msg = looper::Message::create(0, m_main_handler);
-    addMsgCmd(*msg, MainHandler::CMD::CMD_STOP);
+    auto msg = CreateMsgWithCmd(m_main_handler, MainHandler::CMD::CMD_STOP);
     msg->setBool("value", false);
     msg->post();
 }
 void SceneWallpaper::pause() {
-    auto msg = looper::Message::create(0, m_main_handler);
-    addMsgCmd(*msg, MainHandler::CMD::CMD_STOP);
+    auto msg = CreateMsgWithCmd(m_main_handler, MainHandler::CMD::CMD_STOP);
     msg->setBool("value", true);
     msg->post();
 }
@@ -275,13 +287,12 @@ void SceneWallpaper::mouseInput(double x, double y) {
     m_main_handler->renderHandler()->setMousePos(x, y);
 }
 
-#define BASIC_TYPE(NAME, TYPENAME)                                                  \
-    void SceneWallpaper::setProperty##NAME(std::string_view name, TYPENAME value) { \
-        auto msg = looper::Message::create(0, m_main_handler);                      \
-        addMsgCmd(*msg, MainHandler::CMD::CMD_SET_PROPERTY);                        \
-        msg->setString("property", std::string(name));                              \
-        msg->set##NAME("value", value);                                             \
-        msg->post();                                                                \
+#define BASIC_TYPE(NAME, TYPENAME)                                                       \
+    void SceneWallpaper::setProperty##NAME(std::string_view name, TYPENAME value) {      \
+        auto msg = CreateMsgWithCmd(m_main_handler, MainHandler::CMD::CMD_SET_PROPERTY); \
+        msg->setString("property", std::string(name));                                   \
+        msg->set##NAME("value", value);                                                  \
+        msg->post();                                                                     \
     }
 
 BASIC_TYPE(Bool, bool);
@@ -319,8 +330,8 @@ MHANDLER_CMD_IMPL(MainHandler, SET_PROPERTY) {
         } else if (property == PROPERTY_FILLMODE) {
             int32_t value;
             if (msg->findInt32("value", &value)) {
-                auto nmsg = looper::Message::create(0, m_render_handler);
-                addMsgCmd(*nmsg, RenderHandler::CMD::CMD_SET_FILLMODE);
+                auto nmsg =
+                    CreateMsgWithCmd(m_render_handler, RenderHandler::CMD::CMD_SET_FILLMODE);
                 nmsg->setInt32("value", value);
                 nmsg->post();
             }
@@ -342,6 +353,13 @@ MHANDLER_CMD_IMPL(MainHandler, SET_PROPERTY) {
             std::shared_ptr<FirstFrameCallback> cb;
             msg->findObject("value", &cb);
             m_first_frame_callback = *cb;
+        } else if (property == PROPERTY_SPEED) {
+            float speed { 1.0f };
+            if (msg->findFloat("value", &speed)) {
+                auto nmsg = CreateMsgWithCmd(m_render_handler, RenderHandler::CMD::CMD_SET_SPEED);
+                nmsg->setFloat("value", speed);
+                nmsg->post();
+            }
         }
     }
 }
@@ -355,8 +373,7 @@ MHANDLER_CMD_IMPL(MainHandler, STOP) {
             m_sound_manager->Play();
         }
 
-        auto msg_r = looper::Message::create(0, m_render_handler);
-        addMsgCmd(*msg_r, RenderHandler::CMD::CMD_STOP);
+        auto msg_r = CreateMsgWithCmd(m_render_handler, RenderHandler::CMD::CMD_STOP);
         msg_r->setBool("value", stop);
         msg_r->post();
     }
@@ -433,27 +450,23 @@ void MainHandler::loadScene() {
     }
 
     {
-        auto msg = looper::Message::create(0, m_render_handler);
-        addMsgCmd(*msg, RenderHandler::CMD::CMD_SET_SCENE);
+        auto msg = CreateMsgWithCmd(m_render_handler, RenderHandler::CMD::CMD_SET_SCENE);
         msg->setObject("scene", scene);
         msg->post();
     }
 
     // draw first frame
     {
-        auto msg = looper::Message::create(0, m_render_handler);
-        addMsgCmd(*msg, RenderHandler::CMD::CMD_DRAW);
+        auto msg = CreateMsgWithCmd(m_render_handler, RenderHandler::CMD::CMD_DRAW);
         msg->post();
     }
 }
 void MainHandler::sendCmdLoadScene() {
-    auto msg = looper::Message::create(0, shared_from_this());
-    addMsgCmd(*msg, MainHandler::CMD::CMD_LOAD_SCENE);
+    auto msg = CreateMsgWithCmd(shared_from_this(), MainHandler::CMD::CMD_LOAD_SCENE);
     msg->post();
 }
 void MainHandler::sendFirstFrameOk() {
-    auto msg = looper::Message::create(0, shared_from_this());
-    addMsgCmd(*msg, MainHandler::CMD::CMD_FIRST_FRAME);
+    auto msg = CreateMsgWithCmd(shared_from_this(), MainHandler::CMD::CMD_FIRST_FRAME);
     msg->post();
 }
 
@@ -470,8 +483,7 @@ bool MainHandler::init() {
 
     {
         auto& frameTimer = m_render_handler->frame_timer;
-        auto  msg        = looper::Message::create(0, m_render_handler);
-        addMsgCmd(*msg, RenderHandler::CMD::CMD_DRAW);
+        auto  msg        = CreateMsgWithCmd(m_render_handler, RenderHandler::CMD::CMD_DRAW);
 
         frameTimer.SetCallback([msg]() {
             msg->post();

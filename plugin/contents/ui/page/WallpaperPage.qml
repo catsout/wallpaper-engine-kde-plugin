@@ -539,6 +539,16 @@ RowLayout {
                         }
                     }
                 }
+                Component {
+                    id: right_opt_dspinbox
+                    DoubleSpinBox {
+                        property real def_val
+                        property real res_val: dValue
+                        function finish() {
+                            dValue = def_val;
+                        }
+                    }
+                }
 
                 OptionGroup {
                     id: right_opts
@@ -662,6 +672,17 @@ RowLayout {
                                     from: 1,
                                     to: 100,
                                     stepSize: 1,
+                                },
+                            },
+                            {
+                                text: 'Speed',
+                                config_key: 'speed', 
+                                comp: right_opt_dspinbox,
+                                props: {
+                                    def_val: cfg_Speed,
+                                    dFrom: 0.1,
+                                    dTo: 16,
+                                    dStepSize: 0.1,
                                 },
                             },
 

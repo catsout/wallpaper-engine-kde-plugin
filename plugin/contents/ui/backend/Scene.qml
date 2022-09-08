@@ -28,6 +28,7 @@ Item{
         anchors.fill: parent
         fps: background.fps
         muted: background.mute
+        speed: background.speed
         assets: sceneItem.assets
         Component.onCompleted: {
             player.setAcceptMouse(true);
