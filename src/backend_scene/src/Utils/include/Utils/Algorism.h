@@ -47,9 +47,9 @@ Eigen::Vector3d GenSphereSurface(TFUNC&& random) noexcept {
 template<typename TFUNC>
 Eigen::Vector3d GenSphereSurfaceNormal(TFUNC&&                normal_random,
                                        const Eigen::Vector3d& direct) noexcept {
-    double u    = normal_random(0.0, direct.x());
-    double v    = normal_random(0.0, direct.y());
-    double w    = normal_random(0.0, direct.z());
+    double u    = direct.x() > 0.0 ? normal_random(0.0, direct.x()) : 0.0;
+    double v    = direct.y() > 0.0 ? normal_random(0.0, direct.y()) : 0.0;
+    double w    = direct.z() > 0.0 ? normal_random(0.0, direct.z()) : 0.0;
     double norm = std::sqrt((u * u + v * v + w * w));
     return Eigen::Vector3d(u, v, w) / norm;
 }

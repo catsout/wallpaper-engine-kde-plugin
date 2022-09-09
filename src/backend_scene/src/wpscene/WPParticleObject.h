@@ -62,7 +62,7 @@ public:
 
 public:
     bool                   FromJson(const nlohmann::json&);
-    std::array<float, 3>   directions { 1.0f, 1.0f, 0 };
+    std::array<float, 3>   directions { 1.0f, 1.0f, 0.0f };
     std::array<float, 3>   distancemax { 256.0f, 256.0f, 256.0f };
     std::array<float, 3>   distancemin { 0.0f, 0.0f, 0.0f };
     std::array<float, 3>   origin { 0, 0, 0 };
