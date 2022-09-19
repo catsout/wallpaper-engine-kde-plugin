@@ -133,7 +133,7 @@ ColumnLayout {
         PlasmaComponents.TabButton {
             height: font.pixelSize
             Text{
-                text: "Backgrounds"
+                text: "Wallpapers"
                 color: Theme.textColor
                 anchors.centerIn: parent
             }
