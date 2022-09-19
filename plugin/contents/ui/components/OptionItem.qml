@@ -1,8 +1,10 @@
-import QtQuick 2.6
-import QtQuick.Controls 2.6
+import QtQuick 2.12
+import "../style" as QQCC
+import QtQuick.Controls 2.12
+import QtQuick.Templates 2.12 as T
 import QtQuick.Layouts 1.10
 
-Control {
+T.Control {
     id: item_root
     property alias icon: iconsvg.source
     property alias icon_color: iconsvg.color
@@ -29,12 +31,15 @@ Control {
     // Layout.minimumWidth: implicitWidth
     // Layout.minimumHeight: implicitHeight
 
+    implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset,
+                            implicitContentWidth + leftPadding + rightPadding)
+    implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset,
+                             implicitContentHeight + topPadding + bottomPadding)
+
+
     leftPadding: 16
     rightPadding: 16
 
-    // the default value is not zero?
-    topPadding: 0
-    bottomPadding: 0
 
     background: Rectangle {
         id: rect_back
@@ -66,26 +71,25 @@ Control {
                 verticalAlignment: Text.AlignVCenter
             }
 
-            Control {
+            QQCC.Control {
                 id: control_action
                 Layout.preferredHeight: Math.max(48, implicitHeight)
 
                 Layout.fillWidth: true
                 Layout.maximumWidth: implicitWidth
 
+                topPadding: 5
+                bottomPadding: 5
+
                 contentItem: Item { id: action_empty }
             }
         }
         
-        Control {
+        QQCC.Control {
             id: control_bottom
             Layout.leftMargin: text_label.x
             Layout.fillWidth: true
 
-            topPadding: 0
-            leftPadding: 0
-            rightPadding: 0
-            bottomPadding: 0
             opacity: content_visible ? 1 : 0
 
             property bool content_visible: contentItem.visible

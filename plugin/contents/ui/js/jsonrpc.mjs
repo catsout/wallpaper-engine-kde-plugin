@@ -41,7 +41,7 @@ Jsonrpc.prototype.send = function(method, params) {
     });
 }
 
-Jsonrpc.prototype.reserve = function(str) {
+Jsonrpc.prototype.receive = function(str) {
     const obj = parseJson(str);
     if(!obj) {
         return;

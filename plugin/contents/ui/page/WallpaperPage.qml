@@ -5,10 +5,11 @@ import QtQuick.Window 2.0 // for Screen
 import QtQuick.Dialogs 1.2
 import QtQuick.Layouts 1.5
 
-import "../utils.mjs" as Utils
 import ".."
 import "../components"
-import "../bbcode.mjs" as BBCode
+
+import "../js/utils.mjs" as Utils
+import "../js/bbcode.mjs" as BBCode
 
 import org.kde.plasma.core 2.0 as PlasmaCore
 import org.kde.plasma.components 3.0 as PlasmaComponents
@@ -94,6 +95,7 @@ RowLayout {
                     actions: [
                         Kirigami.Action {
                             icon.source: '../../images/folder-outline.svg'
+                            icon.color: Theme.textColor
                             text: 'Library'
                             tooltip: cfg_SteamLibraryPath ? cfg_SteamLibraryPath : 'Select steam library dir'
                             onTriggered: wpDialog.open()
@@ -102,7 +104,7 @@ RowLayout {
                             id: action_cb_filter
                             text: 'Filter'
                             icon.source: '../../images/filter.svg'
-
+                            icon.color: Theme.textColor
                             property int currentIndex
                             readonly property var model: Common.filterModel
                             readonly property var modelValues: Common.filterModel.getValueArray(cfg_FilterStr)
@@ -117,7 +119,7 @@ RowLayout {
                             id: action_cb_sort
                             text: model[currentIndex].short
                             icon.source: '../../images/arrow-down.svg'
-
+                            icon.color: Theme.textColor
                             property int currentIndex: Common.modelIndexOfValue(model, cfg_SortMode)
                             readonly property var model: [
                                 {
@@ -140,6 +142,7 @@ RowLayout {
                         },
                         Kirigami.Action {
                             icon.source: '../../images/refresh.svg'
+                            icon.color: Theme.textColor
                             text: 'Refresh'
                             onTriggered: wpListModel.refresh()
                         }
@@ -198,11 +201,6 @@ RowLayout {
                                 tooltip: "Open Workshop Link"
                                 enabled: workshopid.match(Common.regex_workshop_online)
                                 onTriggered: Qt.openUrlExternally(Common.getWorkshopUrl(workshopid))
-                            },
-                            Kirigami.Action {
-                                icon.name: "document-open-folder"
-                                tooltip: "Open Containing Folder"
-                                onTriggered: Qt.openUrlExternally(path) 
                             }
                         ]
                         thumbnail: Rectangle {
@@ -445,6 +443,8 @@ RowLayout {
 
                         actions: [
                             Kirigami.Action {
+                                id: right_act_favor
+                                icon.color: Theme.textColor
                                 icon.source: right_content.wpmodel.favor 
                                     ? '../../images/bookmark.svg'
                                     : '../../images/bookmark-outline-add.svg'

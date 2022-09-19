@@ -1,7 +1,7 @@
 pragma Singleton
 import QtQuick 2.0
 
-import "utils.mjs" as Utils
+import "js/utils.mjs" as Utils
 
 QtObject {
     enum PauseMode {

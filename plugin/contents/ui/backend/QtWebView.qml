@@ -2,7 +2,7 @@ import QtQuick 2.5
 import QtWebEngine 1.10
 import QtWebChannel 1.10
 import ".."
-import "../utils.mjs" as Utils
+import "../js/utils.mjs" as Utils
 
 Item {
     id: webItem

@@ -2,7 +2,7 @@ import QtQuick 2.5
 import QtQuick.Controls 1.0
 import QtQuick.Layouts 1.2
 
-import "utils.mjs" as Utils
+import "js/utils.mjs" as Utils
 
 Item {
     id: root
