@@ -3,7 +3,6 @@ set(LIB_NAME wpUtils)
 add_library(${LIB_NAME}
 STATIC
 Logging.cpp
-FrameTimer.cpp
 FpsCounter.cpp
 Algorism.cpp	
 Sha.cpp

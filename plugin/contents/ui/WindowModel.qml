@@ -58,7 +58,6 @@ https://github.com/KDE/plasma-workspace/blob/master/libtaskmanager/abstracttasks
 
 Item {
     id: wModel
-    property bool playVideoWallpaper: true
     property bool logging: false
     property var desktop: 0
 
@@ -197,7 +196,7 @@ Item {
     }
     function _updateWindowsinfo() {
         if(modePlay === Common.PauseMode.Never) {
-            play();
+            playBy(true);
             return;
         }
         const basefilters = {

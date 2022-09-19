@@ -125,7 +125,6 @@ ColumnLayout {
 
 
     // Content
-
     PlasmaComponents.TabBar {
         id: bar
         implicitWidth: font.pixelSize*8 * 3

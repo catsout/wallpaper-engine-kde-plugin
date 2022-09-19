@@ -4,7 +4,7 @@
 #include "Utils/Logging.h"
 #include "Looper/Looper.hpp"
 
-#include "Utils/FrameTimer.h"
+#include "Timer/FrameTimer.hpp"
 #include "Utils/FpsCounter.h"
 #include "WPSceneParser.hpp"
 #include "Scene/Scene.h"
@@ -482,9 +482,8 @@ bool MainHandler::init() {
     m_render_loop->registerHandler(m_render_handler);
 
     {
-        auto& frameTimer = m_render_handler->frame_timer;
         auto  msg        = CreateMsgWithCmd(m_render_handler, RenderHandler::CMD::CMD_DRAW);
-
+        auto& frameTimer = m_render_handler->frame_timer;
         frameTimer.SetCallback([msg]() {
             msg->post();
         });

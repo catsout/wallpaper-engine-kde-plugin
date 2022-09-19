@@ -28,6 +28,7 @@ include_directories(.)
 
 add_subdirectory(Fs)
 add_subdirectory(Utils)
+add_subdirectory(Timer)
 add_subdirectory(Audio)
 add_subdirectory(Scene)
 add_subdirectory(Looper)
@@ -60,7 +61,7 @@ add_library(${PROJECT_NAME}
 	SceneWallpaper.cpp	
 )
 
-set(InteralLib wpAudio wpLooper wpVulkanRender wpFs wpScene wpVulkan wpRGraph wpParticle)
+set(InteralLib wpAudio wpLooper wpVulkanRender wpFs wpScene wpVulkan wpRGraph wpParticle wpTimer)
 
 target_link_libraries(${PROJECT_NAME}
     PUBLIC

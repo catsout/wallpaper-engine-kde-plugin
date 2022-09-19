@@ -1,8 +1,8 @@
-import QtQuick 2.10
-import QtQuick.Controls 2.10
+import QtQuick 2.12
+import QtQuick.Templates 2.12 as T
 import QtQuick.Layouts 1.10
 
-Control {
+T.Control {
     default property alias content: column_content.children
     property alias color: rect_back.color
     property alias border: rect_back.border
@@ -13,11 +13,10 @@ Control {
 
     property alias item_spacing: column_content.spacing
 
-    // the default value is not zero?
-    leftPadding: 0
-    rightPadding: 0
-    topPadding: 0
-    bottomPadding: 0
+    implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset,
+                            implicitContentWidth + leftPadding + rightPadding)
+    implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset,
+                             implicitContentHeight + topPadding + bottomPadding)
 
     background: Rectangle {
         id: rect_back

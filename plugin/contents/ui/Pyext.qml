@@ -2,7 +2,7 @@ import QtQuick 2.0
 import QtWebSockets 1.0
 import org.kde.plasma.core 2.0 as PlasmaCore
 
-import "jsonrpc.mjs" as Jsonrpc
+import "js/jsonrpc.mjs" as Jsonrpc
 
 Item {
     id: root
@@ -82,7 +82,7 @@ Item {
             console.error("----python helper connected----")
             this.socket = webSocket;
             webSocket.onTextMessageReceived.connect((message) => {
-                ws_server.jrpc.reserve(message);
+                ws_server.jrpc.receive(message);
             });
             webSocket.onStatusChanged.connect((status) => {
                 if(status != WebSocket.Open) {

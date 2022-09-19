@@ -8,6 +8,7 @@
 #include <cstring>
 #include <atomic>
 #include <utility>
+
 #include "Utils/Logging.h"
 #include "Core/NoCopyMove.hpp"
 
