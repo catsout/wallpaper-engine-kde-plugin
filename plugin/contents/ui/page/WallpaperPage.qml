@@ -729,6 +729,7 @@ RowLayout {
 
                     visible: false
                     text: ''
+                    color: Theme.textColor
                     readonly property bool _set_text: {
                         const path = Common.getWpModelProjectPath(right_content.wpmodel);
                         if(path) {

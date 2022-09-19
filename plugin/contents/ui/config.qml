@@ -129,17 +129,30 @@ ColumnLayout {
     PlasmaComponents.TabBar {
         id: bar
         implicitWidth: font.pixelSize*8 * 3
+        implicitHeight: font.pixelSize
         PlasmaComponents.TabButton {
-            text: 'Wallpapers'
-            display: PlasmaComponents.TabButton.TextOnly
+            height: font.pixelSize
+            Text{
+                text: "Wallpapers"
+                color: Theme.textColor
+                anchors.centerIn: parent
+            }
         }
         PlasmaComponents.TabButton {
-            text: 'Settings'
-            display: PlasmaComponents.TabButton.TextOnly
+            height: font.pixelSize
+            Text{
+                text: "Settings"
+                color: Theme.textColor
+                anchors.centerIn: parent
+            }
         }
         PlasmaComponents.TabButton {
-            text: 'About'
-            display: PlasmaComponents.TabButton.TextOnly
+            height: font.pixelSize
+            Text{
+                text: "About"
+                color: Theme.textColor
+                anchors.centerIn: parent
+            }
         }
     }
 
