@@ -13,7 +13,6 @@ FrameTimer::FrameTimer(std::function<void()> cb)
           auto         ideatime  = m_ideatime.load();
           wait_time              = wait_time > ideatime ? wait_time / 2 : ideatime;
           m_timer.SetInterval(wait_time);
-          LOG_INFO("int: %f, busy_count: %d", FrameTime(), m_frame_busy_count.load());
 
           if (m_callback && m_frame_busy_count <= 3) {
               m_frame_busy_count++;
