@@ -151,7 +151,10 @@ public slots:
                 close(fd);
             }
             auto& newtex = texs_map.at(id);
-            m_texture    = newtex.qsg;
+            if (newtex.qsg != nullptr)
+                m_texture = newtex.qsg;
+            else
+                m_texture = m_init_texture;
 
             setTexture(m_texture);
             markDirty(DirtyMaterial);
