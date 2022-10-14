@@ -207,16 +207,18 @@ QSGNode* SceneObject::updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData*) {
         node = new TextureNode(window(), m_scene, m_enable_valid, [this](QQuickWindow* window) {
             return (QSGTexture*)nullptr;
         });
-        node->initGl();
-        node->initVulkan(width(), height());
+        if (node->initGl()) {
+            node->initVulkan(width(), height());
 
-        connect(node, &TextureNode::redraw, window(), &QQuickWindow::update, Qt::QueuedConnection);
-        connect(window(),
-                &QQuickWindow::beforeRendering,
-                node,
-                &TextureNode::newTexture,
-                Qt::DirectConnection);
-        connect(node, &TextureNode::sceneFirstFrame, this, &SceneObject::firstFrame);
+            connect(
+                node, &TextureNode::redraw, window(), &QQuickWindow::update, Qt::QueuedConnection);
+            connect(window(),
+                    &QQuickWindow::beforeRendering,
+                    node,
+                    &TextureNode::newTexture,
+                    Qt::DirectConnection);
+            connect(node, &TextureNode::sceneFirstFrame, this, &SceneObject::firstFrame);
+        }
     }
 
     node->setRect(boundingRect());
