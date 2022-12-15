@@ -78,7 +78,7 @@ mkdir build && cd build
 cmake .. -DUSE_PLASMAPKG=ON
 
 # Build
-make
+make -j$nproc
 
 # Install package (ignore if USE_PLASMAPKG=OFF for system-wide installation)
 make install_pkg
@@ -115,7 +115,7 @@ Requires glfw
 cd src/backend_scene/standalone_view
 mkdir build && cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_QML=ON
-make 
+make -j$nproc
 
 ./sceneviewer --help
 ```
