@@ -23,7 +23,7 @@ Debian:
 sudo apt install build-essential libvulkan-dev plasma-workspace-dev gstreamer1.0-libav \
 liblz4-dev libmpv-dev python3-websockets qtbase5-private-dev \
 libqt5x11extras5-dev \
-qml-module-qtwebchannel qml-module-qtwebsockets
+qml-module-qtwebchannel qml-module-qtwebsockets cmake
 ```  
 
 Fedora:  
@@ -31,20 +31,20 @@ Fedora:
 # Please add "RPM Fusion" repo first
 sudo dnf install vulkan-headers plasma-workspace-devel kf5-plasma-devel gstreamer1-libav \
 lz4-devel mpv-libs-devel python3-websockets qt5-qtbase-private-devel \
-qt5-qtx11extras-devel qt5-qtwebchannel-devel qt5-qtwebsockets-devel
+qt5-qtx11extras-devel qt5-qtwebchannel-devel qt5-qtwebsockets-devel cmake
 ```
 
 Arch:  
 ```sh
 sudo pacman -S extra-cmake-modules plasma-framework gst-libav \
-base-devel mpv python-websockets qt5-declarative qt5-websockets qt5-webchannel vulkan-headers 
+base-devel mpv python-websockets qt5-declarative qt5-websockets qt5-webchannel vulkan-headers cmake
 ```
 
 Void:  
 ```sh
 sudo xbps-install -S extra-cmake-modules plasma-framework \
 gst-libav base-devel mpv python3-websockets qt5-declarative qt5-websockets \
-qt5-webchannel plasma-workspace-devel mpv-devel liblz4-devel Vulkan-Headers
+qt5-webchannel plasma-workspace-devel mpv-devel liblz4-devel Vulkan-Headers cmake
 ```
 
 openSUSE:
@@ -53,7 +53,7 @@ openSUSE:
 sudo zypper in vulkan-devel plasma-framework-devel plasma5-workspace-devel \
 libqt5-qtwebsockets-devel mpv-devel python310-websockets \
 libqt5-qtx11extras-devel liblz4-devel gstreamer-plugins-libav \
-libqt5-qtbase-private-headers-devel
+libqt5-qtbase-private-headers-devel cmake
 ```
 
 Fedora Kinoite:  
