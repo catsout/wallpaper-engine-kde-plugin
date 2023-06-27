@@ -2488,6 +2488,7 @@ VMA_CALL_PRE void VMA_CALL_POST vmaFreeStatsString(
 #include <cstdlib>
 #include <cstring>
 #include <utility>
+#include <cstdio>
 
 /*******************************************************************************
 CONFIGURATION SECTION
