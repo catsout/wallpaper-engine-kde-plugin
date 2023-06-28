@@ -11,7 +11,7 @@ set(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY true)
 
 option(USE_PLASMAPKG "Use plasmapkg2 to install plugin to user'home" ${USE_PLASMAPKG})
 
-set(DEFAULT_BUILD_TYPE "Release")
+set(DEFAULT_BUILD_TYPE "RelWithDebInfo")
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     message(STATUS "Setting build type to '${DEFAULT_BUILD_TYPE}' as none was specified.")
     set(CMAKE_BUILD_TYPE "${DEFAULT_BUILD_TYPE}" CACHE STRING "Choose the type of build." FORCE)

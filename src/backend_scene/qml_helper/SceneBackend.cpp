@@ -151,7 +151,10 @@ public slots:
                 close(fd);
             }
             auto& newtex = texs_map.at(id);
-            m_texture    = newtex.qsg;
+            if (newtex.qsg != nullptr)
+                m_texture = newtex.qsg;
+            else
+                m_texture = m_init_texture;
 
             setTexture(m_texture);
             markDirty(DirtyMaterial);
@@ -207,16 +210,18 @@ QSGNode* SceneObject::updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData*) {
         node = new TextureNode(window(), m_scene, m_enable_valid, [this](QQuickWindow* window) {
             return (QSGTexture*)nullptr;
         });
-        node->initGl();
-        node->initVulkan(width(), height());
+        if (node->initGl()) {
+            node->initVulkan(width(), height());
 
-        connect(node, &TextureNode::redraw, window(), &QQuickWindow::update, Qt::QueuedConnection);
-        connect(window(),
-                &QQuickWindow::beforeRendering,
-                node,
-                &TextureNode::newTexture,
-                Qt::DirectConnection);
-        connect(node, &TextureNode::sceneFirstFrame, this, &SceneObject::firstFrame);
+            connect(
+                node, &TextureNode::redraw, window(), &QQuickWindow::update, Qt::QueuedConnection);
+            connect(window(),
+                    &QQuickWindow::beforeRendering,
+                    node,
+                    &TextureNode::newTexture,
+                    Qt::DirectConnection);
+            connect(node, &TextureNode::sceneFirstFrame, this, &SceneObject::firstFrame);
+        }
     }
 
     node->setRect(boundingRect());
