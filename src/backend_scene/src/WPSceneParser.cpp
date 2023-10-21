@@ -603,8 +603,12 @@ void ParseImageObj(ParseContext& context, wpscene::WPImageObject& img_obj) {
             }
         }
 
-        baseConstSvs["g_Alpha"]      = wpimgobj.alpha;
-        baseConstSvs["g_Color"]      = wpimgobj.color;
+        baseConstSvs["g_Color4"]     = std::array<float, 4> {
+            wpimgobj.color[0],
+            wpimgobj.color[1],
+            wpimgobj.color[2],
+            1.0f
+        };
         baseConstSvs["g_UserAlpha"]  = wpimgobj.alpha;
         baseConstSvs["g_Brightness"] = wpimgobj.brightness;
 
