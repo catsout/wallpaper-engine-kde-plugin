@@ -18,6 +18,7 @@ A clear and concise description of what the bug is.
 - Qt: [e.g. 5.15]
 - OS: [e.g. Debian]
 - Installation Source: [e.g. KDE Plugins or git]
+- Wallpaper Engine version: [e.g. 2.3]
 
 **Additional context**<br/>
 Add any other context about the problem here. [e.g. screenshots/logs]
