@@ -17,6 +17,14 @@ A wallpaper plugin integrating [wallpaper engine](https://store.steampowered.com
 If you are using amd, please choose RADV driver.  
 
 ## Install
+
+Gentoo:
+```sh
+sudo emerge -av eselect-repository
+sudo eselect repository enable gig
+sudo emerge -av kde-misc/wallpaper-engine-kde-plugin
+```
+
 #### Dependencies
 Debian:  
 ```sh
