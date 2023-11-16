@@ -24,7 +24,7 @@ Flickable {
     property alias cfg_RandomizeWallpaper: ckbox_randomizeWallpaper.checked
     property alias cfg_PauseFilterByScreen: ckbox_pauseFilterByScreen.checked
 
-    property alias cfg_PauseAcPlugin: ckbox_pauseAcPlugin.checked
+    property alias cfg_PauseOnBatPower: chkbox_pauseOnBatPower.checked
     property alias cfg_PauseBatPercent: spin_pauseBatPercent.value
 
 
@@ -98,10 +98,10 @@ Flickable {
                 }
             }
             OptionItem {
-                text: 'Pause if AC adapter not plugged in'
+                text: 'Pause if PC is on battery power'
                 text_color: Theme.textColor
                 actor: Switch {
-                    id: ckbox_pauseAcPlugin
+                    id: chkbox_pauseOnBatPower
                 }
             }
             OptionItem {

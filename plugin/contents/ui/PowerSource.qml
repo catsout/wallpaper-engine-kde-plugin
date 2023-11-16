@@ -6,9 +6,9 @@ Item {
 	id: root
     readonly property alias pm_data: pm_source.data
 
-    readonly property bool st_ac_plugin_in: pm_data['AC Adapter']['Plugged in']
-    readonly property bool st_battery_has: pm_data['Battery']['Has Battery']
-    readonly property int  st_battery_percent: pm_data['Battery']['Percent']
+    readonly property bool   st_battery_has: pm_data['Battery']['Has Battery']
+	readonly property string st_battery_state: pm_data['Battery']['State']
+    readonly property int    st_battery_percent: pm_data['Battery']['Percent']
 
 	// https://github.com/KDE/plasma-workspace/blob/master/dataengines/powermanagement/powermanagementengine.h
 	// https://github.com/KDE/plasma-workspace/blob/master/dataengines/powermanagement/powermanagementengine.cpp

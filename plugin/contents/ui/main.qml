@@ -20,8 +20,8 @@ Rectangle {
     property bool   mouseInput: wallpaper.configuration.MouseInput
     property bool   mpvStats: wallpaper.configuration.MpvStats
 
-    property bool   pauseAcPlugin: wallpaper.configuration.PauseAcPlugin
-    property int   pauseBatPercent: wallpaper.configuration.PauseBatPercent
+    property bool   pauseOnBatPower: wallpaper.configuration.PauseOnBatPower
+    property int    pauseBatPercent: wallpaper.configuration.PauseBatPercent
 
     
     property var curOpt: ({})
@@ -167,7 +167,7 @@ Rectangle {
     PowerSource {
         id: powerSource
         readonly property bool reqPause: {
-            (background.pauseAcPlugin && !st_ac_plugin_in) ||
+            (background.pauseOnBatPower && (st_battery_state == 'NoCharge' || st_battery_state == 'Discharging')) ||
             (background.pauseBatPercent !== 0 && st_battery_has && st_battery_percent < background.pauseBatPercent)
         }
     }
