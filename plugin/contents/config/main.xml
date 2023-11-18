@@ -34,8 +34,8 @@
       <label>Filter By Screen</label>
       <default>true</default>
     </entry>
-    <entry name="PauseAcPlugin" type="Bool">
-      <label>Pause Ac Plugin</label>
+    <entry name="PauseOnBatPower" type="Bool">
+      <label>Pause when PC is on battery power</label>
       <default>false</default>
     </entry>
     <entry name="PauseBatPercent" type="Int">
