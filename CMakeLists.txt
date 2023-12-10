@@ -28,10 +28,17 @@ endif()
 find_package(ECM REQUIRED NO_MODULE)
 set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} ${CMAKE_MODULE_PATH})
 include(KDEInstallDirs)
+if(QT_MAJOR_VERSION EQUAL 6)
+find_package(KF6 ${KF5_MIN_VERSION} REQUIRED COMPONENTS
+    Package
+    # Plasma
+)
+else()
 find_package(KF5 ${KF5_MIN_VERSION} REQUIRED COMPONENTS
     Package
     Plasma
 )
+endif()
 
 if(NOT USE_PLASMAPKG)
     plasma_install_package(plugin com.github.casout.wallpaperEngineKde wallpapers wallpaper)

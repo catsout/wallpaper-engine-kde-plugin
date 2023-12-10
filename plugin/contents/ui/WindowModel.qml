@@ -1,5 +1,5 @@
 import QtQuick 2.5
-import QtQuick.Controls 1.0
+import QtQuick.Controls 2.0
 import QtQuick.Layouts 1.2
 import QtQuick.Window 2.1
 import org.kde.plasma.core 2.0 as PlasmaCore
@@ -138,13 +138,14 @@ Item {
             return this.data(idx, TaskManager.AbstractTasksModel[property]);
         }
     }
-    PlasmaCore.SortFilterModel {
-        filterRole: 'IsWindow'
-        filterRegExp: 'true'
-        sourceModel: tasksModel
-        onDataChanged: updateWindowsinfo()
-        onCountChanged: updateWindowsinfo()
-    }
+    // TODO: PlasmaCore.SortFilterModel
+    // PlasmaCore.SortFilterModel {
+    //     filterRole: 'IsWindow'
+    //     filterRegExp: 'true'
+    //     sourceModel: tasksModel
+    //     onDataChanged: updateWindowsinfo()
+    //     onCountChanged: updateWindowsinfo()
+    // }
 
     Timer{
         id: triggerTimer

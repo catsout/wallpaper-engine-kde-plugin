@@ -3,7 +3,7 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON) 
 project(mpvbackend-viewer)
 
-find_package(Qt5 COMPONENTS Gui Quick REQUIRED)
+find_package(Qt${QT_MAJOR_VERSION} COMPONENTS Gui Quick REQUIRED)
 
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)

@@ -1,7 +1,9 @@
 import QtQuick 2.12
 import QtQuick.Window 2.2
 import org.kde.plasma.core 2.0 as PlasmaCore
+import org.kde.plasma.plasmoid
 
+WallpaperItem {
 Rectangle {
     id: background
     anchors.fill: parent
@@ -158,7 +160,7 @@ Rectangle {
     WindowModel {
         id: windowModel
         screenGeometry: wallpaper.parent.screenGeometry
-        activity: wallpaper.parent.activity
+        activity: ""// TODO: wallpaper.parent.activity: error: assign null to string
         filterByScreen: wallpaper.configuration.PauseFilterByScreen
         modePlay: wallpaper.configuration.PauseMode
         resumeTime: wallpaper.configuration.ResumeTime
@@ -345,4 +347,5 @@ Rectangle {
         lauchPauseTimer.start();
         randomizeTimer.start();
     }
+}
 }

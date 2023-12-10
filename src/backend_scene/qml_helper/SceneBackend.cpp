@@ -11,6 +11,9 @@
 
 #include <QtGui/QOffscreenSurface>
 #include <QtQuick/QSGSimpleTextureNode>
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+#include <QSGTexture>
+#endif
 
 #include <clocale>
 #include <atomic>
@@ -42,7 +45,9 @@ void* get_proc_address(const char* name) {
 }
 
 QSGTexture* createTextureFromGl(uint32_t handle, QSize size, QQuickWindow* window) {
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+    return QNativeInterface::QSGOpenGLTexture::fromNative(handle, window, size);
+#elif (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
     return window->createTextureFromNativeObject(
         QQuickWindow::NativeObjectTexture, &handle, 0, size);
 #else
