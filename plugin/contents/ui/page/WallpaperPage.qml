@@ -94,7 +94,7 @@ RowLayout {
 
                     actions: [
                         Kirigami.Action {
-                            icon.source: '../../images/folder-outline.svg'
+                            icon.source: Qt.resolvedUrl('../../images/folder-outline.svg')
                             icon.color: Theme.textColor
                             text: 'Library'
                             tooltip: cfg_SteamLibraryPath ? cfg_SteamLibraryPath : 'Select steam library dir'
@@ -103,7 +103,7 @@ RowLayout {
                         Kirigami.Action {
                             id: action_cb_filter
                             text: 'Filter'
-                            icon.source: '../../images/filter.svg'
+                            icon.source: Qt.resolvedUrl('../../images/filter.svg')
                             icon.color: Theme.textColor
                             property int currentIndex
                             readonly property var model: Common.filterModel
@@ -118,7 +118,7 @@ RowLayout {
                         Kirigami.Action {
                             id: action_cb_sort
                             text: model[currentIndex].short
-                            icon.source: '../../images/arrow-down.svg'
+                            icon.source: Qt.resolvedUrl('../../images/arrow-down.svg')
                             icon.color: Theme.textColor
                             property int currentIndex: Common.modelIndexOfValue(model, cfg_SortMode)
                             readonly property var model: [
@@ -141,7 +141,7 @@ RowLayout {
                             children: model.map((el, index) => comp_action_sort.createObject(null, {text: el.text, act_value: el.value}))
                         },
                         Kirigami.Action {
-                            icon.source: '../../images/refresh.svg'
+                            icon.source: Qt.resolvedUrl('../../images/refresh.svg')
                             icon.color: Theme.textColor
                             text: 'Refresh'
                             onTriggered: wpListModel.refresh()
@@ -443,21 +443,21 @@ RowLayout {
                                 id: right_act_favor
                                 icon.color: Theme.textColor
                                 icon.source: right_content.wpmodel.favor 
-                                    ? '../../images/bookmark.svg'
-                                    : '../../images/bookmark-outline-add.svg'
+                                    ? Qt.resolvedUrl('../../images/bookmark.svg')
+                                    : Qt.resolvedUrl('../../images/bookmark-outline-add.svg')
                                 tooltip: right_content.wpmodel.favor
                                     ? 'Remove from favorites'
                                     : 'Add to favorites'
                                 onTriggered: picViewLoader.item.toggleFavor(right_content.wpmodel)
                             },
                             Kirigami.Action {
-                                icon.source: '../../images/link.svg'
+                                icon.source: Qt.resolvedUrl('../../images/link.svg')
                                 tooltip: "Open Workshop Link"
                                 enabled: right_content.wpmodel.workshopid.match(Common.regex_workshop_online)
                                 onTriggered: Qt.openUrlExternally(Common.getWorkshopUrl(right_content.wpmodel.workshopid))
                             },
                             Kirigami.Action {
-                                icon.source: '../../images/folder-outline.svg'
+                                icon.source: Qt.resolvedUrl('../../images/folder-outline.svg')
                                 tooltip: "Open Containing Folder"
                                 onTriggered: Qt.openUrlExternally(right_content.wpmodel.path) 
                             }
@@ -692,7 +692,7 @@ RowLayout {
                                 right_opts.config_changes && 
                                 right_opts.has_change(modelData.config_key)
 
-                            icon: is_changed ? '../../images../../images/edit-pencil.svg' : ''
+                            icon: is_changed ? Qt.resolvedUrl('../../images/edit-pencil.svg') : ''
                             actor: Loader {
                                 sourceComponent: modelData.comp
                                 onLoaded: {
