@@ -1,5 +1,5 @@
 import QtQuick 2.6
-import QtGraphicalEffects 1.12
+import Qt5Compat.GraphicalEffects
 
 
 Item {
@@ -8,7 +8,7 @@ Item {
 
     property alias source: image.source
     property alias fillMode: image.fillMode
-    property alias smooth: image.smooth
+    // property alias smooth: image.smooth
     property alias color: overlay_color.color
 
     Image {

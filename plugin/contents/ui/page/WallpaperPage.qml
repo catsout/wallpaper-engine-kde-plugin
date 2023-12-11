@@ -2,7 +2,7 @@ import QtQuick 2.6
 import QtQuick.Controls 2.3
 import QtQuick.Controls 2.3 as QQC
 import QtQuick.Window 2.0 // for Screen
-import QtQuick.Dialogs 1.2
+import QtQuick.Dialogs
 import QtQuick.Layouts 1.5
 
 import ".."
@@ -14,7 +14,7 @@ import "../js/bbcode.mjs" as BBCode
 import org.kde.plasma.core 2.0 as PlasmaCore
 import org.kde.plasma.components 3.0 as PlasmaComponents
 // for kcm gridview
-import org.kde.kcm 1.1 as KCM
+import org.kde.kcmutils as KCM
 import org.kde.kirigami 2.6 as Kirigami
 import org.kde.kquickcontrolsaddons 2.0
 
@@ -205,11 +205,11 @@ RowLayout {
                         ]
                         thumbnail: Rectangle {
                             anchors.fill: parent
-                            QIconItem {
+                            Kirigami.Icon {
                                 anchors.centerIn: parent
                                 width: root.iconSizes.large
                                 height: width
-                                icon: "view-preview"
+                                source: "view-preview"
                                 visible: !imgPre.visible
                             }
                             Image {
@@ -297,12 +297,9 @@ RowLayout {
                 }
             }
 
-            FileDialog {
+            FolderDialog {
                 id: wpDialog
                 title: "Select steamlibrary folder"
-                selectFolder: true
-                selectMultiple : false
-                nameFilters: [ "All files (*)" ]
                 onAccepted: {
                     const path = Utils.trimCharR(wpDialog.fileUrls[0], '/');
                     cfg_SteamLibraryPath = path;
