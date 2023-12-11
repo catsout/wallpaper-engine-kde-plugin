@@ -31,8 +31,8 @@ include(KDEInstallDirs)
 if(QT_MAJOR_VERSION EQUAL 6)
 find_package(KF6 ${KF5_MIN_VERSION} REQUIRED COMPONENTS
     Package
-    # Plasma
 )
+find_package(Plasma)
 else()
 find_package(KF5 ${KF5_MIN_VERSION} REQUIRED COMPONENTS
     Package
