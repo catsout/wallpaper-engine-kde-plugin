@@ -114,7 +114,7 @@ Rectangle {
         property int tryTimes: 0
         onTriggered: {
             tryTimes++; 
-            if(tryTimes >= 10 || !background.hasLib || !mouseInput) return;
+            if(tryTimes >= 10 || !background.hasLib || !this.mouseInput) return;
             if(background.mouseHooker) return;
             background.hookMouse();
         }
@@ -160,7 +160,7 @@ Rectangle {
     WindowModel {
         id: windowModel
         screenGeometry: wallpaper.parent.screenGeometry
-        activity: ""// TODO: wallpaper.parent.activity: error: assign null to string
+        activity: wallpaper.parent.activity
         filterByScreen: wallpaper.configuration.PauseFilterByScreen
         modePlay: wallpaper.configuration.PauseMode
         resumeTime: wallpaper.configuration.ResumeTime
