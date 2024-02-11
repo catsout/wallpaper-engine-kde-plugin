@@ -61,7 +61,7 @@ openSUSE:
 sudo zypper in vulkan-devel plasma-framework-devel plasma5-workspace-devel \
 libqt5-qtwebsockets-devel mpv-devel python310-websockets \
 libqt5-qtx11extras-devel liblz4-devel gstreamer-plugins-libav \
-libqt5-qtbase-private-headers-devel cmake
+libqt5-qtbase-private-headers-devel cmake extra-cmake-modules
 ```
 
 Fedora Kinoite:  
