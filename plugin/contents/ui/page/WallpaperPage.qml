@@ -301,7 +301,7 @@ RowLayout {
                 id: wpDialog
                 title: "Select steamlibrary folder"
                 onAccepted: {
-                    const path = Utils.trimCharR(wpDialog.fileUrls[0], '/');
+                    const path = Utils.trimCharR(wpDialog.selectedFolder.toString(), '/');
                     cfg_SteamLibraryPath = path;
                     wpListModel.refresh();
                 }
