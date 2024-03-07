@@ -81,25 +81,21 @@ Every time you receive update in discover, you should run these commands to upda
 git clone https://github.com/catsout/wallpaper-engine-kde-plugin.git
 cd wallpaper-engine-kde-plugin
 
-# Download submodule (glslang)
+# Download submodule
 git submodule update --init
 
-# Configure
-# 'USE_PLASMAPKG=ON': using plasmapkg2 tool to install plugin
-mkdir build && cd build
-cmake .. -DUSE_PLASMAPKG=ON
-
-# Build
-make -j$nproc
+# Configure, build and install
+# 'USE_PLASMAPKG=ON': using kpackagetool tool to install plugin
+cmake -B build -S . -GNinja -DUSE_PLASMAPKG=ON
+cmake --build build
+cmake --install build
 
 # Install package (ignore if USE_PLASMAPKG=OFF for system-wide installation)
-make install_pkg
-# install lib
-sudo make install
+cmake --build build --target install_pkg
 ```
 #### Uninstall
 1. remove files that list in `wallpaper-engine-kde-plugin/build/install_manifest.txt`
-2. `plasmapkg2 -r ~/.local/share/plasma/wallpapers/com.github.casout.wallpaperEngineKde`
+2. `kpackagetool6 -t Plasma/Wallpaper -r com.github.catsout.wallpaperEngineKde`
 
 ## Usage
 1. *Wallpaper Engine* installed on Steam

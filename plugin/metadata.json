@@ -9,7 +9,7 @@
         "Category": "",
         "Description": "Wallpaper Engine for Kde",
         "Icon": "preferences-desktop-wallpaper",
-        "Id": "com.github.casout.wallpaperEngineKde",
+        "Id": "com.github.catsout.wallpaperEngineKde",
         "License": "GPLv2+",
         "Name": "Wallpaper Engine for Kde",
         "ServiceTypes": [
