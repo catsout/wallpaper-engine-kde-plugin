@@ -35,7 +35,7 @@ Item{
     MediaPlayer {
         id: player
         loops: MediaPlayer.Infinite
-        playbackRate: background.videoRate
+        playbackRate: background.speed
         videoOutput: videoView
         audioOutput: audioOut
     }

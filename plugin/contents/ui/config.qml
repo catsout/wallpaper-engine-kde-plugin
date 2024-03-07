@@ -54,15 +54,15 @@ ColumnLayout {
             }
         }
     }
-    property var themeWidth: {
-        if(PlasmaCore.Theme && PlasmaCore.Theme.mSize) {
-            themeWidth = PlasmaCore.Theme.mSize(theme.defaultFont).width;
-        } else if(theme) {
-            themeWidth = theme.mSize(theme.defaultFont).width;
-        } else {
-            themeWidth = font.pixelSize;
-        }
-    }
+    // property var themeWidth: {
+    //     if(PlasmaCore.Theme && PlasmaCore.Theme.mSize) {
+    //         themeWidth = PlasmaCore.Theme.mSize(theme.defaultFont).width;
+    //     } else if(theme) {
+    //         themeWidth = theme.mSize(theme.defaultFont).width;
+    //     } else {
+    //         themeWidth = font.pixelSize;
+    //     }
+    // }
 
     property var libcheck: ({
         wallpaper: Common.checklib_wallpaper(root),
