@@ -1,4 +1,5 @@
-find_package(Qt5 COMPONENTS Quick Qml REQUIRED)
+message(STATUS "QT_MAJOR_VERSION = ${QT_MAJOR_VERSION}")
+find_package(Qt${QT_MAJOR_VERSION} COMPONENTS Quick Qml REQUIRED)
 
 add_subdirectory(backend_mpv)
 
@@ -19,8 +20,8 @@ add_library(${PROJECT_NAME}
 
 target_link_libraries(${PROJECT_NAME} 
 	PRIVATE
-	Qt5::Quick
-	Qt5::Qml 
+	Qt::Quick
+	Qt::Qml 
 	mpvbackend
 	wescene-renderer-qml
 )

@@ -1,7 +1,9 @@
 import QtQuick 2.12
 import QtQuick.Window 2.2
 import org.kde.plasma.core 2.0 as PlasmaCore
+import org.kde.plasma.plasmoid
 
+WallpaperItem {
 Rectangle {
     id: background
     anchors.fill: parent
@@ -112,7 +114,7 @@ Rectangle {
         property int tryTimes: 0
         onTriggered: {
             tryTimes++; 
-            if(tryTimes >= 10 || !background.hasLib || !mouseInput) return;
+            if(tryTimes >= 10 || !background.hasLib || !this.mouseInput) return;
             if(background.mouseHooker) return;
             background.hookMouse();
         }
@@ -345,4 +347,5 @@ Rectangle {
         lauchPauseTimer.start();
         randomizeTimer.start();
     }
+}
 }

@@ -1,6 +1,7 @@
 import QtQuick 2.0
 import QtWebSockets 1.0
 import org.kde.plasma.core 2.0 as PlasmaCore
+import org.kde.plasma.plasma5support as Plasma5Support
 
 import "js/jsonrpc.mjs" as Jsonrpc
 
@@ -112,7 +113,7 @@ Item {
         }
     }
 
-    PlasmaCore.DataSource {
+    Plasma5Support.DataSource {
         engine: 'executable'
         connectedSources: [source]
         onNewData: {

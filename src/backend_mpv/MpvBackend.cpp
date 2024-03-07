@@ -7,12 +7,22 @@
 
 #include <QtGui/QGuiApplication>
 #include <QtGui/QOpenGLContext>
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+#include <QtOpenGL/QOpenGLFramebufferObject>
+#else
 #include <QtGui/QOpenGLFramebufferObject>
+#endif
 #include <QtGui/QOpenGLFunctions>
 #include <QtQuick/QQuickWindow>
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+#include <QtQuick/QQuickOpenGLUtils>
+#endif
 
 #include <QtGui/QOffscreenSurface>
 #include <QtQuick/QSGSimpleTextureNode>
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+#include <QSGTexture>
+#endif
 
 #include <clocale>
 #include <array>
@@ -23,7 +33,9 @@
 
 #if defined(__linux__) || defined(__FreeBSD__)
 //#ifdef ENABLE_X11
+#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
 #    include <QX11Info> // IWYU pragma: keep
+#endif
 //#endif
 #    include <qpa/qplatformnativeinterface.h> // IWYU pragma: keep
 #endif
@@ -68,7 +80,14 @@ int CreateMpvContex(mpv_handle* mpv, mpv_render_context** mpv_gl) {
 #if defined(__linux__) || defined(__FreeBSD__)
     if (QGuiApplication::platformName().contains("xcb")) {
         params[2].type = MPV_RENDER_PARAM_X11_DISPLAY;
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+        // TODO: QGuiApplication::nativeInterface<QNativeInterface::QX11Application>()::display();
+        // same for wayland
+        auto* native   = QGuiApplication::platformNativeInterface();
+        params[2].data = native->nativeResourceForWindow("display", nullptr);
+#else
         params[2].data = QX11Info::display();
+#endif
     }
     if (QGuiApplication::platformName().contains("wayland")) {
         params[2].type = MPV_RENDER_PARAM_WL_DISPLAY;
@@ -81,7 +100,9 @@ int CreateMpvContex(mpv_handle* mpv, mpv_render_context** mpv_gl) {
 }
 
 QSGTexture* createTextureFromGl(uint32_t handle, QSize size, QQuickWindow* window) {
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+    return QNativeInterface::QSGOpenGLTexture::fromNative(handle, window, size);
+#elif (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
     return window->createTextureFromNativeObject(
         QQuickWindow::NativeObjectTexture, &handle, 0, size);
 #else
@@ -266,14 +287,22 @@ public slots:
         if (Dirty()) {
             mpv_obj->checkAndEmitFirstFrame();
         }
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+        QQuickOpenGLUtils::resetOpenGLState();
+#else
         m_window->resetOpenGLState();
+#endif
     }
 
     void render() override {
         if (setDirty(false)) {
             QOpenGLFramebufferObject* fbo = framebufferObject();
             renderFrame(fbo);
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+            QQuickOpenGLUtils::resetOpenGLState();
+#else
             m_window->resetOpenGLState();
+#endif
         }
     }
 
@@ -323,7 +352,9 @@ void MpvObject::checkAndEmitFirstFrame() {
 }
 
 QQuickFramebufferObject::Renderer* MpvObject::createRenderer() const {
+#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
     window()->setPersistentOpenGLContext(true);
+#endif
     window()->setPersistentSceneGraph(true);
 
     auto* render = new MpvRender(m_shared_mpv, window());

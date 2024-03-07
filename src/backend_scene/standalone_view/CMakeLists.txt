@@ -38,7 +38,7 @@ target_link_libraries(${PROJECT_NAME}
 )
 
 if(BUILD_QML)
-    find_package(Qt5 COMPONENTS Qml REQUIRED)
+    find_package(Qt${QT_MAJOR_VERSION} COMPONENTS Qml REQUIRED)
 
     set(CMAKE_AUTOMOC ON) 
     set(CMAKE_AUTORCC ON) 
