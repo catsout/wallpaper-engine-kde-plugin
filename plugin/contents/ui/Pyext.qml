@@ -7,7 +7,7 @@ import "js/jsonrpc.mjs" as Jsonrpc
 
 Item {
     id: root
-    readonly property string file: "plasma/wallpapers/com.github.casout.wallpaperEngineKde/contents/pyext.py"
+    readonly property string file: "plasma/wallpapers/com.github.catsout.wallpaperEngineKde/contents/pyext.py"
     readonly property string source: {
         const sh = [
             `EXT=${file}`,
