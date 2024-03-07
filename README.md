@@ -1,6 +1,10 @@
 # Wallpaper Engine for Kde
 A wallpaper plugin integrating [wallpaper engine](https://store.steampowered.com/app/431960/Wallpaper_Engine) into kde wallpaper setting.  
 
+## Todo
+- support kde6
+- move scene to separate process
+
 ## Note
 - Known issues:
   - Some scene wallpapers may **crash** your KDE.  
@@ -192,11 +196,6 @@ It's using GStreamer to play video.
 #### Mpv
 Need to compile the plugin lib.  
 The config is set to `hwdec=auto`, and is not configurable for now.  
-
-## About integrating into other desktop environments
-There is no general way. If there is a way to have good support for most desktop environments, why not we just require wallpaper engine itself to support linux. Some similar apps like [lively](https://github.com/rocksdanister/lively) and [ScreenPlay](https://store.steampowered.com/app/672870/ScreenPlay) can benefit from that, but that way doesn't exist. Actually the integration and implement are separated, for all integration ways, the implement is shared. So if there is a general way, we can move to it easily.  
-
-The major work of this plugin is the scene wallpaper [renderer](src/backend_scene/src). If you want to integrate this into other desktop environments, here are some [examples](src/backend_scene/standalone_view). Currently this renderer is rendering under vulkan and sharing to opengl texture which will be read by qml(plasmashell) in kde. You can integrate this renderer into anything that can show vulkan or opengl textures.  
 
 ## Acknowledgments
 - [RePKG](https://github.com/notscuffed/repkg)
