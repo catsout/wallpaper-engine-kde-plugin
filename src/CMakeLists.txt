@@ -1,5 +1,5 @@
-message(STATUS "QT_MAJOR_VERSION = ${QT_MAJOR_VERSION}")
-find_package(Qt${QT_MAJOR_VERSION} COMPONENTS Quick Qml REQUIRED)
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Quick Qml)
 
 add_subdirectory(backend_mpv)
 
