@@ -53,7 +53,7 @@ message(FATAL_ERROR "Qt not found")
 endif()
 
 if(NOT USE_PLASMAPKG)
-  plasma_install_package(plugin com.github.casout.wallpaperEngineKde wallpapers
+  plasma_install_package(plugin com.github.catsout.wallpaperEngineKde wallpapers
                          wallpaper)
 else()
   find_program(KPACKAGETOOL NAMES kpackagetool6 kpackagetool)
