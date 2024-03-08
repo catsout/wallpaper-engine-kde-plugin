@@ -97,6 +97,9 @@ Item {
     TaskManager.ActivityInfo { 
         id: activityInfo 
         onCurrentActivityChanged: virtualDesktopInfo.onCurrentDesktopChanged();
+        Component.onCompleted: {
+            wModel.activity = this.currentActivity;
+        }
     }
 
     TaskManager.VirtualDesktopInfo { 

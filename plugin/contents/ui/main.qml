@@ -160,7 +160,6 @@ Rectangle {
     WindowModel {
         id: windowModel
         screenGeometry: wallpaper.parent.screenGeometry
-        activity: wallpaper.parent.activity ?? ''
         filterByScreen: wallpaper.configuration.PauseFilterByScreen
         modePlay: wallpaper.configuration.PauseMode
         resumeTime: wallpaper.configuration.ResumeTime
