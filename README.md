@@ -82,7 +82,7 @@ git clone https://github.com/catsout/wallpaper-engine-kde-plugin.git
 cd wallpaper-engine-kde-plugin
 
 # Download submodule
-git submodule update --init
+git submodule update --init --force --recursive
 
 # Configure, build and install
 # 'USE_PLASMAPKG=ON': using kpackagetool tool to install plugin
