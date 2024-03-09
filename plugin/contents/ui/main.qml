@@ -63,8 +63,8 @@ Rectangle {
     signal sig_backendFirstFrame(string backname);
     onSig_backendFirstFrame: {
         console.error(`backend ${backname} first frame`);
-        if (wallpaper.hasOwnProperty('repaintNeeded'))
-            wallpaper.repaintNeeded();
+        if (wallpaper.hasOwnProperty('accentColor'))
+            wallpaper.accentColorChanged();
     }
 
     Component.onDestruction: {
