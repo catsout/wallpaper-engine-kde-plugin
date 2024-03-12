@@ -58,49 +58,6 @@ Item {
         audioMuted: background.mute
         activeFocusOnPress: false
         webChannel: channel
-        userScripts: [
-            WebEngineScript {
-                injectionPoint: WebEngineScript.DocumentCreation
-                worldId: WebEngineScript.MainWorld
-                name: "QWebChannel"
-                sourceUrl: "qrc:///qtwebchannel/qwebchannel.js"
-            },
-            WebEngineScript {
-                injectionPoint: WebEngineScript.DocumentCreation
-                worldId: WebEngineScript.MainWorld
-                name: "Audio"
-                sourceCode: `
-                    window.wallpaperRegisterAudioListener = function(listener) {
-                        if(window.wpeQml)
-                            window.wpeQml.sigAudio.connect(listener);
-                        else
-                            window.wallpaperRAed = listener;
-                    }
-                `
-            },
-            WebEngineScript {
-                worldId: WebEngineScript.MainWorld
-                injectionPoint: WebEngineScript.Deferred
-                name: "ObjectInjector"
-                sourceCode: `
-                    new QWebChannel(qt.webChannelTransport, function(channel) {
-                        window.wpeQml = channel.objects.wpeQml;
-                        const wpeQml = window.wpeQml;
-                        const propertyListener = window.wallpaperPropertyListener;
-                        if(window.wallpaperRAed)
-                            wpeQml.sigAudio.connect(window.wallpaperRAed);
-                        if(propertyListener) {
-                            if(propertyListener.applyGeneralProperties)
-                                wpeQml.sigGeneralProperties.connect(propertyListener.applyGeneralProperties);
-                            if(propertyListener.applyUserProperties)
-                                wpeQml.sigUserProperties.connect(propertyListener.applyUserProperties);
-                        }
-                        wpeQml.loaded = true;
-                    });
-                    document.getElementsByTagName('body')[0].ondragstart = function() { return false; }
-                    `
-            }
-        ]
 
         property bool paused: false
         property bool _init: {
@@ -120,8 +77,8 @@ Item {
         //onContextMenuRequested: function(request) {
         //    request.accepted = true;
         //}
-        onLoadingChanged: {
-            if(loadRequest.status == WebEngineView.LoadSucceededStatus) {
+        onLoadingChanged: (loadingInfo) => {
+            if(loadingInfo.status == WebEngineView.LoadSucceededStatus) {
                 // check pause after load
                 if(paused) {
                     webItem.play();
@@ -143,6 +100,49 @@ Item {
         }
 
         Component.onCompleted: {
+            userScripts.insert([
+                {
+                    injectionPoint: WebEngineScript.DocumentCreation,
+                    worldId: WebEngineScript.MainWorld,
+                    name: "QWebChannel",
+                    sourceUrl: "qrc:///qtwebchannel/qwebchannel.js"
+                },
+                {
+                    injectionPoint: WebEngineScript.DocumentCreation,
+                    worldId: WebEngineScript.MainWorld,
+                    name: "Audio",
+                    sourceCode: `
+                        window.wallpaperRegisterAudioListener = function(listener) {
+                            if(window.wpeQml)
+                                window.wpeQml.sigAudio.connect(listener);
+                            else
+                                window.wallpaperRAed = listener;
+                        }
+                    `
+                },
+                {
+                    worldId: WebEngineScript.MainWorld,
+                    injectionPoint: WebEngineScript.Deferred,
+                    name: "ObjectInjector",
+                    sourceCode: `
+                        new QWebChannel(qt.webChannelTransport, function(channel) {
+                            window.wpeQml = channel.objects.wpeQml;
+                            const wpeQml = window.wpeQml;
+                            const propertyListener = window.wallpaperPropertyListener;
+                            if(window.wallpaperRAed)
+                                wpeQml.sigAudio.connect(window.wallpaperRAed);
+                            if(propertyListener) {
+                                if(propertyListener.applyGeneralProperties)
+                                    wpeQml.sigGeneralProperties.connect(propertyListener.applyGeneralProperties);
+                                if(propertyListener.applyUserProperties)
+                                    wpeQml.sigUserProperties.connect(propertyListener.applyUserProperties);
+                            }
+                            wpeQml.loaded = true;
+                        });
+                        document.getElementsByTagName('body')[0].ondragstart = function() { return false; }
+                        `
+                }
+            ])
             background.nowBackend = 'QtWebEngine';
         }
 
