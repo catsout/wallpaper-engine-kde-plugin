@@ -44,7 +44,7 @@ qt5-qtx11extras-devel qt5-qtwebchannel-devel qt5-qtwebsockets-devel cmake
 
 Arch:  
 ```sh
-sudo pacman -S extra-cmake-modules plasma-framework gst-libav \
+sudo pacman -S extra-cmake-modules plasma-framework5 gst-libav \
 base-devel mpv python-websockets qt5-declarative qt5-websockets qt5-webchannel vulkan-headers cmake
 ```
 
