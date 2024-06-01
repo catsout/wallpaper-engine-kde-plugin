@@ -60,8 +60,8 @@ Rectangle {
     property string wallpaperPath
     property string wallpaperType
 
-    signal sig_backendFirstFrame(string backname);
-    onSig_backendFirstFrame: {
+    signal sig_backendFirstFrame(string backname)
+    function onBackendFirstFrame(backname) {
         console.error(`backend ${backname} first frame`);
         if (wallpaper.hasOwnProperty('accentColor'))
             wallpaper.accentColorChanged();
@@ -113,8 +113,8 @@ Rectangle {
         interval: 2000
         property int tryTimes: 0
         onTriggered: {
-            tryTimes++; 
-            if(tryTimes >= 10 || !background.hasLib || !this.mouseInput) return;
+            tryTimes++;
+            if(tryTimes >= 10 || !background.hasLib || !background.mouseInput) return;
             if(background.mouseHooker) return;
             background.hookMouse();
         }
