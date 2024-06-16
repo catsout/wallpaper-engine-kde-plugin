@@ -36,8 +36,8 @@ Item{
         }
 
         Connections {
-            ignoreUnknownSignals: true
-            onFirstFrame: {
+            target: player
+            function onFirstFrame() {
                 background.sig_backendFirstFrame('scene');
             }
         }

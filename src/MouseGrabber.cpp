@@ -2,6 +2,8 @@
 #include <iostream>
 #include <QLoggingCategory>
 #include <QCoreApplication>
+#include <QHoverEvent>
+#include <QMouseEvent>
 
 using namespace wekde;
 
@@ -42,22 +44,22 @@ void MouseGrabber::sendEvent(QObject* target, QEvent* event) {
 
 void MouseGrabber::sendMouseEvent(QMouseEvent* event) {
     if (m_target) {
-        QMouseEvent temp = QMouseEvent(event->type(),
-                                       mapToItem(m_target, event->localPos()),
-                                       event->screenPos(),
-                                       event->button(),
-                                       event->buttons(),
-                                       event->modifiers());
+        QMouseEvent temp(event->type(),
+                         mapToItem(m_target, event->localPos()),
+                         event->screenPos(),
+                         event->button(),
+                         event->buttons(),
+                         event->modifiers());
         QCoreApplication::sendEvent(m_target, &temp);
     }
 }
 
 void MouseGrabber::sendHoverEvent(QHoverEvent* event) {
     if (m_target) {
-        QHoverEvent temp = QHoverEvent(event->type(),
-                                       mapToItem(m_target, event->posF()),
-                                       mapToItem(m_target, event->oldPosF()),
-                                       event->modifiers());
+        QHoverEvent temp(event->type(),
+                         mapToItem(m_target, event->posF()),
+                         mapToItem(m_target, event->oldPosF()),
+                         event->modifiers());
         QCoreApplication::sendEvent(m_target, &temp);
     }
 }
