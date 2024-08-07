@@ -7,6 +7,7 @@ import "js/utils.mjs" as Utils
 Item {
     id: root
     property var workshopDirs
+    property var globalConfigPath
     property string filterStr: ""
     property int sortMode: Common.SortMode.Id
     property bool enabled: true
@@ -38,6 +39,7 @@ Item {
 
     property int countNoFilter: 0
 
+    property var playlists: {}
     property var folderModels: []
 
     function loadItemFromJson(text, el) {
@@ -57,6 +59,41 @@ Item {
                 el.tags = project.tags.map(el => Object({key: el}));
             }
         }
+    }
+
+    function loadPlaylists() {
+        // reset playlists property
+        root.playlists = {};
+    
+        return root._readfile(Common.urlNative(globalConfigPath)).then(value => {
+            var jsonData = JSON.parse(value);
+
+            // refreshing entries in the filter model is not thread safe, so we need to lock it
+            var filterModel = Common.filterModel;
+            return filterModel.lock.lock().then(() => {
+                // remove playlists from the filterModel
+                var selectedPlaylists = new Set();
+                for(var i =0; i < filterModel.count; i++) {
+                    var el = filterModel.get(i);
+                    if(el.type == "playlist") {
+                        if(el.def) { selectedPlaylists.add(el.key); }
+                        filterModel.remove(i);
+                        i--;
+                    }
+                }
+
+                jsonData.steamuser.general.playlists.forEach(function(el) {
+                    // we're going to be using paths to match wallpapers to playlists, but the paths in the config will start with a Windows-style drive letter
+                    // so we need to convert them to file:// URLs. In addition it appears that the paths are truncated to 110 chars elsewhere so we will do the same
+                    // so that they can match later
+                    root.playlists[el.name] = new Set(el.items.map(el => "file://" + el.substring(2).replace(/\/[^\/]*$/, "").substring(0,110))); 
+                    // add the playlist to the filter model preserving it's previous selection status
+                    filterModel.append({type: "playlist", key: el.name, text: el.name, def: selectedPlaylists.has(el.name) ? 1 : 0});                    
+                });
+            })
+            .then(() => { filterModel.lock.release() })
+            .catch(() => { filterModel.lock.release() });
+        }).catch(reason => console.error("PlaylistLoadError " + reason.lineNumber + " -- " + reason.type + reason.message));
     }
 
     function genSortCmp(mode) {
@@ -90,7 +127,7 @@ Item {
             this.folderMapModel.forEach((value, key) => {
                 this.model.push(...value);
             });
-            filterToList(root.model, root.filterStr, this.model);
+            return filterToList(root.model, root.filterStr, this.model);
         }
         function filterToList(listModel, filterStr, data) {
             const filterValues = Common.filterModel.getValueArray(filterStr);
@@ -102,7 +139,7 @@ Item {
                     };
                 });
             root.modelStartSync();
-            new Promise((resolve, reject) => {
+            return new Promise((resolve, reject) => {
                 const filter = Common.filterModel.genFilter(filterstr);
                 const model = listModel;
                 data.sort(genSortCmp(sortMode));
@@ -113,7 +150,6 @@ Item {
                 });
                 resolve();
             }).then(() => {
-                console.error(`filtered, filter: ${root.filterStr}, from ${this.model.length} to ${root.model.count}`);
                 root.countNoFilter = this.model.length;
                 root.modelRefreshed();
             });
@@ -121,31 +157,37 @@ Item {
     }
 
     function refresh() {
-        if(!root.enabled) return;
+        if(!root.enabled) return Promise.resolve(null);
         const p_list = [];
-        this.workshopDirs.forEach(el => {
-            const dirs = (Array.isArray(el) ? el : [el]).map(Common.urlNative);
-            p_list.push(pyext.get_folder_list(
-                dirs[0],
-                { only_dir: true, fallbacks: dirs.slice(1) }
-            ).then(res => {
-                if(!res) console.error(`folder not found: ${dirs[0]}`);
-                return res;
-            }).catch(reason => console.error(reason)));
-        });
-        new Promise((resolve, reject) => {
-            Promise.all(p_list).then(values => {
-                this.loadFolderLists(values);
-            }).catch(reason => console.error(reason));
-            resolve();
-        });
 
+        return loadPlaylists().then(() => {
+            this.workshopDirs.forEach(el => {
+                const dirs = (Array.isArray(el) ? el : [el]).map(Common.urlNative);
+                p_list.push(pyext.get_folder_list(
+                    dirs[0],
+                    { only_dir: true, fallbacks: dirs.slice(1) }
+                ).then(res => {
+                    if(!res) console.error(`folder not found: ${dirs[0]}`);
+                    return res;
+                }).catch(reason => console.error(reason)));
+            });
+            return new Promise((resolve, reject) => {
+                Promise.all(p_list).then(values => {
+                    return this.loadFolderLists(values);
+                }).then(() => {
+                    resolve();
+                }).catch(reason => {
+                    console.error(reason)
+                    resolve();
+                });
+            });
+        });
     }
 
     function loadFolderLists(folders) {
         const proxyModel = []
         folders.forEach(folder => {
-            if(!folder) return;
+            if(!folder) return Promise.resolve();
             // seems qml's "for" is a function
             const folder_dir = folder.folder;
             folder.items.forEach(el => {
@@ -159,47 +201,49 @@ Item {
             });
             //if(proxyModel) console.error(`show the first: ${proxyModel[0].path}`)
         });
-        new Promise((resolve, reject) => {
+        return new Promise((resolve, reject) => {
             const plist = []
             proxyModel.forEach((el) => {
                 // as no allSettled, catch any error
-                const p = root._readfile(Common.urlNative(Common.getWpModelProjectPath(el))).then(value => {
+                const p = root._readfile(Common.urlNative(Common.getWpModelProjectPath(el))).then(value => {                    
+                        el.playlists = [];
                         root.loadItemFromJson(value, el);
+                        Object.keys(root.playlists).forEach((key) => {
+                            const value = root.playlists[key];
+                            if(value.has(el.path)) {       
+                                if(!el.playlists.includes(key))
+                                    el.playlists.push(Object({key: key}));
+                            }
+                        });
                     }).catch(reason => console.error(reason));
                 plist.push(p);
             });
             const path = this.folder;
             Promise.all(plist).then(value => {
-                folderWorker.loadModel(path, proxyModel);
-            }).catch(reason => console.error(reason));
-            resolve();
-            /*
-            const msg = {
-                action: "loadFolder", 
-                data: proxyModel,
-                path: this.folder
-            };
-            sendMessage(msg);
-            */
+                folderWorker.loadModel(path, proxyModel).then(() => resolve());
+            }).catch(reason => {
+                console.error(reason);
+                resolve();
+            });
         });
 
     }
     Component.onCompleted: {
         this.filterStrChanged.connect(function() {
             if(root.enabled) {
-                folderWorker.filterToList(root.model, root.filterStr, folderWorker.model)
+                return folderWorker.filterToList(root.model, root.filterStr, folderWorker.model)
             }
+            return Promise.resolve();
         });
         this.sortModeChanged.connect(this.filterStrChanged);
         this.enabledChanged.connect(this.refresh.bind(this));
 
         const fc = this.readfile;
         this.readfileChanged.connect(function() {
-            if(fc === root.readfile) return;
-            root.refresh();
-            fc = root.readfile;
+            if(fc === root.readfile) return Promise.resolve();
+            return root.refresh().then(() => { fc = root.readfile; });
         });
-        this.refresh();
+        return this.refresh();
     }
 
     // scan once
@@ -209,7 +253,8 @@ Item {
         repeat: false   //run once
         onTriggered: {
             if(wpListModel.model.count === 0)
-                wpListModel.refresh();  //refresh to scan
+                return wpListModel.refresh();  //refresh to scan
+            return Promise.resolve();
         }
     }
 

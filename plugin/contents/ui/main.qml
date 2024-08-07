@@ -147,11 +147,6 @@ Rectangle {
                         anchors.fill: parent
                     }
             `, screenGrid);
-            /*
-            console.error(Common.genItemListStr(Window.contentItem, "  ", function(item) {
-                return `${item} {z: ${item.z}, w: ${item.width}, h: ${item.height}}`;
-            }));
-            */
             return true;
        }
        return false;
@@ -180,6 +175,7 @@ Rectangle {
         id: wpListModel
         enabled: background.randomizeWallpaper
         workshopDirs: Common.getProjectDirs(background.steamlibrary)
+        globalConfigPath: Common.getGlobalConfigPath(background.steamlibrary)
         filterStr: background.filterStr
         initItemOp: (item) => {
             if(!background.customConf) return;
