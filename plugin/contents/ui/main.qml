@@ -1,4 +1,5 @@
 import QtQuick 2.12
+import com.github.catsout.wallpaperEngineKde 1.2
 import QtQuick.Window 2.2
 import org.kde.plasma.core 2.0 as PlasmaCore
 import org.kde.plasma.plasmoid
@@ -49,6 +50,20 @@ Rectangle {
 
     // auto pause
     property bool   ok: !windowModel.reqPause && !powerSource.reqPause
+
+    // detect TTY switch and pause wallpaper(s)
+    TTYSwitchMonitor {
+        id: ttyMonitor
+        onTtySwitch: {
+            if (sleep) {
+                console.log("Preparing for sleep (possibly a VT switch)");
+                this.pause();
+            } else {
+                console.log("Waking up (VT switch back)");
+                this.play();
+            }
+        }
+    }
 
     property string nowBackend: ""
 
