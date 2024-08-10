@@ -4,6 +4,17 @@ import org.kde.plasma.core 2.0 as PlasmaCore
 import org.kde.plasma.plasmoid
 
 WallpaperItem {
+    id: root
+
+    contextualActions: [
+        PlasmaCore.Action {
+            text:"Next Wallpaper Image"
+            icon.name: "user-desktop"
+            visible: root.pluginName === "com.github.catsout.wallpaperEngineKde" && background.randomizeWallpaper
+            onTriggered: wpListModel.randomizeWallpaper();
+        }
+    ]
+    
 Rectangle {
     id: background
     anchors.fill: parent
@@ -193,16 +204,31 @@ Rectangle {
             wallpaper.configuration.WallpaperWorkShopId = model.workshopid;
             wallpaper.configuration.WallpaperSource = Common.packWallpaperSource(model);
         }
+
+        function randomizeWallpaper()
+        {
+            // puase the wallpaper using launch settings to avoid freezing with fast wallpaper changes
+            lauchPauseTimer.start() 
+            
+            if(this.model.count === 0) return;
+            let result = this.model.get(Math.round(Math.random() * this.model.count));
+            while(typeof result === 'undefined' || result.workshopid == wallpaper.configuration.WallpaperWorkShopId)
+            {
+                result = this.model.get(Math.round(Math.random() * this.model.count));
+            }
+
+            wallpaper.configuration.WallpaperWorkShopId = result.workshopid;
+            wallpaper.configuration.WallpaperSource = Common.packWallpaperSource(result);
+        }
+
+        
     }
     Timer {
         id: randomizeTimer
         running: background.randomizeWallpaper
         interval: background.switchTimer * 1000 * 60
         repeat: true
-        onTriggered: {
-            const i = Math.round(Math.random() * wpListModel.model.count);
-            wpListModel.changeWallpaper(i);
-        }
+        onTriggered: wpListModel.randomizeWallpaper();
     }
 
     // lauch pause time to avoid freezing
