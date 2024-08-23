@@ -22,6 +22,7 @@ Flickable {
     property alias cfg_ResumeTime: resumeSpin.value
     property alias cfg_SwitchTimer: randomSpin.value
     property alias cfg_RandomizeWallpaper: ckbox_randomizeWallpaper.checked
+    property alias cfg_NoRandomWhilePaused: ckbox_noRandomWhilePaused.checked
     property alias cfg_PauseFilterByScreen: ckbox_pauseFilterByScreen.checked
 
     property alias cfg_PauseOnBatPower: chkbox_pauseOnBatPower.checked
@@ -197,6 +198,17 @@ Flickable {
                         }
                         Label { text: " min" }
                         Item { Layout.fillWidth: true }
+                    }
+                    RowLayout {
+                        Layout.fillWidth: true
+                        visible: ckbox_randomizeWallpaper.checked
+                        Label { 
+                            id: randomWhilePausedSetter
+                            text: "Skip randomizing while wallpaper is paused  " 
+                        }
+                        Switch {
+                            id: ckbox_noRandomWhilePaused
+                        }
                     }
                 }
             }

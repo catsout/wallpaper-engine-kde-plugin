@@ -19,6 +19,7 @@ Rectangle {
     property int    fps: wallpaper.configuration.Fps
 
     property bool   randomizeWallpaper: wallpaper.configuration.RandomizeWallpaper
+    property bool   noRandomWhilePaused: wallpaper.configuration.NoRandomWhilePaused
     property bool   mouseInput: wallpaper.configuration.MouseInput
     property bool   mpvStats: wallpaper.configuration.MpvStats
 
@@ -200,8 +201,10 @@ Rectangle {
         interval: background.switchTimer * 1000 * 60
         repeat: true
         onTriggered: {
-            const i = Math.round(Math.random() * wpListModel.model.count);
-            wpListModel.changeWallpaper(i);
+            if(!(background.noRandomWhilePaused && !background.ok)) {
+                const i = Math.round(Math.random() * wpListModel.model.count);
+                wpListModel.changeWallpaper(i);
+            }
         }
     }
 
