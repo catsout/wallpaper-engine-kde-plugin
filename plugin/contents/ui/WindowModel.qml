@@ -230,6 +230,10 @@ Item {
             return getproperty("IsMaximized") === true || getproperty("IsFullScreen") === true;
         }, notMinWModel);
 
+        const fullSModel = taskFilter.filterCallback((getproperty) => {
+            return getproperty("IsFullScreen") === true;
+        }, notMinWModel);
+
         const activeModel = taskFilter.filter({IsActive: true}, notMinWModel);
 
 
@@ -242,6 +246,10 @@ Item {
             break;
         case Common.PauseMode.Max:
             playBy(maxWModel.length === 0);
+            break;
+        case Common.PauseMode.FullScreen:
+            console.log("fullScreen", fullSModel);
+            playBy(fullSModel.length === 0);
             break;
         case Common.PauseMode.Focus:
             playBy(activeModel.length === 0);
