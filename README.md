@@ -1,6 +1,10 @@
 # Wallpaper Engine for Kde
 A wallpaper plugin integrating [wallpaper engine](https://store.steampowered.com/app/431960/Wallpaper_Engine) into kde wallpaper setting.  
 
+## Todo
+- support kde6
+- move scene to separate process
+
 ## Note
 - Known issues:
   - Some scene wallpapers may **crash** your KDE.  
@@ -74,28 +78,24 @@ Every time you receive update in discover, you should run these commands to upda
 #### Build and Install
 ```sh
 # Download source
-git clone https://github.com/catsout/wallpaper-engine-kde-plugin.git
+git clone --branch=qt6 https://github.com/catsout/wallpaper-engine-kde-plugin.git
 cd wallpaper-engine-kde-plugin
 
-# Download submodule (glslang)
-git submodule update --init
+# Download submodule
+git submodule update --init --force --recursive
 
-# Configure
-# 'USE_PLASMAPKG=ON': using plasmapkg2 tool to install plugin
-mkdir build && cd build
-cmake .. -DUSE_PLASMAPKG=ON
-
-# Build
-make -j$nproc
+# Configure, build and install
+# 'USE_PLASMAPKG=ON': using kpackagetool tool to install plugin
+cmake -B build -S . -GNinja -DUSE_PLASMAPKG=ON
+cmake --build build
+cmake --install build
 
 # Install package (ignore if USE_PLASMAPKG=OFF for system-wide installation)
-make install_pkg
-# install lib
-sudo make install
+cmake --build build --target install_pkg
 ```
 #### Uninstall
 1. remove files that list in `wallpaper-engine-kde-plugin/build/install_manifest.txt`
-2. `plasmapkg2 -r ~/.local/share/plasma/wallpapers/com.github.casout.wallpaperEngineKde`
+2. `kpackagetool6 -t Plasma/Wallpaper -r com.github.catsout.wallpaperEngineKde`
 
 ## Usage
 1. *Wallpaper Engine* installed on Steam
@@ -192,11 +192,6 @@ It's using GStreamer to play video.
 #### Mpv
 Need to compile the plugin lib.  
 The config is set to `hwdec=auto`, and is not configurable for now.  
-
-## About integrating into other desktop environments
-There is no general way. If there is a way to have good support for most desktop environments, why not we just require wallpaper engine itself to support linux. Some similar apps like [lively](https://github.com/rocksdanister/lively) and [ScreenPlay](https://store.steampowered.com/app/672870/ScreenPlay) can benefit from that, but that way doesn't exist. Actually the integration and implement are separated, for all integration ways, the implement is shared. So if there is a general way, we can move to it easily.  
-
-The major work of this plugin is the scene wallpaper [renderer](src/backend_scene/src). If you want to integrate this into other desktop environments, here are some [examples](src/backend_scene/standalone_view). Currently this renderer is rendering under vulkan and sharing to opengl texture which will be read by qml(plasmashell) in kde. You can integrate this renderer into anything that can show vulkan or opengl textures.  
 
 ## Acknowledgments
 - [RePKG](https://github.com/notscuffed/repkg)

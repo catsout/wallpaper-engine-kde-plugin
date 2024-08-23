@@ -1,6 +1,3 @@
-[submodule "src/backend_scene/third_libs/glslang"]
-	path = src/backend_scene/third_libs/glslang
-	url = https://github.com/KhronosGroup/glslang.git
-[submodule "src/backend_scene/third_party/glslang"]
-	path = src/backend_scene/third_party/glslang
-	url = https://github.com/KhronosGroup/glslang.git
+[submodule "src/backend_scene"]
+	path = src/backend_scene
+	url = https://github.com/catsout/wallpaper-scene-renderer.git

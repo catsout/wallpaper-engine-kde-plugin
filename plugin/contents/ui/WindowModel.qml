@@ -1,8 +1,9 @@
 import QtQuick 2.5
-import QtQuick.Controls 1.0
+import QtQuick.Controls 2.0
 import QtQuick.Layouts 1.2
 import QtQuick.Window 2.1
 import org.kde.plasma.core 2.0 as PlasmaCore
+import org.kde.plasma.plasma5support as Plasma5Support
 
 import org.kde.taskmanager 0.1 as TaskManager
 
@@ -96,6 +97,9 @@ Item {
     TaskManager.ActivityInfo { 
         id: activityInfo 
         onCurrentActivityChanged: virtualDesktopInfo.onCurrentDesktopChanged();
+        Component.onCompleted: {
+            wModel.activity = this.currentActivity;
+        }
     }
 
     TaskManager.VirtualDesktopInfo { 
@@ -138,7 +142,8 @@ Item {
             return this.data(idx, TaskManager.AbstractTasksModel[property]);
         }
     }
-    PlasmaCore.SortFilterModel {
+
+    Plasma5Support.SortFilterModel {
         filterRole: 'IsWindow'
         filterRegExp: 'true'
         sourceModel: tasksModel
@@ -225,6 +230,10 @@ Item {
             return getproperty("IsMaximized") === true || getproperty("IsFullScreen") === true;
         }, notMinWModel);
 
+        const fullSModel = taskFilter.filterCallback((getproperty) => {
+            return getproperty("IsFullScreen") === true;
+        }, notMinWModel);
+
         const activeModel = taskFilter.filter({IsActive: true}, notMinWModel);
 
 
@@ -237,6 +246,10 @@ Item {
             break;
         case Common.PauseMode.Max:
             playBy(maxWModel.length === 0);
+            break;
+        case Common.PauseMode.FullScreen:
+            console.log("fullScreen", fullSModel);
+            playBy(fullSModel.length === 0);
             break;
         case Common.PauseMode.Focus:
             playBy(activeModel.length === 0);

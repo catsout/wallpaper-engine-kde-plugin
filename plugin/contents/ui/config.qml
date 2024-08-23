@@ -27,6 +27,7 @@ ColumnLayout {
     property alias  cfg_ResumeTime:          settingPage.cfg_ResumeTime
     property alias  cfg_SwitchTimer:         settingPage.cfg_SwitchTimer
     property alias  cfg_RandomizeWallpaper:  settingPage.cfg_RandomizeWallpaper
+    property alias  cfg_NoRandomWhilePaused: settingPage.cfg_NoRandomWhilePaused
     property alias  cfg_PauseFilterByScreen: settingPage.cfg_PauseFilterByScreen
     property alias  cfg_PauseOnBatPower:     settingPage.cfg_PauseOnBatPower
     property alias  cfg_PauseBatPercent:     settingPage.cfg_PauseBatPercent
@@ -54,15 +55,15 @@ ColumnLayout {
             }
         }
     }
-    property var themeWidth: {
-        if(PlasmaCore.Theme && PlasmaCore.Theme.mSize) {
-            themeWidth = PlasmaCore.Theme.mSize(theme.defaultFont).width;
-        } else if(theme) {
-            themeWidth = theme.mSize(theme.defaultFont).width;
-        } else {
-            themeWidth = font.pixelSize;
-        }
-    }
+    // property var themeWidth: {
+    //     if(PlasmaCore.Theme && PlasmaCore.Theme.mSize) {
+    //         themeWidth = PlasmaCore.Theme.mSize(theme.defaultFont).width;
+    //     } else if(theme) {
+    //         themeWidth = theme.mSize(theme.defaultFont).width;
+    //     } else {
+    //         themeWidth = font.pixelSize;
+    //     }
+    // }
 
     property var libcheck: ({
         wallpaper: Common.checklib_wallpaper(root),
@@ -105,6 +106,7 @@ ColumnLayout {
     WallpaperListModel {
         id: wpListModel
         workshopDirs: Common.getProjectDirs(cfg_SteamLibraryPath)
+        globalConfigPath: Common.getGlobalConfigPath(cfg_SteamLibraryPath)
         filterStr: cfg_FilterStr
         sortMode: cfg_SortMode
         initItemOp: (item) => {

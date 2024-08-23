@@ -2,7 +2,7 @@ import QtQuick 2.6
 import QtQuick.Controls 2.3
 import QtQuick.Controls 2.3 as QQC
 import QtQuick.Window 2.0 // for Screen
-import QtQuick.Dialogs 1.2
+import QtQuick.Dialogs
 import QtQuick.Layouts 1.5
 
 import ".."
@@ -14,7 +14,7 @@ import "../js/bbcode.mjs" as BBCode
 import org.kde.plasma.core 2.0 as PlasmaCore
 import org.kde.plasma.components 3.0 as PlasmaComponents
 // for kcm gridview
-import org.kde.kcm 1.1 as KCM
+import org.kde.kcmutils as KCM
 import org.kde.kirigami 2.6 as Kirigami
 import org.kde.kquickcontrolsaddons 2.0
 
@@ -94,7 +94,7 @@ RowLayout {
 
                     actions: [
                         Kirigami.Action {
-                            icon.source: '../../images/folder-outline.svg'
+                            icon.source: Qt.resolvedUrl('../../images/folder-outline.svg')
                             icon.color: Theme.textColor
                             text: 'Library'
                             tooltip: cfg_SteamLibraryPath ? cfg_SteamLibraryPath : 'Select steam library dir'
@@ -103,7 +103,7 @@ RowLayout {
                         Kirigami.Action {
                             id: action_cb_filter
                             text: 'Filter'
-                            icon.source: '../../images/filter.svg'
+                            icon.source: Qt.resolvedUrl('../../images/filter.svg')
                             icon.color: Theme.textColor
                             property int currentIndex
                             readonly property var model: Common.filterModel
@@ -118,7 +118,7 @@ RowLayout {
                         Kirigami.Action {
                             id: action_cb_sort
                             text: model[currentIndex].short
-                            icon.source: '../../images/arrow-down.svg'
+                            icon.source: Qt.resolvedUrl('../../images/arrow-down.svg')
                             icon.color: Theme.textColor
                             property int currentIndex: Common.modelIndexOfValue(model, cfg_SortMode)
                             readonly property var model: [
@@ -141,7 +141,7 @@ RowLayout {
                             children: model.map((el, index) => comp_action_sort.createObject(null, {text: el.text, act_value: el.value}))
                         },
                         Kirigami.Action {
-                            icon.source: '../../images/refresh.svg'
+                            icon.source: Qt.resolvedUrl('../../images/refresh.svg')
                             icon.color: Theme.textColor
                             text: 'Refresh'
                             onTriggered: wpListModel.refresh()
@@ -205,11 +205,11 @@ RowLayout {
                         ]
                         thumbnail: Rectangle {
                             anchors.fill: parent
-                            QIconItem {
+                            Kirigami.Icon {
                                 anchors.centerIn: parent
                                 width: root.iconSizes.large
                                 height: width
-                                icon: "view-preview"
+                                source: "view-preview"
                                 visible: !imgPre.visible
                             }
                             Image {
@@ -297,16 +297,13 @@ RowLayout {
                 }
             }
 
-            FileDialog {
+            FolderDialog {
                 id: wpDialog
                 title: "Select steamlibrary folder"
-                selectFolder: true
-                selectMultiple : false
-                nameFilters: [ "All files (*)" ]
                 onAccepted: {
-                    const path = Utils.trimCharR(wpDialog.fileUrls[0], '/');
+                    const path = Utils.trimCharR(wpDialog.selectedFolder.toString(), '/');
                     cfg_SteamLibraryPath = path;
-                    wpListModel.refresh();
+                    return wpListModel.refresh();
                 }
             }
         }
@@ -446,21 +443,21 @@ RowLayout {
                                 id: right_act_favor
                                 icon.color: Theme.textColor
                                 icon.source: right_content.wpmodel.favor 
-                                    ? '../../images/bookmark.svg'
-                                    : '../../images/bookmark-outline-add.svg'
+                                    ? Qt.resolvedUrl('../../images/bookmark.svg')
+                                    : Qt.resolvedUrl('../../images/bookmark-outline-add.svg')
                                 tooltip: right_content.wpmodel.favor
                                     ? 'Remove from favorites'
                                     : 'Add to favorites'
                                 onTriggered: picViewLoader.item.toggleFavor(right_content.wpmodel)
                             },
                             Kirigami.Action {
-                                icon.source: '../../images/link.svg'
+                                icon.source: Qt.resolvedUrl('../../images/link.svg')
                                 tooltip: "Open Workshop Link"
                                 enabled: right_content.wpmodel.workshopid.match(Common.regex_workshop_online)
                                 onTriggered: Qt.openUrlExternally(Common.getWorkshopUrl(right_content.wpmodel.workshopid))
                             },
                             Kirigami.Action {
-                                icon.source: '../../images/folder-outline.svg'
+                                icon.source: Qt.resolvedUrl('../../images/folder-outline.svg')
                                 tooltip: "Open Containing Folder"
                                 onTriggered: Qt.openUrlExternally(right_content.wpmodel.path) 
                             }
@@ -478,10 +475,15 @@ RowLayout {
                     readonly property bool _set_model: {
                         const wpmodel = right_content.wpmodel;
                         const tags = right_content.wpmodel.tags;
+                        const playlists = right_content.wpmodel.playlists;
                         const _model = this.model;
                         _model.clear();
                         for(const i of Array(tags.length).keys())
                             _model.append(tags.get(i));
+                        for(const i of Array(playlists.length).keys()){
+                            var playlist = playlists.get(i);
+                            if(playlist != null) { _model.append(playlists.get(i)); }
+                        }
                         _model.append({key: wpmodel.contentrating});
                         return true;
                     }
@@ -695,7 +697,7 @@ RowLayout {
                                 right_opts.config_changes && 
                                 right_opts.has_change(modelData.config_key)
 
-                            icon: is_changed ? '../../images../../images/edit-pencil.svg' : ''
+                            icon: is_changed ? Qt.resolvedUrl('../../images/edit-pencil.svg') : ''
                             actor: Loader {
                                 sourceComponent: modelData.comp
                                 onLoaded: {

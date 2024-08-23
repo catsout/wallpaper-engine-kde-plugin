@@ -15,11 +15,11 @@ class MouseGrabber : public QQuickItem
 	Q_PROPERTY(QQuickItem* target READ target WRITE setTarget NOTIFY targetChanged)
 
 public:
-    MouseGrabber(QQuickItem *parent = 0);
-    virtual ~MouseGrabber() {};
+	MouseGrabber(QQuickItem *parent = nullptr);
+	virtual ~MouseGrabber() override {};
 
 	bool forceCapture() const;
-	QQuickItem* target() const;	
+	QQuickItem* target() const; 
 
 	void setForceCapture(bool);
 	void setTarget(QQuickItem*);
@@ -27,12 +27,12 @@ public:
 	Q_INVOKABLE void sendEvent(QObject*, QEvent*);
 
 protected:
-	void mouseUngrabEvent();
-	void mousePressEvent(QMouseEvent*);
-	void mouseMoveEvent(QMouseEvent*);
-	void mouseReleaseEvent(QMouseEvent *);
-    void mouseDoubleClickEvent(QMouseEvent *);
-    void hoverMoveEvent(QHoverEvent *);
+	void mouseUngrabEvent() override;
+	void mousePressEvent(QMouseEvent*) override;
+	void mouseMoveEvent(QMouseEvent*) override;
+	void mouseReleaseEvent(QMouseEvent *) override;
+	void mouseDoubleClickEvent(QMouseEvent *) override;
+	void hoverMoveEvent(QHoverEvent *) override;
 
 signals:
 	void forceCaptureChanged();

@@ -1,0 +1,22 @@
+{
+    "KPackageStructure": "Plasma/Wallpaper",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "catsout"
+            }
+        ],
+        "Category": "",
+        "Description": "Wallpaper Engine for Kde",
+        "Icon": "preferences-desktop-wallpaper",
+        "Id": "com.github.catsout.wallpaperEngineKde",
+        "License": "GPLv2+",
+        "Name": "Wallpaper Engine for Kde",
+        "ServiceTypes": [
+            "Plasma/Wallpaper"
+        ],
+        "Version": ""
+    },
+    "X-KDE-ParentApp": "org.kde.plasmashell",
+    "X-Plasma-MainScript": "ui/main.qml"
+}

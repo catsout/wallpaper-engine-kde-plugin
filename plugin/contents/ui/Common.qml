@@ -9,7 +9,8 @@ QtObject {
         Any,
         Max,
         Focus,
-        FocusOrMax
+        FocusOrMax,
+        FullScreen
     }
     enum DisplayMode {
         Aspect,
@@ -39,7 +40,8 @@ QtObject {
         type: "unknown",
         contentrating: "Everyone",
         tags: [],
-        favor: false
+        favor: false,
+        playlists: []
     })
 
     function wpitemFromQtObject(qobj) {
@@ -86,7 +88,33 @@ QtObject {
         ListElement { text: "Television";   type:"tags";          key:"Television";    def: 1}
         ListElement { text: "Vehicle";      type:"tags";          key:"Vehicle";       def: 1}
         ListElement { text: "Unspecified";  type:"tags";          key:"Unspecified";   def: 1}
+        ListElement { text: "PLAYLIST";     type:"_nocheck";      key:"";              def: 1}
 
+        // need to be able to lock the filterModel because when settings are being applied to multiple screens simultaneously,
+        // the filtermodel can be modified by multiple threads at the same time. This can lead to having excess playlist entries, which will cause
+        // the filter value to be rejected by the getValueArray function for being shorter than the numebr of filter elements, causing it to drop 
+        // the filter value and use the default value instead.This is particularly problematic when using the randomizer timer across multiple screens.
+        property var lock: ({
+            locked : false,
+            lock_resolvers: [],
+            lock: function() {
+                return new Promise((resolve, reject) => {
+                    if(!this.locked) {
+                        this.locked = true;
+                        resolve();
+                    } else {
+                        this.lock_resolvers.push(resolve);
+                    }
+                });            
+            },
+            release: function() {
+                if(this.lock_resolvers.length > 0) {
+                    this.lock_resolvers.shift()();
+                } else {
+                    this.locked = false;
+                }
+            }
+        })
 
         function map(func) {
             const arr = [];
@@ -107,6 +135,7 @@ QtObject {
         function genFilter(filters) {
             const typeF = {};
             const noTags = new Set();
+            const playlists = new Set();
             let onlyFavor = false;
             filters.forEach((el) => {
                 if(el.type === "type") 
@@ -117,6 +146,11 @@ QtObject {
                     onlyFavor = el.value;
                 else if(el.type === "tags") {
                     if(!el.value) noTags.add(el.key)
+                }
+                else if(el.type === "playlist") {
+                    if(el.value) {
+                        playlists.add(el.key);
+                    }                    
                 }
             });
 
@@ -131,8 +165,17 @@ QtObject {
                 }
                 return true;
             }
+            const checkPlaylists = (el) => {
+                if(playlists.size === 0) return true;
+                for(let i=0; i < el.playlists.length;i++) {
+                    if(playlists.has(el.playlists[i].key)) {
+                        return true;
+                    }
+                }
+                return false;
+            }
             return (el) => {
-                return checkType(el) && checkFavor(el) && checkContentrating(el) && checkNoTags(el);
+                return checkType(el) && checkFavor(el) && checkContentrating(el) && checkNoTags(el) && checkPlaylists(el);
             }
         }
     }
@@ -167,6 +210,9 @@ QtObject {
     }
     function getAssetsPath(steamLibrary) {
         return steamLibrary + "/steamapps/common/wallpaper_engine/assets";
+    }
+    function getGlobalConfigPath(steamLibrary) {
+        return steamLibrary + "/steamapps/common/wallpaper_engine/config.json";
     }
     function getWorkshopUrl(workshopid) {
         return "https://steamcommunity.com/sharedfiles/filedetails/?id=" + workshopid;

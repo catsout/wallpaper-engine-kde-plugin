@@ -1,5 +1,0 @@
-<RCC>
-    <qresource prefix="/pkg">
-        <file>main.qml</file>
-    </qresource>
-</RCC>

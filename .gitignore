@@ -11,10 +11,10 @@ CTestTestfile.cmake
 _deps
 *.tar
 build
-build-release
 *.swp
 *.out
 .vscode
 .idea
 .cache
 cmake-build-debug
+build-*

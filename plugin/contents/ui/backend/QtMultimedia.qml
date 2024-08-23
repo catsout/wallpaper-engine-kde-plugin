@@ -1,5 +1,5 @@
 import QtQuick 2.5
-import QtMultimedia 5.13
+import QtMultimedia
 import ".."
 
 Item{
@@ -10,7 +10,7 @@ Item{
     property var volumeFade: Common.createVolumeFade(
         videoItem, 
         Qt.binding(function() { return background.mute ? 0 : background.volume; }),
-        (volume) => { player.volume = volume / 100.0; }
+        (volume) => { audioOut.volume = volume / 100.0; }
     )
 
     onDisplayModeChanged: {
@@ -26,17 +26,18 @@ Item{
         id: videoView
         //fillMode: wallpaper.configuration.FillMode
         anchors.fill: parent
-        source: player
-        // keep lastframe for loop 
-        flushMode: VideoOutput.LastFrame 
+    }
+    AudioOutput {
+        id: audioOut
+        volume: 0.0
+        muted: background.mute
     }
     MediaPlayer {
         id: player
-        autoPlay: true
         loops: MediaPlayer.Infinite
-        muted: background.mute
-        volume: 0.0
-        playbackRate: background.videoRate
+        playbackRate: background.speed
+        videoOutput: videoView
+        audioOutput: audioOut
     }
     Component.onCompleted:{
         background.nowBackend = "QtMultimedia";
