@@ -1,4 +1,4 @@
-find_package(Qt6 REQUIRED COMPONENTS Quick Qml)
+find_package(Qt6 REQUIRED COMPONENTS Quick Qml Core DBus)
 
 add_subdirectory(backend_mpv)
 
@@ -13,6 +13,7 @@ add_library(${PROJECT_NAME}
 	SHARED
 	plugin.cpp
 	MouseGrabber.cpp
+	TTYSwitchMonitor.cpp
     PluginInfo.cpp
 	qmldir
 )
@@ -23,6 +24,8 @@ target_link_libraries(${PROJECT_NAME}
 	Qt::Qml 
 	mpvbackend
 	wescene-renderer-qml
+	Qt::Core
+	Qt::DBus
 )
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_VISIBILITY_PRESET hidden)
 set_target_properties(${PROJECT_NAME}
