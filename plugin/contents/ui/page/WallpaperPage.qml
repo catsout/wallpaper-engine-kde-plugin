@@ -303,7 +303,7 @@ RowLayout {
                 onAccepted: {
                     const path = Utils.trimCharR(wpDialog.selectedFolder.toString(), '/');
                     cfg_SteamLibraryPath = path;
-                    wpListModel.refresh();
+                    return wpListModel.refresh();
                 }
             }
         }
@@ -475,10 +475,15 @@ RowLayout {
                     readonly property bool _set_model: {
                         const wpmodel = right_content.wpmodel;
                         const tags = right_content.wpmodel.tags;
+                        const playlists = right_content.wpmodel.playlists;
                         const _model = this.model;
                         _model.clear();
                         for(const i of Array(tags.length).keys())
                             _model.append(tags.get(i));
+                        for(const i of Array(playlists.length).keys()){
+                            var playlist = playlists.get(i);
+                            if(playlist != null) { _model.append(playlists.get(i)); }
+                        }
                         _model.append({key: wpmodel.contentrating});
                         return true;
                     }
