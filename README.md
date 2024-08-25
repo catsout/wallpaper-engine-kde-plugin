@@ -78,7 +78,7 @@ Every time you receive update in discover, you should run these commands to upda
 #### Build and Install
 ```sh
 # Download source
-git clone --branch=qt6 https://github.com/catsout/wallpaper-engine-kde-plugin.git
+git clone https://github.com/catsout/wallpaper-engine-kde-plugin.git
 cd wallpaper-engine-kde-plugin
 
 # Download submodule
