@@ -2,7 +2,6 @@
 A wallpaper plugin integrating [wallpaper engine](https://store.steampowered.com/app/431960/Wallpaper_Engine) into kde wallpaper setting.  
 
 ## Todo
-- support kde6
 - move scene to separate process
 
 ## Note
