@@ -172,6 +172,29 @@ RowLayout {
                     wpListModel.modelStartSync.connect(this.item.backtoBegin);
                     wpListModel.modelRefreshed.connect(refreshIndex.bind(this));
                 }
+
+                Kirigami.Heading {
+                    anchors.fill: parent
+                    anchors.margins: Kirigami.Units.largeSpacing
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                    wrapMode: Text.WordWrap
+                    visible: picViewLoader.item && picViewLoader.item.view.count === 0
+                    level: 2
+                    text: { 
+                        if(!(libcheck.qtwebsockets && pyext))
+                            return `Please make sure qtwebsockets(qml module) installed, and open this again`
+                        if(!pyext.ok) {
+                            return `Python helper run failed: ${pyext.log}`;
+                        }
+                        if(!cfg_SteamLibraryPath)
+                            return "Select your steam library through the folder selecting button above";
+                        if(wpListModel.countNoFilter > 0)
+                            return `Found ${wpListModel.countNoFilter} wallpapers, but none of them matched filters`;
+                        return `There are no wallpapers in steam library`;
+                    }
+                    opacity: 0.5
+                }
             }
             Component { 
                 id: picViewCom
@@ -181,6 +204,7 @@ RowLayout {
 
                     readonly property var currentModel: view.model.get(view.currentIndex)
                     readonly property var defaultModel: ListModel {}
+                    visible: view.count > 0
 
                     // from org.kde.image
                     view.implicitCellWidth: Screen.width / 10 + Kirigami.Units.smallSpacing * 2
@@ -232,30 +256,7 @@ RowLayout {
                         }
                     }
 
-                    Kirigami.Heading {
-                        anchors.fill: parent
-                        anchors.margins: Kirigami.Units.largeSpacing
-                        // FIXME: this is needed to vertically center it in the grid for some reason
-                        anchors.topMargin: picViewGrid.height
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
-                        wrapMode: Text.WordWrap
-                        visible: picViewGrid.view.count === 0
-                        level: 2
-                        text: { 
-                            if(!(libcheck.qtwebsockets && pyext))
-                                return `Please make sure qtwebsockets(qml module) installed, and open this again`
-                            if(!pyext.ok) {
-                                return `Python helper run failed: ${pyext.log}`;
-                            }
-                            if(!cfg_SteamLibraryPath)
-                                return "Select your steam library through the folder selecting button above";
-                            if(wpListModel.countNoFilter > 0)
-                                return `Found ${wpListModel.countNoFilter} wallpapers, but none of them matched filters`;
-                            return `There are no wallpapers in steam library`;
-                        }
-                        opacity: 0.5
-                    }
+     
                     function backtoBegin() {
                         view.model = defaultModel
                         //view.positionViewAtBeginning();

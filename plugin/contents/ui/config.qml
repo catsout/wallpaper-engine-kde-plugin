@@ -8,8 +8,6 @@ import "page"
 
 ColumnLayout {
     id: root
-    anchors.fill: parent
-    anchors.topMargin: 5
     spacing: 5
     
     property string cfg_SteamLibraryPath
