@@ -21,7 +21,6 @@ If you are using amd, please choose RADV driver.
 
 ## Install
 
-Gentoo:
 ```sh
 sudo emerge -av eselect-repository
 sudo eselect repository enable gig
