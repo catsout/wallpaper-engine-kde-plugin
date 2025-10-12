@@ -37,7 +37,6 @@
 #    include <QX11Info> // IWYU pragma: keep
 #endif
 //#endif
-#    include <qpa/qplatformnativeinterface.h> // IWYU pragma: keep
 #endif
 
 Q_LOGGING_CATEGORY(wekdeMpv, "wekde.mpv")
@@ -81,18 +80,23 @@ int CreateMpvContex(mpv_handle* mpv, mpv_render_context** mpv_gl) {
     if (QGuiApplication::platformName().contains("xcb")) {
         params[2].type = MPV_RENDER_PARAM_X11_DISPLAY;
 #if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
-        // TODO: QGuiApplication::nativeInterface<QNativeInterface::QX11Application>()::display();
-        // same for wayland
-        auto* native   = QGuiApplication::platformNativeInterface();
-        params[2].data = native->nativeResourceForWindow("display", nullptr);
+        if (auto* x11App = qGuiApp->nativeInterface<QNativeInterface::QX11Application>()) {
+            params[2].data = x11App->display();
+        }
 #else
         params[2].data = QX11Info::display();
 #endif
     }
     if (QGuiApplication::platformName().contains("wayland")) {
         params[2].type = MPV_RENDER_PARAM_WL_DISPLAY;
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+        if (auto* waylandApp = qGuiApp->nativeInterface<QNativeInterface::QWaylandApplication>()) {
+            params[2].data = waylandApp->display();
+        }
+#else
         auto* native   = QGuiApplication::platformNativeInterface();
         params[2].data = native->nativeResourceForWindow("display", nullptr);
+#endif
     }
 #endif
     int code = mpv_render_context_create(mpv_gl, mpv, params);
