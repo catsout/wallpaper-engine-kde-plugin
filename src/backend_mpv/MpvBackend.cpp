@@ -89,11 +89,11 @@ int CreateMpvContex(mpv_handle* mpv, mpv_render_context** mpv_gl) {
     }
     if (QGuiApplication::platformName().contains("wayland")) {
         params[2].type = MPV_RENDER_PARAM_WL_DISPLAY;
-#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
-        if (auto* waylandApp = qGuiApp->nativeInterface<QNativeInterface::QWaylandApplication>()) {
-            params[2].data = waylandApp->display();
-        }
-#else
+    #if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+            if (auto* waylandApp = qGuiApp->nativeInterface<QNativeInterface::QWaylandApplication>()) {
+                params[2].data = waylandApp->display();
+            }
+    #else
         auto* native   = QGuiApplication::platformNativeInterface();
         params[2].data = native->nativeResourceForWindow("display", nullptr);
 #endif
@@ -184,13 +184,19 @@ MpvObject::Status MpvObject::status() const {
 
 QUrl MpvObject::source() const { return m_source; }
 
-bool MpvObject::mute() const { return getProperty("mute").toBool(); }
+bool MpvObject::mute() const {
+    QString aid = getProperty("aid").toString();
+    return aid == "no";
+}
 
 QString MpvObject::logfile() const { return getProperty("log-file").toString(); }
 
 int MpvObject::volume() const { return getProperty("volume").toInt(); }
 
-void MpvObject::setMute(const bool& mute) { setProperty("mute", mute); }
+void MpvObject::setMute(const bool& mute) {
+    // aid is the audio track ID, "no" means no audio track
+    setProperty("aid", mute ? "no" : "auto");
+}
 
 void MpvObject::setVolume(const int& volume) { setProperty("volume", volume); }
 
