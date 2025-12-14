@@ -1,4 +1,4 @@
-Name: wallpaper-engine-kde-plugin
+Name: wallpaper-engine-kde-plugin-qt6
 
 %global shortcommit %(c=%{commit}; echo ${c:0:7})
 
@@ -13,16 +13,16 @@ Source0: https://github.com/catsout/wallpaper-engine-kde-plugin/archive/%{commit
 Source1: https://github.com/KhronosGroup/glslang/archive/refs/tags/%{glslang_ver}.tar.gz
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-BuildRequires: mpv-libs-devel vulkan-headers plasma-workspace-devel kf5-plasma-devel lz4-devel qt5-qtbase-private-devel qt5-qtx11extras-devel
-Requires: plasma-workspace gstreamer1-libav mpv-libs lz4 python3-websockets qt5-qtwebchannel-devel qt5-qtwebsockets-devel
+BuildRequires: mpv-libs-devel vulkan-headers plasma-workspace-devel kf6-plasma-devel lz4-devel qt6-qtbase-private-devel qt5-qtx11extras-devel
+Requires: plasma-workspace gstreamer1-libav mpv-libs lz4 python3-websockets qt6-qtwebchannel-devel qt6-qtwebsockets-devel
 
 %description
 
 %prep
-%setup -q -n %{name}-%{commit}
-%setup -T -D -a 1 -n %{name}-%{commit}
-rm -r src/backend_scene/third_party/glslang
-ln -Tfs ../../../glslang-%{glslang_ver} src/backend_scene/third_party/glslang
+%setup -q -n wallpaper-engine-kde-plugin-%{commit}
+%setup -T -D -a 1 -n wallpaper-engine-kde-plugin-%{commit}
+rm -r src/backend_scene
+git clone --recurse-submodules https://github.com/catsout/wallpaper-scene-renderer.git src/backend_scene
 
 %global _enable_debug_package 0
 %global debug_package %{nil}
