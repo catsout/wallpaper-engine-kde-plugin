@@ -1,6 +1,6 @@
 project(mpvbackend)
 
-find_package(Qt${QT_MAJOR_VERSION} COMPONENTS Gui Quick REQUIRED)
+find_package(Qt${QT_MAJOR_VERSION} COMPONENTS Gui Quick REQUIRED GuiPrivate)
 include_directories(${Qt${QT_MAJOR_VERSION}Gui_PRIVATE_INCLUDE_DIRS})
 
 find_package(PkgConfig REQUIRED)
@@ -19,6 +19,7 @@ target_link_libraries(${PROJECT_NAME}
 	PRIVATE 
     Qt::Quick
 	Qt::Gui
+	Qt::GuiPrivate
 	# Qt::X11Extras
 	${MPV_LIBRARIES}
 )

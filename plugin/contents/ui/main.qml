@@ -1,7 +1,7 @@
-import QtQuick 2.12
-import com.github.catsout.wallpaperEngineKde 1.2
-import QtQuick.Window 2.2
-import org.kde.plasma.core 2.0 as PlasmaCore
+import QtQuick
+import com.github.catsout.wallpaperEngineKde
+import QtQuick.Window
+import org.kde.plasma.core as PlasmaCore
 import org.kde.plasma.plasmoid
 
 WallpaperItem {
