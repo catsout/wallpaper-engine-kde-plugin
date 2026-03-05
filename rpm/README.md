@@ -28,12 +28,11 @@ rpmbuild --define="commit $(git rev-parse HEAD)" \
 
 # Exit toolbox
 logout
-rpm-ostree
 
 # if youre updating do this
 rpm-ostree uninistall wallpaper-engine-kde-plugin
 
 # Install package
 cd ~/rpmbuild/RPMS/x86_64
-rpm-ostree install ./<select-newley-created-rpm-to-install>.rpm 
+rpm-ostree install ./<select-newly-created-rpm-to-install>.rpm 
 ```
