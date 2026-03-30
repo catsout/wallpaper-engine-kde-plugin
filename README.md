@@ -42,7 +42,7 @@ Fedora:
 # Please add "RPM Fusion" repo first
 sudo dnf install vulkan-headers plasma-workspace-devel kf5-plasma-devel gstreamer1-libav \
 lz4-devel mpv-libs-devel python3-websockets qt5-qtbase-private-devel libplasma-devel \
-qt5-qtx11extras-devel qt5-qtwebchannel-devel qt5-qtwebsockets-devel cmake
+qt5-qtx11extras-devel qt5-qtwebchannel-devel qt6-qtwebsockets-devel cmake ninja-build
 ```
 
 Arch:  
@@ -87,7 +87,7 @@ git submodule update --init --force --recursive
 # 'USE_PLASMAPKG=ON': using kpackagetool tool to install plugin
 cmake -B build -S . -GNinja -DUSE_PLASMAPKG=ON
 cmake --build build
-cmake --install build
+sudo cmake --install build
 
 # Install package (ignore if USE_PLASMAPKG=OFF for system-wide installation)
 cmake --build build --target install_pkg
