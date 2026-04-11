@@ -78,8 +78,8 @@ install_deps() {
                 qml-module-qtwebchannel qml-module-qtwebsockets \
                 plasma-workspace-dev extra-cmake-modules
             ;;
-        fedora)
-            info "Installing Fedora dependencies…"
+        fedora|nobara|bazzite)
+            info "Installing Fedora-based dependencies…"
             info "Note: RPM Fusion repository is required for mpv and gstreamer-libav."
             sudo dnf install -y \
                 cmake ninja-build gcc-c++ \
