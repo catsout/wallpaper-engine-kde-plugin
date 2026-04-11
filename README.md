@@ -20,59 +20,11 @@ A wallpaper plugin integrating [wallpaper engine](https://store.steampowered.com
 If you are using amd, please choose RADV driver.  
 
 ## Install
-
-Gentoo:
 ```sh
-sudo emerge -av eselect-repository
-sudo eselect repository enable gig
-sudo emerge -av kde-misc/wallpaper-engine-kde-plugin
-```
-
-#### Dependencies
-Debian:  
-```sh
-sudo apt install build-essential libvulkan-dev plasma-workspace-dev gstreamer1.0-libav \
-liblz4-dev libmpv-dev python3-websockets qtbase5-private-dev \
-libqt5x11extras5-dev \
-qml-module-qtwebchannel qml-module-qtwebsockets cmake ninja-build
+git clone https://github.com/cycloarcane/wallpaper-engine-kde-plugin
+cd wallpaper-engine-kde-plugin
+./install.sh
 ```  
-
-Fedora:  
-```sh
-# Please add "RPM Fusion" repo first
-sudo dnf install vulkan-headers plasma-workspace-devel kf5-plasma-devel gstreamer1-libav \
-lz4-devel mpv-libs-devel python3-websockets qt5-qtbase-private-devel libplasma-devel \
-qt5-qtx11extras-devel qt5-qtwebchannel-devel qt5-qtwebsockets-devel cmake
-```
-
-Arch:  
-```sh
-sudo pacman -S extra-cmake-modules plasma-framework5 gst-libav ninja \
-base-devel mpv python-websockets qt5-declarative qt5-websockets qt5-webchannel vulkan-headers cmake
-```
-
-Void:  
-```sh
-sudo xbps-install -S extra-cmake-modules plasma-framework \
-gst-libav base-devel mpv python3-websockets qt5-declarative qt5-websockets \
-qt5-webchannel plasma-workspace-devel mpv-devel liblz4-devel Vulkan-Headers cmake
-```
-
-openSUSE:
-```sh
-# You'll need to add the Packman repository first
-sudo zypper in vulkan-devel plasma-framework-devel plasma5-workspace-devel \
-libqt5-qtwebsockets-devel mpv-devel python310-websockets \
-libqt5-qtx11extras-devel liblz4-devel gstreamer-plugins-libav \
-libqt5-qtbase-private-headers-devel cmake extra-cmake-modules
-```
-
-Fedora Kinoite:  
-see [install via rpm-ostree](rpm)
-
-#### Note for kde store
-Still need to run commands below to get scene and mpv work.  
-Every time you receive update in discover, you should run these commands to update.  
 
 #### Build and Install
 ```sh
