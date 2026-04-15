@@ -7,7 +7,6 @@ import base64
 import math
 import os
 import platform
-import shutil
 
 from pathlib import Path
 
@@ -52,11 +51,6 @@ class Main:
     def reset_wallpaper_config(self, id: str) -> None:
         cfg_file: Path = self.__wallpaper_config_file(id)
         cfg_file.unlink()
-
-    def delete_wallpaper_config(self, id: str) -> None:
-        cfg_file: Path = self.__wallpaper_config_file(id)
-        if cfg_file.exists():
-            cfg_file.unlink()
 
 class Jsonrpc:
     def __init__(self):
@@ -154,24 +148,6 @@ get_folder_list.default_opt = {"only_dir": True, "fallbacks": []}
 jrpc.add_method(M.read_wallpaper_config)
 jrpc.add_method(M.write_wallpaper_config)
 jrpc.add_method(M.reset_wallpaper_config)
-
-
-@jrpc.add_method
-def delete_wallpaper(path: str, workshopid: str = "") -> dict:
-    # Safety: require the target to be an existing directory containing
-    # a project.json file so arbitrary paths can't be wiped out.
-    try:
-        folder: Path = Path(path).resolve()
-        if not folder.is_dir():
-            return {"ok": False, "error": "not a directory"}
-        if not (folder / "project.json").is_file():
-            return {"ok": False, "error": "not a wallpaper folder"}
-        shutil.rmtree(folder)
-        if workshopid:
-            M.delete_wallpaper_config(workshopid)
-        return {"ok": True}
-    except Exception as e:
-        return {"ok": False, "error": repr(e)}
 
 
 @jrpc.add_method
