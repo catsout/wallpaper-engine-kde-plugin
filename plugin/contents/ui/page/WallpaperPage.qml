@@ -225,6 +225,11 @@ RowLayout {
                                 tooltip: "Open Workshop Link"
                                 enabled: workshopid.match(Common.regex_workshop_online)
                                 onTriggered: Qt.openUrlExternally(Common.getWorkshopUrl(workshopid))
+                            },
+                            Kirigami.Action {
+                                icon.name: "edit-delete"
+                                tooltip: "Delete from disk"
+                                onTriggered: picViewLoader.item.requestDelete(model)
                             }
                         ]
                         thumbnail: Rectangle {
@@ -331,6 +336,13 @@ RowLayout {
                             resolve();
                         });
                     }
+                    function requestDelete(wpmodel) {
+                        if(!wpmodel || !wpmodel.path) return;
+                        deleteConfirm.targetPath = Common.urlNative(wpmodel.path);
+                        deleteConfirm.targetWorkshopId = wpmodel.workshopid || "";
+                        deleteConfirm.targetTitle = wpmodel.title || wpmodel.workshopid || "";
+                        deleteConfirm.open();
+                    }
                     function toggleFavor(model, index) {
                         if(!index) index = view.currentIndex;
 
@@ -355,6 +367,43 @@ RowLayout {
                     const path = Utils.trimCharR(wpDialog.selectedFolder.toString(), '/');
                     cfg_SteamLibraryPath = path;
                     return wpListModel.refresh();
+                }
+            }
+
+            MessageDialog {
+                id: deleteConfirm
+                property string targetPath: ""
+                property string targetWorkshopId: ""
+                property string targetTitle: ""
+
+                title: "Delete Wallpaper"
+                text: `Delete "${targetTitle}" from disk? This cannot be undone.`
+                buttons: MessageDialog.Yes | MessageDialog.No
+
+                onAccepted: {
+                    if(!targetPath) return;
+                    const path = targetPath;
+                    const wid = targetWorkshopId;
+                    const wasSelected = wid && wid === cfg_WallpaperWorkShopId;
+                    pyext.delete_wallpaper(path, wid).then(res => {
+                        if(res && res.ok) {
+                            if(wasSelected) {
+                                cfg_WallpaperSource = "";
+                                cfg_WallpaperWorkShopId = "";
+                            }
+                            wpListModel.refresh();
+                        } else {
+                            console.error("delete failed:", res ? res.error : "no response");
+                        }
+                    }).catch(reason => console.error("delete error:", reason));
+                    targetPath = "";
+                    targetWorkshopId = "";
+                    targetTitle = "";
+                }
+                onRejected: {
+                    targetPath = "";
+                    targetWorkshopId = "";
+                    targetTitle = "";
                 }
             }
         }
@@ -510,7 +559,13 @@ RowLayout {
                             Kirigami.Action {
                                 icon.source: Qt.resolvedUrl('../../images/folder-outline.svg')
                                 tooltip: "Open Containing Folder"
-                                onTriggered: Qt.openUrlExternally(right_content.wpmodel.path) 
+                                onTriggered: Qt.openUrlExternally(right_content.wpmodel.path)
+                            },
+                            Kirigami.Action {
+                                icon.name: "edit-delete"
+                                tooltip: "Delete from disk"
+                                enabled: Boolean(right_content.wpmodel.path)
+                                onTriggered: picViewLoader.item.requestDelete(right_content.wpmodel)
                             }
                         ]
                     }
