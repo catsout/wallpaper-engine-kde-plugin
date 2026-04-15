@@ -43,6 +43,7 @@ Rectangle {
     property bool   mute: get_opt_value('mute_audio', wallpaper.configuration.MuteAudio)
     property int    volume: get_opt_value('volume', wallpaper.configuration.Volume)
     property real    speed: get_opt_value('speed', wallpaper.configuration.Speed)
+    property int    rotationDeg: get_opt_value('rotation', wallpaper.configuration.Rotation)
 
     property bool   perOptChanged: wallpaper.configuration.PerOptChanged
     onPerOptChangedChanged: {
@@ -251,10 +252,14 @@ Rectangle {
         interval: 200
         onTriggered: background.autoPause();
     }
-    // main  
-    Item { 
+    // main
+    Item {
         id: backendLoader
-        anchors.fill: parent
+        readonly property bool _swapped: background.rotationDeg === 90 || background.rotationDeg === 270
+        width: _swapped ? parent.height : parent.width
+        height: _swapped ? parent.width : parent.height
+        anchors.centerIn: parent
+        rotation: background.rotationDeg
         property var item: null
 
         signal loaded

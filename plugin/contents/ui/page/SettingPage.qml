@@ -27,6 +27,7 @@ Flickable {
 
     property alias cfg_PauseOnBatPower: chkbox_pauseOnBatPower.checked
     property alias cfg_PauseBatPercent: spin_pauseBatPercent.value
+    property int   cfg_Rotation
 
 
     Layout.fillWidth: true
@@ -142,6 +143,23 @@ Flickable {
                     textRole: "text"
                     onActivated: cfg_DisplayMode = Common.cbCurrentValue(this)
                     Component.onCompleted: currentIndex = Common.cbIndexOfValue(this, cfg_DisplayMode)
+                }
+            }
+            OptionItem {
+                text: 'Rotation'
+                text_color: Theme.textColor
+                icon: '../../images/window.svg'
+                actor: ComboBox {
+                    id: rotationCombo
+                    model: [
+                        { text: "0\u00B0 (Normal)",       value: 0 },
+                        { text: "90\u00B0 (Right)",       value: 90 },
+                        { text: "180\u00B0 (Upside down)", value: 180 },
+                        { text: "270\u00B0 (Left)",       value: 270 }
+                    ]
+                    textRole: "text"
+                    onActivated: cfg_Rotation = Common.cbCurrentValue(this)
+                    Component.onCompleted: currentIndex = Common.cbIndexOfValue(this, cfg_Rotation)
                 }
             }
 
