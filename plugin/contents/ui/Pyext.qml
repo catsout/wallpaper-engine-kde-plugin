@@ -60,6 +60,9 @@ Item {
     function analyse_pkg(path) {
         return ws_server.jrpc.send("analyse_pkg", [path]).then(res => res.result);
     }
+    function delete_wallpaper(path, workshopid) {
+        return ws_server.jrpc.send("delete_wallpaper", [path, workshopid || ""]).then(res => res.result);
+    }
 
 
 
