@@ -32,6 +32,7 @@ ColumnLayout {
     property int    cfg_DisplayMode
     property int    cfg_PauseMode
     property int    cfg_VideoBackend
+    property alias  cfg_Rotation:            settingPage.cfg_Rotation
 
     property bool   cfg_PerOptChanged
 
