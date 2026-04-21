@@ -57,6 +57,9 @@ Item {
     function reset_wallpaper_config(id) {
         return ws_server.jrpc.send("reset_wallpaper_config", [id]);
     }
+    function delete_wallpaper(path, workshopid) {
+        return ws_server.jrpc.send("delete_wallpaper", [path, workshopid || ""]).then(res => res.result);
+    }
 
 
 
