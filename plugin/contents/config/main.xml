@@ -26,6 +26,10 @@
       <label>Video display mode</label>
       <default>0</default>
     </entry>
+    <entry name="Rotation" type="Int">
+      <label>Wallpaper rotation in degrees</label>
+      <default>0</default>
+    </entry>
     <entry name="PauseMode" type="Int">
       <label>Video Pause mode</label>
       <default>0</default>
